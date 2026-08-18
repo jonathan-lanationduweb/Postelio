@@ -13,13 +13,18 @@
   /* Fond beige : à la libération du pin, tout interstice se fond avec la
      section suivante (crème) — jamais de bandeau vert ni de flash. */
   background: var(--c-bg);
+  overflow-x: clip; /* neutralise tout débordement horizontal (étage 100vw) */
 }
 
-/* Étage figé (épinglé par ScrollTrigger le temps du parcours) */
+/* Étage figé (épinglé par ScrollTrigger le temps du parcours).
+   min-width:100vw force la pleine largeur du viewport : GSAP fige sinon une
+   largeur en px (viewport − barre de défilement) et la vidéo ne remplit pas
+   tout. min-width l'emporte sur la largeur inline de GSAP sans !important. */
 .cine__sticky {
   position: relative;
   height: 100vh;
   height: 100svh;
+  min-width: 100vw;
   overflow: hidden;
   isolation: isolate;
 }
