@@ -53,6 +53,36 @@
   <a class="skip-link" href="#contenu-site">Aller au contenu principal</a>
   <p class="demo-banner">Site de démonstration — toutes les offres, entreprises et personnes citées sont fictives.</p>
 
+  <!-- Navbar UNIQUE et persistante : cinématique (transparente/blanche) sur la
+       vidéo, puis normale (crème/vert) — l'état bascule selon le scroll.
+       Source : partials/header.html (variante « cine » sur l'accueil). -->
+  <header class="site-header site-header--cine">
+  <div class="header-inner">
+    <a class="logo" href="index.html" aria-label="Postelio, retour à l'accueil">
+      <span class="logo-mark" aria-hidden="true">P</span>
+      <span class="logo-text">Postelio</span>
+    </a>
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Ouvrir le menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="main-nav" id="main-nav" aria-label="Navigation principale">
+      <ul class="nav-links">
+        <li><a href="index.html" aria-current="page">Accueil</a></li>
+        <li><a href="offres.html">Offres d'emploi</a></li>
+        <li><a href="entreprises.html">Entreprises</a></li>
+        <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
+        <li><a href="blog.html">Conseils</a></li>
+        <li><a href="a-propos.html">Qui sommes-nous</a></li>
+        <li class="nav-guided"><a href="recherche-guidee.html">Recherche guidée</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="connexion.html" class="btn btn-ghost">Se connecter</a>
+        <a href="publier-offre.html" class="btn btn-primary">Publier une offre</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
 <main id="contenu">
 
     <!-- ===== Intro cinématique pilotée par le scroll (= hero de la page) ===== -->
@@ -64,21 +94,6 @@
           <source src="assets/videos/postelio-scroll-journey.mp4" type="video/mp4">
         </video>
         <div class="cine__overlay" id="cine-overlay" aria-hidden="true"></div>
-
-        <!-- Navbar de l'intro : transparente puis translucide au défilement -->
-        <header class="cine__nav" id="cine-nav">
-          <a class="cine__logo" href="index.html" aria-label="Postelio, accueil">
-            <span class="cine__logo-mark" aria-hidden="true">P</span>
-            <span class="cine__logo-text">Postelio</span>
-          </a>
-          <nav class="cine__nav-links" aria-label="Navigation">
-            <a href="offres.html">Offres d'emploi</a>
-            <a href="entreprises.html">Entreprises</a>
-            <a href="savoir-faire.html">Savoir-faire</a>
-            <a href="blog.html">Conseils</a>
-          </nav>
-          <a class="cine__nav-cta" href="publier-offre.html">Publier une offre</a>
-        </header>
 
         <!-- Moments narratifs : ponctuations sur la vidéo (opacity/translate/blur
              pilotés par la progression du scroll, avec des respirations sans texte) -->
@@ -124,34 +139,6 @@
     </section>
 
     <span id="contenu-site" tabindex="-1"></span>
-
-    <!-- Navbar unifiée (variante light) — prend le relais après l'intro. Source : partials/header.html -->
-    <header class="site-header site-header--light">
-  <div class="header-inner">
-    <a class="logo" href="index.html" aria-label="Postelio, retour à l'accueil">
-      <span class="logo-mark" aria-hidden="true">P</span>
-      <span class="logo-text">Postelio</span>
-    </a>
-    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Ouvrir le menu">
-      <span></span><span></span><span></span>
-    </button>
-    <nav class="main-nav" id="main-nav" aria-label="Navigation principale">
-      <ul class="nav-links">
-        <li><a href="index.html" aria-current="page">Accueil</a></li>
-        <li><a href="offres.html">Offres d'emploi</a></li>
-        <li><a href="entreprises.html">Entreprises</a></li>
-        <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
-        <li><a href="blog.html">Conseils</a></li>
-        <li><a href="a-propos.html">Qui sommes-nous</a></li>
-        <li class="nav-guided"><a href="recherche-guidee.html">Recherche guidée</a></li>
-      </ul>
-      <div class="nav-actions">
-        <a href="connexion.html" class="btn btn-ghost">Se connecter</a>
-        <a href="publier-offre.html" class="btn btn-primary">Publier une offre</a>
-      </div>
-    </nav>
-  </div>
-</header>
 
     <!-- ===== Offres récentes : une vedette + une liste ===== -->
     <section class="section section--surface" aria-labelledby="recent-title">

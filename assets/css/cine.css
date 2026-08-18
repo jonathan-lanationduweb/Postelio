@@ -51,21 +51,88 @@
   pointer-events: none;
 }
 
-/* Transition de sortie : le beige de la section suivante monte du bas.
-   Hauteur/opacité pilotées par --cine-exit (JS). Ne couvre pas le centre. */
-.cine__sticky::after {
-  content: "";
-  position: absolute;
+/* Plus de voile beige : la continuité de sortie est assurée par la section
+   suivante qui remonte (JS) et par le dépinnage naturel de la vidéo. */
+
+/* =====================================================================
+   Navbar UNIQUE de l'accueil (.site-header--cine)
+   Même élément DOM du début à la fin : cinématique (transparente, texte
+   blanc) sur la vidéo, puis normale (crème, vert Postelio) une fois l'intro
+   terminée. L'état bascule via .is-solid (posée par le scroll). Position
+   fixed pour rester persistante et laisser la vidéo occuper tout l'écran.
+   ===================================================================== */
+.site-header--cine {
+  position: fixed;
+  top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: 58%;
-  z-index: 5;
-  background: linear-gradient(to top, var(--c-bg) 0%, var(--c-bg) 30%, rgba(250, 247, 241, 0) 100%);
-  transform: translateY(calc((1 - var(--cine-exit, 0)) * 100%));
-  opacity: var(--cine-exit, 0);
+  z-index: 1000;
+  background: transparent;
+  transition: background 0.45s ease, box-shadow 0.45s ease, backdrop-filter 0.45s ease;
+}
+.site-header--cine .header-inner {
+  width: min(1280px, 100% - 48px);
+  margin-inline: auto;
+  min-height: 76px;
+  transition: min-height 0.45s ease;
+}
+/* Voile haut (état cinématique uniquement) : lisibilité sur les frames claires. */
+.site-header--cine:not(.is-solid)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to bottom, rgba(8, 20, 16, 0.5) 0%, rgba(8, 20, 16, 0) 100%);
   pointer-events: none;
 }
+/* Transitions douces de couleur (changement d'état presque imperceptible) */
+.site-header--cine .logo-text,
+.site-header--cine .logo-text strong,
+.site-header--cine .nav-links,
+.site-header--cine .nav-links a,
+.site-header--cine .nav-actions .btn-ghost,
+.site-header--cine .nav-actions .btn-primary,
+.site-header--cine .nav-toggle span {
+  transition: color 0.45s ease, background 0.45s ease, border-color 0.45s ease;
+}
+
+/* --- État cinématique (par défaut, sur la vidéo) : blanc --- */
+.site-header--cine .logo-text,
+.site-header--cine .logo-text strong { color: #fff; }
+.site-header--cine .nav-links {
+  background: rgba(16, 28, 24, 0.26);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.site-header--cine .nav-links a { color: rgba(255, 255, 255, 0.9); }
+.site-header--cine .nav-links a:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.site-header--cine .nav-links a[aria-current="page"] { background: rgba(255, 255, 255, 0.92); color: var(--c-primary-dark); }
+.site-header--cine .nav-actions .btn-ghost { color: #fff; border-color: transparent; }
+.site-header--cine .nav-actions .btn-ghost:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.site-header--cine .nav-actions .btn-primary { background: #fff; border-color: #fff; color: var(--c-primary-dark); }
+.site-header--cine .nav-toggle span { background: #fff; }
+
+/* --- État normal (fond clair arrivé) : crème + vert Postelio --- */
+.site-header--cine.is-solid {
+  background: rgba(250, 247, 241, 0.96);
+  box-shadow: 0 1px 0 rgba(20, 45, 38, 0.04), 0 8px 24px -12px rgba(20, 45, 38, 0.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.site-header--cine.is-solid .header-inner { min-height: 64px; }
+.site-header--cine.is-solid .logo-text { color: var(--c-primary-dark); }
+.site-header--cine.is-solid .logo-text strong { color: var(--c-accent-dark); }
+.site-header--cine.is-solid .nav-links {
+  background: rgba(31, 51, 42, 0.07);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.site-header--cine.is-solid .nav-links a { color: var(--c-ink-soft); }
+.site-header--cine.is-solid .nav-links a:hover { background: rgba(31, 51, 42, 0.08); color: var(--c-primary-dark); }
+.site-header--cine.is-solid .nav-links a[aria-current="page"] { background: var(--c-primary); color: #fff; }
+.site-header--cine.is-solid .nav-actions .btn-ghost { color: var(--c-primary-dark); border-color: transparent; }
+.site-header--cine.is-solid .nav-actions .btn-primary { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+.site-header--cine.is-solid .nav-toggle span { background: var(--c-primary-dark); }
 
 /* ---- Navbar de l'intro : discrète, transparente puis à peine translucide ---- */
 .cine__nav {

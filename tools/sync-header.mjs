@@ -41,10 +41,11 @@ for (const file of readdirSync(ROOT).filter((f) => f.endsWith(".html"))) {
     continue;
   }
 
-  /* L'intro cinématique de l'accueil possède sa propre nav ; la navbar
-     unifiée passe donc en variante « light » partout (plus d'overlay hero). */
+  /* Accueil : variante « cine » = navbar UNIQUE et persistante, cinématique
+     (transparente/blanche) sur la vidéo puis normale (crème/vert) ensuite,
+     pilotée par le scroll. Toutes les autres pages : variante « light ». */
   let header = partial
-    .replace("{{variant}}", "light")
+    .replace("{{variant}}", file === "index.html" ? "cine" : "light")
     .trimEnd();
 
   const active = ACTIVE[file];

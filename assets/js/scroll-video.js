@@ -34,7 +34,7 @@
 
     var stage = section.querySelector(".cine__sticky");
     var overlay = document.getElementById("cine-overlay");
-    var nav = document.getElementById("cine-nav");
+    var header = document.querySelector(".site-header--cine");
     var hint = document.getElementById("cine-hint");
     var scenes = Array.prototype.slice.call(section.querySelectorAll(".cine__scene"));
 
@@ -56,6 +56,7 @@
     var duration = 0;
     var dbg = null;
     var lastGrad = "";
+    var lastSolid = null;
 
     /* Progression locale bornée [0,1]. */
     function rangeProgress(p, a, b) {
@@ -110,11 +111,9 @@
         hint.style.setProperty("--hint", Math.max(0, Math.min(1, hv)).toFixed(3));
       }
 
-      /* Navbar à peine translucide après le tout début. */
-      if (nav) { nav.classList.toggle("is-solid", p > 0.04); }
-
-      /* Sortie : le beige de la section suivante monte du bas (90 → 100 %). */
-      section.style.setProperty("--cine-exit", rangeProgress(p, 0.90, 1.0).toFixed(3));
+      /* Navbar UNIQUE : bascule cinématique → normale à la fin de l'intro
+         (même élément DOM, l'état suit le scroll ; réversible). */
+      if (header) { header.classList.toggle("is-solid", p > 0.9); }
 
       if (DEBUG && dbg) {
         dbg.textContent = "Progress: " + p.toFixed(3) +
@@ -155,6 +154,24 @@
           anticipatePin: 1
         }
       }).to(proxy, { p: 1, ease: "none", onUpdate: apply });
+
+      /* Continuité de sortie : la 1re section du site remonte doucement à son
+         entrée (mouvement vertical naturel, réversible) — le vrai site prend
+         le relais sans trou ni flash. */
+      var firstSection = document.querySelector("#recent-title");
+      firstSection = firstSection ? firstSection.closest("section") : null;
+      if (firstSection) {
+        gsap.from(firstSection, {
+          y: 48,
+          ease: "none",
+          scrollTrigger: {
+            trigger: firstSection,
+            start: "top bottom",
+            end: "top 64%",
+            scrub: true
+          }
+        });
+      }
 
       render(0);
       ScrollTrigger.refresh();
