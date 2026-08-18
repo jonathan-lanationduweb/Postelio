@@ -41,8 +41,10 @@ for (const file of readdirSync(ROOT).filter((f) => f.endsWith(".html"))) {
     continue;
   }
 
+  /* L'intro cinématique de l'accueil possède sa propre nav ; la navbar
+     unifiée passe donc en variante « light » partout (plus d'overlay hero). */
   let header = partial
-    .replace("{{variant}}", file === "index.html" ? "overlay" : "light")
+    .replace("{{variant}}", "light")
     .trimEnd();
 
   const active = ACTIVE[file];
