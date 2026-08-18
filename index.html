@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/companies.css">
   <link rel="stylesheet" href="assets/css/home.css">
+  <link rel="stylesheet" href="assets/css/cine.css">
   <link rel="stylesheet" href="assets/css/guided-search.css">
   <link rel="stylesheet" href="assets/css/responsive.css">
   <script type="application/ld+json">
@@ -53,6 +54,91 @@
   <p class="demo-banner">Site de démonstration — toutes les offres, entreprises et personnes citées sont fictives.</p>
 
 <main id="contenu">
+
+    <!-- ===== Séquence cinématique pilotée par le scroll (intro) ===== -->
+    <section class="cine" id="cine" aria-label="Bienvenue sur Postelio">
+      <!-- Navbar dédiée à l'intro (isolée de navigation.js) -->
+      <header class="cine__nav" id="cine-nav">
+        <a class="cine__logo" href="index.html" aria-label="Postelio, accueil">
+          <span class="cine__logo-mark" aria-hidden="true">P</span>
+          <span class="cine__logo-text">Postelio</span>
+        </a>
+        <nav class="cine__nav-links" aria-label="Navigation">
+          <a href="offres.html">Offres d'emploi</a>
+          <a href="entreprises.html">Entreprises</a>
+          <a href="savoir-faire.html">Savoir-faire</a>
+          <a href="blog.html">Conseils</a>
+        </nav>
+        <a class="cine__nav-cta" href="publier-offre.html">Publier une offre</a>
+        <a class="cine__skip" href="#contenu-site">Passer l'intro</a>
+      </header>
+
+      <div class="cine__sticky">
+        <video class="cine__video" id="cine-video" muted playsinline preload="auto"
+          poster="assets/images/hero-bureau-poster.jpg"
+          aria-hidden="true" tabindex="-1">
+          <source src="assets/videos/postelio-scroll-journey.mp4" type="video/mp4">
+        </video>
+        <div class="cine__overlay" id="cine-overlay" aria-hidden="true"></div>
+
+        <!-- Indicateur de progression discret -->
+        <ol class="cine__progress" id="cine-progress" aria-hidden="true">
+          <li data-step="1"><span>01</span></li>
+          <li data-step="2"><span>02</span></li>
+          <li data-step="3"><span>03</span></li>
+          <li data-step="4"><span>04</span></li>
+          <li data-step="5"><span>05</span></li>
+          <li data-step="6"><span>06</span></li>
+        </ol>
+
+        <!-- Scènes narratives (textes en HTML, synchronisés au scroll) -->
+        <div class="cine__scenes">
+          <div class="cine__scene cine__scene--left" data-scene="1" data-from="0" data-to="0.15">
+            <p class="cine__eyebrow">Postelio</p>
+            <h1 class="cine__title">L'emploi commence<br>par une rencontre.</h1>
+          </div>
+
+          <div class="cine__scene cine__scene--left" data-scene="2" data-from="0.15" data-to="0.35">
+            <h2 class="cine__title">Trouvez l'opportunité<br>qui vous ressemble.</h2>
+            <p class="cine__sub">Des offres, des entreprises et des métiers réunis au même endroit.</p>
+          </div>
+
+          <div class="cine__scene cine__scene--right" data-scene="3" data-from="0.35" data-to="0.55">
+            <h2 class="cine__title">Des entreprises<br>à découvrir.</h2>
+            <p class="cine__sub">Explorez leur univers avant même de postuler.</p>
+            <ul class="cine__tags">
+              <li>Entreprises</li><li>Culture</li><li>Opportunités</li>
+            </ul>
+          </div>
+
+          <div class="cine__scene cine__scene--left" data-scene="4" data-from="0.55" data-to="0.72">
+            <h2 class="cine__title">Plus qu'une liste<br>d'offres.</h2>
+            <p class="cine__sub">Conseils. Savoir-faire. Expériences.</p>
+          </div>
+
+          <div class="cine__scene cine__scene--center" data-scene="5" data-from="0.72" data-to="0.88">
+            <h2 class="cine__title">Votre prochaine étape<br>commence ici.</h2>
+            <p class="cine__sub">Cherchez. Découvrez. Postulez.</p>
+          </div>
+
+          <div class="cine__scene cine__scene--center" data-scene="6" data-from="0.88" data-to="1">
+            <h2 class="cine__title">Prêt à trouver votre<br>prochaine opportunité&nbsp;?</h2>
+            <div class="cine__cta">
+              <a class="btn btn-accent btn-lg" href="offres.html">Découvrir les offres</a>
+              <a class="btn btn-outline btn-outline--light btn-lg" href="publier-offre.html">Je recrute</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invite à défiler (début uniquement) -->
+        <div class="cine__hint" id="cine-hint" aria-hidden="true">
+          <span>Défiler pour explorer</span>
+          <span class="cine__hint-arrow">↓</span>
+        </div>
+      </div>
+    </section>
+
+    <span id="contenu-site" tabindex="-1"></span>
 
     <!-- ===== Hero plein écran : vidéo bord à bord, recherche intégrée ===== -->
     <section class="home-hero" aria-labelledby="hero-title">
@@ -371,6 +457,7 @@
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/scroll-video.js"></script>
   <script src="assets/js/hero-video.js"></script>
   <script src="assets/js/navigation.js"></script>
   <script src="assets/js/search.js"></script>

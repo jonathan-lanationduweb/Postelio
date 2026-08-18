@@ -1,0 +1,382 @@
+/* =====================================================================
+   Séquence cinématique pilotée par le scroll (intro Postelio)
+   La vidéo sert de timeline visuelle : le scroll pilote video.currentTime.
+   Tous les textes sont en HTML (responsive, SEO, accessibilité).
+   ===================================================================== */
+
+.cine {
+  --cine-scroll: 560vh;        /* hauteur scrollable de la séquence */
+  position: relative;
+  width: 100%;
+  height: var(--cine-scroll);
+  background: var(--c-primary-dark);
+}
+
+/* Viewport figé pendant la traversée */
+.cine__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Vidéo plein écran, sans cadre ni contrôle */
+.cine__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+  background: var(--c-primary-dark);
+  opacity: 0;
+  transition: opacity 500ms ease;
+  pointer-events: none;
+}
+
+.cine.is-ready .cine__video { opacity: 1; }
+
+.cine__video::-webkit-media-controls { display: none !important; }
+
+/* Overlay dégradé : direction pilotée par JS via --cine-grad */
+.cine__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--cine-grad,
+    linear-gradient(90deg, rgba(9, 33, 27, 0.72) 0%, rgba(9, 33, 27, 0.3) 45%, rgba(9, 33, 27, 0) 80%));
+  transition: background 500ms ease;
+  pointer-events: none;
+}
+
+/* Voile de sortie (transition vers la homepage) piloté par JS */
+.cine__sticky::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: var(--c-bg);
+  opacity: var(--cine-exit, 0);
+  pointer-events: none;
+  transition: opacity 200ms linear;
+}
+
+/* ---- Navbar de l'intro ---- */
+.cine__nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  width: min(1280px, 100% - 3rem);
+  margin-inline: auto;
+  min-height: 84px;
+  color: #fff;
+}
+
+/* Fond translucide vert au défilement (classe posée par JS) */
+.cine__nav.is-solid {
+  position: fixed;
+  background: rgba(20, 55, 47, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-inline: clamp(16px, 4vw, 40px);
+  width: 100%;
+  min-height: 64px;
+  animation: cine-nav-in 300ms ease;
+}
+
+@keyframes cine-nav-in { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+.cine__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: #fff;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.cine__logo-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--c-accent);
+  color: var(--c-primary-dark);
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+}
+
+.cine__nav-links {
+  display: flex;
+  gap: 3px;
+  margin-inline: auto;
+  padding: 5px 7px;
+  background: rgba(16, 28, 24, 0.28);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 999px;
+}
+
+.cine__nav-links a {
+  padding: 0.6rem 0.95rem;
+  border-radius: 999px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: background var(--transition);
+}
+
+.cine__nav-links a:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+
+.cine__nav-cta {
+  flex-shrink: 0;
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-primary-dark);
+  text-decoration: none;
+  font-weight: 650;
+  font-size: 0.9375rem;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.cine__nav-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-m); color: var(--c-primary-dark); }
+
+/* Lien « Passer l'intro » : discret, en accessibilité clavier bien visible */
+.cine__skip {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: var(--text-sm);
+}
+.cine__skip:hover { color: #fff; }
+
+/* ---- Scènes ---- */
+.cine__scenes {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+.cine__scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-inline: clamp(24px, 6vw, 110px);
+  padding-block: clamp(90px, 12vh, 150px);
+  color: #fff;
+  /* état par défaut : masqué (l'opacité est portée par les enfants via --p,
+     jamais par la scène elle-même — sinon le contenu resterait invisible) */
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.cine__scene.is-live { visibility: visible; }
+.cine__scene.is-live .cine__cta a { pointer-events: auto; }
+
+/* Le contenu monte légèrement selon la progression locale (--p) */
+.cine__scene > * {
+  opacity: var(--p, 0);
+  transform: translateY(calc((1 - var(--p, 0)) * 22px));
+  transition: opacity 120ms linear, transform 120ms linear;
+  will-change: opacity, transform;
+}
+
+.cine__scene--left { align-items: flex-start; text-align: left; }
+.cine__scene--right { align-items: flex-end; text-align: right; }
+.cine__scene--center { align-items: center; text-align: center; }
+.cine__scene--right .cine__tags { justify-content: flex-end; }
+.cine__scene--center .cine__cta { justify-content: center; }
+
+.cine__eyebrow {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  margin-bottom: var(--sp-4);
+}
+
+.cine__title {
+  color: #fff;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 6vw, 5.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  max-width: 16ch;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* l'alignement horizontal est porté par align-items sur la scène (flex column) */
+
+.cine__sub {
+  margin-top: var(--sp-4);
+  max-width: 46ch;
+  font-size: clamp(1.0625rem, 1.6vw, 1.375rem);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.35);
+}
+
+.cine__tags {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  list-style: none;
+  padding: 0;
+}
+
+.cine__tags li {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #fff;
+  backdrop-filter: blur(6px);
+}
+
+.cine__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}
+
+/* ---- Indicateur de progression ---- */
+.cine__progress {
+  position: absolute;
+  top: 50%;
+  right: clamp(16px, 3vw, 40px);
+  transform: translateY(-50%);
+  z-index: 5;
+  display: grid;
+  gap: var(--sp-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cine__progress li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color var(--transition);
+}
+
+.cine__progress li::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  transition: width var(--transition), background var(--transition);
+}
+
+.cine__progress li.is-active {
+  color: #fff;
+}
+
+.cine__progress li.is-active::before {
+  width: 40px;
+  background: var(--c-accent);
+}
+
+/* ---- Invite à défiler ---- */
+.cine__hint {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(20px, 4vh, 42px);
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  transition: opacity 400ms ease;
+}
+
+.cine__hint-arrow { animation: cine-bounce 1.8s ease-in-out infinite; }
+
+@keyframes cine-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+.cine.is-past-intro .cine__hint { opacity: 0; }
+
+/* ---- Responsive ---- */
+@media (max-width: 1024px) {
+  .cine__nav-links { display: none; }
+}
+
+@media (max-width: 768px) {
+  .cine { --cine-scroll: 460vh; }
+  .cine__scene,
+  .cine__scene--left, .cine__scene--right {
+    align-items: center;
+    justify-content: flex-end;
+    text-align: center;
+    padding-bottom: 16svh;
+  }
+  .cine__title { max-width: 18ch; }
+  .cine__sub, .cine__tags { justify-content: center; }
+  .cine__progress { display: none; }
+  .cine__nav-cta { display: none; }
+  .cine__video { object-position: 60% center; }
+}
+
+@media (max-width: 360px) {
+  .cine { --cine-scroll: 420vh; }
+}
+
+/* ---- Préférence de mouvement réduit : pas d'expérience scroll imposée ---- */
+@media (prefers-reduced-motion: reduce) {
+  .cine {
+    --cine-scroll: auto;
+    height: auto;
+    min-height: 100svh;
+  }
+  .cine__sticky { position: relative; height: auto; min-height: 100svh; padding-block: 22svh; }
+  .cine__video { position: absolute; opacity: 1; }
+  .cine__hint, .cine__progress { display: none; }
+  /* On révèle la première et la dernière scène (titre + CTA), empilées. */
+  .cine__scene {
+    position: relative;
+    left: auto;
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    width: min(1280px, 100% - 3rem);
+    margin-inline: auto;
+  }
+  .cine__scene > * { opacity: 1; transform: none; }
+  .cine__scene[data-scene="2"],
+  .cine__scene[data-scene="3"],
+  .cine__scene[data-scene="4"],
+  .cine__scene[data-scene="5"] { display: none; }
+  .cine__scene[data-scene="6"] { margin-top: var(--sp-6); }
+  .cine__sticky::after { display: none; }
+}
