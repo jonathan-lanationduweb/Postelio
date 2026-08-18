@@ -141,9 +141,12 @@
       if (Math.abs(diff) < 0.00015) { dispP = targetP; }
       else { dispP += diff * LERP; }
 
-      if (video.readyState >= 1) {
+      /* Seek seulement si des données sont disponibles (readyState >= 2) et si
+         l'écart dépasse ~½ frame (24 fps) : évite les seeks redondants qui
+         saturent le décodeur pendant le scrub. */
+      if (video.readyState >= 2) {
         var t = dispP * duration;
-        if (isFinite(t) && Math.abs(video.currentTime - t) > 0.01) {
+        if (isFinite(t) && Math.abs(video.currentTime - t) > 0.02) {
           try { video.currentTime = t; } catch (e) { /* seek non prêt */ }
         }
       }
