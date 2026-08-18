@@ -47,10 +47,12 @@
       { el: scenes[3], start: 0.84, end: 0.92, pos: "center", hold: true }
     ];
 
+    /* Dégradés LOCAUX et légers : n'assombrissent que le côté du texte,
+       le reste de l'image reste net et lumineux. */
     var GRAD = {
-      left:   "linear-gradient(90deg, rgba(9,33,27,0.58) 0%, rgba(9,33,27,0.14) 42%, rgba(9,33,27,0) 72%)",
-      right:  "linear-gradient(270deg, rgba(9,33,27,0.58) 0%, rgba(9,33,27,0.14) 42%, rgba(9,33,27,0) 72%)",
-      center: "linear-gradient(0deg, rgba(9,33,27,0.5) 0%, rgba(9,33,27,0.08) 46%, rgba(9,33,27,0.16) 100%)"
+      left:   "linear-gradient(90deg, rgba(9,33,27,0.46) 0%, rgba(9,33,27,0.1) 40%, rgba(9,33,27,0) 66%)",
+      right:  "linear-gradient(270deg, rgba(9,33,27,0.46) 0%, rgba(9,33,27,0.1) 40%, rgba(9,33,27,0) 66%)",
+      center: "linear-gradient(0deg, rgba(9,33,27,0.42) 0%, rgba(9,33,27,0.05) 46%, rgba(9,33,27,0.12) 100%)"
     };
 
     var duration = 0;
@@ -103,7 +105,7 @@
         section.style.setProperty("--cine-grad", GRAD[activePos]);
         lastGrad = activePos;
       }
-      overlay.style.opacity = (maxVis * 0.9).toFixed(3);
+      overlay.style.opacity = (maxVis * 0.7).toFixed(3);
 
       /* Invite à défiler : pleine avant 6 %, disparue à 12 %. */
       if (hint) {

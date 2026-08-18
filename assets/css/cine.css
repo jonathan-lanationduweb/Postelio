@@ -54,6 +54,13 @@
 /* Plus de voile beige : la continuité de sortie est assurée par la section
    suivante qui remonte (JS) et par le dépinnage naturel de la vidéo. */
 
+/* Raccord intro → contenu : la 1re section coule depuis la vidéo (pas de
+   ligne de séparation) avec une respiration franche, sans redesign. */
+.section--lead {
+  border-top: none;
+  padding-top: clamp(4.5rem, 7vw, 7rem); /* ~72 → 112 px de respiration */
+}
+
 /* =====================================================================
    Navbar UNIQUE de l'accueil (.site-header--cine)
    Même élément DOM du début à la fin : cinématique (transparente, texte

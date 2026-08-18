@@ -51,7 +51,9 @@
 </head>
 <body>
   <a class="skip-link" href="#contenu-site">Aller au contenu principal</a>
-  <p class="demo-banner">Site de démonstration — toutes les offres, entreprises et personnes citées sont fictives.</p>
+  <!-- Pas de bandeau de démo sur l'accueil : l'intro cinématique commence par
+       la vidéo plein écran + la navbar unique. La mention « démonstration »
+       reste dans le pied de page. -->
 
   <!-- Navbar UNIQUE et persistante : cinématique (transparente/blanche) sur la
        vidéo, puis normale (crème/vert) — l'état bascule selon le scroll.
@@ -141,7 +143,7 @@
     <span id="contenu-site" tabindex="-1"></span>
 
     <!-- ===== Offres récentes : une vedette + une liste ===== -->
-    <section class="section section--surface" aria-labelledby="recent-title">
+    <section class="section section--surface section--lead" aria-labelledby="recent-title">
       <div class="container">
         <div class="section-head section-head--row">
           <div>
