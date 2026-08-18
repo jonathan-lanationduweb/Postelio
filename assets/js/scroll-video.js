@@ -1,19 +1,22 @@
 /**
  * Intro cinématique pilotée par le scroll (page d'accueil).
  *
- * La VIDÉO est l'expérience : GSAP ScrollTrigger épingle l'étage et « scrubbe »
- * la progression du scroll (avec une légère inertie). Cette progression pilote
- * DIRECTEMENT video.currentTime ainsi que l'opacité / le translate / le flou de
- * quatre moments narratifs — le tout entièrement réversible (aucun événement
- * one-shot, aucune classe « revealed » persistante). Des respirations sans
- * texte laissent la caméra raconter seule.
+ * La VIDÉO est l'expérience. GSAP ScrollTrigger épingle l'étage (sticky) et
+ * expose la progression du scroll ; le scroll ne fait que fixer une CIBLE.
+ * Une boucle requestAnimationFrame interpole (lerp) la valeur affichée vers
+ * cette cible et ne déplace video.currentTime que si l'écart dépasse un seuil
+ * — d'où un travelling continu et fluide, sans palier ni saut de frame. La
+ * même valeur lissée pilote l'opacité / le translate / le flou des moments
+ * narratifs (réversible, aucun one-shot). Des respirations sans texte laissent
+ * la caméra raconter seule.
  */
 (function () {
   "use strict";
 
   var DEBUG = false; /* true en dev : overlay Progress / Video / Moment */
-  var SCROLL_DISTANCE = "+=300%"; /* distance de scroll du parcours (calibrée) */
-  var SCRUB = 0.3;                /* inertie cinématique (≈ 0.25–0.35) */
+  var SCROLL_DISTANCE = "+=400%"; /* longue section sticky (~400vh) */
+  var LERP = 0.14;                /* lissage du seek (0.10–0.18) : supprime les
+                                     micro-saccades sans ralentir la réponse */
 
   document.addEventListener("DOMContentLoaded", function () {
     var section = document.getElementById("cine");
@@ -124,16 +127,32 @@
       }
     }
 
-    /* Applique la progression : currentTime + rendu des moments. */
-    var proxy = { p: 0 };
-    function apply() {
-      var t = proxy.p * duration;
-      if (t > duration) { t = duration; }
-      if (video.readyState >= 1 && isFinite(t)) {
-        try { video.currentTime = t; } catch (e) { /* seek non prêt */ }
+    /* ---- Moteur : scroll → cible, rAF → interpolation (lerp) ----
+       Le handler de scroll ne fait QUE fixer targetP (aucun calcul lourd).
+       La boucle rejoint targetP en douceur et ne touche video.currentTime que
+       si l'écart dépasse un seuil — évite les seeks redondants (fluidité).
+       Progression continue de 0 à 1, sans palier ni saut. */
+    var targetP = 0; /* progression brute du scroll (cible) */
+    var dispP = 0;   /* valeur affichée, lissée */
+    var rafId = null;
+
+    function loop() {
+      var diff = targetP - dispP;
+      if (Math.abs(diff) < 0.00015) { dispP = targetP; }
+      else { dispP += diff * LERP; }
+
+      if (video.readyState >= 1) {
+        var t = dispP * duration;
+        if (isFinite(t) && Math.abs(video.currentTime - t) > 0.01) {
+          try { video.currentTime = t; } catch (e) { /* seek non prêt */ }
+        }
       }
-      render(proxy.p);
+      render(dispP);
+
+      if (Math.abs(targetP - dispP) >= 0.00015) { rafId = requestAnimationFrame(loop); }
+      else { rafId = null; }
     }
+    function requestLoop() { if (rafId === null) { rafId = requestAnimationFrame(loop); } }
 
     var built = false;
     function build() {
@@ -143,19 +162,18 @@
       built = true;
       section.classList.add("is-ready");
 
-      /* Timeline « scrubbée » : la tête de lecture suit le scroll avec inertie.
-         proxy.p (0→1) pilote currentTime + textes via apply(). */
-      gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: SCROLL_DISTANCE,
-          pin: stage,
-          pinSpacing: true,
-          scrub: SCRUB,
-          anticipatePin: 1
-        }
-      }).to(proxy, { p: 1, ease: "none", onUpdate: apply });
+      /* Pin sticky géré par ScrollTrigger ; PAS de scrub (qui pousserait
+         currentTime à chaque frame). onUpdate ne fait que fixer la cible. */
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: SCROLL_DISTANCE,
+        pin: stage,
+        pinSpacing: true,
+        anticipatePin: 1,
+        onUpdate: function (self) { targetP = self.progress; requestLoop(); },
+        onRefresh: function (self) { targetP = dispP = self.progress; render(dispP); }
+      });
 
       /* Continuité de sortie : la 1re section du site remonte doucement à son
          entrée (mouvement vertical naturel, réversible) — le vrai site prend
