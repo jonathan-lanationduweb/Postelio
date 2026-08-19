@@ -212,3 +212,29 @@
     }
   });
 })();
+
+/**
+ * Contexte de publication selon ?type : un candidat partage un savoir-faire
+ * (preuve de compétence) ; un recruteur publie un contenu entreprise (marque
+ * employeur). Adapte le titre/intro sans changer le formulaire.
+ */
+(function () {
+  "use strict";
+  document.addEventListener("DOMContentLoaded", function () {
+    if (!window.SS || !SS.param) { return; }
+    var type = SS.param("type");
+    var s = SS.auth && SS.auth.get ? SS.auth.get() : null;
+    if (!type && s) { type = s.role === "employer" ? "entreprise" : "candidat"; }
+    if (type !== "entreprise") { return; }
+    var title = document.getElementById("kh-publish-title");
+    var intro = document.getElementById("kh-publish-intro");
+    var crumb = document.getElementById("kh-publish-crumb");
+    if (title) { title.textContent = "Publier un contenu entreprise"; }
+    if (crumb) { crumb.textContent = "Contenu entreprise"; }
+    if (intro) {
+      intro.textContent = "Présentez un métier, une journée type, vos coulisses ou vos méthodes de travail : " +
+        "ces contenus renforcent votre marque employeur. Six étapes guidées, un aperçu avant envoi, " +
+        "puis une relecture par notre équipe avant la mise en ligne.";
+    }
+  });
+})();
