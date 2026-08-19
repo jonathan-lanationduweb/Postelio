@@ -6,7 +6,7 @@
  * Aucune clé d'API réelle ne doit jamais être stockée dans ce fichier.
  */
 window.APP_CONFIG = {
-  siteName: "SuperSecrétaire",
+  siteName: "Postelio",
 
   /* Sources de données de démonstration (fichiers JSON locaux). */
   data: {
@@ -62,7 +62,12 @@ window.APP_CONFIG = {
     knowhowRatings: "ss_sf_notes",
     knowhowComments: "ss_sf_commentaires",
     knowhowViews: "ss_sf_vues",
-    knowhowReports: "ss_sf_signalements"
+    knowhowReports: "ss_sf_signalements",
+    /* Espace candidat (prototype) */
+    applications: "ss_candidate_applications",
+    favorites: "ss_candidate_favorites",
+    alerts: "ss_candidate_alerts",
+    candidateProfile: "ss_candidate_profile"
   },
 
   /* Compte entreprise de démonstration pour l'espace entreprise. */
@@ -70,5 +75,30 @@ window.APP_CONFIG = {
     id: "fiduciaire-bellecour",
     nom: "Fiduciaire Bellecour",
     contact: "Claire Fontanel"
+  },
+
+  /* Comptes de démonstration — plateforme à deux faces (prototype).
+     AUCUN mot de passe réel n'est stocké ni vérifié. */
+  demoAccounts: {
+    candidate: {
+      loggedIn: true,
+      role: "candidate",
+      firstName: "Jonathan",
+      lastName: "Davy",
+      email: "jonathan.davy@exemple.fr",
+      city: "Lyon",
+      metier: "Développeur web"
+    },
+    employer: {
+      loggedIn: true,
+      role: "employer",
+      firstName: "Claire",
+      lastName: "Martin",
+      email: "claire.martin@fiduciaire-bellecour.exemple.fr",
+      city: "Lyon",
+      company: "Fiduciaire Bellecour",
+      companyId: "fiduciaire-bellecour",
+      secteur: "Finance & Comptabilité"
+    }
   }
 };

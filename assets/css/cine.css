@@ -66,6 +66,18 @@
   padding-top: clamp(4.5rem, 7vw, 7rem); /* ~72 → 112 px de respiration */
 }
 
+/* Passerelle éditoriale post-intro : très épurée, prolonge le premium de la
+   vidéo (beaucoup d'espace, typo forte, deux entrées, aucun encombrement). */
+.cine-bridge { background: var(--c-bg); }
+.cine-bridge__inner { max-width: 760px; margin-inline: auto; text-align: center; padding-block: clamp(1rem, 3vw, 2.5rem); }
+.cine-bridge__title {
+  font-family: var(--font-serif); font-weight: 700;
+  font-size: clamp(2.4rem, 6vw, 4.25rem); line-height: 1.03;
+  letter-spacing: -0.02em; color: var(--c-primary-dark); margin-top: var(--sp-2);
+}
+.cine-bridge__text { max-width: 52ch; margin: var(--sp-4) auto 0; font-size: clamp(1.05rem, 1.5vw, 1.25rem); line-height: 1.6; color: var(--c-ink-soft); }
+.cine-bridge__actions { display: flex; flex-wrap: wrap; gap: var(--sp-4); justify-content: center; margin-top: var(--sp-6); }
+
 /* =====================================================================
    Navbar UNIQUE de l'accueil (.site-header--cine)
    Même élément DOM du début à la fin : cinématique (transparente, texte

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mon espace candidat | Postelio</title>
+  <meta name="description" content="Votre espace candidat Postelio : suivez vos candidatures, retrouvez vos offres favorites, gérez vos alertes emploi et complétez votre profil.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Postelio">
+  <meta property="og:title" content="Mon espace candidat | Postelio">
+  <meta property="og:description" content="Suivez vos candidatures, vos favoris et vos alertes emploi depuis un espace clair et gratuit.">
+  <meta property="og:image" content="https://jonathan-lanationduweb.github.io/Postelio/assets/images/photos/og-image.jpg">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="theme-color" content="#1e4f46">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="assets/css/reset.css">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+  <link rel="stylesheet" href="assets/css/guided-search.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenu">Aller au contenu principal</a>
+  <p class="demo-banner">Site de démonstration — toutes les offres, entreprises et personnes citées sont fictives.</p>
+
+  <header class="site-header site-header--light">
+  <div class="header-inner">
+    <a class="logo" href="index.html" aria-label="Postelio, retour à l'accueil">
+      <span class="logo-mark" aria-hidden="true">P</span>
+      <span class="logo-text">Postelio</span>
+    </a>
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Ouvrir le menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="main-nav" id="main-nav" aria-label="Navigation principale">
+      <ul class="nav-links">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="offres.html">Offres d'emploi</a></li>
+        <li><a href="entreprises.html">Entreprises</a></li>
+        <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
+        <li><a href="blog.html">Conseils</a></li>
+        <li><a href="a-propos.html">Qui sommes-nous</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <!-- Zone compte : navigation.js remplace ces boutons par l'avatar+menu
+           quand une session existe (candidat ou recruteur). -->
+      <div class="nav-actions" id="account-nav" data-account-nav>
+        <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
+        <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+  <main id="contenu">
+    <div class="container section">
+      <div class="dash-layout">
+
+        <!-- ===== Barre latérale ===== -->
+        <aside class="dash-sidebar">
+          <div class="dash-sidebar__id">
+            <span class="avatar" id="dash-avatar" aria-hidden="true">?</span>
+            <div>
+              <strong id="dash-name">Candidat</strong>
+              <span>Espace candidat</span>
+            </div>
+          </div>
+          <nav class="dash-nav" aria-label="Navigation de l'espace candidat">
+            <a href="#apercu" class="is-active">Vue d'ensemble</a>
+            <a href="#candidatures">Mes candidatures</a>
+            <a href="#recommandations">Des offres pour vous</a>
+            <a href="#favoris">Mes favoris</a>
+            <a href="#alertes">Mes alertes</a>
+            <a href="#profil">Mon profil</a>
+            <a href="#parametres">Paramètres</a>
+          </nav>
+        </aside>
+
+        <!-- ===== Contenu ===== -->
+        <div class="dash-main">
+
+          <!-- 1. Vue d'ensemble -->
+          <section class="dash-block" id="apercu">
+            <h1 class="dash-greeting">Bonjour <span id="hello-name">…</span> 👋</h1>
+            <p class="dash-subtitle">Voici où en est votre recherche aujourd'hui.</p>
+            <div class="dash-metrics">
+              <div class="dash-metric"><b id="metric-applications">0</b><span>candidatures</span></div>
+              <div class="dash-metric"><b id="metric-views">0</b><span>entreprises ont consulté votre profil</span></div>
+              <div class="dash-metric"><b id="metric-favorites">0</b><span>offres enregistrées</span></div>
+              <div class="dash-metric"><b id="metric-reco">0</b><span>nouvelles offres pour vous</span></div>
+            </div>
+            <p class="notice notice--demo">L'espace candidat est entièrement gratuit.</p>
+          </section>
+
+          <!-- 2. Mes candidatures -->
+          <section class="dash-block" id="candidatures">
+            <h2>Mes candidatures</h2>
+            <div id="applications-list"></div>
+          </section>
+
+          <!-- 3. Des offres pour vous -->
+          <section class="dash-block" id="recommandations">
+            <h2>Des offres pour vous</h2>
+            <p class="dash-subtitle">Sélectionnées à partir du métier indiqué dans votre profil.</p>
+            <div id="reco-list" class="grid-3"></div>
+            <p><a class="btn btn-outline" href="offres.html">Voir toutes mes recommandations</a></p>
+          </section>
+
+          <!-- 4. Mes favoris -->
+          <section class="dash-block" id="favoris">
+            <h2>Mes favoris</h2>
+            <div id="favorites-list"></div>
+          </section>
+
+          <!-- 5. Mes alertes emploi -->
+          <section class="dash-block" id="alertes">
+            <h2>Mes alertes emploi</h2>
+            <p class="dash-subtitle">Recevez les nouvelles offres correspondant à vos critères (simulé).</p>
+            <form id="alert-form" class="card" style="padding: var(--sp-5);" novalidate>
+              <div class="form-row">
+                <div class="field">
+                  <label for="alert-metier">Métier</label>
+                  <input id="alert-metier" placeholder="Développeur, assistant, comptable…">
+                </div>
+                <div class="field">
+                  <label for="alert-lieu">Localisation</label>
+                  <input id="alert-lieu" placeholder="Lille, Lyon, Paris…">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label for="alert-rayon">Rayon</label>
+                  <select id="alert-rayon">
+                    <option value="10">10 km</option>
+                    <option value="30" selected>30 km</option>
+                    <option value="50">50 km</option>
+                    <option value="100">100 km</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="alert-contrat">Type de contrat</label>
+                  <select id="alert-contrat">
+                    <option value="">Tous</option>
+                    <option>CDI</option>
+                    <option>CDD</option>
+                    <option>Intérim</option>
+                    <option>Alternance</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field field--checkbox">
+                <input type="checkbox" id="alert-teletravail">
+                <label for="alert-teletravail">Uniquement les offres proposant du télétravail</label>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Créer l'alerte</button>
+              </div>
+            </form>
+            <div id="alerts-list" style="margin-top: var(--sp-5);"></div>
+          </section>
+
+          <!-- 6. Mon profil -->
+          <section class="dash-block" id="profil">
+            <h2>Mon profil</h2>
+            <div class="card" style="padding: var(--sp-5);">
+              <div class="profile-meter" aria-hidden="true"><span class="profile-meter__fill-75"></span></div>
+              <p class="profile-meter__label">Profil complété à <strong>75 %</strong></p>
+              <p class="notice notice--demo" style="margin-top: var(--sp-4);">
+                Prochaine étape suggérée : <strong>ajoutez votre CV</strong> pour augmenter vos chances d'être contacté(e).
+              </p>
+            </div>
+
+            <div class="card grid-2" id="profile-fields" style="padding: var(--sp-5); margin-top: var(--sp-4);">
+              <div class="field"><label>Photo</label><input value="" placeholder="Aucune photo ajoutée"></div>
+              <div class="field"><label for="prof-nom">Nom</label><input id="prof-nom" value=""></div>
+              <div class="field"><label for="prof-ville">Ville</label><input id="prof-ville" value=""></div>
+              <div class="field"><label for="prof-metier">Métier recherché</label><input id="prof-metier" value=""></div>
+              <div class="field" style="grid-column: 1 / -1;"><label for="prof-presentation">Présentation</label><textarea id="prof-presentation" placeholder="Quelques lignes sur votre parcours et vos objectifs…"></textarea></div>
+              <div class="field"><label for="prof-experiences">Expériences</label><input id="prof-experiences" placeholder="Ex. 3 ans en développement web"></div>
+              <div class="field"><label for="prof-formation">Formation</label><input id="prof-formation" placeholder="Ex. BUT Informatique"></div>
+              <div class="field" style="grid-column: 1 / -1;"><label for="prof-competences">Compétences</label><input id="prof-competences" placeholder="HTML, CSS, JavaScript, travail en équipe…"></div>
+              <div class="field"><label>CV</label><input value="" placeholder="Aucun CV ajouté"></div>
+              <div class="field"><label for="prof-dispo">Disponibilité</label>
+                <select id="prof-dispo">
+                  <option>Immédiate</option>
+                  <option>Sous 1 mois</option>
+                  <option>Sous 3 mois</option>
+                </select>
+              </div>
+              <div class="field"><label for="prof-contrats">Types de contrats</label><input id="prof-contrats" placeholder="CDI, CDD…"></div>
+              <div class="field"><label for="prof-mobilite">Mobilité</label><input id="prof-mobilite" placeholder="Ex. 30 km autour de Lyon"></div>
+              <div class="field"><label for="prof-teletravail">Télétravail</label>
+                <select id="prof-teletravail">
+                  <option>Peu importe</option>
+                  <option>Sur site</option>
+                  <option>Partiel</option>
+                  <option>Complet</option>
+                </select>
+              </div>
+            </div>
+            <p class="dash-subtitle" style="margin-top: var(--sp-3);">Prototype : les champs du profil ne sont pas enregistrés côté serveur.</p>
+          </section>
+
+          <!-- 7. Paramètres -->
+          <section class="dash-block" id="parametres">
+            <h2>Paramètres</h2>
+            <div class="card" style="padding: var(--sp-5);">
+              <div class="field">
+                <label for="set-email">Adresse e-mail</label>
+                <input type="email" id="set-email" value="">
+              </div>
+              <fieldset class="field" style="border: 0; padding: 0;">
+                <label style="margin-bottom: var(--sp-2);">Notifications</label>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-offers" checked><label for="set-notif-offers">Recevoir les nouvelles offres correspondant à mes alertes</label></div>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-status" checked><label for="set-notif-status">M'avertir quand une candidature change de statut</label></div>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-news"><label for="set-notif-news">Recevoir les conseils et actualités Postelio</label></div>
+              </fieldset>
+              <p class="dash-subtitle">Prototype : ces réglages ne déclenchent aucun envoi réel.</p>
+              <div class="form-actions" style="margin-top: var(--sp-4);">
+                <button type="button" class="btn btn-ghost" id="logout-btn">Se déconnecter</button>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="logo-text">Postelio</span>
+          <p>Postelio vous aide à trouver l’opportunité qui vous correspond : offres, entreprises et conseils partout en France.</p>
+          <ul class="footer-social" aria-label="Réseaux sociaux">
+            <li><a href="#">LinkedIn</a></li>
+            <li><a href="#">Instagram</a></li>
+            <li><a href="#">Facebook</a></li>
+          </ul>
+        </div>
+        <nav class="footer-col" aria-label="Liens candidats">
+          <h2>Candidats</h2>
+          <ul>
+            <li><a href="offres.html">Offres d'emploi</a></li>
+            <li><a href="entreprises.html">Annuaire des entreprises</a></li>
+            <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
+            <li><a href="blog.html">Conseils &amp; articles</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-col" aria-label="Liens recruteurs">
+          <h2>Recruteurs</h2>
+          <ul>
+            <li><a href="espace-entreprise.html">Espace recruteur</a></li>
+            <li><a href="publier-savoir-faire.html">Partager un savoir-faire</a></li>
+            <li><a href="connexion.html">Se connecter</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-col" aria-label="Liens de la plateforme">
+          <h2>La plateforme</h2>
+          <ul>
+            <li><a href="a-propos.html">Qui sommes-nous</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="mentions-legales.html">Mentions légales</a></li>
+            <li><a href="confidentialite.html">Confidentialité</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Postelio</span>
+        <span>Prototype de démonstration — offres, entreprises et personnes fictives.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/offers.js"></script>
+  <script src="assets/js/dashboard-candidat.js"></script>
+  <script src="assets/js/chatbot.js"></script>
+</body>
+</html>

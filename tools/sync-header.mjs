@@ -24,7 +24,7 @@ const ACTIVE = {
   "blog.html": "blog.html",
   "article.html": "blog.html",
   "a-propos.html": "a-propos.html",
-  "recherche-guidee.html": "recherche-guidee.html",
+  "contact.html": "contact.html",
 };
 
 const partial = readFileSync(join(ROOT, "partials", "header.html"), "utf8")

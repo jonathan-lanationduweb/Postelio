@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Créer un compte | Postelio</title>
+  <meta name="description" content="Créez votre compte Postelio : un espace candidat pour trouver et suivre vos candidatures, ou un espace recruteur pour publier et gérer vos offres.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Postelio">
+  <meta property="og:title" content="Créer un compte | Postelio">
+  <meta property="og:description" content="Espace candidat ou espace recruteur : choisissez comment vous utilisez Postelio.">
+  <meta property="og:image" content="https://jonathan-lanationduweb.github.io/Postelio/assets/images/photos/og-image.jpg">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#1e4f46">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="assets/css/reset.css">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+  <link rel="stylesheet" href="assets/css/guided-search.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenu">Aller au contenu principal</a>
+  <p class="demo-banner">Site de démonstration — toutes les offres, entreprises et personnes citées sont fictives.</p>
+
+  <header class="site-header site-header--light">
+  <div class="header-inner">
+    <a class="logo" href="index.html" aria-label="Postelio, retour à l'accueil">
+      <span class="logo-mark" aria-hidden="true">P</span>
+      <span class="logo-text">Postelio</span>
+    </a>
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Ouvrir le menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="main-nav" id="main-nav" aria-label="Navigation principale">
+      <ul class="nav-links">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="offres.html">Offres d'emploi</a></li>
+        <li><a href="entreprises.html">Entreprises</a></li>
+        <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
+        <li><a href="blog.html">Conseils</a></li>
+        <li><a href="a-propos.html">Qui sommes-nous</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <!-- Zone compte : navigation.js remplace ces boutons par l'avatar+menu
+           quand une session existe (candidat ou recruteur). -->
+      <div class="nav-actions" id="account-nav" data-account-nav>
+        <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
+        <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+  <main id="contenu">
+    <div class="container section">
+
+      <!-- Étape 1 : choix du rôle -->
+      <section id="role-chooser" class="role-chooser">
+        <div class="role-chooser__head">
+          <p class="eyebrow">Créer un compte</p>
+          <h1>Bienvenue sur Postelio</h1>
+          <p>Comment souhaitez-vous utiliser Postelio&nbsp;?</p>
+        </div>
+        <div class="role-cards">
+          <div class="card role-card">
+            <span class="role-card__icon" aria-hidden="true">🔎</span>
+            <h2>Je cherche un emploi</h2>
+            <p>Trouvez des offres, enregistrez vos favoris et suivez toutes vos candidatures. C'est gratuit.</p>
+            <button type="button" class="btn btn-primary" data-choose-role="candidate">Créer mon espace candidat</button>
+          </div>
+          <div class="card role-card">
+            <span class="role-card__icon" aria-hidden="true">📣</span>
+            <h2>Je recrute</h2>
+            <p>Publiez vos offres et gérez simplement vos candidatures depuis un tableau de bord clair.</p>
+            <button type="button" class="btn btn-accent" data-choose-role="employer">Créer mon espace recruteur</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Étape 2a : formulaire candidat -->
+      <section id="form-candidate" class="auth-form-wrap" hidden>
+        <a href="#" class="link-more back-link" data-back-roles>← Changer de rôle</a>
+        <div class="card auth-card">
+          <h1>Créer mon espace candidat</h1>
+          <p>Quelques informations suffisent — vous compléterez votre profil ensuite.</p>
+          <form novalidate>
+            <div class="form-row">
+              <div class="field"><label for="cand-firstname">Prénom *</label><input id="cand-firstname" autocomplete="given-name" required><p class="field-error" hidden>Indiquez votre prénom.</p></div>
+              <div class="field"><label for="cand-lastname">Nom *</label><input id="cand-lastname" autocomplete="family-name" required><p class="field-error" hidden>Indiquez votre nom.</p></div>
+            </div>
+            <div class="field"><label for="cand-email">Adresse e-mail *</label><input type="email" id="cand-email" autocomplete="email" required><p class="field-error" hidden>Adresse e-mail invalide.</p></div>
+            <div class="field"><label for="cand-password">Mot de passe *</label><input type="password" id="cand-password" autocomplete="new-password" required><p class="hint">Démonstration : le mot de passe n'est ni vérifié ni enregistré.</p><p class="field-error" hidden>Choisissez un mot de passe.</p></div>
+            <div class="form-row">
+              <div class="field"><label for="cand-city">Ville *</label><input id="cand-city" autocomplete="address-level2" required><p class="field-error" hidden>Indiquez votre ville.</p></div>
+              <div class="field"><label for="cand-metier">Métier ou domaine recherché *</label><input id="cand-metier" placeholder="Développeur, commercial, comptable…" required><p class="field-error" hidden>Indiquez un métier.</p></div>
+            </div>
+            <div class="field field--checkbox"><input type="checkbox" id="cand-consent" required><label for="cand-consent">J'accepte les conditions d'utilisation de la plateforme. *</label><p class="field-error" hidden>Veuillez accepter les conditions.</p></div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary btn-block">Créer mon espace candidat</button></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Étape 2b : formulaire recruteur -->
+      <section id="form-employer" class="auth-form-wrap" hidden>
+        <a href="#" class="link-more back-link" data-back-roles>← Changer de rôle</a>
+        <div class="card auth-card">
+          <h1>Créer mon espace recruteur</h1>
+          <p>Créez votre entreprise pour publier et gérer vos offres.</p>
+          <form novalidate>
+            <div class="field"><label for="emp-company">Nom de l'entreprise *</label><input id="emp-company" autocomplete="organization" required><p class="field-error" hidden>Indiquez le nom de l'entreprise.</p></div>
+            <div class="form-row">
+              <div class="field"><label for="emp-firstname">Prénom du responsable *</label><input id="emp-firstname" autocomplete="given-name" required><p class="field-error" hidden>Indiquez le prénom.</p></div>
+              <div class="field"><label for="emp-lastname">Nom du responsable *</label><input id="emp-lastname" autocomplete="family-name" required><p class="field-error" hidden>Indiquez le nom.</p></div>
+            </div>
+            <div class="field"><label for="emp-email">E-mail professionnel *</label><input type="email" id="emp-email" autocomplete="email" required><p class="field-error" hidden>Adresse e-mail invalide.</p></div>
+            <div class="field"><label for="emp-password">Mot de passe *</label><input type="password" id="emp-password" autocomplete="new-password" required><p class="hint">Démonstration : le mot de passe n'est ni vérifié ni enregistré.</p><p class="field-error" hidden>Choisissez un mot de passe.</p></div>
+            <div class="form-row">
+              <div class="field"><label for="emp-city">Ville *</label><input id="emp-city" autocomplete="address-level2" required><p class="field-error" hidden>Indiquez la ville.</p></div>
+              <div class="field"><label for="emp-secteur">Secteur *</label>
+                <select id="emp-secteur" required>
+                  <option value="">Choisissez…</option>
+                  <option>Administration &amp; Assistanat</option>
+                  <option>Commerce &amp; Vente</option>
+                  <option>Informatique &amp; Digital</option>
+                  <option>Santé &amp; Social</option>
+                  <option>BTP &amp; Construction</option>
+                  <option>Logistique &amp; Transport</option>
+                  <option>Finance &amp; Comptabilité</option>
+                  <option>Ressources humaines</option>
+                  <option>Immobilier</option>
+                  <option>Hôtellerie &amp; Restauration</option>
+                  <option>Artisanat</option>
+                  <option>Services</option>
+                </select>
+                <p class="field-error" hidden>Choisissez un secteur.</p>
+              </div>
+            </div>
+            <div class="field field--checkbox"><input type="checkbox" id="emp-consent" required><label for="emp-consent">J'accepte les conditions d'utilisation de la plateforme. *</label><p class="field-error" hidden>Veuillez accepter les conditions.</p></div>
+            <div class="form-actions"><button type="submit" class="btn btn-accent btn-block">Créer mon espace recruteur</button></div>
+          </form>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="logo-text">Postelio</span>
+          <p>Postelio vous aide à trouver l’opportunité qui vous correspond : offres, entreprises et conseils partout en France.</p>
+          <ul class="footer-social" aria-label="Réseaux sociaux">
+            <li><a href="#">LinkedIn</a></li>
+            <li><a href="#">Instagram</a></li>
+            <li><a href="#">Facebook</a></li>
+          </ul>
+        </div>
+        <nav class="footer-col" aria-label="Liens candidats">
+          <h2>Candidats</h2>
+          <ul>
+            <li><a href="offres.html">Offres d'emploi</a></li>
+            <li><a href="entreprises.html">Annuaire des entreprises</a></li>
+            <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
+            <li><a href="blog.html">Conseils &amp; articles</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-col" aria-label="Liens recruteurs">
+          <h2>Recruteurs</h2>
+          <ul>
+            <li><a href="espace-entreprise.html">Espace recruteur</a></li>
+            <li><a href="publier-savoir-faire.html">Partager un savoir-faire</a></li>
+            <li><a href="connexion.html">Se connecter</a></li>
+          </ul>
+        </nav>
+        <nav class="footer-col" aria-label="Liens de la plateforme">
+          <h2>La plateforme</h2>
+          <ul>
+            <li><a href="a-propos.html">Qui sommes-nous</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="mentions-legales.html">Mentions légales</a></li>
+            <li><a href="confidentialite.html">Confidentialité</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Postelio</span>
+        <span>Prototype de démonstration — offres, entreprises et personnes fictives.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/offers.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/chatbot.js"></script>
+</body>
+</html>

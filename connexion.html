@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Connexion à votre espace entreprise | Postelio</title>
+  <title>Connexion à votre espace | Postelio</title>
   <meta name="description" content="Connectez-vous à votre espace entreprise Postelio ou créez votre compte pour publier des offres d'emploi et suivre vos candidatures.">
     <meta property="og:type" content="website">
   <meta property="og:site_name" content="Postelio">
-  <meta property="og:title" content="Connexion à votre espace entreprise | Postelio">
+  <meta property="og:title" content="Connexion à votre espace | Postelio">
   <meta property="og:description" content="Connectez-vous à votre espace entreprise Postelio ou créez votre compte pour publier des offres d'emploi et suivre vos candidatures.">
   <meta property="og:image" content="https://jonathan-lanationduweb.github.io/Postelio/assets/images/photos/og-image.jpg">
   <meta property="og:locale" content="fr_FR">
@@ -45,11 +45,13 @@
         <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
         <li><a href="blog.html">Conseils</a></li>
         <li><a href="a-propos.html">Qui sommes-nous</a></li>
-        <li class="nav-guided"><a href="recherche-guidee.html">Recherche guidée</a></li>
+        <li><a href="contact.html">Contact</a></li>
       </ul>
-      <div class="nav-actions">
-        <a href="connexion.html" class="btn btn-ghost">Se connecter</a>
-        <a href="publier-offre.html" class="btn btn-primary">Publier une offre</a>
+      <!-- Zone compte : navigation.js remplace ces boutons par l'avatar+menu
+           quand une session existe (candidat ou recruteur). -->
+      <div class="nav-actions" id="account-nav" data-account-nav>
+        <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
+        <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
       </div>
     </nav>
   </div>
@@ -57,83 +59,50 @@
 
   <main id="contenu">
     <div class="container auth-layout">
-      <!-- Pourquoi créer un espace -->
-      <aside class="auth-aside" aria-label="Les avantages de l'espace entreprise">
-        <p class="eyebrow">Espace entreprise</p>
-        <h2>Tout votre recrutement au même endroit.</h2>
+      <!-- Deux faces de la plateforme -->
+      <aside class="auth-aside" aria-label="Votre espace Postelio">
+        <p class="eyebrow">Votre espace Postelio</p>
+        <h2>Candidat ou recruteur, tout au même endroit.</h2>
         <ul class="auth-aside__points">
-          <li>Publiez et modifiez vos annonces en 6 étapes guidées</li>
-          <li>Suivez vos candidatures depuis un tableau de bord simple</li>
-          <li>Renouvelez une offre expirée en un clic, pour 10&nbsp;€</li>
-          <li>Présentez votre entreprise et vos savoir-faire aux candidats</li>
+          <li><strong>Candidats</strong> — enregistrez des offres, postulez et suivez chaque candidature. C'est gratuit.</li>
+          <li><strong>Recruteurs</strong> — publiez vos offres et gérez simplement vos candidatures.</li>
+          <li>Une seule plateforme pour trouver l'opportunité qui vous correspond.</li>
         </ul>
-        <p class="auth-aside__note">La recherche d'emploi, elle, reste libre : les candidats n'ont pas besoin de compte.</p>
+        <p class="auth-aside__note">Pas encore de compte&nbsp;? <a href="inscription.html">Créez le vôtre</a> en une minute.</p>
       </aside>
 
-      <!-- Connexion / création -->
+      <!-- Connexion -->
       <div class="card auth-card">
         <h1>Se connecter</h1>
-        <p>Accédez à votre espace ou créez votre compte en une minute.</p>
+        <p>Accédez à votre espace candidat ou recruteur.</p>
 
-        <div class="auth-tabs" role="tablist" aria-label="Connexion ou création de compte">
-          <button type="button" role="tab" aria-selected="true" data-panel="login" id="tab-login">Se connecter</button>
-          <button type="button" role="tab" aria-selected="false" data-panel="register" id="tab-register">Créer un compte</button>
-        </div>
+        <form id="login-form" novalidate>
+          <fieldset class="field auth-roles">
+            <legend>Je me connecte en tant que</legend>
+            <label class="auth-role"><input type="radio" name="login-role" value="candidate" checked> Candidat</label>
+            <label class="auth-role"><input type="radio" name="login-role" value="employer"> Recruteur</label>
+          </fieldset>
+          <div class="field">
+            <label for="login-email">Adresse e-mail *</label>
+            <input type="email" id="login-email" autocomplete="email" required>
+            <p class="field-error" hidden>Veuillez indiquer une adresse e-mail valide.</p>
+          </div>
+          <div class="field">
+            <label for="login-password">Mot de passe *</label>
+            <input type="password" id="login-password" autocomplete="current-password" required>
+            <p class="field-error" hidden>Veuillez indiquer votre mot de passe.</p>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-block">Me connecter</button>
+          </div>
+        </form>
 
-        <!-- Connexion -->
-        <div id="panel-login" role="tabpanel" aria-labelledby="tab-login">
-          <form id="login-form" novalidate>
-            <div class="field">
-              <label for="login-email">Adresse e-mail *</label>
-              <input type="email" id="login-email" autocomplete="email" required>
-              <p class="field-error" hidden>Veuillez indiquer une adresse e-mail valide.</p>
-            </div>
-            <div class="field">
-              <label for="login-password">Mot de passe *</label>
-              <input type="password" id="login-password" autocomplete="current-password" required>
-              <p class="field-error" hidden>Veuillez indiquer votre mot de passe.</p>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary btn-block">Me connecter</button>
-            </div>
-          </form>
-          <p class="auth-demo-note">Démonstration : n'importe quels identifiants ouvrent le compte fictif « Fiduciaire Bellecour ». Rien n'est vérifié ni conservé.</p>
+        <p class="auth-demo-note">Démonstration — testez les deux espaces en un clic&nbsp;:</p>
+        <div class="auth-demo-buttons">
+          <button type="button" class="btn btn-outline btn-sm" data-demo-login="candidate">Candidat démo · Jonathan Davy</button>
+          <button type="button" class="btn btn-outline btn-sm" data-demo-login="employer">Recruteur démo · Claire Martin</button>
         </div>
-
-        <!-- Création de compte -->
-        <div id="panel-register" role="tabpanel" aria-labelledby="tab-register" hidden>
-          <form id="register-form" novalidate>
-            <div class="field">
-              <label for="register-company">Nom de l'entreprise *</label>
-              <input type="text" id="register-company" autocomplete="organization" required>
-              <p class="field-error" hidden>Veuillez indiquer le nom de votre entreprise.</p>
-            </div>
-            <div class="field">
-              <label for="register-name">Votre nom et prénom *</label>
-              <input type="text" id="register-name" autocomplete="name" required>
-              <p class="field-error" hidden>Veuillez indiquer votre nom.</p>
-            </div>
-            <div class="field">
-              <label for="register-email">Adresse e-mail professionnelle *</label>
-              <input type="email" id="register-email" autocomplete="email" required>
-              <p class="field-error" hidden>Veuillez indiquer une adresse e-mail valide.</p>
-            </div>
-            <div class="field">
-              <label for="register-password">Mot de passe *</label>
-              <input type="password" id="register-password" autocomplete="new-password" required>
-              <p class="hint">Démonstration : le mot de passe n'est ni vérifié ni enregistré.</p>
-              <p class="field-error" hidden>Veuillez choisir un mot de passe.</p>
-            </div>
-            <div class="field field--checkbox">
-              <input type="checkbox" id="register-consent" required>
-              <label for="register-consent">J'accepte les conditions d'utilisation de la plateforme. *</label>
-              <p class="field-error" hidden>Veuillez accepter les conditions d'utilisation.</p>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-accent btn-block">Créer mon espace entreprise</button>
-            </div>
-          </form>
-        </div>
+        <p class="auth-switch">Pas encore de compte&nbsp;? <a href="inscription.html">Créer un compte</a></p>
       </div>
     </div>
   </main>

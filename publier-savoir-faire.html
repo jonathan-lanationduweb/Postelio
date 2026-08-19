@@ -46,11 +46,13 @@
         <li><a href="savoir-faire.html" aria-current="page">Savoir-faire &amp; Avis</a></li>
         <li><a href="blog.html">Conseils</a></li>
         <li><a href="a-propos.html">Qui sommes-nous</a></li>
-        <li class="nav-guided"><a href="recherche-guidee.html">Recherche guidée</a></li>
+        <li><a href="contact.html">Contact</a></li>
       </ul>
-      <div class="nav-actions">
-        <a href="connexion.html" class="btn btn-ghost">Se connecter</a>
-        <a href="publier-offre.html" class="btn btn-primary">Publier une offre</a>
+      <!-- Zone compte : navigation.js remplace ces boutons par l'avatar+menu
+           quand une session existe (candidat ou recruteur). -->
+      <div class="nav-actions" id="account-nav" data-account-nav>
+        <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
+        <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
       </div>
     </nav>
   </div>

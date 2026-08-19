@@ -609,3 +609,130 @@
 .about-prose p + p {
   margin-top: var(--sp-4);
 }
+
+/* ============================================================
+   Compte : avatar navbar + menu déroulant (candidat / recruteur)
+   ============================================================ */
+.account-menu { position: relative; }
+.avatar-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: none; border: 0; padding: 2px; cursor: pointer;
+  color: inherit; border-radius: var(--radius-pill);
+}
+.avatar-btn .avatar { width: 40px; height: 40px; font-size: 0.95rem; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25); }
+.avatar-btn:hover .avatar { filter: brightness(1.07); }
+.avatar-btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.avatar-caret { font-size: 0.7rem; opacity: 0.85; }
+
+.account-dropdown {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 300;
+  min-width: 250px;
+  background: var(--c-surface); color: var(--c-ink);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-l);
+  padding: 6px;
+  animation: account-pop 140ms ease;
+}
+@keyframes account-pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.account-dropdown__head { padding: 10px 12px 8px; }
+.account-dropdown__head strong { display: block; font-family: var(--font-serif); font-size: 1.05rem; color: var(--c-primary-dark); }
+.account-dropdown__head span { display: block; font-size: var(--text-xs); color: var(--c-ink-soft); }
+.account-dropdown__links { display: grid; padding: 6px 0; border-top: 1px solid var(--c-line); }
+.account-dropdown a[role="menuitem"],
+.account-dropdown__logout {
+  display: block; width: 100%; text-align: left;
+  padding: 9px 12px; border-radius: var(--radius-s);
+  color: var(--c-ink); text-decoration: none; font-size: 0.95rem;
+  background: none; border: 0; cursor: pointer;
+}
+.account-dropdown a[role="menuitem"]:hover,
+.account-dropdown a[role="menuitem"]:focus-visible { background: var(--c-primary-soft); color: var(--c-primary-dark); }
+.account-dropdown__logout { border-top: 1px solid var(--c-line); margin-top: 4px; color: var(--c-error); font-weight: 600; }
+.account-dropdown__logout:hover, .account-dropdown__logout:focus-visible { background: var(--c-error-soft); }
+
+/* ============================================================
+   Espace (candidat / recruteur) : layout sidebar + contenu
+   ============================================================ */
+.dash-layout { display: grid; grid-template-columns: 250px 1fr; gap: var(--sp-6); align-items: start; }
+.dash-sidebar {
+  position: sticky; top: calc(var(--header-height) + var(--sp-4));
+  background: var(--c-surface); border: 1px solid var(--c-line);
+  border-radius: var(--radius-l); padding: var(--sp-4);
+}
+.dash-sidebar__id { display: flex; align-items: center; gap: 0.6rem; padding: 4px 6px var(--sp-4); border-bottom: 1px solid var(--c-line); margin-bottom: var(--sp-3); }
+.dash-sidebar__id .avatar { width: 42px; height: 42px; flex-shrink: 0; }
+.dash-sidebar__id strong { display: block; font-size: 0.95rem; }
+.dash-sidebar__id span { display: block; font-size: var(--text-xs); color: var(--c-ink-soft); }
+.dash-nav { display: grid; gap: 2px; }
+.dash-nav a { display: flex; align-items: center; gap: 0.5rem; padding: 9px 12px; border-radius: var(--radius-s); color: var(--c-ink); text-decoration: none; font-size: 0.95rem; font-weight: 500; }
+.dash-nav a:hover { background: var(--c-primary-soft); color: var(--c-primary-dark); }
+.dash-nav a[aria-current="page"], .dash-nav a.is-active { background: var(--c-primary); color: #fff; }
+.dash-main { min-width: 0; }
+.dash-greeting { font-family: var(--font-serif); font-size: clamp(1.6rem, 3vw, 2.1rem); color: var(--c-primary-dark); margin: 0; }
+.dash-subtitle { color: var(--c-ink-soft); margin-top: 4px; }
+.dash-block { margin-top: var(--sp-6); }
+.dash-block > h2 { font-size: var(--text-xl); }
+
+/* Indicateurs */
+.dash-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); margin: var(--sp-5) 0; }
+.dash-metric { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius-m); padding: var(--sp-4); }
+.dash-metric b { display: block; font-family: var(--font-serif); font-size: 1.9rem; color: var(--c-primary-dark); line-height: 1; }
+.dash-metric span { display: block; font-size: var(--text-sm); color: var(--c-ink-soft); margin-top: 6px; }
+
+/* Suivi de candidature : carte + timeline + statuts */
+.appli-card { border: 1px solid var(--c-line); border-radius: var(--radius-m); background: var(--c-surface); padding: var(--sp-4); }
+.appli-card + .appli-card { margin-top: var(--sp-4); }
+.appli-card__top { display: flex; justify-content: space-between; align-items: start; gap: var(--sp-3); flex-wrap: wrap; }
+.appli-timeline { list-style: none; margin: var(--sp-3) 0 0; padding: 0; }
+.appli-timeline li { position: relative; padding: 0 0 10px 20px; font-size: var(--text-sm); color: var(--c-ink-soft); }
+.appli-timeline li::before { content: ""; position: absolute; left: 4px; top: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--c-primary); }
+.appli-timeline li:not(:last-child)::after { content: ""; position: absolute; left: 7px; top: 12px; bottom: -2px; width: 2px; background: var(--c-line); }
+.appli-timeline li.is-next { color: var(--c-primary-dark); font-weight: 600; }
+.appli-timeline li.is-next::before { background: var(--c-accent); }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: var(--radius-pill); font-size: var(--text-xs); font-weight: 650; white-space: nowrap; }
+.status-envoyee { background: var(--c-info-soft); color: #1e4f7a; }
+.status-vue { background: var(--c-primary-soft); color: var(--c-primary-dark); }
+.status-preselection { background: var(--c-accent-soft); color: var(--c-accent-dark); }
+.status-entretien { background: #efe3ff; color: #5a3ea0; }
+.status-recue { background: var(--c-success-soft); color: #1f6b45; }
+.status-refusee { background: var(--c-error-soft); color: #a23b3b; }
+
+/* Connexion / inscription : rôles, démo, choix */
+.auth-roles { border: 1px solid var(--c-line); border-radius: var(--radius-m); padding: 10px 12px; }
+.auth-roles legend { font-size: var(--text-sm); font-weight: 600; padding: 0 4px; }
+.auth-role { display: inline-flex; align-items: center; gap: 6px; margin-right: var(--sp-4); font-weight: 500; cursor: pointer; }
+.auth-demo-note { margin-top: var(--sp-4); font-size: var(--text-sm); color: var(--c-ink-soft); }
+.auth-demo-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: 6px; }
+.auth-switch { margin-top: var(--sp-4); text-align: center; font-size: var(--text-sm); }
+
+/* Inscription : choix de rôle (deux cartes) */
+.role-chooser { max-width: 860px; margin-inline: auto; }
+.role-chooser__head { text-align: center; margin-bottom: var(--sp-6); }
+.role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+.role-card {
+  display: flex; flex-direction: column; text-align: left;
+  background: var(--c-surface); border: 1px solid var(--c-line);
+  border-radius: var(--radius-l); padding: var(--sp-6);
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+.role-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-m); border-color: var(--c-primary); }
+.role-card__icon { font-size: 1.8rem; }
+.role-card h2 { font-size: var(--text-xl); margin-top: var(--sp-3); }
+.role-card p { color: var(--c-ink-soft); margin: var(--sp-2) 0 var(--sp-5); flex: 1; }
+.auth-form-wrap { max-width: 560px; margin-inline: auto; }
+.auth-form-wrap .back-link { display: inline-flex; gap: 4px; align-items: center; font-size: var(--text-sm); margin-bottom: var(--sp-4); }
+
+/* Responsive : sidebar en barre horizontale */
+@media (max-width: 900px) {
+  .dash-layout { grid-template-columns: 1fr; }
+  .dash-sidebar { position: static; }
+  .dash-sidebar__id { border-bottom: 0; margin-bottom: 0; }
+  .dash-nav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; gap: 4px; padding-top: var(--sp-3); }
+  .dash-nav a { white-space: nowrap; }
+  .dash-metrics { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .role-cards { grid-template-columns: 1fr; }
+  .account-dropdown { position: fixed; left: 12px; right: 12px; top: auto; min-width: 0; }
+}

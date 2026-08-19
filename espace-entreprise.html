@@ -45,105 +45,228 @@
         <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
         <li><a href="blog.html">Conseils</a></li>
         <li><a href="a-propos.html">Qui sommes-nous</a></li>
-        <li class="nav-guided"><a href="recherche-guidee.html">Recherche guidée</a></li>
+        <li><a href="contact.html">Contact</a></li>
       </ul>
-      <div class="nav-actions">
-        <a href="connexion.html" class="btn btn-ghost">Se connecter</a>
-        <a href="publier-offre.html" class="btn btn-primary">Publier une offre</a>
+      <!-- Zone compte : navigation.js remplace ces boutons par l'avatar+menu
+           quand une session existe (candidat ou recruteur). -->
+      <div class="nav-actions" id="account-nav" data-account-nav>
+        <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
+        <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
       </div>
     </nav>
   </div>
 </header>
 
   <main id="contenu">
-    <div id="dashboard" class="container">
-      <div class="dashboard-head">
-        <div>
-          <h1 id="dashboard-welcome">Bonjour !</h1>
-          <p>Voici l'activité de <strong>Fiduciaire Bellecour</strong> (compte de démonstration).</p>
+    <div class="container section">
+      <div class="dash-layout">
+
+        <!-- ===== Barre latérale ===== -->
+        <aside class="dash-sidebar" aria-label="Navigation de l'espace entreprise">
+          <div class="dash-sidebar__id">
+            <span class="avatar" id="dash-avatar" aria-hidden="true">FB</span>
+            <span>
+              <strong id="dash-name">Espace entreprise</strong>
+              <span id="dash-company">Compte recruteur</span>
+            </span>
+          </div>
+          <nav class="dash-nav" aria-label="Sections de l'espace entreprise">
+            <a href="#tableau" class="is-active" data-nav="tableau">Tableau de bord</a>
+            <a href="#offres" data-nav="offres">Mes offres</a>
+            <a href="#candidatures" data-nav="candidatures">Candidatures</a>
+            <a href="publier-offre.html">Publier une offre</a>
+            <a href="#profil" data-nav="profil">Profil entreprise</a>
+            <a href="#messages" data-nav="messages">Messages</a>
+            <a href="#facturation" data-nav="facturation">Facturation</a>
+            <a href="#parametres" data-nav="parametres">Paramètres</a>
+          </nav>
+        </aside>
+
+        <!-- ===== Contenu ===== -->
+        <div class="dash-main">
+
+          <!-- 1. Tableau de bord -->
+          <section class="dash-block" id="tableau" aria-labelledby="h-tableau">
+            <h1 class="dash-greeting" id="h-tableau">Bonjour <span id="hello-name">!</span> 👋</h1>
+            <p class="dash-subtitle" id="company-line">Voici l'activité de votre entreprise.</p>
+
+            <div class="dash-metrics">
+              <div class="dash-metric"><b id="metric-active">—</b><span>offres actives</span></div>
+              <div class="dash-metric"><b id="metric-applications">—</b><span>candidatures reçues</span></div>
+              <div class="dash-metric"><b id="metric-new">—</b><span>nouvelles candidatures</span></div>
+              <div class="dash-metric"><b id="metric-renew">—</b><span>offre(s) à renouveler</span></div>
+            </div>
+
+            <p><a class="btn btn-accent" href="publier-offre.html">+ Publier une offre</a></p>
+
+            <!-- Carte contextuelle 10 € : renseignée par dashboard.js si une offre expire -->
+            <div id="renewal-alert"></div>
+          </section>
+
+          <!-- 2. Mes offres -->
+          <section class="dash-block" id="offres" aria-labelledby="h-offres">
+            <h2 id="h-offres">Mes offres</h2>
+            <div class="table-wrap" id="dashboard-table-wrap">
+              <table class="data-table">
+                <caption class="visually-hidden">Liste de vos offres d'emploi avec vues, candidatures, statut, expiration et actions</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Titre</th>
+                    <th scope="col">Publiée le</th>
+                    <th scope="col">Vues</th>
+                    <th scope="col">Candidatures</th>
+                    <th scope="col">Statut</th>
+                    <th scope="col">Expire le</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-offers">
+                  <tr><td colspan="7">Chargement de vos offres…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="notice notice--demo">Prototype de démonstration : le paiement du renouvellement (10&nbsp;€) est simulé et vos modifications (désactivation, renouvellement) sont conservées dans votre navigateur.</p>
+          </section>
+
+          <!-- 3. Candidatures reçues -->
+          <section class="dash-block" id="candidatures" aria-labelledby="h-candidatures">
+            <h2 id="h-candidatures">Candidatures reçues</h2>
+            <div id="applications-received"></div>
+          </section>
+
+          <!-- 4. Profil entreprise -->
+          <section class="dash-block" id="profil" aria-labelledby="h-profil">
+            <h2 id="h-profil">Profil entreprise</h2>
+            <div class="card dash-card">
+              <div class="dash-sidebar__id" style="border-bottom:0;margin-bottom:0;padding-left:0;">
+                <span class="avatar" id="profil-logo" aria-hidden="true">FB</span>
+                <span>
+                  <strong id="profil-name">Fiduciaire Bellecour</strong>
+                  <span><span id="profil-sector">Finance &amp; Comptabilité</span> — <span id="profil-city">Lyon</span></span>
+                </span>
+              </div>
+              <div class="form-field" style="margin-top:var(--sp-4);">
+                <label for="profil-desc">Présentation de l'entreprise</label>
+                <textarea id="profil-desc" rows="4">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</textarea>
+              </div>
+              <p class="text-muted" style="margin-block:var(--sp-3);">Une fiche complète attire davantage de candidatures.</p>
+              <div class="profile-meter" role="img" aria-label="Profil complété à 75 %">
+                <span class="profile-meter__fill-75"></span>
+              </div>
+              <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque un logo et une photo de vos locaux.</p>
+              <div class="form-actions" style="margin-top:var(--sp-4);">
+                <button type="button" class="btn btn-primary" data-toast="Profil enregistré (démonstration).">Enregistrer</button>
+                <a class="btn btn-ghost" href="publier-savoir-faire.html">Publier un savoir-faire</a>
+              </div>
+            </div>
+          </section>
+
+          <!-- 5. Messages -->
+          <section class="dash-block" id="messages" aria-labelledby="h-messages">
+            <h2 id="h-messages">Messages</h2>
+            <div class="appli-card">
+              <div class="appli-card__top">
+                <div>
+                  <strong>Camille Reynaud</strong><br>
+                  <span class="text-muted">Assistant(e) comptable — CDI</span>
+                </div>
+                <span class="status-badge status-recue">Nouveau</span>
+              </div>
+              <p class="text-muted" style="margin-top:var(--sp-2);">« Bonjour, je reste disponible pour un entretien la semaine prochaine si besoin. »</p>
+              <div class="form-actions" style="margin-top:var(--sp-3);">
+                <button type="button" class="btn btn-primary btn-sm" data-toast="Réponse envoyée (démonstration).">Répondre</button>
+              </div>
+            </div>
+            <div class="appli-card">
+              <div class="appli-card__top">
+                <div>
+                  <strong>Malik Benhaddou</strong><br>
+                  <span class="text-muted">Gestionnaire de paie — CDI</span>
+                </div>
+                <span class="status-badge status-vue">Lu</span>
+              </div>
+              <p class="text-muted" style="margin-top:var(--sp-2);">« Merci pour votre retour, je vous confirme ma présence à l'entretien de jeudi. »</p>
+              <div class="form-actions" style="margin-top:var(--sp-3);">
+                <button type="button" class="btn btn-primary btn-sm" data-toast="Réponse envoyée (démonstration).">Répondre</button>
+              </div>
+            </div>
+            <div class="appli-card">
+              <div class="appli-card__top">
+                <div>
+                  <strong>Sophie Lemaire</strong><br>
+                  <span class="text-muted">Secrétaire administrative — CDD</span>
+                </div>
+                <span class="status-badge status-vue">Lu</span>
+              </div>
+              <p class="text-muted" style="margin-top:var(--sp-2);">« Bonjour, ma candidature est-elle toujours à l'étude ? Bien cordialement. »</p>
+              <div class="form-actions" style="margin-top:var(--sp-3);">
+                <button type="button" class="btn btn-primary btn-sm" data-toast="Réponse envoyée (démonstration).">Répondre</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 6. Facturation -->
+          <section class="dash-block" id="facturation" aria-labelledby="h-facturation">
+            <h2 id="h-facturation">Facturation</h2>
+            <div class="card dash-card">
+              <h3>Renouvellement d'offre — 10&nbsp;€ / 30 jours</h3>
+              <p class="text-muted">Pas d'abonnement : vous ne payez que lorsque vous prolongez une offre arrivée à expiration. Chaque renouvellement remet l'annonce en ligne pour 30&nbsp;jours.</p>
+            </div>
+
+            <h3 style="margin-top:var(--sp-5);">Historique des paiements</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <caption class="visually-hidden">Historique de vos renouvellements d'offres</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Offre</th>
+                    <th scope="col">Montant</th>
+                    <th scope="col">Statut</th>
+                    <th scope="col">Facture</th>
+                  </tr>
+                </thead>
+                <tbody id="billing-history">
+                  <tr><td colspan="5">Chargement…</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card dash-card" style="margin-top:var(--sp-5);">
+              <h3>Moyen de paiement</h3>
+              <p>Carte bancaire <strong>•••• •••• •••• 4242</strong> — expire 09/29 <span class="badge badge--neutral">Démonstration</span></p>
+              <div class="form-actions" style="margin-top:var(--sp-3);">
+                <button type="button" class="btn btn-ghost btn-sm" data-toast="Gestion des moyens de paiement (démonstration).">Modifier la carte</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 7. Paramètres -->
+          <section class="dash-block" id="parametres" aria-labelledby="h-parametres">
+            <h2 id="h-parametres">Paramètres</h2>
+            <div class="card dash-card">
+              <div class="form-field">
+                <label class="auth-role"><input type="checkbox" checked> Recevoir un e-mail à chaque nouvelle candidature</label>
+              </div>
+              <div class="form-field" style="margin-top:var(--sp-2);">
+                <label class="auth-role"><input type="checkbox" checked> Recevoir un rappel avant l'expiration d'une offre</label>
+              </div>
+              <div class="form-field" style="margin-top:var(--sp-2);">
+                <label class="auth-role"><input type="checkbox"> Recevoir la lettre d'information recruteurs</label>
+              </div>
+              <div class="form-actions" style="margin-top:var(--sp-4);">
+                <button type="button" class="btn btn-primary" data-toast="Préférences enregistrées (démonstration).">Enregistrer les préférences</button>
+              </div>
+            </div>
+            <div class="card dash-card" style="margin-top:var(--sp-4);">
+              <h3>Session</h3>
+              <p class="text-muted">Vous êtes connecté(e) au compte de démonstration recruteur.</p>
+              <button type="button" class="btn btn-ghost" id="logout-btn">Se déconnecter</button>
+            </div>
+          </section>
+
         </div>
-        <a class="btn btn-accent" href="publier-offre.html">Publier une offre</a>
       </div>
-
-      <!-- Statistiques -->
-      <section class="stats-grid" aria-label="Statistiques de votre compte">
-        <div class="card stat-card">
-          <span class="stat-value" id="stat-active">—</span>
-          <span class="stat-label">Offres actives</span>
-        </div>
-        <div class="card stat-card stat-card--accent">
-          <span class="stat-value" id="stat-expired">—</span>
-          <span class="stat-label">Offres expirées ou désactivées</span>
-        </div>
-        <div class="card stat-card">
-          <span class="stat-value" id="stat-applications">—</span>
-          <span class="stat-label">Candidatures reçues</span>
-        </div>
-      </section>
-
-      <!-- Liste des offres -->
-      <section class="dashboard-section" aria-labelledby="h-mes-offres">
-        <h2 id="h-mes-offres">Mes offres</h2>
-        <div class="table-wrap" id="dashboard-table-wrap">
-          <table class="data-table">
-            <caption class="visually-hidden">Liste de vos offres d'emploi avec statut, expiration, candidatures et actions</caption>
-            <thead>
-              <tr>
-                <th scope="col">Offre</th>
-                <th scope="col">Statut</th>
-                <th scope="col">Expire le</th>
-                <th scope="col">Candidatures</th>
-                <th scope="col">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="dashboard-offers">
-              <tr><td colspan="5">Chargement de vos offres…</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="notice notice--demo">Lorsqu'une offre expire, le bouton « Renouveler pour 10&nbsp;€ » vous permet de la prolonger de 60 jours. Dans ce prototype, le paiement est simulé et vos modifications sont conservées dans votre navigateur.</p>
-      </section>
-
-      <!-- Activité et profil -->
-      <section class="dashboard-section" aria-labelledby="h-suivi">
-        <h2 id="h-suivi">Votre suivi</h2>
-        <div class="dash-duo">
-          <div class="card dash-card">
-            <h3>Activité récente</h3>
-            <div id="dashboard-activity" class="dash-activity"></div>
-          </div>
-          <div class="card dash-card">
-            <h3>Profil entreprise</h3>
-            <p class="text-muted">Une fiche complète attire davantage de candidatures.</p>
-            <div class="profile-meter" role="img" aria-label="Profil complété à 75 %">
-              <span class="profile-meter__fill-75"></span>
-            </div>
-            <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque une photo de vos locaux et un savoir-faire publié.</p>
-            <div class="form-actions">
-              <a class="link-more" href="entreprise-detail.html?id=fiduciaire-bellecour">Voir ma fiche</a>
-              <a class="link-more" href="publier-savoir-faire.html">Publier un savoir-faire</a>
-            </div>
-          </div>
-        </div>
-        <p class="notice dash-tip">Conseil du moment : les annonces qui affichent une fourchette de salaire reçoivent nettement plus de candidatures qualifiées. Pensez-y lors de votre prochaine publication.</p>
-      </section>
-
-      <!-- Aide rapide -->
-      <section class="dashboard-section" aria-labelledby="h-questions">
-        <h2 id="h-questions">Questions fréquentes</h2>
-        <details class="accordion">
-          <summary>Combien de temps une offre reste-t-elle en ligne ?</summary>
-          <div class="accordion-body">Une offre est publiée pour 60 jours. Vous recevez un rappel avant son expiration et pouvez la renouveler pour 10&nbsp;€ depuis ce tableau de bord, ou la laisser expirer.</div>
-        </details>
-        <details class="accordion">
-          <summary>Comment sont transmises les candidatures ?</summary>
-          <div class="accordion-body">Chaque candidature est envoyée à l'adresse e-mail indiquée lors de la publication de l'offre, et comptabilisée ici. Vous répondez ensuite directement au candidat.</div>
-        </details>
-        <details class="accordion">
-          <summary>Puis-je modifier une offre déjà publiée ?</summary>
-          <div class="accordion-body">Oui, l'action « Modifier » rouvre le formulaire de publication pré-rempli avec les informations de votre annonce. Les modifications sont relues avant remise en ligne.</div>
-        </details>
-      </section>
     </div>
   </main>
 

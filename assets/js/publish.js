@@ -12,6 +12,10 @@
     var wizard = document.getElementById("publish-wizard");
     if (!wizard) { return; }
 
+    /* La publication appartient à l'espace recruteur : réservé aux comptes
+       employeur connectés (visiteur → connexion ; candidat → son espace). */
+    if (window.SS && SS.auth && !SS.auth.require("employer")) { return; }
+
     var form = document.getElementById("publish-form");
     var prevBtn = document.getElementById("wizard-prev");
     var nextBtn = document.getElementById("wizard-next");

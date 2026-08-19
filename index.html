@@ -75,11 +75,13 @@
         <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
         <li><a href="blog.html">Conseils</a></li>
         <li><a href="a-propos.html">Qui sommes-nous</a></li>
-        <li class="nav-guided"><a href="recherche-guidee.html">Recherche guidée</a></li>
+        <li><a href="contact.html">Contact</a></li>
       </ul>
-      <div class="nav-actions">
-        <a href="connexion.html" class="btn btn-ghost">Se connecter</a>
-        <a href="publier-offre.html" class="btn btn-primary">Publier une offre</a>
+      <!-- Zone compte : navigation.js remplace ces boutons par l'avatar+menu
+           quand une session existe (candidat ou recruteur). -->
+      <div class="nav-actions" id="account-nav" data-account-nav>
+        <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
+        <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
       </div>
     </nav>
   </div>
@@ -128,7 +130,7 @@
               </div>
               <button type="submit" class="btn btn-accent cine__search-submit">Rechercher</button>
             </form>
-            <a class="cine__cta-link" href="publier-offre.html">Je recrute</a>
+            <a class="cine__cta-link" href="inscription.html">Je recrute</a>
           </div>
         </div>
 
@@ -142,8 +144,21 @@
 
     <span id="contenu-site" tabindex="-1"></span>
 
+    <!-- ===== Passerelle éditoriale : de l'intro cinématique au produit ===== -->
+    <section class="section cine-bridge section--lead" aria-labelledby="bridge-title">
+      <div class="container cine-bridge__inner">
+        <p class="eyebrow">Postelio</p>
+        <h2 id="bridge-title" class="cine-bridge__title">Trouvez. Postulez. Suivez.</h2>
+        <p class="cine-bridge__text">Découvrez des opportunités qui vous correspondent et suivez simplement chaque étape de votre recherche d'emploi.</p>
+        <div class="cine-bridge__actions">
+          <a class="btn btn-primary btn-lg" href="offres.html">Je cherche un emploi</a>
+          <a class="btn btn-outline btn-lg" href="inscription.html">Je recrute</a>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== Offres récentes : une vedette + une liste ===== -->
-    <section class="section section--surface section--lead" aria-labelledby="recent-title">
+    <section class="section section--surface" aria-labelledby="recent-title">
       <div class="container">
         <div class="section-head section-head--row">
           <div>
@@ -196,7 +211,7 @@
               <li>Relecture de chaque annonce par notre équipe</li>
             </ul>
             <div class="form-actions">
-              <a class="btn btn-accent" href="publier-offre.html">Publier une offre</a>
+              <a class="btn btn-accent" href="inscription.html">Publier une offre</a>
               <a class="btn btn-outline btn-outline--light" href="connexion.html">Créer mon espace</a>
             </div>
           </aside>
@@ -312,7 +327,7 @@
             <p>Publiez votre annonce en quelques minutes et touchez des candidats dans tous les secteurs — commerce, informatique, BTP, santé, logistique et bien d'autres. Annonce relue, visible 60 jours, renouvelable pour 10&nbsp;€.</p>
           </div>
           <div class="cta-final__actions">
-            <a class="btn btn-accent btn-lg" href="publier-offre.html">Publier une offre</a>
+            <a class="btn btn-accent btn-lg" href="inscription.html">Publier une offre</a>
             <a class="btn btn-outline btn-outline--light" href="connexion.html">Créer un compte</a>
             <p>Une question avant de commencer&nbsp;? <a href="contact.html">Écrivez-nous</a>, réponse sous un jour ouvré.</p>
           </div>
@@ -353,7 +368,7 @@
         <nav class="footer-col" aria-label="Liens recruteurs">
           <h2>Recruteurs</h2>
           <ul>
-            <li><a href="publier-offre.html">Publier une offre</a></li>
+            <li><a href="inscription.html">Publier une offre</a></li>
             <li><a href="publier-savoir-faire.html">Partager un savoir-faire</a></li>
             <li><a href="espace-entreprise.html">Espace entreprise</a></li>
             <li><a href="connexion.html">Se connecter</a></li>
