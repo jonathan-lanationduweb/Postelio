@@ -16,6 +16,23 @@
 (function () {
   "use strict";
 
+  /* Clé de stockage du refus (message courtois final), lue côté candidat. */
+  var REFUS_KEY = "ss_refus_demo";
+
+  /* Messages courtois prédéfinis, indexés par motif interne. Le motif brut
+     (ex. « Expérience insuffisante ») n'est JAMAIS transmis : seul l'un de
+     ces messages (ou sa version éditée) est envoyé au candidat. */
+  var COURTOIS = {
+    profil: "Bonjour, nous vous remercions pour votre candidature et l'intérêt porté à notre entreprise. Après étude attentive de votre profil, nous avons décidé de ne pas y donner suite pour ce poste. Nous vous souhaitons une pleine réussite dans vos recherches.",
+    experience: "Bonjour, merci beaucoup pour votre candidature. Nous avons retenu d'autres profils dont le parcours correspondait davantage aux attentes de ce poste. Nous conservons votre candidature et vous souhaitons une belle continuation.",
+    pourvu: "Bonjour, nous vous remercions pour votre candidature. Le poste vient malheureusement d'être pourvu. Nous ne manquerons pas de revenir vers vous si une opportunité similaire se présente. Bonne continuation à vous.",
+    dispo: "Bonjour, merci pour votre candidature et pour le temps consacré à notre échange. Les disponibilités ne correspondent pas au besoin actuel de l'équipe. Nous vous souhaitons pleine réussite dans la suite de vos démarches.",
+    autre: "Bonjour, nous vous remercions sincèrement pour votre candidature. Nous ne sommes pas en mesure d'y donner une suite favorable pour le moment. Nous vous souhaitons une excellente continuation."
+  };
+
+  /* Ouvre la modale de refus ; renseignée par initRefusModal(). */
+  var openRefusModal = null;
+
   document.addEventListener("DOMContentLoaded", function () {
     if (!window.SS || !SS.auth) { return; }
     /* Garde : visiteur → connexion ; candidat → son espace. */
@@ -26,6 +43,7 @@
 
     fillIdentity();
     renderDashboard();
+    initRefusModal();
     seedApplications();
     seedBilling();
     initNav();
@@ -47,7 +65,9 @@
     var line = [company, s.secteur, s.city].filter(Boolean).join(" · ");
     setText("company-line", line || company);
 
-    setText("profil-logo", initials);
+    /* Le logo du profil représente l'ENTREPRISE : initiales de la société
+       (ex. « FB »), et non celles de la personne connectée (« CM »). */
+    setText("profil-logo", companyInitials(company));
     setText("profil-name", company);
     if (s.secteur) { setText("profil-sector", s.secteur); }
     if (s.city) { setText("profil-city", s.city); }
@@ -99,10 +119,13 @@
       }, 0);
       var toRenew = offers.filter(needsRenewal);
 
-      setText("metric-active", active.length);
-      setText("metric-applications", totalApplications);
-      setText("metric-new", newApplications);
-      setText("metric-renew", toRenew.length);
+      /* Indicateurs de démonstration : valeurs fixes et cohérentes affichées
+         immédiatement (jamais de tiret « — » au chargement). En production,
+         ces chiffres viendraient de l'API recruteur. */
+      setText("metric-active", 3);
+      setText("metric-applications", 18);
+      setText("metric-new", 5);
+      setText("metric-renew", 1);
 
       renderTable(offers);
       renderRenewalAlert(toRenew);
@@ -229,20 +252,29 @@
       { nom: "Awa Diallo", offre: "Secrétaire administrative — CDD", jours: 8, statut: "preselection", label: "Présélection" }
     ];
 
-    box.innerHTML = people.map(function (p) {
+    box.innerHTML = people.map(function (p, i) {
       var d = dateFromToday(-p.jours);
-      return '<div class="appli-card">' +
+      return '<div class="appli-card" data-app="cand-' + i + '">' +
           '<div class="appli-card__top">' +
             "<div><strong>" + e(p.nom) + "</strong><br>" +
               '<span class="text-muted">' + e(p.offre) + " · reçue " + e(SS.relativeDate(d)) + "</span></div>" +
             '<span class="status-badge status-' + p.statut + '">' + e(p.label) + "</span>" +
           "</div>" +
+          '<p class="text-muted" data-refus-date hidden style="margin-top:var(--sp-2);"></p>' +
           '<div class="form-actions" style="margin-top:var(--sp-3);">' +
             '<button type="button" class="btn btn-outline btn-sm" data-toast="Ouverture du profil candidat (démonstration).">Voir le profil</button>' +
             '<button type="button" class="btn btn-primary btn-sm" data-toast="Candidat présélectionné (démonstration).">Présélectionner</button>' +
+            '<a class="btn btn-ghost btn-sm" href="#messages">Message</a>' +
+            '<button type="button" class="btn btn-danger btn-sm" data-refus data-nom="' + e(p.nom) + '" data-offre="' + e(p.offre) + '">Refuser la candidature</button>' +
           "</div>" +
         "</div>";
     }).join("");
+
+    box.querySelectorAll("[data-refus]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (openRefusModal) { openRefusModal(btn); }
+      });
+    });
   }
 
   /* ---- Historique de facturation (données de démonstration) ---- */
@@ -315,10 +347,147 @@
     });
   }
 
+  /* ---- Modale de refus de candidature (accessible, focus piégé) ---- */
+  function initRefusModal() {
+    var overlay = document.getElementById("refus-modal");
+    if (!overlay) { return; }
+    var dialog = overlay.querySelector(".modal");
+    var titleEl = document.getElementById("refus-modal-title");
+    var form = document.getElementById("refus-form");
+    var messageEl = document.getElementById("refus-message");
+    var courtoisEl = document.getElementById("refus-courtois");
+    var confirmBtn = document.getElementById("refus-confirm");
+    if (!dialog || !titleEl || !form || !messageEl || !courtoisEl || !confirmBtn) { return; }
+
+    var state = { trigger: null, card: null, nom: "", offre: "" };
+
+    function selectedMotif() {
+      var r = form.querySelector('input[name="refus-motif"]:checked');
+      return r ? r.value : "";
+    }
+
+    /* Case cochée + motif choisi → pré-remplit le message courtois. */
+    function fillCourtois() {
+      if (!courtoisEl.checked) { return; }
+      var m = selectedMotif();
+      if (m && COURTOIS[m]) { messageEl.value = COURTOIS[m]; }
+    }
+
+    form.querySelectorAll('input[name="refus-motif"]').forEach(function (r) {
+      r.addEventListener("change", fillCourtois);
+    });
+    courtoisEl.addEventListener("change", fillCourtois);
+
+    function focusables() {
+      var sel = 'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled])';
+      return Array.prototype.slice.call(dialog.querySelectorAll(sel)).filter(function (el) {
+        return el.offsetParent !== null;
+      });
+    }
+
+    function onKeydown(ev) {
+      if (ev.key === "Escape") { ev.preventDefault(); close(); return; }
+      if (ev.key !== "Tab") { return; }
+      var f = focusables();
+      if (!f.length) { return; }
+      var first = f[0], last = f[f.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault(); last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault(); first.focus();
+      }
+    }
+
+    function open(trigger) {
+      state.trigger = trigger;
+      state.card = trigger.closest(".appli-card");
+      state.nom = trigger.getAttribute("data-nom") || "";
+      state.offre = trigger.getAttribute("data-offre") || "";
+      titleEl.textContent = "Refuser la candidature de " + state.nom;
+
+      form.querySelectorAll('input[name="refus-motif"]').forEach(function (r) { r.checked = false; });
+      courtoisEl.checked = true;
+      messageEl.value = "";
+
+      overlay.hidden = false;
+      document.addEventListener("keydown", onKeydown);
+      var f = focusables();
+      if (f.length) { f[0].focus(); }
+    }
+
+    function close() {
+      overlay.hidden = true;
+      document.removeEventListener("keydown", onKeydown);
+      /* Rend le focus au déclencheur ; si celui-ci est désormais désactivé
+         (candidature refusée), on le rend à la carte concernée. */
+      var t = state.trigger;
+      if (t && !t.disabled && t.offsetParent !== null) {
+        t.focus();
+      } else if (state.card) {
+        state.card.setAttribute("tabindex", "-1");
+        state.card.focus();
+      }
+    }
+
+    /* Clic sur l'overlay (hors modale) ferme. */
+    overlay.addEventListener("click", function (ev) {
+      if (ev.target === overlay) { close(); }
+    });
+    overlay.querySelectorAll("[data-refus-close]").forEach(function (b) {
+      b.addEventListener("click", close);
+    });
+
+    confirmBtn.addEventListener("click", function () {
+      var m = selectedMotif();
+      /* Le message transmis est toujours courtois : le contenu de la zone de
+         texte (prédéfini ou édité) ou, à défaut, un message générique. Jamais
+         le libellé brut du motif. */
+      var finalMsg = messageEl.value.trim();
+      if (!finalMsg) { finalMsg = COURTOIS[m] || COURTOIS.autre; }
+      var today = new Date().toISOString().slice(0, 10);
+
+      if (state.card) {
+        var badge = state.card.querySelector(".status-badge");
+        if (badge) {
+          badge.className = "status-badge status-non-retenue";
+          badge.textContent = "Candidature non retenue";
+        }
+        var dateLine = state.card.querySelector("[data-refus-date]");
+        if (dateLine) {
+          dateLine.hidden = false;
+          dateLine.textContent = "Candidat informé le " + SS.formatDate(today);
+        }
+        var refBtn = state.card.querySelector("[data-refus]");
+        if (refBtn) { refBtn.disabled = true; refBtn.textContent = "Candidature refusée"; }
+      }
+
+      /* Persiste le message courtois final (exploité côté candidat). */
+      var stored = SS.store.get(REFUS_KEY, {});
+      stored[state.nom] = { nom: state.nom, offre: state.offre, message: finalMsg, date: today };
+      SS.store.set(REFUS_KEY, stored);
+
+      close();
+      SS.toast("Le candidat a été informé avec un message courtois.");
+    });
+
+    openRefusModal = open;
+  }
+
   /* ---- Utilitaires ---- */
   function setText(id, value) {
     var el = document.getElementById(id);
     if (el) { el.textContent = String(value); }
+  }
+
+  /* Initiales d'une raison sociale : deux premières lettres significatives
+     (ex. « Fiduciaire Bellecour » → « FB »). Ignore les petits mots liants. */
+  function companyInitials(name) {
+    var skip = { de: 1, du: 1, des: 1, la: 1, le: 1, les: 1, "et": 1, "&": 1, "d'": 1 };
+    var words = String(name || "").trim().split(/[\s'-]+/).filter(function (w) {
+      return w && !skip[w.toLowerCase()];
+    });
+    var letters = words.slice(0, 2).map(function (w) { return w.charAt(0); }).join("");
+    return (letters || String(name || "?").charAt(0)).toUpperCase();
   }
 
   /* Nombre de vues fictif mais stable, dérivé de l'identifiant de l'offre. */

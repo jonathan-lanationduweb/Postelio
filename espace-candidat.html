@@ -72,6 +72,7 @@
           <nav class="dash-nav" aria-label="Navigation de l'espace candidat">
             <a href="#apercu" class="is-active">Vue d'ensemble</a>
             <a href="#candidatures">Mes candidatures</a>
+            <a href="#messages">Messages</a>
             <a href="#recommandations">Des offres pour vous</a>
             <a href="#favoris">Mes favoris</a>
             <a href="#alertes">Mes alertes</a>
@@ -93,6 +94,8 @@
               <div class="dash-metric"><b id="metric-favorites">0</b><span>offres enregistrées</span></div>
               <div class="dash-metric"><b id="metric-reco">0</b><span>nouvelles offres pour vous</span></div>
             </div>
+            <!-- Notifications de mise à jour de candidature (rempli par dashboard-candidat.js) -->
+            <div id="status-notification"></div>
             <p class="notice notice--demo">L'espace candidat est entièrement gratuit.</p>
           </section>
 
@@ -100,6 +103,25 @@
           <section class="dash-block" id="candidatures">
             <h2>Mes candidatures</h2>
             <div id="applications-list"></div>
+          </section>
+
+          <!-- 2b. Messages -->
+          <section class="dash-block" id="messages">
+            <h2>Messages</h2>
+            <p class="dash-subtitle">Vos échanges avec les entreprises. Prototype : la messagerie est simulée.</p>
+            <div class="appli-card">
+              <div class="appli-card__top">
+                <div>
+                  <strong>Pixel &amp; Co</strong><br>
+                  <span class="text-muted">Développeur web junior — Lille</span>
+                </div>
+                <span class="status-badge status-entretien">Entretien proposé</span>
+              </div>
+              <p class="text-muted" style="margin-top:var(--sp-2);">« Bonjour, nous serions ravis de vous rencontrer. Seriez-vous disponible le 21 août à 14 h ? »</p>
+              <div class="form-actions" style="margin-top:var(--sp-3);">
+                <button type="button" class="btn btn-primary btn-sm" data-toast="Réponse envoyée (démonstration).">Répondre</button>
+              </div>
+            </div>
           </section>
 
           <!-- 3. Des offres pour vous -->

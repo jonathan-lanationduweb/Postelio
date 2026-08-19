@@ -19,6 +19,8 @@
     /* 3-7. Données de démonstration + rendu des sections. */
     seedIfEmpty();
     renderApplications();
+    renderStatusNotification();
+    initToasts();
     renderRecommendations();
     renderFavorites();
     renderAlerts();
@@ -49,9 +51,18 @@
   /* ============================================================
      Données de démonstration (seed au 1er chargement)
      ============================================================ */
+  /* Version du jeu de démonstration : à incrémenter dès que la structure des
+     candidatures change (ex. ajout du message d'entreprise). Les navigateurs
+     ayant un ancien seed en cache sont ainsi régénérés, sinon la nouvelle
+     fonctionnalité (message reçu, statut « non retenue ») resterait invisible. */
+  var SEED_VERSION = "2026-08-19-refus";
+  var SEED_KEY = "ss_seed_version";
+
   function seedIfEmpty() {
-    if (!SS.store.get(S.applications, null)) {
+    var staleSeed = SS.store.get(SEED_KEY, null) !== SEED_VERSION;
+    if (staleSeed || !SS.store.get(S.applications, null)) {
       SS.store.set(S.applications, defaultApplications());
+      SS.store.set(SEED_KEY, SEED_VERSION);
     }
     if (!SS.store.get(S.favorites, null)) {
       SS.store.set(S.favorites, [
@@ -143,8 +154,10 @@
         entreprise: "Pixel & Co",
         ville: "Bordeaux",
         dateEnvoi: "2026-07-28",
-        statut: "refusee",
+        statut: "non-retenue",
         note: "Profil un peu trop junior pour ce poste — à retenter plus tard.",
+        messageEntreprise: "Bonjour, nous vous remercions pour votre candidature. Le poste vient malheureusement d'être pourvu. Nous ne manquerons pas de revenir vers vous si une opportunité similaire se présente. Bonne continuation à vous.",
+        dateMaj: "2026-08-04",
         timeline: [
           { label: "Candidature envoyée", date: "2026-07-28" },
           { label: "Vue par l'entreprise", date: "2026-07-30" },
@@ -157,13 +170,20 @@
   /* ============================================================
      Candidatures
      ============================================================ */
+  /* Vocabulaire de statuts unifié (ordre logique du suivi de candidature).
+     Les clés « recue » et « refusee » restent mappées pour d'anciennes
+     données éventuellement déjà présentes en stockage local. */
   var STATUT_LABEL = {
-    envoyee: "Envoyée",
+    envoyee: "Candidature envoyée",
     vue: "Vue par l'entreprise",
     preselection: "Présélection",
-    entretien: "Entretien",
-    recue: "Candidature reçue",
-    refusee: "Non retenue"
+    entretien: "Entretien proposé",
+    "entretien-realise": "Entretien réalisé",
+    "offre-recue": "Offre reçue",
+    "non-retenue": "Candidature non retenue",
+    retiree: "Candidature retirée",
+    recue: "Offre reçue",
+    refusee: "Candidature non retenue"
   };
 
   function getApplications() { return SS.store.get(S.applications, []); }
@@ -192,6 +212,17 @@
         ? '<p class="notice" data-note style="margin-top: var(--sp-3);"><strong>Ma note :</strong> ' + e(a.note) + "</p>"
         : '<p data-note hidden></p>';
 
+      /* Message courtois reçu de l'entreprise : masqué derrière un disclosure. */
+      var messageBlock = a.messageEntreprise
+        ? '<div class="msg-disclosure">' +
+            '<button type="button" class="btn btn-outline btn-sm" data-action="toggle-message" data-id="' + e(a.id) + '" aria-expanded="false" aria-controls="msg-' + e(a.id) + '">Voir le message</button>' +
+            '<div class="msg-disclosure__panel" id="msg-' + e(a.id) + '" hidden>' +
+              (a.dateMaj ? '<p class="text-muted" style="margin:0 0 var(--sp-2);">Réponse reçue le ' + e(SS.formatDate(a.dateMaj)) + "</p>" : "") +
+              '<p style="margin:0;">' + e(a.messageEntreprise) + "</p>" +
+            "</div>" +
+          "</div>"
+        : "";
+
       return '<article class="appli-card" data-app="' + e(a.id) + '">' +
         '<div class="appli-card__top">' +
           "<div><strong>" + e(a.offreTitre) + "</strong><br>" +
@@ -201,9 +232,11 @@
         "</div>" +
         '<ul class="appli-timeline">' + timeline + "</ul>" +
         noteBlock +
+        messageBlock +
         '<div class="form-actions" style="margin-top: var(--sp-3); display:flex; gap: var(--sp-2); flex-wrap: wrap;">' +
           (a.offreId ? '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(a.offreId) + '">Voir l\'offre</a>' : "") +
           (a.entrepriseId ? '<a class="btn btn-ghost btn-sm" href="entreprise-detail.html?id=' + encodeURIComponent(a.entrepriseId) + '">Voir l\'entreprise</a>' : "") +
+          '<a class="btn btn-ghost btn-sm" href="#messages">Envoyer un message</a>' +
           '<button type="button" class="btn btn-ghost btn-sm" data-action="note" data-id="' + e(a.id) + '">Ajouter une note</button>' +
           '<button type="button" class="btn btn-ghost btn-sm" data-action="withdraw" data-id="' + e(a.id) + '">Retirer ma candidature</button>' +
         "</div>" +
@@ -240,6 +273,17 @@
       return;
     }
 
+    if (action === "toggle-message") {
+      var panel = card.querySelector(".msg-disclosure__panel");
+      if (panel) {
+        var wasHidden = panel.hidden;
+        panel.hidden = !wasHidden;
+        btn.setAttribute("aria-expanded", String(wasHidden));
+        btn.textContent = wasHidden ? "Masquer le message" : "Voir le message";
+      }
+      return;
+    }
+
     if (action === "save-note") {
       var ta = card.querySelector("textarea");
       var value = ta ? ta.value.trim() : "";
@@ -251,6 +295,31 @@
       renderApplications();
       SS.toast("Note enregistrée.");
     }
+  }
+
+  /* Bandeau d'aperçu : signale une candidature dont le statut a évolué. */
+  function renderStatusNotification() {
+    var box = document.getElementById("status-notification");
+    if (!box) { return; }
+    var updated = getApplications().filter(function (a) {
+      return a.statut === "non-retenue" || a.statut === "offre-recue" || a.statut === "refusee";
+    });
+    if (!updated.length) { box.innerHTML = ""; return; }
+    var a = updated[0];
+    var e = SS.escapeHtml;
+    box.innerHTML =
+      '<div class="notice notice--demo" style="margin-bottom: var(--sp-4);">' +
+        "<strong>Votre candidature chez " + e(a.entreprise) + " a été mise à jour.</strong> " +
+        '<a href="#candidatures">Voir mes candidatures</a>' +
+      "</div>";
+  }
+
+  /* Boutons fictifs (data-toast) de l'espace candidat (ex. « Répondre »). */
+  function initToasts() {
+    document.addEventListener("click", function (ev) {
+      var btn = ev.target.closest ? ev.target.closest("[data-toast]") : null;
+      if (btn) { SS.toast(btn.getAttribute("data-toast")); }
+    });
   }
 
   /* ============================================================

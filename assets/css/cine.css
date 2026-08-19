@@ -63,20 +63,21 @@
    ligne de séparation) avec une respiration franche, sans redesign. */
 .section--lead {
   border-top: none;
-  padding-top: clamp(4.5rem, 7vw, 7rem); /* ~72 → 112 px de respiration */
+  padding-top: clamp(2.25rem, 4vw, 3.25rem); /* passerelle compacte : ~36 → 52 px */
+  padding-bottom: clamp(2.25rem, 4vw, 3.25rem);
 }
 
 /* Passerelle éditoriale post-intro : très épurée, prolonge le premium de la
    vidéo (beaucoup d'espace, typo forte, deux entrées, aucun encombrement). */
 .cine-bridge { background: var(--c-bg); }
-.cine-bridge__inner { max-width: 760px; margin-inline: auto; text-align: center; padding-block: clamp(1rem, 3vw, 2.5rem); }
+.cine-bridge__inner { max-width: 760px; margin-inline: auto; text-align: center; padding-block: 0; }
 .cine-bridge__title {
   font-family: var(--font-serif); font-weight: 700;
-  font-size: clamp(2.4rem, 6vw, 4.25rem); line-height: 1.03;
-  letter-spacing: -0.02em; color: var(--c-primary-dark); margin-top: var(--sp-2);
+  font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.05;
+  letter-spacing: -0.02em; color: var(--c-primary-dark); margin-top: 0;
 }
-.cine-bridge__text { max-width: 52ch; margin: var(--sp-4) auto 0; font-size: clamp(1.05rem, 1.5vw, 1.25rem); line-height: 1.6; color: var(--c-ink-soft); }
-.cine-bridge__actions { display: flex; flex-wrap: wrap; gap: var(--sp-4); justify-content: center; margin-top: var(--sp-6); }
+.cine-bridge__text { max-width: 52ch; margin: var(--sp-3) auto 0; font-size: clamp(1.05rem, 1.5vw, 1.2rem); line-height: 1.55; color: var(--c-ink-soft); }
+.cine-bridge__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: center; margin-top: var(--sp-5); }
 
 /* =====================================================================
    Navbar UNIQUE de l'accueil (.site-header--cine)
@@ -420,6 +421,15 @@
   .cine__search-submit { width: 100%; }
   /* Recadrage mobile : garder le sujet et la fenêtre lumineuse. */
   .cine__video { object-position: 62% center; }
+}
+
+/* Très petits écrans (smartphones) : recadrage plus marqué pour conserver
+   le sujet au centre malgré le format portrait. */
+@media (max-width: 600px) {
+  .cine__video { object-position: 58% center; }
+}
+@media (max-width: 430px) {
+  .cine__video { object-position: 55% center; }
 }
 
 /* ---- Mouvement réduit : version statique, aucun scrubbing imposé ---- */

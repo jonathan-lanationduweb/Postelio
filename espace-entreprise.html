@@ -91,10 +91,10 @@
             <p class="dash-subtitle" id="company-line">Voici l'activité de votre entreprise.</p>
 
             <div class="dash-metrics">
-              <div class="dash-metric"><b id="metric-active">—</b><span>offres actives</span></div>
-              <div class="dash-metric"><b id="metric-applications">—</b><span>candidatures reçues</span></div>
-              <div class="dash-metric"><b id="metric-new">—</b><span>nouvelles candidatures</span></div>
-              <div class="dash-metric"><b id="metric-renew">—</b><span>offre(s) à renouveler</span></div>
+              <div class="dash-metric"><b id="metric-active">3</b><span>offres actives</span></div>
+              <div class="dash-metric"><b id="metric-applications">18</b><span>candidatures reçues</span></div>
+              <div class="dash-metric"><b id="metric-new">5</b><span>nouvelles candidatures</span></div>
+              <div class="dash-metric"><b id="metric-renew">1</b><span>offre(s) à renouveler</span></div>
             </div>
 
             <p><a class="btn btn-accent" href="publier-offre.html">+ Publier une offre</a></p>
@@ -138,25 +138,27 @@
           <section class="dash-block" id="profil" aria-labelledby="h-profil">
             <h2 id="h-profil">Profil entreprise</h2>
             <div class="card dash-card">
-              <div class="dash-sidebar__id" style="border-bottom:0;margin-bottom:0;padding-left:0;">
+              <div class="profile-head">
                 <span class="avatar" id="profil-logo" aria-hidden="true">FB</span>
                 <span>
-                  <strong id="profil-name">Fiduciaire Bellecour</strong>
-                  <span><span id="profil-sector">Finance &amp; Comptabilité</span> — <span id="profil-city">Lyon</span></span>
+                  <span class="profile-head__name" id="profil-name">Fiduciaire Bellecour</span>
+                  <span class="profile-head__meta"><span id="profil-sector">Finance &amp; Comptabilité</span> · <span id="profil-city">Lyon</span></span>
                 </span>
               </div>
-              <div class="form-field" style="margin-top:var(--sp-4);">
-                <label for="profil-desc">Présentation de l'entreprise</label>
-                <textarea id="profil-desc" rows="4">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</textarea>
+              <div class="profile-form">
+                <div class="form-field">
+                  <label for="profil-desc">Présentation de l'entreprise</label>
+                  <textarea id="profil-desc" rows="4">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</textarea>
+                </div>
+                <p class="text-muted form-hint">Une fiche complète attire davantage de candidatures.</p>
+                <div class="profile-meter" role="img" aria-label="Profil complété à 75 %">
+                  <span class="profile-meter__fill-75"></span>
+                </div>
+                <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque un logo et une photo de vos locaux.</p>
               </div>
-              <p class="text-muted" style="margin-block:var(--sp-3);">Une fiche complète attire davantage de candidatures.</p>
-              <div class="profile-meter" role="img" aria-label="Profil complété à 75 %">
-                <span class="profile-meter__fill-75"></span>
-              </div>
-              <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque un logo et une photo de vos locaux.</p>
-              <div class="form-actions" style="margin-top:var(--sp-4);">
+              <div class="profile-actions">
                 <button type="button" class="btn btn-primary" data-toast="Profil enregistré (démonstration).">Enregistrer</button>
-                <a class="btn btn-ghost" href="publier-savoir-faire.html">Publier un savoir-faire</a>
+                <a class="btn btn-ghost secondary" href="publier-savoir-faire.html">Partager un savoir-faire</a>
               </div>
             </div>
           </section>
@@ -270,6 +272,38 @@
     </div>
   </main>
 
+  <!-- Modale : refus d'une candidature (accessible, focus piégé via dashboard.js) -->
+  <div class="modal-overlay" id="refus-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="refus-modal-title">
+      <div class="modal__head">
+        <h2 class="modal__title" id="refus-modal-title">Refuser la candidature</h2>
+        <button type="button" class="modal-close" data-refus-close aria-label="Fermer la fenêtre">✕</button>
+      </div>
+      <form class="modal__body" id="refus-form">
+        <fieldset>
+          <legend>Motif (interne, non transmis)</legend>
+          <label class="auth-role"><input type="radio" name="refus-motif" value="profil"> Profil ne correspondant pas</label>
+          <label class="auth-role"><input type="radio" name="refus-motif" value="experience"> Expérience insuffisante</label>
+          <label class="auth-role"><input type="radio" name="refus-motif" value="pourvu"> Poste déjà pourvu</label>
+          <label class="auth-role"><input type="radio" name="refus-motif" value="dispo"> Disponibilités incompatibles</label>
+          <label class="auth-role"><input type="radio" name="refus-motif" value="autre"> Autre</label>
+        </fieldset>
+        <div class="field">
+          <label for="refus-message">Message envoyé au candidat</label>
+          <textarea id="refus-message" rows="6"></textarea>
+        </div>
+        <div class="field--checkbox">
+          <input type="checkbox" id="refus-courtois" checked>
+          <label for="refus-courtois">Utiliser un message courtois prédéfini</label>
+        </div>
+      </form>
+      <div class="modal__actions">
+        <button type="button" class="btn btn-outline" data-refus-close>Annuler</button>
+        <button type="button" class="btn btn-primary" id="refus-confirm">Confirmer le refus</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -302,10 +336,10 @@
         <nav class="footer-col" aria-label="Liens recruteurs">
           <h2>Recruteurs</h2>
           <ul>
+            <li><a href="espace-entreprise.html">Espace recruteur</a></li>
             <li><a href="publier-offre.html">Publier une offre</a></li>
-            <li><a href="publier-savoir-faire.html">Partager un savoir-faire</a></li>
-            <li><a href="espace-entreprise.html">Espace entreprise</a></li>
-            <li><a href="connexion.html">Se connecter</a></li>
+            <li><a href="a-propos.html">Pourquoi Postelio&nbsp;?</a></li>
+            <li><a href="contact.html">Contact</a></li>
           </ul>
         </nav>
         <nav class="footer-col" aria-label="Liens de la plateforme">
@@ -315,7 +349,6 @@
             <li><a href="contact.html">Contact</a></li>
             <li><a href="mentions-legales.html">Mentions légales</a></li>
             <li><a href="confidentialite.html">Confidentialité</a></li>
-            <li><a href="paiement.html">Renouvellement d'offre (10&nbsp;€)</a></li>
           </ul>
         </nav>
       </div>

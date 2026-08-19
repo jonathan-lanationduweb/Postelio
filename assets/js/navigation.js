@@ -72,10 +72,12 @@
       var sub = isEmp ? (session.company || "Espace recruteur") : "Espace candidat";
 
       var menu = isEmp ? [
-        ["Mon espace entreprise", "espace-entreprise.html"],
-        ["Profil entreprise", "espace-entreprise.html#profil"],
+        ["Tableau de bord", "espace-entreprise.html"],
         ["Mes offres", "espace-entreprise.html#offres"],
-        ["Candidatures reçues", "espace-entreprise.html#candidatures"],
+        ["Candidatures", "espace-entreprise.html#candidatures"],
+        ["Publier une offre", "publier-offre.html"],
+        ["Profil entreprise", "espace-entreprise.html#profil"],
+        ["Messages", "espace-entreprise.html#messages"],
         ["Facturation", "espace-entreprise.html#facturation"],
         ["Paramètres", "espace-entreprise.html#parametres"]
       ] : [

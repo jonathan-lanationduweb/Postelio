@@ -64,9 +64,222 @@
 
   var FOLLOW_UP = "Puis-je vous aider sur un autre sujet ?";
 
-  var messages, shortcuts, panel, toggle;
+  var messages, shortcuts, panel, toggle, input;
   var opened = false;
   var busy = false;
+
+  /* ==========================================================================
+     Analyse d'intention de la saisie libre.
+     Principe : tout est mis en minuscules et débarrassé des accents, puis on
+     teste des tables de mots-clés. L'ordre des tests compte (les intentions
+     spécifiques passent avant « emploi », qui est la plus générique).
+     ========================================================================== */
+
+  function normalize(str) {
+    return (str == null ? "" : String(str))
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "");
+  }
+
+  /* Mots trop génériques pour servir de filtre sur les offres. */
+  var STOPWORDS = {
+    "emploi": 1, "emplois": 1, "poste": 1, "postes": 1, "offre": 1, "offres": 1,
+    "job": 1, "jobs": 1, "travail": 1, "metier": 1, "metiers": 1, "cherche": 1,
+    "recherche": 1, "recherches": 1, "trouver": 1, "voudrais": 1, "veux": 1,
+    "aimerais": 1, "suis": 1, "dans": 1, "pour": 1, "avec": 1, "sur": 1, "une": 1,
+    "des": 1, "les": 1, "mon": 1, "mes": 1, "ma": 1, "que": 1, "quel": 1,
+    "quelle": 1, "comme": 1, "est": 1, "chez": 1, "vers": 1, "region": 1,
+    "secteur": 1, "domaine": 1, "candidat": 1, "recherchez": 1, "bonjour": 1
+  };
+
+  var JOB_WORDS = ["secretaire", "assistant", "assistante", "assistanat",
+    "comptable", "comptabilite", "gestionnaire", "gestion", "accueil",
+    "standardiste", "office manager", "administratif", "administrative",
+    "administration", "juridique", "medical", "medicale", "paie", "facturation",
+    "direction", "commercial", "commerciale", "saisie", "reception",
+    "receptionniste", "hotesse", "ressources humaines", "assistant rh"];
+
+  /* Chaque table = liste de sous-chaînes recherchées dans le texte normalisé. */
+  var KW = {
+    suivi: ["ou en est ma candidature", "ou en sont mes candidature",
+      "suivre ma candidature", "suivre mes candidature", "suivi de ma candidature",
+      "suivi de mes candidature", "suivi de candidature", "ma candidature",
+      "mes candidatures", "statut de ma candidature", "reponse a ma candidature",
+      "j'ai postule", "j ai postule"],
+    renouveler: ["renouvel", "prolonger mon offre", "prolonger l'offre",
+      "prolonger une offre", "payer mon offre", "payer l'offre", "remettre en ligne"],
+    recruter: ["recrut", "publier une offre", "publier une annonce",
+      "deposer une offre", "poster une offre", "poster une annonce", "embaucher",
+      "je recrute", "diffuser une offre", "publier une offre d'emploi"],
+    contact: ["contact", "parler a quelqu", "parler a un", "parler a une personne",
+      "un humain", "une humaine", "un vrai", "joindre l'equipe", "vous joindre",
+      "conseiller", "assistance humaine", "appeler"],
+    guide: ["je ne sais pas quel metier", "sais pas quel metier", "pas quel metier",
+      "aucune idee", "sais pas quoi faire", "je ne sais pas quoi", "sais pas quoi",
+      "je suis perdu", "je suis perdue", "m'orienter", "besoin d'orientation",
+      "je ne sais pas ce que"],
+    emploi: ["emploi", "poste", "offre", "je cherche", "cherche un", "cherche du",
+      "recherche un", "recherche d'emploi", "travail", "job", "metier", "carriere",
+      "cdi", "cdd", "temps partiel", "temps plein", "teletravail", "alternance"]
+  };
+
+  function matchesAny(text, list) {
+    for (var i = 0; i < list.length; i++) {
+      if (text.indexOf(list[i]) !== -1) { return true; }
+    }
+    return false;
+  }
+
+  function detectIntent(text) {
+    var t = normalize(text);
+    if (matchesAny(t, KW.suivi)) { return { type: "suivi" }; }
+    if (matchesAny(t, KW.renouveler) || /(^|\D)10(\D|$)/.test(t)) { return { type: "renouveler" }; }
+    if (matchesAny(t, KW.recruter)) { return { type: "recruter" }; }
+    if (matchesAny(t, KW.contact)) { return { type: "contact" }; }
+    if (matchesAny(t, KW.guide)) { return { type: "guide" }; }
+    if (matchesAny(t, KW.emploi) || matchesAny(t, JOB_WORDS)) { return { type: "emploi" }; }
+    return { type: "default" };
+  }
+
+  /* Mots « utiles » du message (hors mots vides) pour filtrer les offres. */
+  function significantTokens(text) {
+    return normalize(text)
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter(function (w) { return w.length >= 3 && !STOPWORDS[w]; });
+  }
+
+  /* Sélectionne jusqu'à 3 offres dont le titre/catégorie/ville contient un des
+     mots. Sans mot utile, renvoie simplement quelques offres récentes. */
+  function matchOffers(offers, tokens) {
+    if (!tokens.length) { return offers.slice(0, 3); }
+    var scored = [];
+    offers.forEach(function (o) {
+      var hay = normalize([o.titre, o.categorieLabel, o.categorie, o.ville, o.contrat].join(" "));
+      var score = 0;
+      tokens.forEach(function (tk) { if (hay.indexOf(tk) !== -1) { score++; } });
+      if (score > 0) { scored.push({ offer: o, score: score }); }
+    });
+    scored.sort(function (a, b) { return b.score - a.score; });
+    return scored.slice(0, 3).map(function (x) { return x.offer; });
+  }
+
+  /* ---- Réponses aux intentions (chaînent botSay puis la relance FOLLOW_UP) ---- */
+
+  function thenFollowUp(promise) {
+    return promise.then(function () { return botSay(FOLLOW_UP); });
+  }
+
+  function respondSuivi() {
+    var isCandidate = window.SS && SS.auth && SS.auth.isCandidate();
+    if (isCandidate) {
+      return thenFollowUp(botSay(
+        "Retrouvez l'état de chacune de vos candidatures dans votre " +
+        '<a href="espace-candidat.html#candidatures">espace candidat</a> : ' +
+        "statut, date d'envoi et réponses des recruteurs y sont récapitulés.", true));
+    }
+    return thenFollowUp(botSay(
+      "Pour suivre une candidature, connectez-vous à votre " +
+      '<a href="connexion.html">compte candidat</a>. Vous n\'en avez pas encore ? ' +
+      'La <a href="inscription.html">création d\'un compte candidat</a> est gratuite ' +
+      "et vous permet de suivre vos candidatures et vos offres enregistrées.", true));
+  }
+
+  function respondRenouveler() {
+    var r = (window.APP_CONFIG && APP_CONFIG.payment && APP_CONFIG.payment.renewal) || {};
+    var price = r.price != null ? r.price : 10;
+    var days = r.durationDays != null ? r.durationDays : 60;
+    return thenFollowUp(botSay(
+      "Lorsqu'une de vos offres arrive à expiration, un bouton " +
+      "« Renouveler pour " + price + " € » apparaît : il remet l'annonce en ligne " +
+      "pour " + days + " jours. Tout se passe dans la rubrique Facturation de votre " +
+      '<a href="espace-entreprise.html#facturation">espace entreprise</a>. ' +
+      "Dans ce prototype, le paiement est entièrement simulé.", true));
+  }
+
+  function respondRecruter() {
+    return thenFollowUp(botSay(
+      "Pour recruter, créez un " +
+      '<a href="inscription.html">compte entreprise</a> (ou ' +
+      '<a href="connexion.html">connectez-vous</a>), puis publiez votre annonce ' +
+      'depuis la page <a href="publier-offre.html">Publier une offre</a>. Vous ' +
+      'suivez ensuite vos offres et candidatures dans votre ' +
+      '<a href="espace-entreprise.html">espace entreprise</a>.', true));
+  }
+
+  function respondContact() {
+    return thenFollowUp(botSay(
+      "Notre équipe vous répond du lundi au vendredi, de 9h à 18h. " +
+      'Le plus simple est le <a href="contact.html">formulaire de contact</a> : ' +
+      "nous répondons généralement sous un jour ouvré.", true));
+  }
+
+  function respondGuide() {
+    return thenFollowUp(botSay(
+      "Pas d'inquiétude, c'est fait pour ça ! Notre " +
+      '<a href="recherche-guidee.html">recherche guidée</a> vous pose quelques ' +
+      "questions simples et vous oriente vers les métiers et offres qui vous " +
+      "correspondent. Vous pouvez aussi lancer le mini-quiz ci-dessous.", true));
+  }
+
+  function respondDefault() {
+    return thenFollowUp(botSay(
+      "Je ne suis pas certaine d'avoir bien compris. Je peux vous aider à " +
+      "trouver une offre, suivre une candidature, publier une annonce ou " +
+      "contacter l'équipe — reformulez votre question, ou utilisez les " +
+      "raccourcis ci-dessous.", true));
+  }
+
+  function respondEmploi(text) {
+    var tokens = significantTokens(text);
+    if (!(window.SS && typeof SS.getActiveOffers === "function")) {
+      return thenFollowUp(botSay(
+        'Vous pouvez consulter toutes nos <a href="offres.html">offres d\'emploi</a> ' +
+        "et filtrer par mot-clé, ville et type de contrat.", true));
+    }
+    busy = true; /* verrouille la saisie le temps de charger les offres */
+    return SS.getActiveOffers().then(function (offers) {
+      busy = false;
+      var results = matchOffers(offers || [], tokens);
+      var allUrl = "offres.html" + (tokens.length ? "?q=" + encodeURIComponent(tokens.join(" ")) : "");
+      var html;
+      if (results.length) {
+        var items = results.map(function (o) {
+          var label = SS.escapeHtml(o.titre) + (o.ville ? " — " + SS.escapeHtml(o.ville) : "");
+          return '<li><a href="offre-detail.html?id=' + encodeURIComponent(o.id) + '">' + label + "</a></li>";
+        }).join("");
+        html = "Voici des offres qui pourraient vous intéresser :" +
+          '<ul class="chatbot-offer-list">' + items + "</ul>" +
+          '<a href="' + allUrl + '">Voir toutes les offres →</a>';
+      } else {
+        html = "Je n'ai pas trouvé d'offre correspondant précisément à votre " +
+          'recherche. Explorez toutes nos <a href="' + allUrl + '">offres d\'emploi</a>, ' +
+          'ou laissez-vous guider par la <a href="recherche-guidee.html">recherche guidée</a>.';
+      }
+      return thenFollowUp(botSay(html, true));
+    }).catch(function () {
+      busy = false;
+      return thenFollowUp(botSay(
+        "Je n'ai pas réussi à récupérer les offres à l'instant. Vous pouvez les " +
+        'consulter directement sur la page <a href="offres.html">Offres d\'emploi</a>.', true));
+    });
+  }
+
+  function handleUserText(raw) {
+    var text = (raw == null ? "" : String(raw)).trim();
+    if (!text || busy) { return; }
+    addMessage(text, "user");
+    switch (detectIntent(text).type) {
+      case "suivi": respondSuivi(); break;
+      case "renouveler": respondRenouveler(); break;
+      case "recruter": respondRecruter(); break;
+      case "contact": respondContact(); break;
+      case "guide": respondGuide(); break;
+      case "emploi": respondEmploi(text); break;
+      default: respondDefault();
+    }
+  }
 
   document.addEventListener("DOMContentLoaded", function () {
     injectWidget();
@@ -76,6 +289,8 @@
     var closeBtn = document.getElementById("chatbot-close");
     messages = document.getElementById("chatbot-messages");
     shortcuts = document.getElementById("chatbot-shortcuts");
+    input = document.getElementById("chatbot-text");
+    var inputForm = document.getElementById("chatbot-input");
 
     function setOpen(open) {
       panel.classList.toggle("is-open", open);
@@ -88,8 +303,8 @@
           opened = true;
           botSay(WELCOME);
         }
-        var firstBtn = panel.querySelector(".chatbot-shortcuts button");
-        if (firstBtn) { firstBtn.focus(); }
+        /* Focus sur la saisie libre : le clavier est prêt dès l'ouverture. */
+        if (input) { input.focus(); }
       }
     }
 
@@ -149,6 +364,38 @@
     /* Source des réponses — actuellement locale, plus tard : API d'IA. */
     function getAnswer(scenario) {
       return Promise.resolve(scenario.answer);
+    }
+
+    /* ---- Saisie libre ---- */
+    var MAX_INPUT_HEIGHT = 96; /* ~4 lignes */
+
+    function autoResize() {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, MAX_INPUT_HEIGHT) + "px";
+    }
+
+    function submitInput() {
+      /* Ne rien effacer tant que le bot répond : le message serait perdu. */
+      if (busy || !input.value.trim()) { return; }
+      var text = input.value;
+      input.value = "";
+      autoResize();
+      handleUserText(text);
+    }
+
+    if (inputForm && input) {
+      inputForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        submitInput();
+      });
+      input.addEventListener("input", autoResize);
+      /* Entrée envoie ; Shift+Entrée insère une nouvelle ligne. */
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          submitInput();
+        }
+      });
     }
 
     /* ---- Mini-quiz dans la conversation ---- */
@@ -234,6 +481,19 @@
             return '<button type="button" data-scenario="' + s.id + '">' + s.label + "</button>";
           }).join("") +
         "</div>" +
+        '<form id="chatbot-input" class="chatbot-input">' +
+          '<label class="sr-only" for="chatbot-text">Écrivez votre message</label>' +
+          '<textarea id="chatbot-text" class="chatbot-input__field" rows="1" ' +
+            'placeholder="Écrivez votre message…" autocomplete="off" ' +
+            'aria-describedby="chatbot-input-hint"></textarea>' +
+          '<span id="chatbot-input-hint" class="sr-only">Appuyez sur Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne.</span>' +
+          '<button type="submit" class="chatbot-input__send" aria-label="Envoyer">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+              'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>' +
+            "</svg>" +
+          "</button>" +
+        "</form>" +
       "</section>";
     while (wrapper.firstChild) {
       document.body.appendChild(wrapper.firstChild);

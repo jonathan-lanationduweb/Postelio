@@ -47,8 +47,8 @@ window.APP_CONFIG = {
     renewal: {
       price: 10,
       currency: "EUR",
-      durationDays: 60,
-      label: "Renouvellement d'une offre d'emploi (60 jours)"
+      durationDays: 30,
+      label: "Renouvellement d'une offre d'emploi (30 jours)"
     }
   },
 

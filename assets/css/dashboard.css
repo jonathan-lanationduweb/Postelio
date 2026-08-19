@@ -111,6 +111,27 @@
   color: var(--c-ink-soft);
 }
 
+/* Carte profil entreprise : en-tête logo aligné, présentation pleine largeur,
+   jauge de complétude, puis une barre d'actions clairement séparée. */
+.profile-head { display: flex; align-items: center; gap: var(--sp-3); }
+.profile-head .avatar {
+  width: 56px; height: 56px; border-radius: var(--radius-m);
+  font-size: 1.25rem; background: var(--c-primary-dark);
+}
+.profile-head__name { display: block; font-family: var(--font-serif); font-size: 1.25rem; color: var(--c-primary-dark); line-height: 1.2; }
+.profile-head__meta { display: block; margin-top: 3px; font-size: var(--text-sm); color: var(--c-ink-soft); }
+.profile-form { margin-top: var(--sp-4); }
+.profile-form textarea { width: 100%; }
+.profile-form .form-hint { margin-block: var(--sp-3) 0; }
+.profile-actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3);
+  margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--c-line);
+}
+.profile-actions .secondary { margin-left: auto; }
+@media (max-width: 560px) {
+  .profile-actions .secondary { margin-left: 0; width: 100%; }
+}
+
 .dash-tip {
   margin-top: var(--sp-5);
 }
@@ -610,46 +631,8 @@
   margin-top: var(--sp-4);
 }
 
-/* ============================================================
-   Compte : avatar navbar + menu déroulant (candidat / recruteur)
-   ============================================================ */
-.account-menu { position: relative; }
-.avatar-btn {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  background: none; border: 0; padding: 2px; cursor: pointer;
-  color: inherit; border-radius: var(--radius-pill);
-}
-.avatar-btn .avatar { width: 40px; height: 40px; font-size: 0.95rem; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25); }
-.avatar-btn:hover .avatar { filter: brightness(1.07); }
-.avatar-btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
-.avatar-caret { font-size: 0.7rem; opacity: 0.85; }
-
-.account-dropdown {
-  position: absolute; top: calc(100% + 10px); right: 0; z-index: 300;
-  min-width: 250px;
-  background: var(--c-surface); color: var(--c-ink);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius-m);
-  box-shadow: var(--shadow-l);
-  padding: 6px;
-  animation: account-pop 140ms ease;
-}
-@keyframes account-pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-.account-dropdown__head { padding: 10px 12px 8px; }
-.account-dropdown__head strong { display: block; font-family: var(--font-serif); font-size: 1.05rem; color: var(--c-primary-dark); }
-.account-dropdown__head span { display: block; font-size: var(--text-xs); color: var(--c-ink-soft); }
-.account-dropdown__links { display: grid; padding: 6px 0; border-top: 1px solid var(--c-line); }
-.account-dropdown a[role="menuitem"],
-.account-dropdown__logout {
-  display: block; width: 100%; text-align: left;
-  padding: 9px 12px; border-radius: var(--radius-s);
-  color: var(--c-ink); text-decoration: none; font-size: 0.95rem;
-  background: none; border: 0; cursor: pointer;
-}
-.account-dropdown a[role="menuitem"]:hover,
-.account-dropdown a[role="menuitem"]:focus-visible { background: var(--c-primary-soft); color: var(--c-primary-dark); }
-.account-dropdown__logout { border-top: 1px solid var(--c-line); margin-top: 4px; color: var(--c-error); font-weight: 600; }
-.account-dropdown__logout:hover, .account-dropdown__logout:focus-visible { background: var(--c-error-soft); }
+/* Le menu compte (avatar + dropdown) vit désormais dans components.css
+   (chargé sur TOUTES les pages, pas seulement les espaces). */
 
 /* ============================================================
    Espace (candidat / recruteur) : layout sidebar + contenu
@@ -695,8 +678,12 @@
 .status-vue { background: var(--c-primary-soft); color: var(--c-primary-dark); }
 .status-preselection { background: var(--c-accent-soft); color: var(--c-accent-dark); }
 .status-entretien { background: #efe3ff; color: #5a3ea0; }
+.status-entretien-realise { background: #e4d6fb; color: #4a2f90; }
 .status-recue { background: var(--c-success-soft); color: #1f6b45; }
+.status-offre-recue { background: var(--c-success-soft); color: #1f6b45; }
 .status-refusee { background: var(--c-error-soft); color: #a23b3b; }
+.status-non-retenue { background: var(--c-error-soft); color: var(--c-error); }
+.status-retiree { background: var(--c-bg-alt); color: var(--c-ink-soft); }
 
 /* Connexion / inscription : rôles, démo, choix */
 .auth-roles { border: 1px solid var(--c-line); border-radius: var(--radius-m); padding: 10px 12px; }
@@ -734,5 +721,4 @@
 }
 @media (max-width: 640px) {
   .role-cards { grid-template-columns: 1fr; }
-  .account-dropdown { position: fixed; left: 12px; right: 12px; top: auto; min-width: 0; }
 }

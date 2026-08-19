@@ -77,10 +77,12 @@
         <p>Accédez à votre espace candidat ou recruteur.</p>
 
         <form id="login-form" novalidate>
-          <fieldset class="field auth-roles">
+          <fieldset class="field auth-segment">
             <legend>Je me connecte en tant que</legend>
-            <label class="auth-role"><input type="radio" name="login-role" value="candidate" checked> Candidat</label>
-            <label class="auth-role"><input type="radio" name="login-role" value="employer"> Recruteur</label>
+            <div class="segment">
+              <label class="segment__opt"><input type="radio" name="login-role" value="candidate" checked><span>Candidat</span></label>
+              <label class="segment__opt"><input type="radio" name="login-role" value="employer"><span>Recruteur</span></label>
+            </div>
           </fieldset>
           <div class="field">
             <label for="login-email">Adresse e-mail *</label>
@@ -139,10 +141,10 @@
         <nav class="footer-col" aria-label="Liens recruteurs">
           <h2>Recruteurs</h2>
           <ul>
+            <li><a href="espace-entreprise.html">Espace recruteur</a></li>
             <li><a href="publier-offre.html">Publier une offre</a></li>
-            <li><a href="publier-savoir-faire.html">Partager un savoir-faire</a></li>
-            <li><a href="espace-entreprise.html">Espace entreprise</a></li>
-            <li><a href="connexion.html">Se connecter</a></li>
+            <li><a href="a-propos.html">Pourquoi Postelio&nbsp;?</a></li>
+            <li><a href="contact.html">Contact</a></li>
           </ul>
         </nav>
         <nav class="footer-col" aria-label="Liens de la plateforme">
@@ -152,7 +154,6 @@
             <li><a href="contact.html">Contact</a></li>
             <li><a href="mentions-legales.html">Mentions légales</a></li>
             <li><a href="confidentialite.html">Confidentialité</a></li>
-            <li><a href="paiement.html">Renouvellement d'offre (10&nbsp;€)</a></li>
           </ul>
         </nav>
       </div>
