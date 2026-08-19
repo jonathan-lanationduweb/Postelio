@@ -5,6 +5,32 @@
 (function () {
   "use strict";
 
+  /* Famille d'icônes SVG « line » (trait fin, currentColor) — voir la classe
+     .icon dans components.css. Un même concept réutilise toujours le même tracé. */
+  function svgIcon(paths) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + paths + "</svg>";
+  }
+  var ICONS = {
+    pin: svgIcon('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>'),
+    users: svgIcon('<path d="M17 20v-1.7a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7.5" r="3.3"/><path d="M22 20v-1.7a4 4 0 0 0-3-3.85"/><path d="M16 4.15a4 4 0 0 1 0 7.7"/>'),
+    briefcase: svgIcon('<rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M2.5 12.5h19"/>'),
+    phone: svgIcon('<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.8.7A2 2 0 0 1 22 16.9z"/>'),
+    mail: svgIcon('<rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M3 6.5l9 6 9-6"/>'),
+    globe: svgIcon('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"/>'),
+    building: svgIcon('<rect x="4.5" y="3" width="15" height="18" rx="1.5"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M9 15h.01M15 15h.01"/><path d="M10 21v-3.5h4V21"/>'),
+    home: svgIcon('<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/>'),
+    heart: svgIcon('<path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/>'),
+    cap: svgIcon('<path d="M2.5 8.5 12 4.5l9.5 4-9.5 4-9.5-4z"/><path d="M6.5 10.3V15c0 1.2 2.5 2.3 5.5 2.3s5.5-1.1 5.5-2.3v-4.7"/><path d="M21.5 8.5v5"/>'),
+    transport: svgIcon('<rect x="6" y="3.5" width="12" height="13" rx="2.5"/><path d="M6 11h12"/><path d="M9.5 16.5 7.5 20M14.5 16.5 16.5 20"/><path d="M9 13.7h.01M15 13.7h.01"/>'),
+    calendar: svgIcon('<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v4M16 3v4"/>'),
+    euro: svgIcon('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.8a4.5 4.5 0 1 0 0 6.4"/><path d="M7 11h6M7 13.4h5"/>'),
+    check: svgIcon('<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.5"/>')
+  };
+  function iconEl(name, cls) {
+    return '<span class="icon' + (cls ? " " + cls : "") + '" aria-hidden="true">' + (ICONS[name] || "") + "</span>";
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     renderFeatured();
     initDirectory();
@@ -127,7 +153,7 @@
       var e = SS.escapeHtml;
       var offerCount = counts[company.id] || 0;
 
-      document.title = company.nom + " – recrutement | SuperSecrétaire";
+      document.title = company.nom + " – recrutement | Postelio";
 
       document.getElementById("company-name").textContent = company.nom;
       document.getElementById("company-activity").textContent = company.activite;
@@ -154,9 +180,9 @@
           ? offerCount + (offerCount > 1 ? " offres en ligne" : " offre en ligne")
           : "Aucune offre en ce moment";
         meta.innerHTML =
-          "<li><span aria-hidden=\"true\">📍</span>" + e(company.ville) + " · " + e(company.departement) + "</li>" +
-          "<li><span aria-hidden=\"true\">👥</span>" + e(company.taille) + "</li>" +
-          "<li><span aria-hidden=\"true\">💼</span>" + e(offerLabel) + "</li>";
+          "<li>" + iconEl("pin") + e(company.ville) + " · " + e(company.departement) + "</li>" +
+          "<li>" + iconEl("users") + e(company.taille) + "</li>" +
+          "<li>" + iconEl("briefcase") + e(offerLabel) + "</li>";
       }
 
       /* Chiffres clés. */
@@ -174,14 +200,14 @@
       var coords = document.getElementById("company-coordinates");
       if (coords) {
         coords.innerHTML =
-          coordRow("📍", "Adresse", e(company.adresse)) +
-          coordRow("🏙️", "Ville", e(company.ville) + " — " + e(company.departement)) +
-          coordRow("☎️", "Téléphone", e(company.telephone)) +
-          coordRow("✉️", "E-mail", e(company.email)) +
-          coordRow("🌐", "Site internet",
+          coordRow("pin", "Adresse", e(company.adresse)) +
+          coordRow("pin", "Ville", e(company.ville) + " — " + e(company.departement)) +
+          coordRow("phone", "Téléphone", e(company.telephone)) +
+          coordRow("mail", "E-mail", e(company.email)) +
+          coordRow("globe", "Site internet",
             '<a href="' + e(company.siteWeb) + '" rel="nofollow">' + e(company.siteWeb.replace("https://", "")) + "</a>") +
-          coordRow("🏢", "Secteur", e(company.secteur)) +
-          coordRow("👥", "Effectif", e(company.taille));
+          coordRow("building", "Secteur", e(company.secteur)) +
+          coordRow("users", "Effectif", e(company.taille));
       }
 
       /* Valeurs → cartes ; avantages → cartes à icône. */
@@ -223,9 +249,9 @@
     return '<div class="stat-tile"><strong>' + e(value) + "</strong><span>" + e(label) + "</span></div>";
   }
 
-  function coordRow(icon, label, valueHtml) {
+  function coordRow(iconName, label, valueHtml) {
     return '<li class="company-coords__row">' +
-      '<span class="company-coords__icon" aria-hidden="true">' + icon + "</span>" +
+      '<span class="company-coords__icon" aria-hidden="true"><span class="icon">' + (ICONS[iconName] || "") + "</span></span>" +
       '<span class="company-coords__body"><span class="company-coords__label">' + label + "</span>" +
       '<span class="company-coords__value">' + valueHtml + "</span></span></li>";
   }
@@ -243,15 +269,15 @@
   /* Icône déduite du libellé de l'avantage (sobre, sans surcharge). */
   function perkIcon(text) {
     var t = (text || "").toLowerCase();
-    if (/t[ée]l[ée]travail|distance|remote/.test(t)) { return "🏠"; }
-    if (/mutuelle|sant[ée]|pr[ée]voyance/.test(t)) { return "🩺"; }
-    if (/formation|mont[ée]e|comp[ée]tence/.test(t)) { return "🎓"; }
-    if (/parking|v[ée]lo|transport|m[ée]tro|acc[èe]s/.test(t)) { return "🚉"; }
-    if (/horaire|planning|temps|flex/.test(t)) { return "🗓️"; }
-    if (/13|prime|salaire|r[ée]mun[ée]ration|ticket|repas/.test(t)) { return "💶"; }
-    if (/locaux|bureau|espace|cadre/.test(t)) { return "🏢"; }
-    if (/[ée]quipe|ambiance|convivial/.test(t)) { return "🤝"; }
-    return "✓";
+    if (/t[ée]l[ée]travail|distance|remote/.test(t)) { return "home"; }
+    if (/mutuelle|sant[ée]|pr[ée]voyance/.test(t)) { return "heart"; }
+    if (/formation|mont[ée]e|comp[ée]tence/.test(t)) { return "cap"; }
+    if (/parking|v[ée]lo|transport|m[ée]tro|acc[èe]s/.test(t)) { return "transport"; }
+    if (/horaire|planning|temps|flex/.test(t)) { return "calendar"; }
+    if (/13|prime|salaire|r[ée]mun[ée]ration|ticket|repas/.test(t)) { return "euro"; }
+    if (/locaux|bureau|espace|cadre/.test(t)) { return "building"; }
+    if (/[ée]quipe|ambiance|convivial/.test(t)) { return "users"; }
+    return "check";
   }
 
   function renderPerkCards(id, perks) {
@@ -259,8 +285,8 @@
     if (!el || !perks) { return; }
     var e = SS.escapeHtml;
     el.innerHTML = perks.map(function (p) {
-      return '<div class="perk-card"><span class="perk-card__icon" aria-hidden="true">' +
-        perkIcon(p) + "</span><span>" + e(p) + "</span></div>";
+      return '<div class="perk-card"><span class="perk-card__icon icon" aria-hidden="true">' +
+        (ICONS[perkIcon(p)] || "") + "</span><span>" + e(p) + "</span></div>";
     }).join("");
   }
 

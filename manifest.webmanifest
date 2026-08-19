@@ -1,7 +1,7 @@
 {
-  "name": "SuperSecrétaire — L'emploi administratif",
-  "short_name": "SuperSecrétaire",
-  "description": "Offres d'emploi, annuaire d'entreprises et savoir-faire des métiers du secrétariat et de l'assistanat.",
+  "name": "Postelio — L'emploi qui vous correspond",
+  "short_name": "Postelio",
+  "description": "Offres d'emploi, annuaire d'entreprises et conseils, dans tous les secteurs.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://jonathan-lanationduweb.github.io/SuperSecr-taire/sitemap.xml
+Sitemap: https://jonathan-lanationduweb.github.io/Postelio/sitemap.xml

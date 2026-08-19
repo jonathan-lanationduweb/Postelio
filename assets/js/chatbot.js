@@ -59,7 +59,7 @@
     }
   ];
 
-  var WELCOME = "Bonjour, je suis Clémence 👋 Posez-moi une question ci-dessous — " +
+  var WELCOME = "Bonjour, je suis Clémence. Posez-moi une question ci-dessous — " +
     "ou faites le mini-quiz : je vous oriente en quelques réponses.";
 
   var FOLLOW_UP = "Puis-je vous aider sur un autre sujet ?";
@@ -400,7 +400,7 @@
 
     /* ---- Mini-quiz dans la conversation ---- */
     function startQuizInChat() {
-      addMessage("Je veux être guidé(e) 🎯", "user");
+      addMessage("Je veux être guidé(e)", "user");
       if (typeof SS.guidedSearchMount !== "function") {
         botSay('Bien sûr ! Rendez-vous sur la <a href="recherche-guidee.html">recherche guidée</a> : quelques questions et je vous oriente.', true);
         return;
@@ -467,16 +467,20 @@
         '<span class="chatbot-toggle__label">Besoin d\'aide&nbsp;?</span>' +
         '<span class="chatbot-dot" hidden aria-hidden="true"></span>' +
       "</button>" +
-      '<section id="chatbot-panel" class="chatbot-panel" aria-hidden="true" aria-label="Assistant SuperSecrétaire">' +
+      '<section id="chatbot-panel" class="chatbot-panel" aria-hidden="true" aria-label="Assistant Postelio">' +
         '<div class="chatbot-header">' +
           '<span class="avatar" aria-hidden="true">C</span>' +
           "<div><h2>Clémence</h2>" +
-          "<p>Assistante SuperSecrétaire — réponses automatiques</p></div>" +
+          "<p>Assistante Postelio — réponses automatiques</p></div>" +
           '<button type="button" id="chatbot-close" class="chatbot-close" aria-label="Fermer l\'assistance">×</button>' +
         "</div>" +
         '<div id="chatbot-messages" class="chatbot-messages" aria-live="polite"></div>' +
         '<div id="chatbot-shortcuts" class="chatbot-shortcuts">' +
-          '<button type="button" class="chatbot-quiz-btn" data-chatbot-quiz>🎯 Trouver ce qu\'il me faut — mini-quiz</button>' +
+          '<button type="button" class="chatbot-quiz-btn" data-chatbot-quiz>' +
+            '<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" ' +
+            'stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>' +
+            "</svg></span> Trouver ce qu'il me faut — mini-quiz</button>" +
           SCENARIOS.map(function (s) {
             return '<button type="button" data-scenario="' + s.id + '">' + s.label + "</button>";
           }).join("") +

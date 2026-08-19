@@ -1,5 +1,5 @@
 /**
- * Configuration centrale de SuperSecrétaire.
+ * Configuration centrale de Postelio.
  * Toutes les futures URL d'API sont regroupées ici : lors du passage
  * à WordPress (ou à une passerelle de paiement réelle), il suffira de
  * remplacer les valeurs `null` par les vraies adresses.

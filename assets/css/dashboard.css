@@ -721,4 +721,7 @@
 }
 @media (max-width: 640px) {
   .role-cards { grid-template-columns: 1fr; }
+  /* Boutons de démonstration : une colonne pleine largeur (libellés longs). */
+  .auth-demo-buttons { flex-direction: column; }
+  .auth-demo-buttons .btn { width: 100%; }
 }

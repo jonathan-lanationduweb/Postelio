@@ -5,6 +5,20 @@
 (function () {
   "use strict";
 
+  /* Famille d'icônes SVG « line » (voir .icon dans components.css). */
+  function svgIcon(paths) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + paths + "</svg>";
+  }
+  var ICONS = {
+    link: svgIcon('<path d="M9.5 14.5 14.5 9.5"/><path d="M10.5 6.5 12 5a4 4 0 0 1 6 6l-1.5 1.5"/><path d="M13.5 17.5 12 19a4 4 0 0 1-6-6l1.5-1.5"/>'),
+    mail: svgIcon('<rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M3 6.5l9 6 9-6"/>'),
+    printer: svgIcon('<path d="M6.5 9V3.5h11V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 15h10v5.5H7z"/>')
+  };
+  function iconEl(name) {
+    return '<span class="icon" aria-hidden="true">' + (ICONS[name] || "") + "</span>";
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     renderRecentArticles();
     initBlogList();
@@ -257,7 +271,7 @@
       var article = articles.find(function (a) { return a.id === id; }) || articles[0];
       var e = SS.escapeHtml;
 
-      document.title = article.titre + " | SuperSecrétaire";
+      document.title = article.titre + " | Postelio";
 
       document.getElementById("article-category").textContent = article.categorie;
       document.getElementById("article-title").textContent = article.titre;
@@ -375,11 +389,11 @@
     var enc = encodeURIComponent(url);
     var encTitle = encodeURIComponent(article.titre);
     box.innerHTML =
-      '<button type="button" class="article-share__btn" data-copy><span aria-hidden="true">🔗</span> Copier le lien</button>' +
+      '<button type="button" class="article-share__btn" data-copy>' + iconEl("link") + " Copier le lien</button>" +
       '<a class="article-share__btn" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=' + enc + '"><span aria-hidden="true">in</span> LinkedIn</a>' +
       '<a class="article-share__btn" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=' + enc + '"><span aria-hidden="true">f</span> Facebook</a>' +
-      '<a class="article-share__btn" href="mailto:?subject=' + encTitle + "&body=" + enc + '"><span aria-hidden="true">✉</span> E-mail</a>' +
-      '<button type="button" class="article-share__btn" data-print><span aria-hidden="true">🖨</span> Imprimer</button>';
+      '<a class="article-share__btn" href="mailto:?subject=' + encTitle + "&body=" + enc + '">' + iconEl("mail") + " E-mail</a>" +
+      '<button type="button" class="article-share__btn" data-print>' + iconEl("printer") + " Imprimer</button>";
 
     var copyBtn = box.querySelector("[data-copy]");
     if (copyBtn && navigator.clipboard) {
@@ -387,7 +401,7 @@
         navigator.clipboard.writeText(url).then(function () {
           copyBtn.textContent = "✓ Lien copié";
           SS.toast("Lien de l'article copié.");
-          setTimeout(function () { copyBtn.innerHTML = '<span aria-hidden="true">🔗</span> Copier le lien'; }, 2500);
+          setTimeout(function () { copyBtn.innerHTML = iconEl("link") + " Copier le lien"; }, 2500);
         });
       });
     } else if (copyBtn) { copyBtn.hidden = true; }
@@ -406,7 +420,7 @@
     box.innerHTML =
       '<span class="article-author-card__avatar" aria-hidden="true">' + e(initials) + "</span>" +
       '<p class="article-author-card__name"><strong>' + e(article.auteur) + "</strong></p>" +
-      '<p class="article-author-card__role">Rédaction éditoriale · SuperSecrétaire</p>' +
+      '<p class="article-author-card__role">Rédaction éditoriale · Postelio</p>' +
       '<p class="article-author-card__bio">Des conseils pratiques pour les métiers du secrétariat, de l\'assistanat et de l\'administratif, relus par notre équipe.</p>' +
       '<span class="article-author-card__count">' + count + " article" + (count > 1 ? "s" : "") + " publié" + (count > 1 ? "s" : "") + "</span>";
   }
@@ -441,7 +455,7 @@
       "headline": article.titre,
       "datePublished": article.date,
       "author": { "@type": "Organization", "name": article.auteur },
-      "publisher": { "@type": "Organization", "name": "SuperSecrétaire" },
+      "publisher": { "@type": "Organization", "name": "Postelio" },
       "description": article.resume
     };
     var script = document.createElement("script");

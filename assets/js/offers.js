@@ -164,7 +164,7 @@
       if (el) { el.textContent = value || "—"; }
     };
 
-    document.title = offer.titre + " – " + offer.ville + " | SuperSecrétaire";
+    document.title = offer.titre + " – " + offer.ville + " | Postelio";
 
     set("offer-title", offer.titre);
     set("offer-city", offer.ville + " · " + offer.departement);
@@ -334,7 +334,7 @@
     if (!navigator.share) { btn.hidden = true; return; }
     btn.addEventListener("click", function () {
       navigator.share({
-        title: offer.titre + " — SuperSecrétaire",
+        title: offer.titre + " — Postelio",
         text: "Offre d'emploi : " + offer.titre + " à " + offer.ville,
         url: window.location.href
       }).catch(function () { /* partage annulé */ });

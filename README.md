@@ -1,6 +1,6 @@
-# SuperSecrétaire — prototype
+# Postelio — prototype
 
-**SuperSecrétaire** est une plateforme française dédiée à l'emploi des métiers du **secrétariat, de l'assistanat et de l'administratif**. Elle mélange plusieurs concepts :
+**Postelio** est une plateforme française dédiée à l'emploi des métiers du **secrétariat, de l'assistanat et de l'administratif**. Elle mélange plusieurs concepts :
 
 - un moteur de recherche d'offres d'emploi (avec filtres, tri et pagination) ;
 - une approche humaine proche d'une agence de recrutement ;
@@ -16,7 +16,7 @@
 ## Direction artistique (v2 — refonte)
 
 - Palette « **vert sapin & miel** » conservée mais redistribuée : blanc pour les sections de contenu, crème en respiration, une section sapin forte par page, orange réservé aux actions clés.
-- **Hero éditorial** : typographie serif géante sur deux lignes (seconde en italique), accroche en colonne droite, et **vidéo locale pleine largeur** arrondie (Pexels, HD/SD selon l'écran, lecture automatique silencieuse, bouton Lire/Suspendre, `prefers-reduced-motion` respecté). Maquette Figma d'origine : fichier « SuperSecrétaire — Hero éditorial vidéo ».
+- **Hero éditorial** : typographie serif géante sur deux lignes (seconde en italique), accroche en colonne droite, et **vidéo locale pleine largeur** arrondie (Pexels, HD/SD selon l'écran, lecture automatique silencieuse, bouton Lire/Suspendre, `prefers-reduced-motion` respecté). Maquette Figma d'origine : fichier « Postelio — Hero éditorial vidéo ».
 - **Photographies locales** (Pexels, format WebP, crédits dans `assets/images/photos/credits.md`) pour les articles, l'à-propos et les savoir-faire ; les schémas SVG restent pour les étapes.
 - Typographie : la **serif** (Georgia) est réservée aux grands titres éditoriaux ; les titres de cartes et l'interface sont en sans-serif.
 - **3 rayons de bordure seulement** (4 px, 8 px, cercle pour les avatars), boutons rectangulaires, étiquettes typographiques à la place des pilules, ombres quasi absentes, filets fins.

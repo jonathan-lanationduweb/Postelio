@@ -183,6 +183,34 @@
   transform: translateX(3px);
 }
 
+/* ===== Icônes — famille SVG « line » unique, trait fin, currentColor =====
+   Remplace tout usage d'emoji/Unicode comme système d'icônes. Les SVG sont
+   insérés inline (helper JS `icon()` côté scripts, markup direct côté HTML)
+   et héritent de la couleur du texte. Dimension par défaut : 1em. */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  color: inherit;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Variante « grand format » pour les cartes (motifs, atouts, rôles). */
+.icon--lg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--c-accent-dark);
+}
+
 /* ===== Étiquettes — sobres, plus de pilules ===== */
 .badge {
   display: inline-flex;

@@ -7,6 +7,26 @@
 (function () {
   "use strict";
 
+  /* Famille d'icônes SVG « line » (voir .icon dans components.css). */
+  function svgIcon(paths) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + paths + "</svg>";
+  }
+  var ICONS = {
+    clock: svgIcon('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'),
+    barChart: svgIcon('<path d="M5 20V11M12 20V4M19 20v-6"/>'),
+    eye: svgIcon('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'),
+    lightbulb: svgIcon('<path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.3 1 2.1h5c0-.8.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>'),
+    alert: svgIcon('<path d="M12 4 2.5 20h19L12 4z"/><path d="M12 10v4"/><path d="M12 17.4h.01"/>'),
+    thumbsUp: svgIcon('<path d="M7 10v10H4V10z"/><path d="M7 10l4.2-7a2 2 0 0 1 2.7 2.6L12.6 9H19a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 17.8 20H7"/>'),
+    check: svgIcon('<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.5"/>'),
+    bookmark: svgIcon('<path d="M6.5 4h11v16l-5.5-3.7L6.5 20z"/>'),
+    bookmarkFilled: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11v16l-5.5-3.7L6.5 20z"/></svg>'
+  };
+  function iconEl(name, cls) {
+    return '<span class="icon' + (cls ? " " + cls : "") + '" aria-hidden="true">' + (ICONS[name] || "") + "</span>";
+  }
+
   var CRITERIA = [
     { key: "clarte", label: "Clarté des explications" },
     { key: "conseils", label: "Utilité des conseils" },
@@ -276,7 +296,7 @@
       var lock = function () {
         testedBtn.setAttribute("aria-pressed", "true");
         testedBtn.classList.add("is-active");
-        testedBtn.innerHTML = '<span aria-hidden="true">✓</span> Vous avez testé cette méthode';
+        testedBtn.innerHTML = iconEl("check") + " Vous avez testé cette méthode";
         testedBtn.disabled = true;
       };
       showCount();
@@ -302,7 +322,7 @@
         saveBtn.classList.toggle("is-on", on);
         saveBtn.setAttribute("aria-pressed", on ? "true" : "false");
         if (label) { label.textContent = on ? "Enregistré" : "Sauvegarder"; }
-        if (icon) { icon.textContent = on ? "★" : "🔖"; }
+        if (icon) { icon.innerHTML = on ? ICONS.bookmarkFilled : ICONS.bookmark; }
       };
       sync();
       saveBtn.addEventListener("click", function () {
@@ -379,7 +399,7 @@
     var e = SS.escapeHtml;
     var r = combinedRatings(pub);
     var views = combinedViews(pub);
-    document.title = pub.titre + " | Savoir-faire SuperSecrétaire";
+    document.title = pub.titre + " | Savoir-faire Postelio";
 
     setText("kh-title", pub.titre);
     setText("kh-hero-resume", pub.resume);
@@ -402,10 +422,10 @@
         ? '<li><span class="kh-fact__star" aria-hidden="true">★</span>' + String(r.criteres.generale).replace(".", ",") + " · " + r.total + " avis</li>"
         : "<li>Pas encore d'avis</li>";
       facts.innerHTML =
-        "<li><span aria-hidden=\"true\">⏱️</span>" + e(pub.duree) + "</li>" +
-        "<li><span aria-hidden=\"true\">📊</span>" + e(pub.difficulteLabel) + "</li>" +
+        "<li>" + iconEl("clock") + e(pub.duree) + "</li>" +
+        "<li>" + iconEl("barChart") + e(pub.difficulteLabel) + "</li>" +
         noteHtml +
-        "<li><span aria-hidden=\"true\">👁️</span>" + views + " vues</li>";
+        "<li>" + iconEl("eye") + views + " vues</li>";
     }
 
     /* Auteur (dans le hero). */
@@ -456,8 +476,8 @@
     fillList("kh-materials", pub.materiel);
 
     /* Conseils et erreurs en blocs callout. */
-    renderCallouts("kh-tips", pub.conseils, "💡");
-    renderCallouts("kh-mistakes", pub.erreurs, "⚠️");
+    renderCallouts("kh-tips", pub.conseils, ICONS.lightbulb);
+    renderCallouts("kh-mistakes", pub.erreurs, ICONS.alert);
 
     /* Étapes en timeline. */
     var steps = document.getElementById("kh-steps");
@@ -468,7 +488,7 @@
         (step.image && /\.(webp|jpg|jpeg|png)$/i.test(step.image)
           ? '<img src="' + e(step.image) + '" alt="Illustration : ' + e(step.titre) + '" loading="lazy">' : "") +
         (step.conseil
-          ? '<p class="kh-step-tip"><span class="kh-step-tip__icon" aria-hidden="true">💡</span><span><strong>Astuce du pro : </strong>' + e(step.conseil) + "</span></p>"
+          ? '<p class="kh-step-tip"><span class="kh-step-tip__icon icon" aria-hidden="true">' + ICONS.lightbulb + "</span><span><strong>Astuce du pro : </strong>" + e(step.conseil) + "</span></p>"
           : "") +
       "</div></li>";
     }).join("");
@@ -496,12 +516,12 @@
     return '<div class="kh-stat"><strong>' + SS.escapeHtml(String(value)) + "</strong><span>" + SS.escapeHtml(label) + "</span></div>";
   }
 
-  function renderCallouts(id, items, icon) {
+  function renderCallouts(id, items, iconSvg) {
     var el = document.getElementById(id);
     if (!el) { return; }
     if (!items || !items.length) { el.closest("section").hidden = true; return; }
     el.innerHTML = items.map(function (it) {
-      return '<div class="kh-callout"><span class="kh-callout__icon" aria-hidden="true">' + icon +
+      return '<div class="kh-callout"><span class="kh-callout__icon icon" aria-hidden="true">' + iconSvg +
         "</span><span>" + SS.escapeHtml(it) + "</span></div>";
     }).join("");
   }
@@ -667,7 +687,7 @@
       "<p>" + e(c.texte) + "</p>" +
       (c.resultat ? '<p class="comment-result">Résultat obtenu : ' + e(c.resultat) + "</p>" : "") +
       (c.reponsePro ? '<div class="pro-reply"><strong>Réponse du professionnel :</strong> ' + e(c.reponsePro) + "</div>" : "") +
-      '<button type="button" class="comment-useful" data-useful><span aria-hidden="true">👍</span> Utile · <span class="comment-useful__n">' + useful + "</span></button>" +
+      '<button type="button" class="comment-useful" data-useful>' + iconEl("thumbsUp") + ' Utile · <span class="comment-useful__n">' + useful + "</span></button>" +
     "</article>";
   }
 
@@ -739,7 +759,7 @@
     if (!btn) { return; }
     btn.addEventListener("click", function () {
       var payload = {
-        title: pub.titre + " — Savoir-faire SuperSecrétaire",
+        title: pub.titre + " — Savoir-faire Postelio",
         text: pub.resume,
         url: window.location.href
       };
