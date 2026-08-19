@@ -43,6 +43,22 @@
   color: var(--c-primary-dark);
 }
 
+/* ===== Encart « Partager mon savoir-faire » (CTA contextuel) ===== */
+.knowhow-share {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: var(--sp-4);
+  background: var(--c-surface); border: 1px solid var(--c-line);
+  border-radius: var(--radius-m); padding: var(--sp-4) var(--sp-5);
+  margin-top: var(--sp-5);
+}
+.knowhow-share__text { display: flex; flex-direction: column; gap: 2px; max-width: 62ch; }
+.knowhow-share__text strong { font-family: var(--font-serif); font-size: 1.15rem; color: var(--c-primary-dark); }
+.knowhow-share__text span { font-size: var(--text-sm); color: var(--c-ink-soft); }
+.knowhow-share .btn { flex-shrink: 0; }
+@media (max-width: 560px) {
+  .knowhow-share .btn { width: 100%; }
+}
+
 /* ===== Liste des savoir-faire ===== */
 .knowhow-toolbar {
   background: var(--c-surface);

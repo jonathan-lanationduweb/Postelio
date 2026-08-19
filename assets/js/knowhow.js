@@ -815,3 +815,28 @@
   }
 })();
 
+/**
+ * CTA « Partager mon savoir-faire » de la page publique : destination adaptée
+ * à la session (visiteur → connexion ; candidat → savoir-faire candidat ;
+ * recruteur → contenu entreprise). Reste disponible sans être ambigu.
+ */
+(function () {
+  "use strict";
+  document.addEventListener("DOMContentLoaded", function () {
+    var cta = document.getElementById("share-savoirfaire-cta");
+    if (!cta || !window.SS || !SS.auth) { return; }
+    var s = SS.auth.get();
+    if (!s) {
+      cta.href = "connexion.html";
+      return;
+    }
+    if (SS.auth.isEmployer()) {
+      cta.href = "publier-savoir-faire.html?type=entreprise";
+      cta.textContent = "Publier un contenu entreprise";
+    } else {
+      cta.href = "publier-savoir-faire.html?type=candidat";
+      cta.textContent = "Partager mon savoir-faire";
+    }
+  });
+})();
+
