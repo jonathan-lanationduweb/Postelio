@@ -525,8 +525,17 @@
   }
 
   .chatbot-panel {
-    right: var(--sp-4);
+    right: 12px;
+    left: 12px;
+    width: auto;                 /* = calc(100vw - 24px) */
     bottom: calc(var(--sp-4) + 64px);
+    max-height: 70vh;
+  }
+  /* La zone messages absorbe la hauteur, la saisie reste toujours visible. */
+  .chatbot-messages {
+    max-height: none;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 }
 

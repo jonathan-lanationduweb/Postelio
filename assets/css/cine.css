@@ -408,9 +408,14 @@
     text-align: center;
     padding-bottom: 15svh;
   }
-  .cine__line { max-width: 20ch; }
+  /* Safe zone latérale : le texte ne colle jamais aux bords. */
+  .cine__scene { padding-inline: 20px; }
+  /* Typo mobile réduite : H1 narratif ~30 → 40px (au lieu de 46px mini). */
+  .cine__line { max-width: 20ch; font-size: clamp(1.9rem, 8vw, 2.5rem); }
   .cine__scene[data-moment="1"] .cine__line { max-width: 100%; }
-  .cine__sub { max-width: 32ch; margin-inline: auto; }
+  .cine__line--final { font-size: clamp(1.75rem, 7vw, 2.25rem); }
+  .cine__sub { max-width: 32ch; margin-inline: auto; font-size: 1rem; }
+  .cine__meta { font-size: 0.95rem; }
   .cine__search {
     flex-direction: column;
     align-items: stretch;
