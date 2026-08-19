@@ -35,6 +35,7 @@
         '<p class="offer-row__company"><strong>' + e(offer.entrepriseNom) + "</strong> · " + e(offer.ville) + "</p>" +
         '<p class="offer-row__tags">' + e(offer.contrat) + (offer.duree ? " " + e(offer.duree) : "") +
           " · " + e(offer.tempsTravail) +
+          (offer.experienceLabel ? " · " + e(offer.experienceLabel) : "") +
           (remote ? ' · <span class="badge badge--remote">' + e(remote) + "</span>" : "") +
         "</p>" +
       "</div>" +
@@ -189,6 +190,8 @@
       badges.innerHTML =
         '<span class="badge">' + e(offer.contrat) + "</span>" +
         '<span class="badge badge--neutral">' + e(offer.tempsTravail) + "</span>" +
+        (offer.experienceLabel ? '<span class="badge badge--neutral">' + e(offer.experienceLabel) + "</span>" : "") +
+        (offer.niveauEtudeLabel ? '<span class="badge badge--neutral">' + e(offer.niveauEtudeLabel) + "</span>" : "") +
         (remote ? '<span class="badge badge--remote">' + e(remote) + "</span>" : "") +
         (offer.statut !== "active" ? '<span class="badge badge--expired">Offre expirée</span>' : "");
     }

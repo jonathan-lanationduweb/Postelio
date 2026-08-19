@@ -127,6 +127,8 @@
     var remoteOnly = document.getElementById("filter-remote").checked;
     var salary = document.getElementById("filter-salary").value;
     var recency = document.getElementById("filter-date").value;
+    var niveau = document.getElementById("filter-niveau").value;
+    var experience = document.getElementById("filter-experience").value;
 
     var saved = state.savedOnly ? savedIds() : null;
 
@@ -143,6 +145,9 @@
       }
       if (category && o.categorie !== category) { return false; }
       if (contract && o.contrat !== contract) { return false; }
+      /* Niveau d'étude : une offre « indifférent » convient à tout niveau demandé. */
+      if (niveau && o.niveauEtude !== niveau && o.niveauEtude !== "indifferent") { return false; }
+      if (experience && o.experience !== experience) { return false; }
       if (remoteOnly && o.teletravail === "non") { return false; }
       if (salary) {
         var min = Number(salary);

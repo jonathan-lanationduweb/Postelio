@@ -135,6 +135,14 @@
 .site-header--cine .nav-actions .btn-ghost { color: #fff; border-color: transparent; }
 .site-header--cine .nav-actions .btn-ghost:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .site-header--cine .nav-actions .btn-primary { background: #fff; border-color: #fff; color: var(--c-primary-dark); }
+/* Burger sur la vidéo : bouton verre sombre + barres blanches (sinon barres
+   blanches sur le fond blanc par défaut = icône invisible avant le scroll). */
+.site-header--cine .nav-toggle {
+  background: rgba(16, 28, 24, 0.34);
+  border-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
 .site-header--cine .nav-toggle span { background: #fff; }
 
 /* --- État normal (fond clair arrivé) : crème + vert Postelio --- */
@@ -157,6 +165,11 @@
 .site-header--cine.is-solid .nav-links a[aria-current="page"] { background: var(--c-primary); color: #fff; }
 .site-header--cine.is-solid .nav-actions .btn-ghost { color: var(--c-primary-dark); border-color: transparent; }
 .site-header--cine.is-solid .nav-actions .btn-primary { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+/* Navbar redevenue claire : burger crème + barres vertes. */
+.site-header--cine.is-solid .nav-toggle {
+  background: var(--c-surface);
+  border-color: var(--c-line);
+}
 .site-header--cine.is-solid .nav-toggle span { background: var(--c-primary-dark); }
 
 /* ---- Navbar de l'intro : discrète, transparente puis à peine translucide ---- */

@@ -98,8 +98,8 @@
 
       <!-- Panneau de filtres -->
       <aside>
-        <button type="button" id="filters-toggle" class="btn btn-outline filters-toggle" aria-expanded="true" aria-controls="filters-panel">Afficher / masquer les filtres</button>
-        <div class="filters-panel" id="filters-panel">
+        <button type="button" id="filters-toggle" class="btn btn-outline filters-toggle" aria-expanded="false" aria-controls="filters-panel">Afficher / masquer les filtres</button>
+        <div class="filters-panel is-collapsed" id="filters-panel">
           <h2>Affiner</h2>
           <form id="filters-form">
             <div class="field">
@@ -127,6 +127,33 @@
                 <option value="CDD">CDD</option>
                 <option value="Intérim">Intérim</option>
                 <option value="Alternance">Alternance</option>
+                <option value="Stage">Stage</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Saisonnier">Saisonnier</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-niveau">Niveau d'étude</label>
+              <select id="filter-niveau">
+                <option value="">Tous niveaux</option>
+                <option value="sans-diplome">Sans diplôme</option>
+                <option value="cap-bep">CAP / BEP</option>
+                <option value="bac">Bac</option>
+                <option value="bac2">Bac +2</option>
+                <option value="bac3">Bac +3</option>
+                <option value="bac5">Bac +5</option>
+                <option value="doctorat">Doctorat</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-experience">Expérience</label>
+              <select id="filter-experience">
+                <option value="">Toutes expériences</option>
+                <option value="debutant">Débutant accepté</option>
+                <option value="moins-2">Moins de 2 ans</option>
+                <option value="2-5">2 à 5 ans</option>
+                <option value="5-10">5 à 10 ans</option>
+                <option value="10-plus">10 ans et plus</option>
               </select>
             </div>
             <div class="field">
