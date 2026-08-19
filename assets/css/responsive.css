@@ -161,12 +161,28 @@
    Meme composant pour les deux variantes ; le panneau deroulant est
    toujours clair et lisible, y compris depuis la navbar overlay. */
 @media (max-width: 1280px) {
+  /* Le burger : cible tactile ≥44px, à l'extrême droite après le compte. */
   .nav-toggle {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    order: 3;
+  }
+
+  /* Compte (cloche + avatar / boutons) : reste DANS la barre, hors du burger,
+     poussé à droite juste avant le menu. */
+  #account-nav.nav-actions {
+    order: 2;
     margin-left: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
   }
 
   .main-nav {
+    order: 4;
     position: absolute;
     top: 100%;
     left: 0;
@@ -230,15 +246,11 @@
     font-weight: 650;
   }
 
-  .nav-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .nav-actions .btn {
-    width: 100%;
-    text-align: center;
-  }
+  /* Boutons visiteur compacts dans la barre (pas pleine largeur). */
+  #account-nav .btn { width: auto; text-align: center; }
+  /* Cibles tactiles ≥44px pour la cloche et l'avatar sur mobile. */
+  .notif-btn { width: 44px; height: 44px; }
+  .avatar-btn .avatar { width: 44px; height: 44px; }
 
   .site-header--overlay .nav-actions .btn-ghost {
     color: var(--c-primary-dark);
@@ -262,6 +274,11 @@
     --text-2xl: 1.5rem;
     --sp-8: 3rem;
   }
+
+  /* Barre étroite : on ne garde que « Se connecter » (Créer un compte reste
+     accessible depuis la page de connexion). L'avatar+cloche (connecté)
+     restent toujours visibles. */
+  .account-guest.btn-primary { display: none; }
 
   /* Hero plein écran mobile : le contenu peut grandir, rien n'est coupé */
   .home-hero {

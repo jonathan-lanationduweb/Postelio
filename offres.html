@@ -44,9 +44,6 @@
       <span class="logo-mark" aria-hidden="true">P</span>
       <span class="logo-text">Postelio</span>
     </a>
-    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Ouvrir le menu">
-      <span></span><span></span><span></span>
-    </button>
     <nav class="main-nav" id="main-nav" aria-label="Navigation principale">
       <ul class="nav-links">
         <li><a href="index.html">Accueil</a></li>
@@ -57,13 +54,17 @@
         <li><a href="a-propos.html">Qui sommes-nous</a></li>
         <li><a href="contact.html">Contact</a></li>
       </ul>
-      <!-- Zone compte : navigation.js remplace ces boutons par l'avatar+menu
-           quand une session existe (candidat ou recruteur). -->
-      <div class="nav-actions" id="account-nav" data-account-nav>
-        <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
-        <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
-      </div>
     </nav>
+    <!-- Zone compte : cloche + avatar (connecté) ou boutons (visiteur).
+         Placée HORS de .main-nav pour rester visible dans la barre sur mobile,
+         à côté du burger. navigation.js réécrit son contenu selon la session. -->
+    <div class="nav-actions" id="account-nav" data-account-nav>
+      <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
+      <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
+    </div>
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Ouvrir le menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
 
