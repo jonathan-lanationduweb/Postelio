@@ -1,23 +1,38 @@
 /**
- * Espace entreprise (démonstration) — tableau de bord recruteur.
+ * Espace entreprise (démonstration) — centre de pilotage du recrutement.
  *
  * Garde de session (SS.auth) : réservé au rôle "employer".
  * Réutilise la logique de fond existante : les offres de l'entreprise
  * sont récupérées via SS.getOffers() filtré sur l'identifiant de la
  * société connectée (companyId), les statuts modifiés (désactivation /
- * renouvellement) transitent par le stockage local (ss_offer_overrides),
- * et le renouvellement renvoie vers paiement.html?offre=<id>.
+ * renouvellement / archivage) transitent par le stockage local
+ * (ss_offer_overrides), et le renouvellement renvoie vers
+ * paiement.html?offre=<id>.
  *
  * Note prototype : le compte de démonstration « Fiduciaire Bellecour »
  * ne possède aucune offre dans les données JSON. Lorsque le filtre par
  * société ne renvoie rien, on adopte un sous-ensemble d'offres de
  * démonstration (déterministe) afin que l'espace reste illustratif.
+ *
+ * Clés de stockage local utilisées ici :
+ *   ss_refus_demo       — message courtois final d'un refus (lu côté candidat).
+ *   ss_pipeline_v1      — étape du pipeline de chaque candidat (avancement).
+ *   ss_company_profile  — présentation d'entreprise éditée dans le profil.
+ *   ss_offer_overrides  — statut/expiration/archivage des offres (partagé).
  */
 (function () {
   "use strict";
 
   /* Clé de stockage du refus (message courtois final), lue côté candidat. */
   var REFUS_KEY = "ss_refus_demo";
+
+  /* Pipeline : étape courante de chaque candidat + version du seed.
+     Le versionnage permet de régénérer proprement si la structure change. */
+  var PIPELINE_KEY = "ss_pipeline_v1";
+  var PIPELINE_SEED_VERSION = 1;
+
+  /* Présentation d'entreprise éditée (mode Modifier du profil). */
+  var PROFILE_KEY = "ss_company_profile";
 
   /* Messages courtois prédéfinis, indexés par motif interne. Le motif brut
      (ex. « Expérience insuffisante ») n'est JAMAIS transmis : seul l'un de
@@ -33,6 +48,11 @@
   /* Ouvre la modale de refus ; renseignée par initRefusModal(). */
   var openRefusModal = null;
 
+  /* Observateurs de mutation des boutons « Refuser » du pipeline : lorsqu'un
+     bouton est désactivé (refus confirmé dans la modale), on régénère le
+     pipeline pour déplacer la carte vers la colonne « Refusé ». */
+  var pipelineObservers = [];
+
   document.addEventListener("DOMContentLoaded", function () {
     if (!window.SS || !SS.auth) { return; }
     /* Garde : visiteur → connexion ; candidat → son espace. */
@@ -43,8 +63,13 @@
 
     fillIdentity();
     renderDashboard();
-    initRefusModal();
-    seedApplications();
+    initRefusModal();   /* modale de refus courtois — inchangée, réutilisée */
+    initTodo();
+    renderPipeline();
+    seedInterviews();
+    initMessages();
+    seedContents();
+    initProfilEdit();
     seedBilling();
     initNav();
     initLogout();
@@ -62,9 +87,6 @@
     setText("dash-company", company);
     setText("hello-name", s.firstName || SS.auth.displayName() || "");
 
-    var line = [company, s.secteur, s.city].filter(Boolean).join(" · ");
-    setText("company-line", line || company);
-
     /* Le logo du profil représente l'ENTREPRISE : initiales de la société
        (ex. « FB »), et non celles de la personne connectée (« CM »). */
     setText("profil-logo", companyInitials(company));
@@ -80,7 +102,9 @@
     return SS.getOffers().then(function (offers) {
       var mine = offers.filter(function (o) { return o.entrepriseId === companyId; });
       /* Données de démonstration : le compte n'a pas d'offres propres. */
-      return mine.length ? mine : buildDemoOffers(offers);
+      var list = mine.length ? mine : buildDemoOffers(offers);
+      /* Les offres archivées (action locale) disparaissent de la liste. */
+      return list.filter(function (o) { return !o.archived; });
     });
   }
 
@@ -93,7 +117,7 @@
       return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
     }).slice(0, 4);
 
-    var expOffsets = [-6, 6, 22, 45];   /* jours avant/après aujourd'hui */
+    var expOffsets = [-6, 3, 22, 45];   /* jours avant/après aujourd'hui */
     var pubOffsets = [-52, -34, -21, -9];
 
     return pick.map(function (o, i) {
@@ -106,31 +130,16 @@
     });
   }
 
-  /* ---- Rendu principal : indicateurs + tableau + alerte 10 € ---- */
+  /* ---- Rendu principal : cartes d'offres + alerte 10 € ----
+     Les indicateurs du tableau de bord sont des valeurs fixes de
+     démonstration inscrites directement dans le HTML (jamais de « — »). */
   function renderDashboard() {
     getCompanyOffers().then(function (offers) {
-      var active = offers.filter(function (o) { return o.statut === "active"; });
-      var totalApplications = offers.reduce(function (sum, o) {
-        return sum + SS.fakeApplicationCount(o.id);
-      }, 0);
-      /* Nouvelles candidatures : sous-ensemble stable des candidatures reçues. */
-      var newApplications = offers.reduce(function (sum, o) {
-        return sum + (SS.fakeApplicationCount(o.id) % 3);
-      }, 0);
       var toRenew = offers.filter(needsRenewal);
-
-      /* Indicateurs de démonstration : valeurs fixes et cohérentes affichées
-         immédiatement (jamais de tiret « — » au chargement). En production,
-         ces chiffres viendraient de l'API recruteur. */
-      setText("metric-active", 3);
-      setText("metric-applications", 18);
-      setText("metric-new", 5);
-      setText("metric-renew", 1);
-
-      renderTable(offers);
+      renderOffers(offers);
       renderRenewalAlert(toRenew);
     }).catch(function () {
-      SS.dataError(document.getElementById("dashboard-table-wrap"));
+      SS.dataError(document.getElementById("dashboard-offers"));
     });
   }
 
@@ -146,7 +155,7 @@
       if (o.dateExpiration && daysUntil(o.dateExpiration) <= 7) {
         return '<span class="badge badge--accent">Expire bientôt</span>';
       }
-      return '<span class="badge badge--remote">Active</span>';
+      return '<span class="badge badge--remote">Publiée</span>';
     }
     if (o.statut === "desactivee") {
       return '<span class="badge badge--neutral">Désactivée</span>';
@@ -154,61 +163,102 @@
     return '<span class="badge badge--expired">Expirée</span>';
   }
 
-  function renderTable(offers) {
-    var tbody = document.getElementById("dashboard-offers");
-    if (!tbody) { return; }
+  /* Libellé « Expire dans X jours » (ou état expiré / désactivé). */
+  function expiryLabel(o) {
+    if (o.statut === "desactivee") { return "Hors ligne (désactivée)"; }
+    if (o.statut === "expiree" || !o.dateExpiration) { return "Offre expirée"; }
+    var d = daysUntil(o.dateExpiration);
+    if (d <= 0) { return "Expire aujourd'hui"; }
+    if (d === 1) { return "Expire demain"; }
+    return "Expire dans " + d + " jours";
+  }
+
+  /* ---- Mes offres : cartes enrichies (stats + actions) ---- */
+  function renderOffers(offers) {
+    var box = document.getElementById("dashboard-offers");
+    if (!box) { return; }
     var e = SS.escapeHtml;
 
     if (!offers.length) {
-      tbody.innerHTML = '<tr><td colspan="7">' +
-        '<div class="empty-state"><h3>Aucune offre pour le moment</h3>' +
-        '<p><a href="publier-offre.html">Publiez votre première offre</a> pour recevoir des candidatures.</p></div>' +
-        "</td></tr>";
+      box.innerHTML =
+        '<div class="empty-state"><h3>Vous n\'avez pas encore publié d\'offre</h3>' +
+        '<p>Publiez une annonce pour commencer à recevoir des candidatures.</p>' +
+        '<p><a class="btn btn-accent" href="publier-offre.html">Créer ma première offre</a></p></div>';
       return;
     }
 
-    tbody.innerHTML = offers.map(function (o) {
+    box.innerHTML = offers.map(function (o) {
       var renewable = needsRenewal(o);
+      var apps = SS.fakeApplicationCount(o.id);
+      var expClass = (o.statut === "active" && o.dateExpiration && daysUntil(o.dateExpiration) <= 7) ||
+                     o.statut === "expiree" ? " offer-card__expiry--warn" : "";
+
       var actions =
+        '<a class="btn btn-outline btn-sm" href="offres.html">Voir</a>' +
         '<a class="btn btn-outline btn-sm" href="publier-offre.html?modifier=' + encodeURIComponent(o.id) + '">Modifier</a>' +
-        '<a class="btn btn-ghost btn-sm" href="#candidatures">Voir les candidatures</a>';
+        '<a class="btn btn-ghost btn-sm" href="#candidatures">Candidatures</a>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-toast="Offre dupliquée (démonstration).">Dupliquer</button>';
       if (o.statut === "active") {
-        actions += '<button type="button" class="btn btn-danger btn-sm" data-action="disable" data-id="' + e(o.id) + '">Désactiver</button>';
+        actions += '<button type="button" class="btn btn-ghost btn-sm" data-offer-action="disable" data-id="' + e(o.id) + '">Désactiver</button>';
       } else if (o.statut === "desactivee") {
-        actions += '<button type="button" class="btn btn-primary btn-sm" data-action="enable" data-id="' + e(o.id) + '">Réactiver</button>';
+        actions += '<button type="button" class="btn btn-primary btn-sm" data-offer-action="enable" data-id="' + e(o.id) + '">Réactiver</button>';
       }
       if (renewable) {
         actions += '<a class="btn btn-accent btn-sm" href="paiement.html?offre=' + encodeURIComponent(o.id) + '">Renouveler</a>';
       }
+      actions += '<button type="button" class="btn btn-danger btn-sm" data-offer-action="archive" data-id="' + e(o.id) + '">Archiver</button>';
 
-      return "<tr>" +
-        '<td data-label="Titre"><strong>' + e(o.titre) + "</strong><br><span class='text-muted'>" + e(o.ville) + " — " + e(o.contrat) + "</span></td>" +
-        '<td data-label="Publiée le">' + e(SS.formatDate(o.datePublication)) + "</td>" +
-        '<td data-label="Vues">' + stableViews(o.id) + "</td>" +
-        '<td data-label="Candidatures">' + SS.fakeApplicationCount(o.id) + "</td>" +
-        '<td data-label="Statut">' + statusBadge(o) + "</td>" +
-        '<td data-label="Expire le">' + e(SS.formatDate(o.dateExpiration)) + "</td>" +
-        '<td><div class="row-actions">' + actions + "</div></td>" +
-      "</tr>";
+      return '<article class="card dash-card offer-card">' +
+          '<div class="offer-card__head">' +
+            '<div><h3 class="offer-card__title">' + e(o.titre) + '</h3>' +
+              '<p class="offer-card__meta">' + e(o.ville) + ' — ' + e(o.contrat) + ' · publiée le ' + e(SS.formatDate(o.datePublication)) + '</p></div>' +
+            statusBadge(o) +
+          '</div>' +
+          '<ul class="offer-stats">' +
+            '<li><b>' + stableViews(o.id) + '</b><span>vues</span></li>' +
+            '<li><b>' + apps + '</b><span>candidatures</span></li>' +
+            '<li><b>' + profilesViewed(o.id) + '</b><span>profils consultés</span></li>' +
+            '<li><b>' + interviewsForOffer(o.id) + '</b><span>entretiens</span></li>' +
+          '</ul>' +
+          '<p class="offer-card__expiry' + expClass + '">' + e(expiryLabel(o)) + '</p>' +
+          '<div class="row-actions">' + actions + '</div>' +
+        '</article>';
     }).join("");
 
-    tbody.querySelectorAll("button[data-action]").forEach(function (btn) {
+    box.querySelectorAll("button[data-offer-action]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-id");
-        var action = btn.getAttribute("data-action");
+        var action = btn.getAttribute("data-offer-action");
         var overrides = SS.store.get(APP_CONFIG.storage.offerOverrides, {});
         overrides[id] = overrides[id] || {};
-        overrides[id].statut = action === "disable" ? "desactivee" : "active";
-        if (action === "enable") {
+
+        if (action === "disable") {
+          overrides[id].statut = "desactivee";
+          SS.toast("Offre désactivée.");
+        } else if (action === "enable") {
+          overrides[id].statut = "active";
           var next = new Date();
           next.setDate(next.getDate() + APP_CONFIG.payment.renewal.durationDays);
           overrides[id].dateExpiration = next.toISOString().slice(0, 10);
+          SS.toast("Offre réactivée.");
+        } else if (action === "archive") {
+          overrides[id].archived = true;
+          SS.toast("Offre archivée.");
         }
         SS.store.set(APP_CONFIG.storage.offerOverrides, overrides);
-        SS.toast(action === "disable" ? "Offre désactivée." : "Offre réactivée.");
         renderDashboard();
       });
     });
+  }
+
+  /* Nombre de profils consultés (fictif, stable) — dérivé des vues. */
+  function profilesViewed(id) {
+    return Math.max(1, Math.round(stableViews(id) / 12));
+  }
+
+  /* Nombre d'entretiens liés à une offre (fictif, stable). */
+  function interviewsForOffer(id) {
+    return SS.fakeApplicationCount(id) % 3;
   }
 
   /* Carte contextuelle 10 € : affichée si une offre expire bientôt / a expiré. */
@@ -236,44 +286,455 @@
       "</div>";
   }
 
-  /* ---- Candidatures reçues (données de démonstration) ---- */
-  function seedApplications() {
-    var box = document.getElementById("applications-received");
-    if (!box) { return; }
+  /* ---- À faire aujourd'hui : liste d'actions prioritaires cliquables ---- */
+  function initTodo() {
+    var list = document.getElementById("dash-todo");
+    if (!list) { return; }
     var e = SS.escapeHtml;
 
-    var people = [
-      { nom: "Camille Reynaud", offre: "Assistant(e) comptable — CDI", jours: 1, statut: "recue", label: "Nouvelle" },
-      { nom: "Malik Benhaddou", offre: "Gestionnaire de paie — CDI", jours: 2, statut: "preselection", label: "Présélection" },
-      { nom: "Sophie Lemaire", offre: "Secrétaire administrative — CDD", jours: 3, statut: "vue", label: "Vue" },
-      { nom: "Yannick Perrot", offre: "Assistant(e) comptable — CDI", jours: 4, statut: "entretien", label: "Entretien" },
-      { nom: "Inès Fabre", offre: "Gestionnaire de paie — CDI", jours: 5, statut: "recue", label: "Nouvelle" },
-      { nom: "Thomas Ravel", offre: "Collaborateur comptable — CDI", jours: 6, statut: "vue", label: "Vue" },
-      { nom: "Awa Diallo", offre: "Secrétaire administrative — CDD", jours: 8, statut: "preselection", label: "Présélection" }
+    var items = [
+      { level: "warn",   texte: "3 nouvelles candidatures à examiner", ancre: "#candidatures" },
+      { level: "urgent", texte: "1 candidat attend une réponse depuis 4 jours", ancre: "#candidatures" },
+      { level: "ok",     texte: "2 entretiens cette semaine", ancre: "#entretiens" },
+      { level: "warn",   texte: "1 offre expire dans 3 jours", ancre: "#offres" }
     ];
 
-    box.innerHTML = people.map(function (p, i) {
-      var d = dateFromToday(-p.jours);
-      return '<div class="appli-card" data-app="cand-' + i + '">' +
-          '<div class="appli-card__top">' +
-            "<div><strong>" + e(p.nom) + "</strong><br>" +
-              '<span class="text-muted">' + e(p.offre) + " · reçue " + e(SS.relativeDate(d)) + "</span></div>" +
-            '<span class="status-badge status-' + p.statut + '">' + e(p.label) + "</span>" +
-          "</div>" +
-          '<p class="text-muted" data-refus-date hidden style="margin-top:var(--sp-2);"></p>' +
-          '<div class="form-actions" style="margin-top:var(--sp-3);">' +
-            '<button type="button" class="btn btn-outline btn-sm" data-toast="Ouverture du profil candidat (démonstration).">Voir le profil</button>' +
-            '<button type="button" class="btn btn-primary btn-sm" data-toast="Candidat présélectionné (démonstration).">Présélectionner</button>' +
-            '<a class="btn btn-ghost btn-sm" href="#messages">Message</a>' +
-            '<button type="button" class="btn btn-danger btn-sm" data-refus data-nom="' + e(p.nom) + '" data-offre="' + e(p.offre) + '">Refuser la candidature</button>' +
-          "</div>" +
-        "</div>";
+    var labels = { urgent: "Urgent", warn: "À traiter", ok: "À venir" };
+
+    list.innerHTML = items.map(function (it) {
+      return '<li><a class="todo-item" href="' + it.ancre + '">' +
+          '<span class="todo-dot todo-dot--' + it.level + '" aria-hidden="true"></span>' +
+          '<span class="todo-item__text">' + e(it.texte) + '</span>' +
+          '<span class="todo-item__tag todo-item__tag--' + it.level + '">' + e(labels[it.level]) + '</span>' +
+        '</a></li>';
+    }).join("");
+  }
+
+  /* ============================================================
+     Pipeline de candidatures (kanban léger, persistant)
+     ============================================================ */
+  var PIPELINE_COLUMNS = [
+    { key: "nouveau", label: "Nouveau" },
+    { key: "a-examiner", label: "À examiner" },
+    { key: "preselection", label: "Présélectionné" },
+    { key: "entretien", label: "Entretien" },
+    { key: "retenu", label: "Retenu" },
+    { key: "refuse", label: "Refusé" }
+  ];
+
+  /* Seed de candidats — métiers généralistes, répartis dans les étapes. */
+  function pipelineSeed() {
+    return [
+      { id: "p1", nom: "Julie Martin", poste: "Assistante commerciale", offre: "Assistant(e) commercial(e) — CDI", ville: "Lyon", exp: 4, skills: ["Relation client", "CRM", "Anglais"], jours: 1, statut: "nouveau" },
+      { id: "p2", nom: "Karim Haddad", poste: "Développeur web", offre: "Développeur web full-stack — CDI", ville: "Villeurbanne", exp: 6, skills: ["JavaScript", "PHP", "React"], jours: 1, statut: "nouveau" },
+      { id: "p3", nom: "Camille Reynaud", poste: "Comptable", offre: "Collaborateur comptable — CDI", ville: "Lyon", exp: 3, skills: ["Sage", "Bilan", "TVA"], jours: 2, statut: "a-examiner" },
+      { id: "p4", nom: "Léa Dubois", poste: "Conductrice de travaux", offre: "Conducteur de travaux — CDI", ville: "Saint-Étienne", exp: 8, skills: ["Chantier", "Gros œuvre", "Sécurité"], jours: 3, statut: "a-examiner" },
+      { id: "p5", nom: "Malik Benhaddou", poste: "Gestionnaire de paie", offre: "Gestionnaire de paie — CDI", ville: "Lyon", exp: 5, skills: ["Paie", "Silae", "Social"], jours: 3, statut: "preselection" },
+      { id: "p6", nom: "Awa Diallo", poste: "Aide-soignante", offre: "Aide-soignant(e) — CDI", ville: "Bron", exp: 7, skills: ["Soins", "Gériatrie", "Écoute"], jours: 4, statut: "preselection" },
+      { id: "p7", nom: "Thomas Ravel", poste: "Préparateur de commandes", offre: "Préparateur de commandes — CDD", ville: "Corbas", exp: 2, skills: ["CACES 1", "Logistique", "Rigueur"], jours: 5, statut: "entretien" },
+      { id: "p8", nom: "Inès Fabre", poste: "Chargée de communication", offre: "Chargé(e) de communication — CDI", ville: "Lyon", exp: 4, skills: ["Réseaux sociaux", "Rédaction", "PAO"], jours: 6, statut: "entretien" },
+      { id: "p9", nom: "Yannick Perrot", poste: "Technicien de maintenance", offre: "Technicien de maintenance — CDI", ville: "Vénissieux", exp: 9, skills: ["Électromécanique", "Dépannage", "GMAO"], jours: 8, statut: "retenu" },
+      { id: "p10", nom: "Sophie Lemaire", poste: "Secrétaire administrative", offre: "Secrétaire administrative — CDD", ville: "Lyon", exp: 3, skills: ["Word", "Accueil", "Planning"], jours: 10, statut: "nouveau" }
+    ];
+  }
+
+  /* Ordre d'avancement des étapes (hors « refuse »). */
+  var PIPELINE_ORDER = ["nouveau", "a-examiner", "preselection", "entretien", "retenu"];
+
+  /* Lit l'état persistant du pipeline (versionné). */
+  function pipelineStore() {
+    var s = SS.store.get(PIPELINE_KEY, null);
+    if (!s || s.v !== PIPELINE_SEED_VERSION || !s.status) {
+      return { v: PIPELINE_SEED_VERSION, status: {} };
+    }
+    return s;
+  }
+
+  function setPipelineStatus(id, statut) {
+    var s = pipelineStore();
+    s.status[id] = statut;
+    SS.store.set(PIPELINE_KEY, s);
+  }
+
+  /* Statut effectif d'un candidat : refus (par nom, via la modale) prioritaire,
+     puis avancement persistant, puis statut du seed. */
+  function effectiveStatus(cand, store, refus) {
+    if (refus[cand.nom]) { return "refuse"; }
+    return store.status[cand.id] || cand.statut;
+  }
+
+  function renderPipeline() {
+    var board = document.getElementById("pipeline-board");
+    if (!board) { return; }
+    var e = SS.escapeHtml;
+
+    /* Nettoie les observateurs de la génération précédente. */
+    pipelineObservers.forEach(function (o) { o.disconnect(); });
+    pipelineObservers = [];
+
+    var store = pipelineStore();
+    var refus = SS.store.get(REFUS_KEY, {});
+    var seed = pipelineSeed();
+
+    var byCol = {};
+    PIPELINE_COLUMNS.forEach(function (c) { byCol[c.key] = []; });
+    seed.forEach(function (cand) {
+      var st = effectiveStatus(cand, store, refus);
+      if (!byCol[st]) { st = "nouveau"; }
+      byCol[st].push(cand);
+    });
+
+    board.innerHTML = PIPELINE_COLUMNS.map(function (col) {
+      var cards = byCol[col.key];
+      var body = cards.length
+        ? cards.map(function (c) { return pipelineCard(c, col.key); }).join("")
+        : '<p class="pipeline-empty">Aucun candidat.</p>';
+      return '<div class="pipeline-col" data-col="' + col.key + '">' +
+          '<div class="pipeline-col__head">' + e(col.label) +
+            '<span class="pipeline-col__count">' + cards.length + '</span></div>' +
+          '<div class="pipeline-col__list">' + body + '</div>' +
+        '</div>';
     }).join("");
 
-    box.querySelectorAll("[data-refus]").forEach(function (btn) {
+    wirePipeline(board);
+  }
+
+  function pipelineCard(c, status) {
+    var e = SS.escapeHtml;
+    var skills = c.skills.slice(0, 3).map(function (s) {
+      return '<span class="skill-tag">' + e(s) + '</span>';
+    }).join("");
+
+    var actions = '<button type="button" class="btn btn-outline btn-sm" data-toast="Ouverture du profil candidat (démonstration).">Voir le profil</button>' +
+                  '<a class="btn btn-ghost btn-sm" href="#messages">Message</a>';
+    if (status === "nouveau" || status === "a-examiner") {
+      actions += '<button type="button" class="btn btn-ghost btn-sm" data-advance="preselection" data-id="' + e(c.id) + '" data-nom="' + e(c.nom) + '">Présélectionner</button>';
+    }
+    if (status === "nouveau" || status === "a-examiner" || status === "preselection") {
+      actions += '<button type="button" class="btn btn-primary btn-sm" data-advance="entretien" data-id="' + e(c.id) + '" data-nom="' + e(c.nom) + '">Proposer un entretien</button>';
+    }
+    if (status === "entretien") {
+      actions += '<button type="button" class="btn btn-primary btn-sm" data-advance="retenu" data-id="' + e(c.id) + '" data-nom="' + e(c.nom) + '">Retenir</button>';
+    }
+    if (status !== "refuse" && status !== "retenu") {
+      actions += '<button type="button" class="btn btn-danger btn-sm" data-refus data-nom="' + e(c.nom) + '" data-offre="' + e(c.offre) + '">Refuser</button>';
+    }
+
+    var refusedNote = status === "refuse"
+      ? '<p class="pipeline-card__note">Candidat informé avec un message courtois.</p>'
+      : '';
+
+    return '<article class="appli-card pipeline-card" data-cand="' + e(c.id) + '" tabindex="-1">' +
+        '<div class="pipeline-card__id">' +
+          '<strong>' + e(c.nom) + '</strong>' +
+          '<span class="pipeline-card__poste">' + e(c.poste) + '</span>' +
+        '</div>' +
+        '<p class="pipeline-card__meta">' + e(c.ville) + ' · ' + c.exp + ' ans d\'expérience</p>' +
+        '<div class="pipeline-card__skills">' + skills + '</div>' +
+        '<p class="pipeline-card__offer">' + e(c.offre) + '</p>' +
+        '<p class="pipeline-card__date">Candidature reçue ' + e(SS.relativeDate(dateFromToday(-c.jours))) + '</p>' +
+        refusedNote +
+        '<div class="row-actions">' + actions + '</div>' +
+      '</article>';
+  }
+
+  function wirePipeline(board) {
+    /* Avancement d'étape : présélection / entretien / retenu. */
+    board.querySelectorAll("button[data-advance]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var to = btn.getAttribute("data-advance");
+        var nom = btn.getAttribute("data-nom") || "";
+        setPipelineStatus(id, to);
+        var msg = to === "preselection" ? "Candidat présélectionné."
+                : to === "entretien" ? "Entretien proposé à " + nom + "."
+                : "Candidat retenu.";
+        renderPipeline();
+        focusCard(id);
+        SS.toast(msg);
+      });
+    });
+
+    /* Refus : réutilise la modale courtoise existante (inchangée). Lorsque le
+       bouton est désactivé par la modale (refus confirmé), on régénère le
+       pipeline pour déplacer la carte dans la colonne « Refusé ». */
+    board.querySelectorAll("[data-refus]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (openRefusModal) { openRefusModal(btn); }
       });
+      if ("MutationObserver" in window) {
+        var card = btn.closest(".pipeline-card");
+        var id = card ? card.getAttribute("data-cand") : null;
+        var obs = new MutationObserver(function () {
+          if (btn.disabled) {
+            obs.disconnect();
+            renderPipeline();
+            if (id) { focusCard(id); }
+          }
+        });
+        obs.observe(btn, { attributes: true, attributeFilter: ["disabled"] });
+        pipelineObservers.push(obs);
+      }
+    });
+  }
+
+  function focusCard(id) {
+    var el = document.querySelector('.pipeline-card[data-cand="' + id + '"]');
+    if (el) { el.focus(); }
+  }
+
+  /* ============================================================
+     Entretiens
+     ============================================================ */
+  function seedInterviews() {
+    var box = document.getElementById("interviews-list");
+    if (!box) { return; }
+    var e = SS.escapeHtml;
+
+    var items = [
+      { quand: "Mardi 25 août · 14:30", nom: "Julie Martin", poste: "Assistante commerciale", mode: "Visioconférence" },
+      { quand: "Mercredi 26 août · 10:00", nom: "Thomas Ravel", poste: "Préparateur de commandes", mode: "Dans nos locaux — Lyon 3e" },
+      { quand: "Jeudi 27 août · 16:15", nom: "Inès Fabre", poste: "Chargée de communication", mode: "Téléphone" }
+    ];
+
+    if (!items.length) {
+      box.innerHTML = '<div class="empty-state"><h3>Aucun entretien planifié</h3>' +
+        '<p>Proposez un entretien depuis le pipeline de candidatures pour le voir apparaître ici.</p></div>';
+      return;
+    }
+
+    box.innerHTML = items.map(function (it) {
+      return '<article class="appli-card interview-card">' +
+          '<div class="interview-card__when">' + e(it.quand) + '</div>' +
+          '<div class="interview-card__who"><strong>' + e(it.nom) + '</strong>' +
+            '<span class="text-muted">' + e(it.poste) + '</span></div>' +
+          '<p class="interview-card__mode">' + e(it.mode) + '</p>' +
+          '<div class="row-actions">' +
+            '<button type="button" class="btn btn-outline btn-sm" data-toast="Ouverture du profil candidat (démonstration).">Voir le profil</button>' +
+            '<a class="btn btn-ghost btn-sm" href="#messages">Message</a>' +
+            '<button type="button" class="btn btn-ghost btn-sm" data-toast="Modification de l\'entretien (démonstration).">Modifier</button>' +
+          '</div>' +
+        '</article>';
+    }).join("");
+  }
+
+  /* ============================================================
+     Messagerie simple (liste + conversation)
+     ============================================================ */
+  var conversations = null;
+  var currentConvId = null;
+
+  function seedConversations() {
+    var today = new Date();
+    function iso(offset) { var d = new Date(today); d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); }
+    return [
+      {
+        id: "m1", nom: "Julie Martin", poste: "Assistante commerciale", offre: "Assistant(e) commercial(e) — CDI",
+        messages: [
+          { from: "them", texte: "Bonjour, je vous remercie pour votre retour. Je reste disponible pour un entretien la semaine prochaine.", date: iso(-2) },
+          { from: "me", texte: "Bonjour Julie, avec plaisir. Seriez-vous disponible mardi à 14h30 en visioconférence ?", date: iso(-1) },
+          { from: "them", texte: "C'est parfait pour moi, je note le rendez-vous. À mardi !", date: iso(0) }
+        ]
+      },
+      {
+        id: "m2", nom: "Karim Haddad", poste: "Développeur web", offre: "Développeur web full-stack — CDI",
+        messages: [
+          { from: "them", texte: "Bonjour, ma candidature au poste de développeur est-elle toujours à l'étude ?", date: iso(-1) }
+        ]
+      },
+      {
+        id: "m3", nom: "Awa Diallo", poste: "Aide-soignante", offre: "Aide-soignant(e) — CDI",
+        messages: [
+          { from: "me", texte: "Bonjour Awa, votre profil nous intéresse. Pourrions-nous échanger par téléphone cette semaine ?", date: iso(-3) },
+          { from: "them", texte: "Bonjour, merci beaucoup. Je suis joignable tous les après-midi. Bien à vous.", date: iso(-2) }
+        ]
+      }
+    ];
+  }
+
+  function initMessages() {
+    var wrap = document.getElementById("messaging");
+    var listBox = document.getElementById("messaging-list");
+    var threadBox = document.getElementById("messaging-thread");
+    if (!wrap || !listBox || !threadBox) { return; }
+
+    conversations = seedConversations();
+
+    if (!conversations.length) {
+      wrap.innerHTML = '<div class="empty-state"><h3>Aucune conversation pour le moment.</h3>' +
+        '<p>Vos échanges avec les candidats apparaîtront ici.</p></div>';
+      return;
+    }
+
+    currentConvId = conversations[0].id;
+    renderConvList();
+    renderThread();
+
+    listBox.addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-conv]");
+      if (!btn) { return; }
+      currentConvId = btn.getAttribute("data-conv");
+      renderConvList();
+      renderThread();
+      wrap.classList.add("is-thread-open"); /* mobile : bascule vers le fil */
+      var t = threadBox.querySelector("h3");
+      if (t) { t.setAttribute("tabindex", "-1"); t.focus(); }
+    });
+  }
+
+  function convInitials(nom) {
+    var parts = String(nom).trim().split(/\s+/);
+    var a = parts[0] ? parts[0][0] : "";
+    var b = parts[1] ? parts[1][0] : "";
+    return (a + b).toUpperCase();
+  }
+
+  function renderConvList() {
+    var listBox = document.getElementById("messaging-list");
+    if (!listBox) { return; }
+    var e = SS.escapeHtml;
+    listBox.innerHTML = conversations.map(function (c) {
+      var last = c.messages[c.messages.length - 1];
+      var active = c.id === currentConvId ? " is-active" : "";
+      return '<button type="button" class="conv-item' + active + '" data-conv="' + e(c.id) + '" role="tab" aria-selected="' + (c.id === currentConvId) + '">' +
+          '<span class="avatar conv-item__avatar" aria-hidden="true">' + e(convInitials(c.nom)) + '</span>' +
+          '<span class="conv-item__body">' +
+            '<span class="conv-item__name">' + e(c.nom) + '</span>' +
+            '<span class="conv-item__preview">' + e(last ? last.texte : "") + '</span>' +
+          '</span>' +
+        '</button>';
+    }).join("");
+  }
+
+  function renderThread() {
+    var threadBox = document.getElementById("messaging-thread");
+    if (!threadBox) { return; }
+    var e = SS.escapeHtml;
+    var conv = conversations.filter(function (c) { return c.id === currentConvId; })[0];
+    if (!conv) { threadBox.innerHTML = ""; return; }
+
+    var bubbles = conv.messages.map(function (m) {
+      var who = m.from === "me" ? "conv-msg--me" : "conv-msg--them";
+      return '<div class="conv-msg ' + who + '">' +
+          '<p class="conv-msg__text">' + e(m.texte) + '</p>' +
+          '<span class="conv-msg__date">' + e(SS.formatDate(m.date)) + '</span>' +
+        '</div>';
+    }).join("");
+
+    threadBox.innerHTML =
+      '<div class="conv-head">' +
+        '<button type="button" class="btn btn-ghost btn-sm conv-back" data-conv-back>← Conversations</button>' +
+        '<div class="conv-head__id">' +
+          '<span class="avatar" aria-hidden="true">' + e(convInitials(conv.nom)) + '</span>' +
+          '<span><h3 class="conv-head__name">' + e(conv.nom) + '</h3>' +
+            '<span class="text-muted">' + e(conv.poste) + ' · ' + e(conv.offre) + '</span></span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="conv-body">' + bubbles + '</div>' +
+      '<form class="conv-reply" id="conv-reply">' +
+        '<label class="visually-hidden" for="conv-reply-text">Votre réponse à ' + e(conv.nom) + '</label>' +
+        '<textarea id="conv-reply-text" rows="2" placeholder="Écrivez votre réponse…"></textarea>' +
+        '<button type="submit" class="btn btn-primary btn-sm">Envoyer</button>' +
+      '</form>';
+
+    var back = threadBox.querySelector("[data-conv-back]");
+    if (back) {
+      back.addEventListener("click", function () {
+        var wrap = document.getElementById("messaging");
+        if (wrap) { wrap.classList.remove("is-thread-open"); }
+      });
+    }
+
+    var form = threadBox.querySelector("#conv-reply");
+    if (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var field = form.querySelector("#conv-reply-text");
+        var txt = (field.value || "").trim();
+        if (!txt) { return; }
+        conv.messages.push({ from: "me", texte: txt, date: new Date().toISOString().slice(0, 10) });
+        renderConvList();
+        renderThread();
+        SS.toast("Message envoyé (démonstration).");
+      });
+    }
+  }
+
+  /* ============================================================
+     Contenus entreprise (marque employeur)
+     ============================================================ */
+  function seedContents() {
+    var box = document.getElementById("contents-list");
+    if (!box) { return; }
+    var e = SS.escapeHtml;
+
+    var items = [
+      { titre: "Une journée avec notre conducteur de travaux", type: "Reportage", jours: 5 },
+      { titre: "Découvrez notre atelier et nos équipements", type: "Visite", jours: 18 },
+      { titre: "Comment travaille notre équipe support", type: "Coulisses", jours: 40 }
+    ];
+
+    if (!items.length) {
+      box.innerHTML = '<div class="empty-state"><h3>Aucun contenu publié</h3>' +
+        '<p>Partagez les coulisses de votre entreprise pour attirer les bons profils.</p>' +
+        '<p><a class="btn btn-accent" href="publier-savoir-faire.html">Publier un contenu</a></p></div>';
+      return;
+    }
+
+    box.innerHTML = items.map(function (it) {
+      return '<article class="card dash-card content-card">' +
+          '<div class="content-card__body">' +
+            '<span class="badge badge--neutral">' + e(it.type) + '</span>' +
+            '<h3 class="content-card__title">' + e(it.titre) + '</h3>' +
+            '<p class="text-muted">Publié ' + e(SS.relativeDate(dateFromToday(-it.jours))) + '</p>' +
+          '</div>' +
+          '<div class="row-actions">' +
+            '<a class="btn btn-outline btn-sm" href="savoir-faire.html">Voir</a>' +
+            '<button type="button" class="btn btn-ghost btn-sm" data-toast="Modification du contenu (démonstration).">Modifier</button>' +
+          '</div>' +
+        '</article>';
+    }).join("");
+  }
+
+  /* ============================================================
+     Profil entreprise — affichage + mode Modifier
+     ============================================================ */
+  function initProfilEdit() {
+    var view = document.getElementById("profil-desc-view");
+    var form = document.getElementById("profil-desc-form");
+    var field = document.getElementById("profil-desc");
+    var editBtn = document.getElementById("profil-edit-btn");
+    var saveBtn = document.getElementById("profil-desc-save");
+    var cancelBtn = document.getElementById("profil-desc-cancel");
+    if (!view || !form || !field || !editBtn || !saveBtn || !cancelBtn) { return; }
+
+    /* Réhydrate la présentation éventuellement éditée précédemment. */
+    var stored = SS.store.get(PROFILE_KEY, null);
+    if (stored && typeof stored.description === "string" && stored.description.trim()) {
+      view.textContent = stored.description;
+      field.value = stored.description;
+    }
+
+    function openEdit() {
+      field.value = view.textContent;
+      form.hidden = false;
+      editBtn.hidden = true;
+      field.focus();
+    }
+    function closeEdit() {
+      form.hidden = true;
+      editBtn.hidden = false;
+      editBtn.focus();
+    }
+
+    editBtn.addEventListener("click", openEdit);
+    cancelBtn.addEventListener("click", closeEdit);
+    saveBtn.addEventListener("click", function () {
+      var val = (field.value || "").trim();
+      if (val) { view.textContent = val; }
+      SS.store.set(PROFILE_KEY, { description: view.textContent });
+      closeEdit();
+      SS.toast("Présentation enregistrée (démonstration).");
     });
   }
 
@@ -284,9 +745,9 @@
     var e = SS.escapeHtml;
 
     var rows = [
-      { date: dateFromToday(-12), offre: "Assistant(e) comptable — CDI" },
+      { date: dateFromToday(-12), offre: "Assistant(e) commercial(e) — CDI" },
       { date: dateFromToday(-48), offre: "Gestionnaire de paie — CDI" },
-      { date: dateFromToday(-95), offre: "Secrétaire administrative — CDD" }
+      { date: dateFromToday(-95), offre: "Conducteur de travaux — CDI" }
     ];
 
     tbody.innerHTML = rows.map(function (r) {
@@ -339,7 +800,7 @@
     }
   }
 
-  /* ---- Boutons fictifs (data-toast) : profil, messages, facturation… ---- */
+  /* ---- Boutons fictifs (data-toast) : profil, facturation, contenus… ---- */
   function initToasts() {
     document.addEventListener("click", function (ev) {
       var btn = ev.target.closest ? ev.target.closest("[data-toast]") : null;
@@ -347,7 +808,10 @@
     });
   }
 
-  /* ---- Modale de refus de candidature (accessible, focus piégé) ---- */
+  /* ---- Modale de refus de candidature (accessible, focus piégé) ----
+     LA MODALE DE REFUS COURTOIS EST INCHANGÉE ET VALIDÉE : motif interne
+     jamais transmis, message courtois pré-rempli et éditable, toast, statut
+     « non retenue ». Réutilisée depuis les cartes du pipeline. */
   function initRefusModal() {
     var overlay = document.getElementById("refus-modal");
     if (!overlay) { return; }

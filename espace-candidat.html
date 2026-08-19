@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="assets/css/global.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/dashboard.css">
+  <link rel="stylesheet" href="assets/css/dashboard-candidat.css">
   <link rel="stylesheet" href="assets/css/guided-search.css">
   <link rel="stylesheet" href="assets/css/responsive.css">
 </head>
@@ -70,13 +71,14 @@
             </div>
           </div>
           <nav class="dash-nav" aria-label="Navigation de l'espace candidat">
-            <a href="#apercu" class="is-active">Vue d'ensemble</a>
+            <a href="#apercu" class="is-active">Tableau de bord</a>
+            <a href="#profil">Mon profil</a>
             <a href="#candidatures">Mes candidatures</a>
-            <a href="#messages">Messages</a>
-            <a href="#recommandations">Des offres pour vous</a>
             <a href="#favoris">Mes favoris</a>
             <a href="#alertes">Mes alertes</a>
-            <a href="#profil">Mon profil</a>
+            <a href="#savoir-faire">Mes savoir-faire</a>
+            <a href="#entretiens">Mes entretiens</a>
+            <a href="#messages">Messages</a>
             <a href="#parametres">Paramètres</a>
           </nav>
         </aside>
@@ -84,57 +86,68 @@
         <!-- ===== Contenu ===== -->
         <div class="dash-main">
 
-          <!-- 1. Vue d'ensemble -->
+          <!-- 1. Tableau de bord (pilotage) -->
           <section class="dash-block" id="apercu">
-            <h1 class="dash-greeting">Bonjour <span id="hello-name">…</span></h1>
+            <h1 class="dash-greeting">Bonjour <span id="hello-name">…</span> <span aria-hidden="true">👋</span></h1>
             <p class="dash-subtitle">Voici où en est votre recherche aujourd'hui.</p>
-            <div class="dash-metrics">
-              <div class="dash-metric"><b id="metric-applications">0</b><span>candidatures</span></div>
-              <div class="dash-metric"><b id="metric-views">0</b><span>entreprises ont consulté votre profil</span></div>
-              <div class="dash-metric"><b id="metric-favorites">0</b><span>offres enregistrées</span></div>
-              <div class="dash-metric"><b id="metric-reco">0</b><span>nouvelles offres pour vous</span></div>
-            </div>
+
             <!-- Notifications de mise à jour de candidature (rempli par dashboard-candidat.js) -->
             <div id="status-notification"></div>
-            <p class="notice notice--demo">L'espace candidat est entièrement gratuit.</p>
+
+            <!-- Ma recherche : critères actifs + édition inline -->
+            <div id="search-criteria" class="cand-card cand-search"></div>
+
+            <!-- 4 indicateurs de pilotage -->
+            <div class="dash-metrics" aria-label="Indicateurs de ma recherche">
+              <div class="dash-metric"><b id="metric-applications">0</b><span>candidatures</span></div>
+              <div class="dash-metric"><b id="metric-views">0</b><span>consultées par l'entreprise</span></div>
+              <div class="dash-metric"><b id="metric-entretiens">0</b><span>entretiens</span></div>
+              <div class="dash-metric"><b id="metric-favorites">0</b><span>favoris</span></div>
+            </div>
+
+            <!-- Candidatures récentes avec frise de progression -->
+            <div class="cand-subhead">
+              <h2>Mes candidatures récentes</h2>
+              <a class="cand-subhead__link" href="#candidatures">Toutes mes candidatures</a>
+            </div>
+            <div id="recent-applications"></div>
+
+            <!-- Recommandations : des offres pour vous -->
+            <div class="cand-subhead" id="recommandations">
+              <h2>Des offres pour vous</h2>
+              <a class="cand-subhead__link" href="offres.html">Voir toutes les offres</a>
+            </div>
+            <p class="dash-subtitle">Sélectionnées à partir des critères de votre recherche. <b id="metric-reco" hidden>0</b></p>
+            <div id="reco-list" class="cand-reco-grid"></div>
+
+            <p class="notice notice--demo" style="margin-top: var(--sp-5);">L'espace candidat est entièrement gratuit.</p>
           </section>
 
-          <!-- 2. Mes candidatures -->
+          <!-- 2. Mon profil -->
+          <section class="dash-block" id="profil">
+            <h2>Mon profil professionnel</h2>
+            <p class="dash-subtitle">Sur Postelio, on ne montre pas seulement où l'on a travaillé, on montre ce que l'on sait faire.</p>
+
+            <!-- Indicateur de complétion + conseils actionnables -->
+            <div id="profile-completion" class="cand-card"></div>
+
+            <!-- Sections du profil (lecture + modification ponctuelle) -->
+            <div id="profile-sections" class="profile-sections"></div>
+
+            <p class="dash-subtitle" style="margin-top: var(--sp-3);">Prototype : les informations du profil sont enregistrées uniquement dans votre navigateur.</p>
+          </section>
+
+          <!-- 3. Mes candidatures -->
           <section class="dash-block" id="candidatures">
             <h2>Mes candidatures</h2>
+            <p class="dash-subtitle">Suivez l'avancement de chaque candidature, étape par étape.</p>
             <div id="applications-list"></div>
-          </section>
-
-          <!-- 2b. Messages -->
-          <section class="dash-block" id="messages">
-            <h2>Messages</h2>
-            <p class="dash-subtitle">Vos échanges avec les entreprises. Prototype : la messagerie est simulée.</p>
-            <div class="appli-card">
-              <div class="appli-card__top">
-                <div>
-                  <strong>Pixel &amp; Co</strong><br>
-                  <span class="text-muted">Développeur web junior — Lille</span>
-                </div>
-                <span class="status-badge status-entretien">Entretien proposé</span>
-              </div>
-              <p class="text-muted" style="margin-top:var(--sp-2);">« Bonjour, nous serions ravis de vous rencontrer. Seriez-vous disponible le 21 août à 14 h ? »</p>
-              <div class="form-actions" style="margin-top:var(--sp-3);">
-                <button type="button" class="btn btn-primary btn-sm" data-toast="Réponse envoyée (démonstration).">Répondre</button>
-              </div>
-            </div>
-          </section>
-
-          <!-- 3. Des offres pour vous -->
-          <section class="dash-block" id="recommandations">
-            <h2>Des offres pour vous</h2>
-            <p class="dash-subtitle">Sélectionnées à partir du métier indiqué dans votre profil.</p>
-            <div id="reco-list" class="grid-3"></div>
-            <p><a class="btn btn-outline" href="offres.html">Voir toutes mes recommandations</a></p>
           </section>
 
           <!-- 4. Mes favoris -->
           <section class="dash-block" id="favoris">
             <h2>Mes favoris</h2>
+            <p class="dash-subtitle">Les offres que vous avez enregistrées pour y revenir.</p>
             <div id="favorites-list"></div>
           </section>
 
@@ -174,9 +187,19 @@
                   </select>
                 </div>
               </div>
-              <div class="field field--checkbox">
-                <input type="checkbox" id="alert-teletravail">
-                <label for="alert-teletravail">Uniquement les offres proposant du télétravail</label>
+              <div class="form-row">
+                <div class="field">
+                  <label for="alert-frequence">Fréquence de notification</label>
+                  <select id="alert-frequence">
+                    <option value="immediate">Immédiatement</option>
+                    <option value="quotidienne" selected>Chaque jour</option>
+                    <option value="hebdomadaire">Chaque semaine</option>
+                  </select>
+                </div>
+                <div class="field field--checkbox" style="align-self:end;">
+                  <input type="checkbox" id="alert-teletravail">
+                  <label for="alert-teletravail">Uniquement les offres proposant du télétravail</label>
+                </div>
               </div>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Créer l'alerte</button>
@@ -185,49 +208,32 @@
             <div id="alerts-list" style="margin-top: var(--sp-5);"></div>
           </section>
 
-          <!-- 6. Mon profil -->
-          <section class="dash-block" id="profil">
-            <h2>Mon profil</h2>
-            <div class="card" style="padding: var(--sp-5);">
-              <div class="profile-meter" aria-hidden="true"><span class="profile-meter__fill-75"></span></div>
-              <p class="profile-meter__label">Profil complété à <strong>75 %</strong></p>
-              <p class="notice notice--demo" style="margin-top: var(--sp-4);">
-                Prochaine étape suggérée : <strong>ajoutez votre CV</strong> pour augmenter vos chances d'être contacté(e).
-              </p>
+          <!-- 6. Mes savoir-faire (fonctionnalité différenciante) -->
+          <section class="dash-block" id="savoir-faire">
+            <div class="cand-subhead">
+              <h2>Mes savoir-faire</h2>
+              <a class="btn btn-primary btn-sm" href="publier-savoir-faire.html?type=candidat">Publier un savoir-faire</a>
             </div>
-
-            <div class="card grid-2" id="profile-fields" style="padding: var(--sp-5); margin-top: var(--sp-4);">
-              <div class="field"><label>Photo</label><input value="" placeholder="Aucune photo ajoutée"></div>
-              <div class="field"><label for="prof-nom">Nom</label><input id="prof-nom" value=""></div>
-              <div class="field"><label for="prof-ville">Ville</label><input id="prof-ville" value=""></div>
-              <div class="field"><label for="prof-metier">Métier recherché</label><input id="prof-metier" value=""></div>
-              <div class="field" style="grid-column: 1 / -1;"><label for="prof-presentation">Présentation</label><textarea id="prof-presentation" placeholder="Quelques lignes sur votre parcours et vos objectifs…"></textarea></div>
-              <div class="field"><label for="prof-experiences">Expériences</label><input id="prof-experiences" placeholder="Ex. 3 ans en développement web"></div>
-              <div class="field"><label for="prof-formation">Formation</label><input id="prof-formation" placeholder="Ex. BUT Informatique"></div>
-              <div class="field" style="grid-column: 1 / -1;"><label for="prof-competences">Compétences</label><input id="prof-competences" placeholder="HTML, CSS, JavaScript, travail en équipe…"></div>
-              <div class="field"><label>CV</label><input value="" placeholder="Aucun CV ajouté"></div>
-              <div class="field"><label for="prof-dispo">Disponibilité</label>
-                <select id="prof-dispo">
-                  <option>Immédiate</option>
-                  <option>Sous 1 mois</option>
-                  <option>Sous 3 mois</option>
-                </select>
-              </div>
-              <div class="field"><label for="prof-contrats">Types de contrats</label><input id="prof-contrats" placeholder="CDI, CDD…"></div>
-              <div class="field"><label for="prof-mobilite">Mobilité</label><input id="prof-mobilite" placeholder="Ex. 30 km autour de Lyon"></div>
-              <div class="field"><label for="prof-teletravail">Télétravail</label>
-                <select id="prof-teletravail">
-                  <option>Peu importe</option>
-                  <option>Sur site</option>
-                  <option>Partiel</option>
-                  <option>Complet</option>
-                </select>
-              </div>
-            </div>
-            <p class="dash-subtitle" style="margin-top: var(--sp-3);">Prototype : les champs du profil ne sont pas enregistrés côté serveur.</p>
+            <p class="dash-subtitle">Partagez des preuves concrètes de vos compétences : une méthode, un tour de main, un retour d'expérience.</p>
+            <div id="savoirfaire-aggregate"></div>
+            <div id="savoirfaire-list"></div>
           </section>
 
-          <!-- 7. Paramètres -->
+          <!-- 7. Mes entretiens -->
+          <section class="dash-block" id="entretiens">
+            <h2>Mes entretiens</h2>
+            <p class="dash-subtitle">Vos rendez-vous à venir avec les entreprises.</p>
+            <div id="interviews-list"></div>
+          </section>
+
+          <!-- 8. Messages -->
+          <section class="dash-block" id="messages">
+            <h2>Messages</h2>
+            <p class="dash-subtitle">Vos échanges avec les entreprises. Prototype : la messagerie est simulée.</p>
+            <div id="messages-app" class="msg-app"></div>
+          </section>
+
+          <!-- 9. Paramètres -->
           <section class="dash-block" id="parametres">
             <h2>Paramètres</h2>
             <div class="card" style="padding: var(--sp-5);">
@@ -241,7 +247,7 @@
                 <div class="field--checkbox"><input type="checkbox" id="set-notif-status" checked><label for="set-notif-status">M'avertir quand une candidature change de statut</label></div>
                 <div class="field--checkbox"><input type="checkbox" id="set-notif-news"><label for="set-notif-news">Recevoir les conseils et actualités Postelio</label></div>
               </fieldset>
-              <p class="dash-subtitle">Prototype : ces réglages ne déclenchent aucun envoi réel.</p>
+              <p class="dash-subtitle">Vos critères de recherche se modifient depuis le bloc « Ma recherche » du tableau de bord. Prototype : ces réglages ne déclenchent aucun envoi réel.</p>
               <div class="form-actions" style="margin-top: var(--sp-4);">
                 <button type="button" class="btn btn-ghost" id="logout-btn">Se déconnecter</button>
               </div>

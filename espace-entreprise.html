@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Espace entreprise — tableau de bord | Postelio</title>
-  <meta name="description" content="Gérez vos offres d'emploi depuis votre espace entreprise : offres actives et expirées, candidatures reçues, modification, désactivation et renouvellement pour 10 €.">
+  <meta name="description" content="Pilotez votre recrutement depuis votre espace entreprise : offres, pipeline de candidatures, entretiens, messages, marque employeur et renouvellement pour 10 €.">
     <meta property="og:type" content="website">
   <meta property="og:site_name" content="Postelio">
   <meta property="og:title" content="Espace entreprise — tableau de bord | Postelio">
-  <meta property="og:description" content="Gérez vos offres d'emploi depuis votre espace entreprise : offres actives et expirées, candidatures reçues, modification, désactivation et renouvellement pour 10 €.">
+  <meta property="og:description" content="Pilotez votre recrutement depuis votre espace entreprise : offres, pipeline de candidatures, entretiens, messages, marque employeur et renouvellement pour 10 €.">
   <meta property="og:image" content="https://jonathan-lanationduweb.github.io/Postelio/assets/images/photos/og-image.jpg">
   <meta property="og:locale" content="fr_FR">
   <meta name="twitter:card" content="summary_large_image">
@@ -70,13 +70,15 @@
               <span id="dash-company">Compte recruteur</span>
             </span>
           </div>
+          <a class="btn btn-accent btn-block dash-sidebar__cta" href="publier-offre.html">Publier une offre</a>
           <nav class="dash-nav" aria-label="Sections de l'espace entreprise">
             <a href="#tableau" class="is-active" data-nav="tableau">Tableau de bord</a>
             <a href="#offres" data-nav="offres">Mes offres</a>
             <a href="#candidatures" data-nav="candidatures">Candidatures</a>
-            <a href="publier-offre.html">Publier une offre</a>
-            <a href="#profil" data-nav="profil">Profil entreprise</a>
+            <a href="#entretiens" data-nav="entretiens">Entretiens</a>
             <a href="#messages" data-nav="messages">Messages</a>
+            <a href="#profil" data-nav="profil">Profil entreprise</a>
+            <a href="#contenus" data-nav="contenus">Contenus entreprise</a>
             <a href="#facturation" data-nav="facturation">Facturation</a>
             <a href="#parametres" data-nav="parametres">Paramètres</a>
           </nav>
@@ -85,19 +87,23 @@
         <!-- ===== Contenu ===== -->
         <div class="dash-main">
 
-          <!-- 1. Tableau de bord -->
+          <!-- 1. Tableau de bord — pilotage -->
           <section class="dash-block" id="tableau" aria-labelledby="h-tableau">
-            <h1 class="dash-greeting" id="h-tableau">Bonjour <span id="hello-name">!</span></h1>
-            <p class="dash-subtitle" id="company-line">Voici l'activité de votre entreprise.</p>
+            <h1 class="dash-greeting" id="h-tableau">Bonjour <span id="hello-name">!</span> <span aria-hidden="true">👋</span></h1>
+            <p class="dash-subtitle">Voici ce qui demande votre attention aujourd'hui.</p>
 
             <div class="dash-metrics">
-              <div class="dash-metric"><b id="metric-active">3</b><span>offres actives</span></div>
-              <div class="dash-metric"><b id="metric-applications">18</b><span>candidatures reçues</span></div>
-              <div class="dash-metric"><b id="metric-new">5</b><span>nouvelles candidatures</span></div>
-              <div class="dash-metric"><b id="metric-renew">1</b><span>offre(s) à renouveler</span></div>
+              <div class="dash-metric"><b>3</b><span>offres actives</span></div>
+              <div class="dash-metric"><b>8</b><span>nouvelles candidatures</span></div>
+              <div class="dash-metric"><b>2</b><span>entretiens</span></div>
+              <div class="dash-metric"><b>5</b><span>à traiter</span></div>
             </div>
 
-            <p><a class="btn btn-accent" href="publier-offre.html">+ Publier une offre</a></p>
+            <!-- À faire aujourd'hui : liste d'actions prioritaires (rendue par dashboard.js) -->
+            <div class="card dash-card dash-todo">
+              <h2 class="dash-todo__title" id="h-todo">À faire aujourd'hui</h2>
+              <ul class="todo-list" id="dash-todo" aria-labelledby="h-todo"></ul>
+            </div>
 
             <!-- Carte contextuelle 10 € : renseignée par dashboard.js si une offre expire -->
             <div id="renewal-alert"></div>
@@ -105,109 +111,94 @@
 
           <!-- 2. Mes offres -->
           <section class="dash-block" id="offres" aria-labelledby="h-offres">
-            <h2 id="h-offres">Mes offres</h2>
-            <div class="table-wrap" id="dashboard-table-wrap">
-              <table class="data-table">
-                <caption class="visually-hidden">Liste de vos offres d'emploi avec vues, candidatures, statut, expiration et actions</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Titre</th>
-                    <th scope="col">Publiée le</th>
-                    <th scope="col">Vues</th>
-                    <th scope="col">Candidatures</th>
-                    <th scope="col">Statut</th>
-                    <th scope="col">Expire le</th>
-                    <th scope="col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="dashboard-offers">
-                  <tr><td colspan="7">Chargement de vos offres…</td></tr>
-                </tbody>
-              </table>
+            <div class="dash-block__head">
+              <h2 id="h-offres">Mes offres</h2>
+              <a class="btn btn-accent btn-sm" href="publier-offre.html">Publier une offre</a>
             </div>
-            <p class="notice notice--demo">Prototype de démonstration : le paiement du renouvellement (10&nbsp;€) est simulé et vos modifications (désactivation, renouvellement) sont conservées dans votre navigateur.</p>
+            <div id="dashboard-offers" class="offers-list">
+              <p class="text-muted">Chargement de vos offres…</p>
+            </div>
+            <p class="notice notice--demo">Prototype de démonstration : le paiement du renouvellement (10&nbsp;€) est simulé et vos actions (désactivation, renouvellement, archivage) sont conservées dans votre navigateur.</p>
           </section>
 
-          <!-- 3. Candidatures reçues -->
+          <!-- 3. Candidatures — pipeline visuel -->
           <section class="dash-block" id="candidatures" aria-labelledby="h-candidatures">
-            <h2 id="h-candidatures">Candidatures reçues</h2>
-            <div id="applications-received"></div>
+            <div class="dash-block__head">
+              <h2 id="h-candidatures">Candidatures</h2>
+              <p class="dash-block__hint">Faites glisser vos candidats d'une étape à l'autre grâce aux actions de chaque carte.</p>
+            </div>
+            <div class="pipeline-wrap">
+              <div class="pipeline" id="pipeline-board" aria-label="Pipeline de recrutement"></div>
+            </div>
           </section>
 
-          <!-- 4. Profil entreprise -->
-          <section class="dash-block" id="profil" aria-labelledby="h-profil">
-            <h2 id="h-profil">Profil entreprise</h2>
-            <div class="card dash-card">
-              <div class="profile-head">
-                <span class="avatar" id="profil-logo" aria-hidden="true">FB</span>
-                <span>
-                  <span class="profile-head__name" id="profil-name">Fiduciaire Bellecour</span>
-                  <span class="profile-head__meta"><span id="profil-sector">Finance &amp; Comptabilité</span> · <span id="profil-city">Lyon</span></span>
-                </span>
-              </div>
-              <div class="profile-form">
-                <div class="form-field">
-                  <label for="profil-desc">Présentation de l'entreprise</label>
-                  <textarea id="profil-desc" rows="4">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</textarea>
-                </div>
-                <p class="text-muted form-hint">Une fiche complète attire davantage de candidatures.</p>
-                <div class="profile-meter" role="img" aria-label="Profil complété à 75 %">
-                  <span class="profile-meter__fill-75"></span>
-                </div>
-                <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque un logo et une photo de vos locaux.</p>
-              </div>
-              <div class="profile-actions">
-                <button type="button" class="btn btn-primary" data-toast="Profil enregistré (démonstration).">Enregistrer</button>
-                <a class="btn btn-ghost secondary" href="publier-savoir-faire.html">Partager un savoir-faire</a>
-              </div>
-            </div>
+          <!-- 4. Entretiens -->
+          <section class="dash-block" id="entretiens" aria-labelledby="h-entretiens">
+            <h2 id="h-entretiens">Mes entretiens</h2>
+            <div id="interviews-list"></div>
           </section>
 
           <!-- 5. Messages -->
           <section class="dash-block" id="messages" aria-labelledby="h-messages">
             <h2 id="h-messages">Messages</h2>
-            <div class="appli-card">
-              <div class="appli-card__top">
-                <div>
-                  <strong>Camille Reynaud</strong><br>
-                  <span class="text-muted">Assistant(e) comptable — CDI</span>
-                </div>
-                <span class="status-badge status-recue">Nouveau</span>
-              </div>
-              <p class="text-muted" style="margin-top:var(--sp-2);">« Bonjour, je reste disponible pour un entretien la semaine prochaine si besoin. »</p>
-              <div class="form-actions" style="margin-top:var(--sp-3);">
-                <button type="button" class="btn btn-primary btn-sm" data-toast="Réponse envoyée (démonstration).">Répondre</button>
-              </div>
+            <div class="messaging" id="messaging" aria-label="Messagerie recruteur">
+              <div class="messaging__list" id="messaging-list" role="tablist" aria-label="Conversations"></div>
+              <div class="messaging__thread" id="messaging-thread"></div>
             </div>
-            <div class="appli-card">
-              <div class="appli-card__top">
-                <div>
-                  <strong>Malik Benhaddou</strong><br>
-                  <span class="text-muted">Gestionnaire de paie — CDI</span>
+          </section>
+
+          <!-- 6. Profil entreprise -->
+          <section class="dash-block" id="profil" aria-labelledby="h-profil">
+            <h2 id="h-profil">Profil entreprise</h2>
+            <div class="card dash-card profil-card">
+              <div class="profile-head">
+                <span class="avatar profile-logo" id="profil-logo" aria-hidden="true">FB</span>
+                <span>
+                  <span class="profile-head__name" id="profil-name">Fiduciaire Bellecour</span>
+                  <span class="profile-head__meta"><span id="profil-sector">Finance &amp; Comptabilité</span> · <span id="profil-city">Lyon</span></span>
+                </span>
+              </div>
+
+              <div class="profile-meter" role="img" aria-label="Profil complété à 75 %">
+                <span class="profile-meter__fill-75"></span>
+              </div>
+              <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque : votre logo, une photo de vos locaux.</p>
+
+              <div class="profil-section">
+                <div class="profil-section__head">
+                  <h3>Présentation de l'entreprise</h3>
+                  <button type="button" class="btn btn-outline btn-sm" id="profil-edit-btn">Modifier</button>
                 </div>
-                <span class="status-badge status-vue">Lu</span>
+                <p id="profil-desc-view">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</p>
+                <form class="profil-desc-form" id="profil-desc-form" hidden>
+                  <div class="form-field">
+                    <label class="visually-hidden" for="profil-desc">Présentation de l'entreprise</label>
+                    <textarea id="profil-desc" rows="5">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</textarea>
+                  </div>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="profil-desc-save">Enregistrer</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="profil-desc-cancel">Annuler</button>
+                  </div>
+                </form>
               </div>
-              <p class="text-muted" style="margin-top:var(--sp-2);">« Merci pour votre retour, je vous confirme ma présence à l'entretien de jeudi. »</p>
-              <div class="form-actions" style="margin-top:var(--sp-3);">
-                <button type="button" class="btn btn-primary btn-sm" data-toast="Réponse envoyée (démonstration).">Répondre</button>
-              </div>
-            </div>
-            <div class="appli-card">
-              <div class="appli-card__top">
-                <div>
-                  <strong>Sophie Lemaire</strong><br>
-                  <span class="text-muted">Secrétaire administrative — CDD</span>
-                </div>
-                <span class="status-badge status-vue">Lu</span>
-              </div>
-              <p class="text-muted" style="margin-top:var(--sp-2);">« Bonjour, ma candidature est-elle toujours à l'étude ? Bien cordialement. »</p>
-              <div class="form-actions" style="margin-top:var(--sp-3);">
-                <button type="button" class="btn btn-primary btn-sm" data-toast="Réponse envoyée (démonstration).">Répondre</button>
+
+              <div class="profile-actions">
+                <a class="btn btn-ghost secondary" href="publier-savoir-faire.html">Partager un savoir-faire</a>
               </div>
             </div>
           </section>
 
-          <!-- 6. Facturation -->
+          <!-- 7. Contenus entreprise — marque employeur -->
+          <section class="dash-block" id="contenus" aria-labelledby="h-contenus">
+            <div class="dash-block__head">
+              <h2 id="h-contenus">Contenus entreprise</h2>
+              <a class="btn btn-accent btn-sm" href="publier-savoir-faire.html">Publier un contenu</a>
+            </div>
+            <p class="dash-block__hint">Ces contenus renforcent votre marque employeur : ils donnent envie aux candidats de vous rejoindre avant même de postuler.</p>
+            <div id="contents-list"></div>
+          </section>
+
+          <!-- 8. Facturation -->
           <section class="dash-block" id="facturation" aria-labelledby="h-facturation">
             <h2 id="h-facturation">Facturation</h2>
             <div class="card dash-card">
@@ -243,7 +234,7 @@
             </div>
           </section>
 
-          <!-- 7. Paramètres -->
+          <!-- 9. Paramètres -->
           <section class="dash-block" id="parametres" aria-labelledby="h-parametres">
             <h2 id="h-parametres">Paramètres</h2>
             <div class="card dash-card">
@@ -367,11 +358,3 @@
   <script src="assets/js/chatbot.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-

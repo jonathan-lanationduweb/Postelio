@@ -1,0 +1,466 @@
+/* ============================================================
+   Espace candidat — styles spécifiques du tableau de bord
+   ------------------------------------------------------------
+   Chargé APRÈS dashboard.css. Réutilise les classes partagées
+   (.dash-*, .appli-card, .status-badge, .profile-meter, .card,
+   .btn*, .badge*, .empty-state, .msg-disclosure) et n'ajoute ici
+   QUE les composants propres à l'espace candidat.
+   Palette Postelio conservée (vert sapin / miel / crème).
+   ============================================================ */
+
+/* Correctif responsive : sous 900px, la barre latérale devient une nav
+   horizontale (dashboard.css). Avec 9 entrées, sans min-width:0 le contenu
+   intrinsèque de la nav élargit la colonne de grille et provoque un scroll
+   horizontal de la page. On contraint donc la colonne ici (fichier chargé
+   uniquement sur l'espace candidat). */
+@media (max-width: 900px) {
+  .dash-sidebar { min-width: 0; max-width: 100%; }
+  .dash-nav { max-width: 100%; }
+}
+
+/* Utilitaire : contenu réservé aux lecteurs d'écran. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Carte générique de l'espace candidat (bloc encadré crème/blanc). */
+.cand-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-l);
+  padding: var(--sp-5);
+}
+.cand-card__title { font-size: var(--text-lg); margin: 0; }
+
+/* Sous-titre de section avec lien d'action à droite. */
+.cand-subhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin: var(--sp-6) 0 var(--sp-3);
+}
+.cand-subhead h2 { font-size: var(--text-xl); margin: 0; }
+.cand-subhead__link { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
+
+/* ============================================================
+   Ma recherche (critères actifs + édition inline)
+   ============================================================ */
+.cand-search { margin-top: var(--sp-5); }
+.cand-search__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+.cand-search__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4);
+  margin: 0;
+}
+.cand-search__grid > div {
+  border-left: 3px solid var(--c-primary);
+  padding-left: var(--sp-3);
+}
+.cand-search__grid dt {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-ink-soft);
+  margin-bottom: 2px;
+}
+.cand-search__grid dd {
+  margin: 0;
+  font-weight: 650;
+  color: var(--c-primary-dark);
+}
+.cand-search__edit {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--c-line);
+}
+.cand-search__edit .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+
+@media (max-width: 640px) {
+  .cand-search__grid { grid-template-columns: 1fr; gap: var(--sp-3); }
+  .cand-search__edit .form-row { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   Frise de progression (5 étapes) — carte candidature
+   ============================================================ */
+.frise {
+  list-style: none;
+  display: flex;
+  gap: 0;
+  margin: var(--sp-4) 0;
+  padding: 0;
+  overflow-x: auto;            /* jamais de débordement de la page */
+  -webkit-overflow-scrolling: touch;
+}
+.frise__step {
+  flex: 1 1 0;
+  min-width: 64px;
+  text-align: center;
+  position: relative;
+  padding-top: 22px;
+  font-size: var(--text-xs);
+  color: var(--c-ink-soft);
+}
+/* Trait de liaison entre deux étapes. */
+.frise__step:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: -50%;
+  width: 100%;
+  height: 3px;
+  background: var(--c-line);
+}
+.frise__dot {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: var(--c-surface);
+  border: 3px solid var(--c-line);
+  z-index: 1;
+}
+.frise__label { display: block; padding: 0 2px; }
+
+/* Étapes franchies */
+.frise__step.is-done { color: var(--c-ink); }
+.frise__step.is-done .frise__dot { background: var(--c-primary); border-color: var(--c-primary); }
+.frise__step.is-done:not(:first-child)::before { background: var(--c-primary); }
+
+/* Étape courante (mise en évidence) */
+.frise__step.is-current { color: var(--c-primary-dark); font-weight: 700; }
+.frise__step.is-current .frise__dot {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 4px var(--c-accent-soft);
+}
+.frise__step.is-current:not(:first-child)::before { background: var(--c-primary); }
+
+/* Issue de la décision (dernière étape) */
+.frise__step.is-positive .frise__dot { background: var(--c-success); border-color: var(--c-success); box-shadow: 0 0 0 4px var(--c-success-soft); }
+.frise__step.is-positive { color: var(--c-success); font-weight: 700; }
+.frise__step.is-negative .frise__dot { background: var(--c-error); border-color: var(--c-error); box-shadow: 0 0 0 4px var(--c-error-soft); }
+.frise__step.is-negative { color: var(--c-error); font-weight: 700; }
+.frise__step.is-neutral .frise__dot { background: var(--c-ink-soft); border-color: var(--c-ink-soft); }
+
+/* Carte candidature compacte (aperçu tableau de bord) */
+.appli-card--compact + .appli-card--compact { margin-top: var(--sp-4); }
+
+/* ============================================================
+   Recommandations : « Des offres pour vous » + « Pourquoi »
+   ============================================================ */
+.cand-reco-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--sp-5);
+}
+.reco-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-l);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.reco-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  align-items: start;
+}
+.reco-card__head strong { color: var(--c-primary-dark); }
+.reco-card__tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.reco-card__salaire { font-size: var(--text-sm); color: var(--c-ink); }
+.reco-card__cta { margin-top: auto; }
+
+/* Bouton favori (cœur) — cible tactile ≥ 40 px */
+.fav-btn {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  border-radius: var(--radius-s);
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--c-accent-dark);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+.fav-btn:hover { background: var(--c-accent-soft); }
+.fav-btn[aria-pressed="true"] { color: var(--c-accent); }
+.fav-btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+/* Divulgation « Pourquoi cette offre ? » */
+.why__toggle { padding-left: 0; }
+.why__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.why__item {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+}
+.why__icon { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; }
+.why__icon--ok { color: var(--c-success); }
+.why__icon--warn { color: var(--c-accent-dark); }
+.why__item.is-warn span { color: var(--c-ink-soft); }
+
+/* ============================================================
+   Profil professionnel : complétion + sections
+   ============================================================ */
+.profile-tips { margin-top: var(--sp-4); }
+.profile-tips__title { font-size: var(--text-sm); font-weight: 650; margin-bottom: var(--sp-2); }
+.profile-tips ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.profile-tips li {
+  font-size: var(--text-sm);
+  color: var(--c-ink-soft);
+  padding-left: 1.2rem;
+  position: relative;
+}
+.profile-tips li::before { content: "+"; position: absolute; left: 0; color: var(--c-accent-dark); font-weight: 700; }
+.profile-tips a { font-weight: 600; }
+
+.profile-sections {
+  margin-top: var(--sp-4);
+  display: grid;
+  gap: 0;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-l);
+  overflow: hidden;
+}
+.profile-row { padding: var(--sp-4) var(--sp-5); }
+.profile-row + .profile-row { border-top: 1px solid var(--c-line); }
+.profile-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.profile-row__head h3 { font-size: var(--text-base); font-family: var(--font-sans); margin: 0; }
+.profile-row__body { margin-top: 6px; }
+.profile-row__value { font-size: var(--text-sm); color: var(--c-ink); }
+.profile-row__empty { font-size: var(--text-sm); color: var(--c-ink-soft); font-style: italic; }
+.profile-row__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.profile-row__edit { margin-top: var(--sp-3); }
+.profile-row__edit textarea,
+.profile-row__edit input { width: 100%; }
+
+/* ============================================================
+   Mes savoir-faire
+   ============================================================ */
+.sf-aggregate {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4);
+  background: var(--c-primary-soft);
+  border-radius: var(--radius-l);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+.sf-aggregate__stat b {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  color: var(--c-primary-dark);
+  line-height: 1;
+}
+.sf-aggregate__stat span { display: block; font-size: var(--text-sm); color: var(--c-ink-soft); margin-top: 4px; }
+
+.sf-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-l);
+  padding: var(--sp-5);
+  display: flex;
+  gap: var(--sp-4);
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.sf-card + .sf-card { margin-top: var(--sp-4); }
+.sf-card__body { flex: 1 1 320px; min-width: 0; }
+.sf-card__body h3 { font-size: var(--text-lg); margin-bottom: 4px; }
+.sf-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  font-size: var(--text-xs);
+  color: var(--c-ink-soft);
+  align-items: center;
+}
+.sf-card__actions { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+@media (max-width: 640px) {
+  .sf-aggregate { grid-template-columns: 1fr; gap: var(--sp-3); text-align: left; }
+  .sf-card__actions { flex-direction: row; flex-wrap: wrap; }
+}
+
+/* ============================================================
+   Mes entretiens
+   ============================================================ */
+.interview-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-l);
+  padding: var(--sp-5);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-5);
+  align-items: center;
+}
+.interview-card + .interview-card { margin-top: var(--sp-4); }
+.interview-card__date {
+  text-align: center;
+  background: var(--c-primary-soft);
+  border-radius: var(--radius-m);
+  padding: var(--sp-3) var(--sp-4);
+  min-width: 130px;
+}
+.interview-card__day { display: block; font-size: var(--text-xs); text-transform: capitalize; color: var(--c-ink-soft); }
+.interview-card__date b { display: block; font-family: var(--font-serif); color: var(--c-primary-dark); font-size: var(--text-base); }
+.interview-card__date span:last-child { display: block; font-weight: 650; color: var(--c-accent-dark); }
+.interview-card__mode { margin-top: var(--sp-2); }
+.interview-card__actions { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+@media (max-width: 720px) {
+  .interview-card { grid-template-columns: 1fr; }
+  .interview-card__date { min-width: 0; display: flex; gap: var(--sp-3); align-items: baseline; justify-content: center; }
+  .interview-card__actions { flex-direction: row; flex-wrap: wrap; }
+}
+
+/* ============================================================
+   Messagerie (liste conversations + fil + réponse)
+   ============================================================ */
+.msg-app {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  gap: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-l);
+  overflow: hidden;
+  background: var(--c-surface);
+}
+.msg-list {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--c-line);
+  background: var(--c-bg);
+}
+.msg-conv {
+  display: block;
+  text-align: left;
+  width: 100%;
+  padding: var(--sp-4);
+  border: 0;
+  border-bottom: 1px solid var(--c-line);
+  background: transparent;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background var(--transition);
+}
+.msg-conv:hover { background: var(--c-primary-soft); }
+.msg-conv.is-active { background: var(--c-surface); box-shadow: inset 3px 0 0 var(--c-primary); }
+.msg-conv__name { display: block; font-weight: 650; color: var(--c-primary-dark); }
+.msg-conv__poste { display: block; font-size: var(--text-xs); color: var(--c-ink-soft); }
+.msg-conv__preview { display: block; font-size: var(--text-sm); color: var(--c-ink-soft); margin-top: 4px; }
+.msg-conv:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+.msg-thread { display: flex; flex-direction: column; min-width: 0; }
+.msg-thread__head {
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--c-line);
+  display: flex;
+  flex-direction: column;
+}
+.msg-thread__body {
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-height: 160px;
+}
+.msg-bubble {
+  max-width: 80%;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-m);
+  font-size: var(--text-sm);
+}
+.msg-bubble p { margin: 0; }
+.msg-bubble__date { display: block; font-size: var(--text-xs); color: var(--c-ink-soft); margin-top: 4px; }
+.msg-bubble--them { align-self: flex-start; background: var(--c-bg-alt); border-bottom-left-radius: 2px; }
+.msg-bubble--me { align-self: flex-end; background: var(--c-primary-soft); border-bottom-right-radius: 2px; }
+.msg-bubble--me .msg-bubble__date { text-align: right; }
+
+.msg-reply {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-end;
+  padding: var(--sp-4);
+  border-top: 1px solid var(--c-line);
+}
+.msg-reply textarea { flex: 1; width: 100%; resize: vertical; margin: 0; }
+.msg-reply .btn { flex-shrink: 0; }
+
+@media (max-width: 720px) {
+  .msg-app { grid-template-columns: 1fr; }   /* pas de scroll horizontal en mobile */
+  .msg-list { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--c-line); }
+  .msg-conv { border-bottom: 0; border-right: 1px solid var(--c-line); min-width: 200px; }
+  .msg-conv.is-active { box-shadow: inset 0 -3px 0 var(--c-primary); }
+  .msg-bubble { max-width: 90%; }
+}
+
+/* ============================================================
+   Alertes : carte enrichie (état + fréquence)
+   ============================================================ */
+.alert-card { padding: var(--sp-4); }
+.alert-card + .alert-card { margin-top: var(--sp-4); }
+.alert-card__main {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.alert-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--c-line);
+}
+.field--inline {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+}
+.field--inline label { font-size: var(--text-sm); color: var(--c-ink-soft); margin: 0; }
+.field--inline select { margin: 0; }

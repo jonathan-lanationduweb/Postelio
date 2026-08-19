@@ -72,22 +72,15 @@
       var name = SS.auth.displayName();
       var sub = isEmp ? (session.company || "Espace recruteur") : "Espace candidat";
 
+      /* Dropdown compte volontairement COURT : la navigation interne de
+         l'espace (sidebar / menu) couvre déjà toutes les sections. */
       var menu = isEmp ? [
-        ["Tableau de bord", "espace-entreprise.html"],
-        ["Mes offres", "espace-entreprise.html#offres"],
-        ["Candidatures", "espace-entreprise.html#candidatures"],
-        ["Messages", "espace-entreprise.html#messages"],
+        ["Mon espace", "espace-entreprise.html"],
         ["Profil entreprise", "espace-entreprise.html#profil"],
-        ["Contenus entreprise", "espace-entreprise.html#contenus"],
-        ["Facturation", "espace-entreprise.html#facturation"],
         ["Paramètres", "espace-entreprise.html#parametres"]
       ] : [
         ["Mon espace", "espace-candidat.html"],
         ["Mon profil", "espace-candidat.html#profil"],
-        ["Mes candidatures", "espace-candidat.html#candidatures"],
-        ["Mes favoris", "espace-candidat.html#favoris"],
-        ["Mes alertes", "espace-candidat.html#alertes"],
-        ["Mes savoir-faire", "espace-candidat.html#savoir-faire"],
         ["Paramètres", "espace-candidat.html#parametres"]
       ];
       var items = menu.map(function (m) {
