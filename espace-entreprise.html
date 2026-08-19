@@ -71,7 +71,6 @@
               <span id="dash-company">Compte recruteur</span>
             </span>
           </div>
-          <a class="btn btn-accent btn-block dash-sidebar__cta" href="publier-offre.html">Publier une offre</a>
           <nav class="dash-nav" aria-label="Sections de l'espace entreprise">
             <a href="#tableau" class="is-active" data-nav="tableau">Tableau de bord</a>
             <a href="#offres" data-nav="offres">Mes offres</a>
@@ -94,16 +93,23 @@
             <p class="dash-subtitle">Voici ce qui demande votre attention aujourd'hui.</p>
 
             <div class="dash-metrics">
-              <div class="dash-metric"><b>3</b><span>offres actives</span></div>
-              <div class="dash-metric"><b>8</b><span>nouvelles candidatures</span></div>
-              <div class="dash-metric"><b>2</b><span>entretiens</span></div>
-              <div class="dash-metric"><b>5</b><span>à traiter</span></div>
+              <a class="dash-metric" href="#offres"><b>3</b><span>offres actives</span></a>
+              <a class="dash-metric" href="#candidatures"><b>8</b><span>nouvelles candidatures</span></a>
+              <a class="dash-metric" href="#entretiens"><b>2</b><span>entretiens</span></a>
+              <a class="dash-metric" href="#candidatures"><b>5</b><span>à traiter</span></a>
             </div>
 
             <!-- À faire aujourd'hui : liste d'actions prioritaires (rendue par dashboard.js) -->
             <div class="card dash-card dash-todo">
               <h2 class="dash-todo__title" id="h-todo">À faire aujourd'hui</h2>
               <ul class="todo-list" id="dash-todo" aria-labelledby="h-todo"></ul>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="dash-quick" aria-label="Actions rapides">
+              <a class="btn btn-accent" href="publier-offre.html">Publier une offre</a>
+              <a class="btn btn-outline" href="#candidatures">Voir les candidatures</a>
+              <a class="btn btn-outline" href="#entretiens">Planifier un entretien</a>
             </div>
 
             <!-- Carte contextuelle 10 € : renseignée par dashboard.js si une offre expire -->
@@ -184,7 +190,6 @@
               </div>
 
               <div class="profile-actions">
-                <a class="btn btn-ghost secondary" href="publier-savoir-faire.html">Partager un savoir-faire</a>
               </div>
             </div>
           </section>

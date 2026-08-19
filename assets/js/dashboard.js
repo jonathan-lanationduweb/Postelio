@@ -293,20 +293,21 @@
     var e = SS.escapeHtml;
 
     var items = [
-      { level: "warn",   texte: "3 nouvelles candidatures à examiner", ancre: "#candidatures" },
-      { level: "urgent", texte: "1 candidat attend une réponse depuis 4 jours", ancre: "#candidatures" },
-      { level: "ok",     texte: "2 entretiens cette semaine", ancre: "#entretiens" },
-      { level: "warn",   texte: "1 offre expire dans 3 jours", ancre: "#offres" }
+      { level: "warn",   texte: "3 nouvelles candidatures à examiner", ancre: "#candidatures", action: "Examiner" },
+      { level: "urgent", texte: "1 candidat attend une réponse depuis 4 jours", ancre: "#candidatures", action: "Répondre" },
+      { level: "ok",     texte: "2 entretiens cette semaine", ancre: "#entretiens", action: "Voir les entretiens" },
+      { level: "warn",   texte: "1 offre expire dans 3 jours", ancre: "#offres", action: "Renouveler" }
     ];
 
     var labels = { urgent: "Urgent", warn: "À traiter", ok: "À venir" };
 
     list.innerHTML = items.map(function (it) {
-      return '<li><a class="todo-item" href="' + it.ancre + '">' +
+      return '<li class="todo-item">' +
           '<span class="todo-dot todo-dot--' + it.level + '" aria-hidden="true"></span>' +
           '<span class="todo-item__text">' + e(it.texte) + '</span>' +
           '<span class="todo-item__tag todo-item__tag--' + it.level + '">' + e(labels[it.level]) + '</span>' +
-        '</a></li>';
+          '<a class="btn btn-outline btn-sm todo-item__action" href="' + it.ancre + '">' + e(it.action) + '</a>' +
+        '</li>';
     }).join("");
   }
 

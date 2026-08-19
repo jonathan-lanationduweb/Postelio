@@ -17,6 +17,27 @@
   document.addEventListener("DOMContentLoaded", function () {
     var layout = document.querySelector(".dash-layout");
     if (!layout) { return; }
+
+    /* ---- Footer compact des espaces connectés ----
+       Le gros footer marketing (newsletter + colonnes) n'a pas sa place dans
+       un espace applicatif : on le remplace par une barre discrète. */
+    (function compactFooter() {
+      var footer = document.querySelector(".site-footer");
+      if (!footer) { return; }
+      footer.classList.add("site-footer--app");
+      footer.innerHTML =
+        '<div class="container app-footer">' +
+          '<span class="app-footer__brand">© <span data-year>2026</span> Postelio</span>' +
+          '<nav class="app-footer__links" aria-label="Liens utiles">' +
+            '<a href="contact.html">Aide</a>' +
+            '<a href="contact.html">Contact</a>' +
+            '<a href="confidentialite.html">Confidentialité</a>' +
+            '<a href="mentions-legales.html">Mentions légales</a>' +
+          "</nav>" +
+        "</div>";
+      var y = footer.querySelector("[data-year]");
+      if (y) { y.textContent = String(new Date().getFullYear()); }
+    })();
     var main = layout.querySelector(".dash-main");
     var sidebar = layout.querySelector(".dash-sidebar");
     if (!main || !sidebar) { return; }
