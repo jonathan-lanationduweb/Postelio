@@ -76,8 +76,8 @@
          l'espace (sidebar / menu) couvre déjà toutes les sections. */
       var menu = isEmp ? [
         ["Mon espace", "espace-entreprise.html"],
-        ["Profil entreprise", "espace-entreprise.html#profil"],
-        ["Paramètres", "espace-entreprise.html#parametres"]
+        ["Profil entreprise", "espace-entreprise-profil.html"],
+        ["Paramètres", "espace-entreprise-parametres.html"]
       ] : [
         ["Mon espace", "espace-candidat.html"],
         ["Mon profil", "espace-candidat.html#profil"],

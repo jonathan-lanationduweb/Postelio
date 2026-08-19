@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Espace entreprise — tableau de bord | Postelio</title>
-  <meta name="description" content="Pilotez votre recrutement depuis votre espace entreprise : offres, pipeline de candidatures, entretiens, messages, marque employeur et renouvellement pour 10 €.">
+  <title>Profil entreprise — espace entreprise | Postelio</title>
+  <meta name="description" content="Complétez le profil de votre entreprise pour renforcer votre marque employeur. Espace entreprise Postelio.">
     <meta property="og:type" content="website">
   <meta property="og:site_name" content="Postelio">
-  <meta property="og:title" content="Espace entreprise — tableau de bord | Postelio">
-  <meta property="og:description" content="Pilotez votre recrutement depuis votre espace entreprise : offres, pipeline de candidatures, entretiens, messages, marque employeur et renouvellement pour 10 €.">
+  <meta property="og:title" content="Profil entreprise — espace entreprise | Postelio">
+  <meta property="og:description" content="Complétez le profil de votre entreprise pour renforcer votre marque employeur. Espace entreprise Postelio.">
   <meta property="og:image" content="https://jonathan-lanationduweb.github.io/Postelio/assets/images/photos/og-image.jpg">
   <meta property="og:locale" content="fr_FR">
   <meta name="twitter:card" content="summary_large_image">
@@ -45,9 +45,6 @@
         <li><a href="contact.html">Contact</a></li>
       </ul>
     </nav>
-    <!-- Zone compte : cloche + avatar (connecté) ou boutons (visiteur).
-         Placée HORS de .main-nav pour rester visible dans la barre sur mobile,
-         à côté du burger. navigation.js réécrit son contenu selon la session. -->
     <div class="nav-actions" id="account-nav" data-account-nav>
       <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
       <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
@@ -62,39 +59,47 @@
     <div class="container section">
       <div class="dash-layout">
 
-        <!-- ===== Barre latérale (remplie par employer-shell.js) ===== -->
         <aside class="dash-sidebar" id="dash-sidebar" data-employer-shell aria-label="Navigation de l'espace entreprise"></aside>
 
-        <!-- ===== Contenu ===== -->
         <div class="dash-main">
 
-          <!-- Tableau de bord — pilotage -->
-          <section class="dash-block" id="tableau" aria-labelledby="h-tableau">
-            <h1 class="dash-greeting" id="h-tableau">Bonjour <span id="hello-name">!</span> <span aria-hidden="true">👋</span></h1>
-            <p class="dash-subtitle">Voici ce qui demande votre attention aujourd'hui.</p>
+          <section class="dash-block" id="profil" aria-labelledby="h-profil">
+            <h2 id="h-profil">Profil entreprise</h2>
+            <div class="card dash-card profil-card">
+              <div class="profile-head">
+                <span class="avatar profile-logo" id="profil-logo" aria-hidden="true">FB</span>
+                <span>
+                  <span class="profile-head__name" id="profil-name">Fiduciaire Bellecour</span>
+                  <span class="profile-head__meta"><span id="profil-sector">Finance &amp; Comptabilité</span> · <span id="profil-city">Lyon</span></span>
+                </span>
+              </div>
 
-            <div class="dash-metrics">
-              <a class="dash-metric" href="espace-entreprise-offres.html"><b>3</b><span>offres actives</span></a>
-              <a class="dash-metric" href="espace-entreprise-candidatures.html"><b>8</b><span>nouvelles candidatures</span></a>
-              <a class="dash-metric" href="espace-entreprise-entretiens.html"><b>2</b><span>entretiens</span></a>
-              <a class="dash-metric" href="espace-entreprise-candidatures.html"><b>5</b><span>à traiter</span></a>
+              <div class="profile-meter" role="img" aria-label="Profil complété à 75 %">
+                <span class="profile-meter__fill-75"></span>
+              </div>
+              <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque : votre logo, une photo de vos locaux.</p>
+
+              <div class="profil-section">
+                <div class="profil-section__head">
+                  <h3>Présentation de l'entreprise</h3>
+                  <button type="button" class="btn btn-outline btn-sm" id="profil-edit-btn">Modifier</button>
+                </div>
+                <p id="profil-desc-view">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</p>
+                <form class="profil-desc-form" id="profil-desc-form" hidden>
+                  <div class="form-field">
+                    <label class="visually-hidden" for="profil-desc">Présentation de l'entreprise</label>
+                    <textarea id="profil-desc" rows="5">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</textarea>
+                  </div>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="profil-desc-save">Enregistrer</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="profil-desc-cancel">Annuler</button>
+                  </div>
+                </form>
+              </div>
+
+              <div class="profile-actions">
+              </div>
             </div>
-
-            <!-- À faire aujourd'hui : liste d'actions prioritaires (rendue par employer-dashboard.js) -->
-            <div class="card dash-card dash-todo">
-              <h2 class="dash-todo__title" id="h-todo">À faire aujourd'hui</h2>
-              <ul class="todo-list" id="dash-todo" aria-labelledby="h-todo"></ul>
-            </div>
-
-            <!-- Actions rapides -->
-            <div class="dash-quick" aria-label="Actions rapides">
-              <a class="btn btn-accent" href="publier-offre.html">Publier une offre</a>
-              <a class="btn btn-outline" href="espace-entreprise-candidatures.html">Voir les candidatures</a>
-              <a class="btn btn-outline" href="espace-entreprise-entretiens.html">Planifier un entretien</a>
-            </div>
-
-            <!-- Carte contextuelle 10 € : renseignée par employer-dashboard.js si une offre expire -->
-            <div id="renewal-alert"></div>
           </section>
 
         </div>
@@ -161,7 +166,7 @@
   <script src="assets/js/main.js"></script>
   <script src="assets/js/navigation.js"></script>
   <script src="assets/js/employer-shell.js"></script>
-  <script src="assets/js/employer-dashboard.js"></script>
+  <script src="assets/js/employer-profile.js"></script>
   <script src="assets/js/chatbot.js"></script>
 </body>
 </html>

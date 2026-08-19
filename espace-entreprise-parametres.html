@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Espace entreprise — tableau de bord | Postelio</title>
-  <meta name="description" content="Pilotez votre recrutement depuis votre espace entreprise : offres, pipeline de candidatures, entretiens, messages, marque employeur et renouvellement pour 10 €.">
+  <title>Paramètres — espace entreprise | Postelio</title>
+  <meta name="description" content="Gérez vos préférences de notifications et votre session. Espace entreprise Postelio.">
     <meta property="og:type" content="website">
   <meta property="og:site_name" content="Postelio">
-  <meta property="og:title" content="Espace entreprise — tableau de bord | Postelio">
-  <meta property="og:description" content="Pilotez votre recrutement depuis votre espace entreprise : offres, pipeline de candidatures, entretiens, messages, marque employeur et renouvellement pour 10 €.">
+  <meta property="og:title" content="Paramètres — espace entreprise | Postelio">
+  <meta property="og:description" content="Gérez vos préférences de notifications et votre session. Espace entreprise Postelio.">
   <meta property="og:image" content="https://jonathan-lanationduweb.github.io/Postelio/assets/images/photos/og-image.jpg">
   <meta property="og:locale" content="fr_FR">
   <meta name="twitter:card" content="summary_large_image">
@@ -45,9 +45,6 @@
         <li><a href="contact.html">Contact</a></li>
       </ul>
     </nav>
-    <!-- Zone compte : cloche + avatar (connecté) ou boutons (visiteur).
-         Placée HORS de .main-nav pour rester visible dans la barre sur mobile,
-         à côté du burger. navigation.js réécrit son contenu selon la session. -->
     <div class="nav-actions" id="account-nav" data-account-nav>
       <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
       <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
@@ -62,39 +59,31 @@
     <div class="container section">
       <div class="dash-layout">
 
-        <!-- ===== Barre latérale (remplie par employer-shell.js) ===== -->
         <aside class="dash-sidebar" id="dash-sidebar" data-employer-shell aria-label="Navigation de l'espace entreprise"></aside>
 
-        <!-- ===== Contenu ===== -->
         <div class="dash-main">
 
-          <!-- Tableau de bord — pilotage -->
-          <section class="dash-block" id="tableau" aria-labelledby="h-tableau">
-            <h1 class="dash-greeting" id="h-tableau">Bonjour <span id="hello-name">!</span> <span aria-hidden="true">👋</span></h1>
-            <p class="dash-subtitle">Voici ce qui demande votre attention aujourd'hui.</p>
-
-            <div class="dash-metrics">
-              <a class="dash-metric" href="espace-entreprise-offres.html"><b>3</b><span>offres actives</span></a>
-              <a class="dash-metric" href="espace-entreprise-candidatures.html"><b>8</b><span>nouvelles candidatures</span></a>
-              <a class="dash-metric" href="espace-entreprise-entretiens.html"><b>2</b><span>entretiens</span></a>
-              <a class="dash-metric" href="espace-entreprise-candidatures.html"><b>5</b><span>à traiter</span></a>
+          <section class="dash-block" id="parametres" aria-labelledby="h-parametres">
+            <h2 id="h-parametres">Paramètres</h2>
+            <div class="card dash-card">
+              <div class="form-field">
+                <label class="auth-role"><input type="checkbox" checked> Recevoir un e-mail à chaque nouvelle candidature</label>
+              </div>
+              <div class="form-field" style="margin-top:var(--sp-2);">
+                <label class="auth-role"><input type="checkbox" checked> Recevoir un rappel avant l'expiration d'une offre</label>
+              </div>
+              <div class="form-field" style="margin-top:var(--sp-2);">
+                <label class="auth-role"><input type="checkbox"> Recevoir la lettre d'information recruteurs</label>
+              </div>
+              <div class="form-actions" style="margin-top:var(--sp-4);">
+                <button type="button" class="btn btn-primary" data-toast="Préférences enregistrées (démonstration).">Enregistrer les préférences</button>
+              </div>
             </div>
-
-            <!-- À faire aujourd'hui : liste d'actions prioritaires (rendue par employer-dashboard.js) -->
-            <div class="card dash-card dash-todo">
-              <h2 class="dash-todo__title" id="h-todo">À faire aujourd'hui</h2>
-              <ul class="todo-list" id="dash-todo" aria-labelledby="h-todo"></ul>
+            <div class="card dash-card" style="margin-top:var(--sp-4);">
+              <h3>Session</h3>
+              <p class="text-muted">Vous êtes connecté(e) au compte de démonstration recruteur.</p>
+              <button type="button" class="btn btn-ghost" id="logout-btn">Se déconnecter</button>
             </div>
-
-            <!-- Actions rapides -->
-            <div class="dash-quick" aria-label="Actions rapides">
-              <a class="btn btn-accent" href="publier-offre.html">Publier une offre</a>
-              <a class="btn btn-outline" href="espace-entreprise-candidatures.html">Voir les candidatures</a>
-              <a class="btn btn-outline" href="espace-entreprise-entretiens.html">Planifier un entretien</a>
-            </div>
-
-            <!-- Carte contextuelle 10 € : renseignée par employer-dashboard.js si une offre expire -->
-            <div id="renewal-alert"></div>
           </section>
 
         </div>
@@ -161,7 +150,7 @@
   <script src="assets/js/main.js"></script>
   <script src="assets/js/navigation.js"></script>
   <script src="assets/js/employer-shell.js"></script>
-  <script src="assets/js/employer-dashboard.js"></script>
+  <script src="assets/js/employer-settings.js"></script>
   <script src="assets/js/chatbot.js"></script>
 </body>
 </html>
