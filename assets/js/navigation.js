@@ -199,5 +199,40 @@
         refreshBadge();
       });
     })();
+
+    /* ---- Footer en accordéon sur mobile (≤768px) ----
+       Les colonnes du footer se replient pour éviter un pied de page qui
+       prend deux écrans. Sur desktop, tout reste déplié (aucun rôle bouton). */
+    (function footerAccordion() {
+      var cols = document.querySelectorAll(".site-footer .footer-col");
+      if (!cols.length) { return; }
+      var mq = window.matchMedia("(max-width: 768px)");
+      cols.forEach(function (col) {
+        var h2 = col.querySelector("h2");
+        if (!h2) { return; }
+        function toggle() {
+          var open = col.classList.toggle("is-open");
+          h2.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+        h2.addEventListener("click", function () { if (mq.matches) { toggle(); } });
+        h2.addEventListener("keydown", function (e) {
+          if (mq.matches && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(); }
+        });
+        function sync() {
+          if (mq.matches) {
+            h2.setAttribute("role", "button");
+            h2.setAttribute("tabindex", "0");
+            h2.setAttribute("aria-expanded", col.classList.contains("is-open") ? "true" : "false");
+          } else {
+            h2.removeAttribute("role");
+            h2.removeAttribute("tabindex");
+            h2.removeAttribute("aria-expanded");
+            col.classList.remove("is-open");
+          }
+        }
+        sync();
+        mq.addEventListener ? mq.addEventListener("change", sync) : mq.addListener(sync);
+      });
+    })();
   });
 })();

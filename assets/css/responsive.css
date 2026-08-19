@@ -491,10 +491,33 @@
     font-size: var(--text-xs);
   }
 
+  /* Footer compact : marque en tête, colonnes en accordéons pleine largeur. */
   .footer-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-5);
+    grid-template-columns: 1fr;
+    gap: 0;
   }
+  .footer-brand { margin-bottom: var(--sp-4); }
+  .footer-col h2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    margin: 0;
+    padding: var(--sp-3) 0;
+    min-height: 44px;
+    border-top: 1px solid var(--c-line);
+    cursor: pointer;
+  }
+  .footer-col h2::after {
+    content: "\25BE";
+    font-size: 0.7em;
+    opacity: 0.7;
+    transition: transform var(--transition);
+  }
+  .footer-col.is-open h2::after { transform: rotate(180deg); }
+  .footer-col h2:focus-visible { outline: none; box-shadow: var(--shadow-focus); border-radius: var(--radius-s); }
+  .footer-col ul { display: none; padding-bottom: var(--sp-3); }
+  .footer-col.is-open ul { display: block; }
 
   /* Le bouton flottant du chatbot ne doit pas recouvrir la zone légale */
   .footer-bottom {
