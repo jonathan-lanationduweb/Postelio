@@ -882,12 +882,27 @@
 }
 
 /* Responsive : sidebar en barre horizontale */
+/* Bouton tiroir « Menu de mon espace » : caché sur desktop (sidebar visible). */
+.dash-drawer-toggle { display: none; }
+
 @media (max-width: 900px) {
   .dash-layout { grid-template-columns: 1fr; }
-  .dash-sidebar { position: static; }
-  .dash-sidebar__id { border-bottom: 0; margin-bottom: 0; }
-  .dash-nav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; gap: 4px; padding-top: var(--sp-3); }
-  .dash-nav a { white-space: nowrap; }
+  /* Le tiroir remplace la barre latérale : bouton en tête de contenu. */
+  .dash-drawer-toggle {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+    width: 100%; min-height: 48px; padding: 0 var(--sp-4); margin-bottom: var(--sp-4);
+    background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius-m);
+    font-weight: 600; font-size: 1rem; color: var(--c-primary-dark); cursor: pointer;
+  }
+  .dash-drawer-toggle__caret { transition: transform var(--transition); }
+  .dash-layout.dash-drawer-open .dash-drawer-toggle__caret { transform: rotate(180deg); }
+  /* Barre latérale masquée par défaut ; dépliée en tiroir quand ouvert. */
+  .dash-sidebar { position: static; display: none; margin-bottom: var(--sp-4); }
+  .dash-layout.dash-drawer-open .dash-sidebar { display: block; }
+  .dash-sidebar__id { border-bottom: 0; margin-bottom: var(--sp-3); }
+  /* Nav du tiroir : liste verticale pleine largeur (plus de scroll horizontal). */
+  .dash-nav { grid-auto-flow: row; grid-auto-columns: auto; overflow-x: visible; gap: 2px; }
+  .dash-nav a { white-space: normal; min-height: 44px; }
   .dash-metrics { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
