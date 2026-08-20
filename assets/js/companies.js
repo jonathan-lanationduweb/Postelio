@@ -46,7 +46,7 @@
       '<div class="company-card__head">' +
         '<span class="logo-bubble" style="background:' + e(company.couleur) + '" aria-hidden="true">' + e(company.initiales) + "</span>" +
         "<div>" +
-          "<h3>" + e(company.nom) + "</h3>" +
+          "<h3>" + e(company.nom) + (company.verifie ? ' <span class="verified-tick" title="' + e(company.verifieLabel || "Entreprise vérifiée") + '" aria-label="' + e(company.verifieLabel || "Entreprise vérifiée") + '">✓</span>' : "") + "</h3>" +
           '<p class="company-card__meta">' + e(company.secteur) + " · " + e(company.ville) + "</p>" +
         "</div>" +
         (offerCount
@@ -170,6 +170,9 @@
           '<span class="badge badge--accent">' + e(company.secteur) + "</span>" +
           (offerCount
             ? '<span class="badge badge--remote">Recrute actuellement</span>'
+            : "") +
+          (company.verifie
+            ? '<span class="badge badge--verified" title="' + e(company.verifieLabel || "Entreprise vérifiée") + '">✓ ' + e(company.verifieLabel || "Entreprise vérifiée") + "</span>"
             : "");
       }
 

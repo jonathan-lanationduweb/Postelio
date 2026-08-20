@@ -350,6 +350,8 @@
       "Mutuelle prise en charge",
       "Formations régulières",
       "Participation aux transports"
-    ]
+    ],
+    "verifie": true,
+    "verifieLabel": "Entreprise vérifiée — démonstration"
   }
 ]

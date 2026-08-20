@@ -214,9 +214,10 @@
         box.innerHTML =
           '<div class="company-card__top">' +
             '<span class="logo-bubble" style="background:' + e(company.couleur) + '" aria-hidden="true">' + e(company.initiales) + "</span>" +
-            "<div><h3>" + e(company.nom) + "</h3>" +
+            "<div><h3>" + e(company.nom) + (company.verifie ? ' <span class="verified-tick" title="' + e(company.verifieLabel || "Entreprise vérifiée") + '" aria-label="' + e(company.verifieLabel || "Entreprise vérifiée") + '">✓</span>' : "") + "</h3>" +
             '<p class="text-muted">' + e(company.activite) + "</p></div>" +
           "</div>" +
+          (company.verifie ? '<p class="verified-note badge badge--verified">✓ ' + e(company.verifieLabel || "Entreprise vérifiée") + "</p>" : "") +
           "<p>" + e(company.description) + "</p>" +
           '<p class="company-card-link"><a class="btn btn-outline btn-sm" href="entreprise-detail.html?id=' +
             encodeURIComponent(company.id) + '">Voir la fiche entreprise</a></p>';
