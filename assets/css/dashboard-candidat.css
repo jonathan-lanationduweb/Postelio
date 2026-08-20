@@ -234,6 +234,11 @@
 .reco-card__head strong { color: var(--c-primary-dark); }
 .reco-card__tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .reco-card__salaire { font-size: var(--text-sm); color: var(--c-ink); }
+.reco-card__match { display: inline-block; align-self: flex-start; font-size: var(--text-xs); font-weight: 700; padding: 0.2rem 0.6rem; border-radius: var(--radius-pill); }
+.reco-card__match.is-high { background: var(--c-primary-soft); color: var(--c-primary-dark); }
+.reco-card__match.is-mid { background: var(--c-accent-soft); color: var(--c-accent-dark); }
+.reco-card__match.is-low { background: var(--c-bg-alt); color: var(--c-ink-soft); }
+.profile-sf__demo { margin: var(--sp-3) 0 var(--sp-2); }
 .reco-card__cta { margin-top: auto; }
 
 /* Bouton favori (cœur) — cible tactile ≥ 40 px */

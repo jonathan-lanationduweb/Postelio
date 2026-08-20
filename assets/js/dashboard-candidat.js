@@ -77,7 +77,7 @@
      candidatures ou du profil change. Les navigateurs ayant un ancien seed en
      cache sont ainsi régénérés, sinon les nouveautés (profil enrichi, message
      reçu, statut « non retenue ») resteraient invisibles. */
-  var SEED_VERSION = "2026-08-20-profil-visibilite";
+  var SEED_VERSION = "2026-08-20-sf-competences";
   var SEED_KEY = "ss_seed_version";
 
   function seedIfEmpty() {
@@ -304,9 +304,9 @@
 
   function defaultSavoirFaire() {
     return [
-      { id: "sf-1", titre: "Comment je structure un projet web from scratch", resume: "Ma méthode pour démarrer un projet front-end proprement : arborescence, conventions de nommage et outillage minimal.", categorie: "Organisation & méthodes", note: 4.9, avis: 52, vues: 71, date: "2026-07-20" },
-      { id: "sf-2", titre: "Déboguer efficacement avec les DevTools", resume: "Les réflexes que j'utilise au quotidien pour retrouver l'origine d'un bug rapidement, sans y passer la journée.", categorie: "Développement web", note: 4.7, avis: 38, vues: 44, date: "2026-06-30" },
-      { id: "sf-3", titre: "Rendre un site accessible : mes 5 vérifications", resume: "Une check-list concrète pour améliorer l'accessibilité d'un site existant sans tout réécrire.", categorie: "Développement web", note: 4.8, avis: 37, vues: 33, date: "2026-06-10" }
+      { id: "sf-1", titre: "Comment je structure un projet web from scratch", resume: "Ma méthode pour démarrer un projet front-end proprement : arborescence, conventions de nommage et outillage minimal.", categorie: "Organisation & méthodes", competences: ["JavaScript", "Git", "Organisation"], note: 4.9, avis: 52, vues: 71, date: "2026-07-20" },
+      { id: "sf-2", titre: "Déboguer efficacement avec les DevTools", resume: "Les réflexes que j'utilise au quotidien pour retrouver l'origine d'un bug rapidement, sans y passer la journée.", categorie: "Développement web", competences: ["JavaScript", "Débogage"], note: 4.7, avis: 38, vues: 44, date: "2026-06-30" },
+      { id: "sf-3", titre: "Rendre un site accessible : mes 5 vérifications", resume: "Une check-list concrète pour améliorer l'accessibilité d'un site existant sans tout réécrire.", categorie: "Développement web", competences: ["Accessibilité", "HTML / CSS"], note: 4.8, avis: 37, vues: 33, date: "2026-06-10" }
     ];
   }
 
@@ -1010,6 +1010,14 @@
           return '<li class="why__item ' + (r.ok ? "is-ok" : "is-warn") + '">' +
             (r.ok ? ICON_CHECK : ICON_TRI) + "<span>" + r.text + "</span></li>";
         }).join("");
+        /* Label de correspondance qualitatif (§5), fondé sur les critères,
+           sans score opaque. */
+        var okCount = reasons.filter(function (r) { return r.ok; }).length;
+        var warnCount = reasons.length - okCount;
+        var matchLabel, matchCls;
+        if (warnCount === 0 && okCount >= 4) { matchLabel = "Correspondance élevée"; matchCls = "is-high"; }
+        else if (okCount >= warnCount) { matchLabel = "Correspondance moyenne"; matchCls = "is-mid"; }
+        else { matchLabel = "Correspondance partielle"; matchCls = "is-low"; }
 
         return '<article class="reco-card">' +
           '<div class="reco-card__head">' +
@@ -1018,6 +1026,7 @@
               (isFav ? "Retirer des favoris" : "Enregistrer en favori") + '">' + (isFav ? "♥" : "♡") + "</button>" +
           "</div>" +
           '<span class="text-muted">' + e(o.entrepriseNom) + " · " + e(o.ville) + "</span>" +
+          '<span class="reco-card__match ' + matchCls + '">' + matchLabel + "</span>" +
           '<div class="reco-card__tags">' +
             '<span class="badge badge--accent">' + e(o.contrat) + "</span>" +
             (remote ? '<span class="badge badge--remote">' + e(remote) + "</span>" : "") +
@@ -1886,11 +1895,18 @@
       body = '<div class="empty-state empty-state--inline"><p>Aucun savoir-faire publié.</p>' +
         '<p><a class="btn btn-primary btn-sm" href="publier-savoir-faire.html?type=candidat">Publier mon premier savoir-faire</a></p></div>';
     } else {
+      /* Compétences démontrées via les savoir-faire (§32). */
+      var demo = [];
+      list.forEach(function (sf) { (sf.competences || []).forEach(function (c) { if (demo.indexOf(c) === -1) { demo.push(c); } }); });
+      var demoBlock = demo.length
+        ? '<p class="profile-sf__demo"><strong>' + demo.length + " compétence" + (demo.length > 1 ? "s" : "") + " démontrée" + (demo.length > 1 ? "s" : "") + " via vos savoir-faire</strong></p>" +
+          '<div class="profile-row__tags">' + demo.map(function (c) { return '<span class="badge badge--neutral">' + e(c) + "</span>"; }).join("") + "</div>"
+        : "";
       body = '<ul class="profile-sf">' + list.slice(0, 3).map(function (sf) {
         return '<li><span class="profile-sf__t">' + e(sf.titre) + "</span>" +
           '<span class="profile-sf__meta"><span class="badge badge--accent">' + String(sf.note).replace(".", ",") + "/5</span>" +
           '<span class="text-muted">' + (sf.avis || 0) + " avis · " + (sf.vues || 0) + " vues</span></span></li>";
-      }).join("") + "</ul>" +
+      }).join("") + "</ul>" + demoBlock +
       '<p><a class="btn btn-outline btn-sm" href="#savoir-faire">Voir tous mes savoir-faire</a></p>';
     }
     return secCard("savoirfaire", "Savoir-faire Postelio", "", body);
