@@ -77,7 +77,7 @@
      candidatures ou du profil change. Les navigateurs ayant un ancien seed en
      cache sont ainsi régénérés, sinon les nouveautés (profil enrichi, message
      reçu, statut « non retenue ») resteraient invisibles. */
-  var SEED_VERSION = "2026-08-20-sf-competences";
+  var SEED_VERSION = "2026-08-20-profil-emploi-2";
   var SEED_KEY = "ss_seed_version";
 
   function seedIfEmpty() {
@@ -213,6 +213,7 @@
     return {
       /* Recherche (champs partagés avec « Ma recherche » du tableau de bord) */
       metier: s.metier || "Développeur web",
+      metiersAlt: ["Développeur front-end", "Intégrateur web"],
       ville: s.city || "Lyon",
       rayon: "30",
       contrat: "CDI",
@@ -268,6 +269,8 @@
       telephone: "06 12 34 56 78",
       /* Visibilité des coordonnées (le candidat choisit ; par défaut privé). */
       visibility: { email: "prive", tel: "apres-candidature" },
+      profileVisibility: "recruteurs",
+      blockedCompanies: [],
       hasPhoto: false,
       dateMaj: "2026-08-15"
     };
@@ -894,7 +897,10 @@
   }
 
   function metierMatches(offer, profile) {
-    var tokens = normalize(profile.metier).split(/[^a-z0-9]+/).filter(function (t) { return t.length >= 3; });
+    /* Le métier principal ET les métiers alternatifs (§7) alimentent la
+       correspondance. */
+    var terms = [profile.metier].concat(profile.metiersAlt || []).filter(Boolean).join(" ");
+    var tokens = normalize(terms).split(/[^a-z0-9]+/).filter(function (t) { return t.length >= 3; });
     var hay = normalize(offer.titre + " " + (offer.categorieLabel || ""));
     var byToken = tokens.some(function (t) { return hay.indexOf(t) !== -1; });
     /* Rapprochement par famille de métier : un développeur voit l'ensemble
@@ -1464,17 +1470,23 @@
   function renderProfileSections() {
     var box = document.getElementById("profile-sections");
     if (!box) { return; }
+    function zone(t) { return '<h2 class="profile-zone">' + SS.escapeHtml(t) + "</h2>"; }
     box.innerHTML =
+      zone("Ma recherche") +
       sectionRecherche() +
+      zone("CV & documents") +
       sectionCv() +
+      zone("Parcours & compétences") +
       sectionPresentation() +
       sectionExperiences() +
       sectionFormations() +
       sectionCompetences() +
-      sectionRealisations() +
-      sectionSavoirFaire() +
       sectionLangues() +
       sectionCertifications() +
+      zone("Réalisations & savoir-faire") +
+      sectionRealisations() +
+      sectionSavoirFaire() +
+      zone("Visibilité & recommandations") +
       sectionRecommandations() +
       sectionLiens() +
       sectionVisibilite();
@@ -1516,8 +1528,10 @@
     var alt = p.alternance || {};
     var isAlt = p.contrat === "Alternance";
     var dispo = p.disponibilite === "À partir d'une date" && p.dispoDate ? "À partir du " + SS.formatDate(p.dispoDate) : (p.disponibilite || "—");
+    var altMetiers = (p.metiersAlt || []).filter(Boolean);
     var view = '<dl class="profile-def">' +
       row("Métier recherché", p.metier) +
+      (altMetiers.length ? row("Aussi ouvert à", altMetiers.join(", ")) : "") +
       row("Localisation", p.ville) +
       row("Rayon", p.rayon ? p.rayon + " km" : "") +
       row("Contrat", p.contrat) +
@@ -1539,8 +1553,11 @@
 
     var edit =
       '<div class="profile-sec__edit" hidden><div class="form-row">' +
-        f("Métier recherché", '<input id="rq-metier" value="' + e(p.metier || "") + '">') +
+        f("Métier recherché (principal)", '<input id="rq-metier" value="' + e(p.metier || "") + '">') +
         f("Localisation", '<input id="rq-ville" value="' + e(p.ville || "") + '">') +
+      "</div><div class=\"form-row\">" +
+        f("Autre métier (optionnel)", '<input id="rq-metier2" value="' + e((p.metiersAlt || [])[0] || "") + '" placeholder="Ex. : Développeur front-end">') +
+        f("Autre métier (optionnel)", '<input id="rq-metier3" value="' + e((p.metiersAlt || [])[1] || "") + '" placeholder="Ex. : Intégrateur web">') +
       "</div><div class=\"form-row\">" +
         f("Rayon", sel("rq-rayon", ["10", "30", "50", "100"], String(p.rayon || "30"), function (r) { return r + " km"; })) +
         f("Contrat", sel("rq-contrat", ["CDI", "CDD", "Intérim", "Alternance", "Stage", ""], p.contrat || "", function (c) { return c || "Indifférent"; })) +
@@ -1588,6 +1605,7 @@
       save.addEventListener("click", function () {
         var p = getProfile();
         p.metier = valOf("rq-metier"); p.ville = valOf("rq-ville"); p.rayon = valOf("rq-rayon");
+        p.metiersAlt = [valOf("rq-metier2"), valOf("rq-metier3")].filter(Boolean);
         p.contrat = valOf("rq-contrat"); p.tempsTravail = valOf("rq-temps"); p.teletravail = valOf("rq-tele");
         p.salaireSouhaite = valOf("rq-salaire"); p.niveauEtude = valOf("rq-niveau");
         p.disponibilite = valOf("rq-dispo"); p.dispoDate = valOf("rq-dispodate");
@@ -1808,10 +1826,42 @@
       '<div class="skill-suggest" id="comp-suggest"></div>' +
       formActions() + "</div>";
 
+    /* Compétences transférables (§39) : métiers proches suggérés par mapping. */
+    var roles = transferableRoles(p);
+    var transferHtml = roles.length
+      ? '<div class="skill-transfer"><h4 class="profile-subh">Vos compétences peuvent aussi correspondre à</h4>' +
+        '<div class="profile-row__tags">' + roles.map(function (r) {
+          return '<a class="badge badge--neutral skill-transfer__role" href="offres.html?q=' + encodeURIComponent(r) + '">' + e(r) + "</a>";
+        }).join("") + "</div></div>"
+      : "";
+
     return secCard("competences", "Compétences",
       editBtn(),
       '<h4 class="profile-subh">Compétences principales</h4>' + principHtml +
-      (complHtml ? '<h4 class="profile-subh">Compétences complémentaires</h4>' + complHtml : "") + edit);
+      (complHtml ? '<h4 class="profile-subh">Compétences complémentaires</h4>' + complHtml : "") + transferHtml + edit);
+  }
+  /* Associations prédéfinies compétence → métiers proches (démonstration, §39). */
+  var TRANSFER_MAP = {
+    "organisation": ["Assistant administratif", "Coordinateur logistique", "Office manager"],
+    "excel": ["Assistant administratif", "Gestionnaire SAV", "Comptable"],
+    "relation client": ["Conseiller de vente", "Gestionnaire SAV", "Chargé de clientèle"],
+    "communication": ["Chargé de communication", "Assistant marketing"],
+    "javascript": ["Développeur front-end", "Intégrateur web"],
+    "html / css": ["Intégrateur web", "Développeur front-end"],
+    "git": ["Développeur web", "Intégrateur web"],
+    "accessibilité": ["Intégrateur web", "Développeur front-end"],
+    "travail en équipe": ["Coordinateur", "Chef de projet junior"]
+  };
+  function transferableRoles(p) {
+    var own = [p.metier].concat(p.metiersAlt || []).filter(Boolean).map(normalize);
+    var skills = (p.competencesPrincipales || []).map(function (c) { return c.nom; })
+      .concat(p.competencesComplementaires || []);
+    var out = [];
+    skills.forEach(function (s) {
+      var roles = TRANSFER_MAP[normalize(s)];
+      if (roles) { roles.forEach(function (r) { if (out.indexOf(r) === -1 && own.indexOf(normalize(r)) === -1) { out.push(r); } }); }
+    });
+    return out.slice(0, 5);
   }
   function wireCompetences(box) {
     var sec = box.querySelector('.profile-sec[data-section="competences"]');
@@ -1895,12 +1945,17 @@
       body = '<div class="empty-state empty-state--inline"><p>Aucun savoir-faire publié.</p>' +
         '<p><a class="btn btn-primary btn-sm" href="publier-savoir-faire.html?type=candidat">Publier mon premier savoir-faire</a></p></div>';
     } else {
-      /* Compétences démontrées via les savoir-faire (§32). */
-      var demo = [];
-      list.forEach(function (sf) { (sf.competences || []).forEach(function (c) { if (demo.indexOf(c) === -1) { demo.push(c); } }); });
-      var demoBlock = demo.length
-        ? '<p class="profile-sf__demo"><strong>' + demo.length + " compétence" + (demo.length > 1 ? "s" : "") + " démontrée" + (demo.length > 1 ? "s" : "") + " via vos savoir-faire</strong></p>" +
-          '<div class="profile-row__tags">' + demo.map(function (c) { return '<span class="badge badge--neutral">' + e(c) + "</span>"; }).join("") + "</div>"
+      /* Compétences démontrées via les savoir-faire, avec le nombre de contenus
+         où chacune apparaît (§26, §32). */
+      var demoCount = {};
+      list.forEach(function (sf) { (sf.competences || []).forEach(function (c) { demoCount[c] = (demoCount[c] || 0) + 1; }); });
+      var demoKeys = Object.keys(demoCount);
+      var demoBlock = demoKeys.length
+        ? '<p class="profile-sf__demo"><strong>' + demoKeys.length + " compétence" + (demoKeys.length > 1 ? "s" : "") + " démontrée" + (demoKeys.length > 1 ? "s" : "") + " via vos savoir-faire</strong></p>" +
+          '<ul class="sf-proof">' + demoKeys.map(function (c) {
+            var n = demoCount[c];
+            return '<li><span class="skill-badge">' + e(c) + '</span> <span class="sf-proof__count">✓ démontré dans ' + n + " contenu" + (n > 1 ? "s" : "") + "</span></li>";
+          }).join("") + "</ul>"
         : "";
       body = '<ul class="profile-sf">' + list.slice(0, 3).map(function (sf) {
         return '<li><span class="profile-sf__t">' + e(sf.titre) + "</span>" +
@@ -2154,22 +2209,47 @@
   /* ---- 16 : Visibilité des informations (lecture, concis) ---- */
   var VIS_EMAIL = [["prive", "Privé"], ["recruteurs", "Visible par les recruteurs"]];
   var VIS_TEL = [["apres-candidature", "Visible après candidature"], ["recruteurs", "Visible par les recruteurs"], ["masque", "Masqué"]];
+  var VIS_PROFILE = [
+    ["recruteurs", "Visible par les recruteurs"],
+    ["candidatees", "Visible uniquement aux entreprises auxquelles je candidate"],
+    ["masque", "Profil masqué"]
+  ];
   function sectionVisibilite() {
     var p = getProfile();
     var vis = p.visibility || {};
+    var pv = p.profileVisibility || "recruteurs";
+    var e = SS.escapeHtml;
     function opt(list, cur) { return list.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === (cur || list[0][0]) ? " selected" : "") + ">" + SS.escapeHtml(o[1]) + "</option>"; }).join(""); }
-    var body = '<ul class="profile-visibility">' +
-      '<li><span>CV</span><span class="badge badge--remote">Visible par les recruteurs</span></li>' +
-      '<li><span>Disponibilité &amp; statut</span><span class="badge badge--remote">Visible</span></li>' +
-      '<li><span>Savoir-faire &amp; réalisations</span><span class="badge badge--remote">Public</span></li>' +
-      '<li class="profile-visibility__ctrl"><label for="vis-email">E-mail</label>' +
-        '<select id="vis-email" data-vis="email">' + opt(VIS_EMAIL, vis.email) + "</select></li>" +
-      '<li class="profile-visibility__ctrl"><label for="vis-tel">Téléphone</label>' +
-        '<select id="vis-tel" data-vis="tel">' + opt(VIS_TEL, vis.tel) + "</select></li>" +
+    var pvHtml = VIS_PROFILE.map(function (o) {
+      return '<label class="vis-radio"><input type="radio" name="vis-profile" value="' + o[0] + '"' + (o[0] === pv ? " checked" : "") + " data-vis-profile><span>" + e(o[1]) + "</span></label>";
+    }).join("");
+    var body =
+      '<h4 class="profile-subh">Qui peut voir mon profil</h4>' +
+      '<div class="vis-radios">' + pvHtml + "</div>" +
+      '<h4 class="profile-subh">Mes coordonnées</h4>' +
+      '<ul class="profile-visibility">' +
+        '<li><span>CV</span><span class="badge badge--remote">Visible par les recruteurs autorisés</span></li>' +
+        '<li><span>Disponibilité &amp; statut</span><span class="badge badge--remote">Visible</span></li>' +
+        '<li><span>Savoir-faire &amp; réalisations</span><span class="badge badge--remote">Visible</span></li>' +
+        '<li class="profile-visibility__ctrl"><label for="vis-email">E-mail</label>' +
+          '<select id="vis-email" data-vis="email">' + opt(VIS_EMAIL, vis.email) + "</select></li>" +
+        '<li class="profile-visibility__ctrl"><label for="vis-tel">Téléphone</label>' +
+          '<select id="vis-tel" data-vis="tel">' + opt(VIS_TEL, vis.tel) + "</select></li>" +
       "</ul>" +
-      '<p class="profile-sec__note text-muted">Vous choisissez si votre e-mail et votre téléphone sont visibles. ' +
-      '<strong>Important :</strong> lorsqu\'un recruteur consulte votre CV, il y voit toutes vos coordonnées, quel que soit ce réglage.</p>';
-    return secCard("visibilite", "Paramètres de visibilité", "", body);
+      '<p class="profile-sec__note text-muted">Lorsqu\'un recruteur consulte votre CV, il y voit toutes vos coordonnées, quel que soit ce réglage.</p>' +
+      '<h4 class="profile-subh">Entreprises bloquées</h4>' +
+      '<p class="form-hint">Utile si vous êtes déjà en poste : ces entreprises ne verront pas votre profil (simulation).</p>' +
+      '<form class="profil-chips__add" data-block-form><input type="text" id="vis-block" placeholder="Nom d\'une entreprise à bloquer"><button type="submit" class="btn btn-outline btn-sm">+ Bloquer</button></form>' +
+      '<div class="vis-blocked" id="vis-blocked">' + blockedChips(p) + "</div>";
+    return secCard("visibilite", "Visibilité du profil", "", body);
+  }
+  function blockedChips(p) {
+    var e = SS.escapeHtml;
+    var list = p.blockedCompanies || [];
+    if (!list.length) { return '<span class="text-muted">Aucune entreprise bloquée.</span>'; }
+    return list.map(function (c, i) {
+      return '<span class="chip vis-blocked__chip">' + e(c) + ' <button type="button" aria-label="Débloquer ' + e(c) + '" data-unblock="' + i + '">✕</button></span>';
+    }).join("");
   }
   function wireVisibilite(box) {
     var sec = box.querySelector('.profile-sec[data-section="visibilite"]');
@@ -2180,6 +2260,38 @@
         p.visibility[selEl.getAttribute("data-vis")] = selEl.value;
         setProfile(p);
         SS.toast("Préférence de visibilité enregistrée.");
+      });
+    });
+    sec.querySelectorAll("[data-vis-profile]").forEach(function (rb) {
+      rb.addEventListener("change", function () {
+        if (!rb.checked) { return; }
+        var p = getProfile(); p.profileVisibility = rb.value; setProfile(p);
+        SS.toast("Visibilité du profil mise à jour.");
+      });
+    });
+    var blockForm = sec.querySelector("[data-block-form]");
+    if (blockForm) {
+      blockForm.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var input = sec.querySelector("#vis-block");
+        var val = (input.value || "").trim();
+        if (!val) { return; }
+        var p = getProfile(); p.blockedCompanies = (p.blockedCompanies || []).concat([val]);
+        setProfile(p);
+        input.value = "";
+        var wrap = sec.querySelector("#vis-blocked"); if (wrap) { wrap.innerHTML = blockedChips(p); wireBlocked(sec); }
+        SS.toast("Entreprise bloquée (simulation).");
+      });
+    }
+    wireBlocked(sec);
+  }
+  function wireBlocked(sec) {
+    sec.querySelectorAll("[data-unblock]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var p = getProfile(); (p.blockedCompanies || []).splice(parseInt(b.getAttribute("data-unblock"), 10), 1);
+        setProfile(p);
+        var wrap = sec.querySelector("#vis-blocked"); if (wrap) { wrap.innerHTML = blockedChips(p); wireBlocked(sec); }
+        SS.toast("Entreprise débloquée.");
       });
     });
   }

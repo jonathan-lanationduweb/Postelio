@@ -239,6 +239,9 @@
 .reco-card__match.is-mid { background: var(--c-accent-soft); color: var(--c-accent-dark); }
 .reco-card__match.is-low { background: var(--c-bg-alt); color: var(--c-ink-soft); }
 .profile-sf__demo { margin: var(--sp-3) 0 var(--sp-2); }
+.sf-proof { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sf-proof li { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.sf-proof__count { font-size: var(--text-sm); color: var(--c-primary); }
 .reco-card__cta { margin-top: auto; }
 
 /* Bouton favori (cœur) — cible tactile ≥ 40 px */
@@ -424,6 +427,11 @@
 .profile-statut__opt { cursor: pointer; }
 .profile-statut__opt:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 
+.skill-transfer { margin-top: var(--sp-3); }
+.skill-transfer__role { text-decoration: none; cursor: pointer; }
+.skill-transfer__role:hover { background: var(--c-primary-soft); color: var(--c-primary-dark); }
+.profile-zone { font-family: var(--font-serif); font-size: var(--text-lg); color: var(--c-primary-dark); margin: var(--sp-6) 0 var(--sp-3); padding-bottom: var(--sp-2); border-bottom: 2px solid var(--c-line); }
+.profile-zone:first-child { margin-top: var(--sp-2); }
 .profile-sec { padding: var(--sp-5); margin-bottom: var(--sp-4); }
 .profile-sec.is-flash { box-shadow: 0 0 0 2px var(--c-accent); }
 .profile-sec__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
@@ -483,6 +491,13 @@
 .profile-visibility { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
 .profile-visibility li { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: var(--text-sm); }
 .profile-visibility__ctrl select { max-width: 260px; margin: 0; padding: 0.35rem 0.6rem; }
+.vis-radios { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.vis-radio { display: flex; align-items: flex-start; gap: var(--sp-2); font-size: var(--text-sm); cursor: pointer; }
+.vis-radio input { accent-color: var(--c-primary); margin-top: 3px; }
+.vis-blocked { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.vis-blocked__chip { display: inline-flex; align-items: center; gap: 6px; }
+.vis-blocked__chip button { border: 0; background: transparent; cursor: pointer; color: var(--c-ink-soft); font-size: 0.8rem; padding: 0; }
+.vis-blocked__chip button:hover { color: var(--c-error, #c0392b); }
 
 /* Profil public (modale) */
 .pub-profile__head { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-3) 0; }
