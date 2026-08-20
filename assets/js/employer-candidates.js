@@ -868,10 +868,15 @@
       var r = form.querySelector('input[name="refus-motif"]:checked');
       return r ? r.value : "";
     }
+    function personalize(txt) {
+      var prenom = String(pending.nom || "").trim().split(/\s+/)[0] || "";
+      /* Personnalise le « Bonjour, » générique avec le prénom du candidat. */
+      return txt.replace(/^Bonjour,/, "Bonjour " + prenom + ",");
+    }
     function fillCourtois() {
       if (!courtoisEl.checked) { return; }
       var m = selectedMotif();
-      if (m && COURTOIS[m]) { messageEl.value = COURTOIS[m]; }
+      if (m && COURTOIS[m]) { messageEl.value = personalize(COURTOIS[m]); }
     }
     form.querySelectorAll('input[name="refus-motif"]').forEach(function (r) {
       r.addEventListener("change", fillCourtois);
@@ -881,15 +886,20 @@
     confirmBtn.addEventListener("click", function () {
       var m = selectedMotif();
       var finalMsg = messageEl.value.trim();
-      if (!finalMsg) { finalMsg = COURTOIS[m] || COURTOIS.autre; }
+      if (!finalMsg) { finalMsg = personalize(COURTOIS[m] || COURTOIS.autre); }
       var today = new Date().toISOString().slice(0, 10);
 
       var stored = SS.store.get(REFUS_KEY, {});
       stored[pending.nom] = { nom: pending.nom, offre: pending.offre, message: finalMsg, date: today };
       SS.store.set(REFUS_KEY, stored);
 
+      /* E-mail simulé enregistré dans le prototype (aucun envoi réel — §31). */
+      var emails = SS.store.get("ss_emails_sent", []);
+      emails.push({ to: pending.nom, offre: pending.offre, sujet: "Votre candidature — " + (pending.offre || "Postelio"), message: finalMsg, date: today, type: "refus" });
+      SS.store.set("ss_emails_sent", emails);
+
       pending.confirmed = true;
-      SS.toast("Le candidat a été informé avec un message courtois.");
+      SS.toast("Le candidat a été informé (message + e-mail simulés).");
       refusModal.close(false);
     });
 
