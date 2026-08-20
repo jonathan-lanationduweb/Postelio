@@ -153,67 +153,45 @@
       </section>
     </div>
 
-    <!-- Modale de candidature -->
-    <dialog class="modal" id="apply-modal" aria-labelledby="apply-modal-title">
+    <!-- Modale de candidature (préremplie depuis le profil candidat) -->
+    <dialog class="modal apply-modal" id="apply-modal" aria-labelledby="apply-modal-title">
       <div class="modal-header">
         <div>
-          <h2 id="apply-modal-title">Postuler</h2>
-          <p class="text-muted" id="apply-offer-title"></p>
+          <h2 id="apply-modal-title">Postuler à cette offre</h2>
+          <p class="text-muted" id="apply-modal-sub">Votre candidature part directement de votre profil Postelio.</p>
         </div>
         <button type="button" class="modal-close" data-close-modal aria-label="Fermer la fenêtre">✕</button>
       </div>
       <div class="modal-body">
-        <p class="apply-intro">Votre candidature sera transmise directement à l'entreprise. Les champs marqués d'une * sont obligatoires.</p>
-        <form novalidate>
-          <div class="form-row">
-            <div class="field">
-              <label for="apply-lastname">Nom *</label>
-              <input type="text" id="apply-lastname" autocomplete="family-name" required>
-              <p class="field-error" hidden>Veuillez indiquer votre nom.</p>
-            </div>
-            <div class="field">
-              <label for="apply-firstname">Prénom *</label>
-              <input type="text" id="apply-firstname" autocomplete="given-name" required>
-              <p class="field-error" hidden>Veuillez indiquer votre prénom.</p>
-            </div>
-          </div>
+
+        <!-- Offre concernée : non éditable -->
+        <div class="apply-offer">
+          <span class="apply-offer__label">Offre concernée</span>
+          <strong class="apply-offer__title" id="apply-offer-title"></strong>
+          <span class="apply-offer__company" id="apply-offer-company"></span>
+        </div>
+
+        <form id="apply-form" novalidate>
+          <p class="apply-intro">Ces informations proviennent de votre profil. Elles seront transmises au recruteur avec votre CV.</p>
+
+          <!-- Identité préremplie (lecture depuis le profil, non ressaisie) -->
+          <dl class="apply-identity" id="apply-identity"></dl>
+
+          <!-- CV sélectionné pour cette candidature -->
+          <div class="apply-cv" id="apply-cv-block"></div>
+          <input type="file" id="apply-cv-file" accept=".pdf,.doc,.docx" class="sr-only" tabindex="-1" aria-hidden="true">
+
+          <!-- Message au recruteur (éditable) -->
           <div class="field">
-            <label for="apply-email">Adresse e-mail *</label>
-            <input type="email" id="apply-email" autocomplete="email" required>
-            <p class="field-error" hidden>Veuillez indiquer une adresse e-mail valide.</p>
-          </div>
-          <div class="field">
-            <label for="apply-phone">Téléphone</label>
-            <input type="tel" id="apply-phone" autocomplete="tel">
-          </div>
-          <div class="field">
-            <label for="apply-message">Message à l'employeur *</label>
-            <textarea id="apply-message" required placeholder="Présentez-vous en quelques lignes : expérience, disponibilité, motivation…"></textarea>
+            <label for="apply-message">Message au recruteur</label>
+            <textarea id="apply-message" rows="5"></textarea>
             <p class="field-error" hidden>Veuillez écrire un court message.</p>
           </div>
-          <div class="field">
-            <span class="hint" id="cv-hint">Votre CV (PDF ou Word) — l'envoi est simulé dans cette démonstration.</span>
-            <label class="file-drop" for="apply-cv">
-              Cliquez pour joindre votre CV
-              <input type="file" id="apply-cv" accept=".pdf,.doc,.docx" aria-describedby="cv-hint">
-              <span class="file-name"></span>
-            </label>
-          </div>
-          <div class="field field--checkbox">
-            <input type="checkbox" id="apply-consent" required>
-            <label for="apply-consent">J'accepte que mes informations soient transmises à l'entreprise dans le cadre de cette candidature, conformément à la politique de confidentialité. *</label>
-            <p class="field-error" hidden>Votre consentement est nécessaire pour envoyer la candidature.</p>
-          </div>
+
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-block">Envoyer ma candidature</button>
+            <button type="submit" class="btn btn-accent btn-block">Envoyer ma candidature</button>
           </div>
         </form>
-        <div class="apply-success" hidden>
-          <p class="notice notice--success" role="status">Merci ! Votre candidature a bien été « envoyée » (démonstration : aucune donnée n'est réellement transmise). L'entreprise vous recontactera directement par e-mail ou téléphone.</p>
-          <div class="form-actions">
-            <button type="button" class="btn btn-outline" data-close-modal>Fermer</button>
-          </div>
-        </div>
       </div>
     </dialog>
   </main>

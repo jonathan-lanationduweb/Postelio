@@ -364,7 +364,89 @@
   /* ============================================================
      Candidatures récentes (aperçu, tableau de bord)
      ============================================================ */
-  function getApplications() { return SS.store.get(S.applications, []); }
+  /* Clé PARTAGÉE écrite quand le candidat postule depuis une offre
+     (offers.js). On fusionne ici les candidatures RÉELLEMENT envoyées par le
+     candidat courant avec le jeu de démonstration, sans doublon. */
+  var SENT_KEY = "ss_applications_sent";
+
+  /* Suivi côté recruteur (clé ss_pipeline_v1). On le relit pour refléter la
+     progression dans la frise du candidat — SANS jamais exposer les notes ni
+     les motifs internes (§20). */
+  var PIPELINE_KEY = "ss_pipeline_v1";
+  /* Statut recruteur → vocabulaire candidat. */
+  var RSTATUT_MAP = {
+    nouveau: "envoyee", examiner: "vue", preselection: "preselection",
+    entretien: "entretien", retenu: "offre-recue", refuse: "non-retenue"
+  };
+  /* Étape ajoutée à la frise du candidat pour le statut courant. */
+  var RSTATUT_STEP = {
+    vue: "Vue par l'entreprise", preselection: "Présélection",
+    entretien: "Entretien proposé", "offre-recue": "Offre reçue",
+    "non-retenue": "Candidature non retenue"
+  };
+
+  function recruiterStatusFor(id) {
+    var s = SS.store.get(PIPELINE_KEY, null);
+    return (s && s.status) ? (s.status[id] || null) : null;
+  }
+
+  /* Convertit une entrée `ss_applications_sent` au format des candidatures
+     de l'espace candidat (offreId / offreTitre / entreprise / timeline…). */
+  function sentToApplication(s) {
+    var date = (s.date || "").slice(0, 10);
+    var rstat = recruiterStatusFor(s.id);
+    /* Vocabulaire candidat : « nouveau » (recruteur) → « envoyee ». */
+    var statut = (rstat && RSTATUT_MAP[rstat]) ? RSTATUT_MAP[rstat] : "envoyee";
+
+    var timeline = (s.timeline && s.timeline.length)
+      ? s.timeline.slice()
+      : [{ label: "Candidature envoyée", date: date || today() }];
+    /* Reflète l'avancée du recruteur (progression uniquement). */
+    if (statut !== "envoyee" && RSTATUT_STEP[statut]) {
+      timeline.push({ label: RSTATUT_STEP[statut], date: null, next: true });
+    }
+
+    return {
+      id: s.id,
+      offreId: s.offerId,
+      offreTitre: s.offerTitle,
+      entrepriseId: s.companyId,
+      entreprise: s.companyName,
+      ville: s.offerCity || s.candidateCity || "",
+      dateEnvoi: date || today(),
+      statut: statut,
+      note: s.note || "",
+      timeline: timeline,
+      _sent: true
+    };
+  }
+
+  /* Fusionne le seed (S.applications) avec les candidatures envoyées par le
+     candidat courant. Dédoublonnage par offre : une candidature déjà présente
+     (même offreId) n'est pas ajoutée une seconde fois. */
+  function mergeSentApplications(base) {
+    var s = SS.auth.get() || {};
+    var email = s.email || "";
+    var sent = SS.store.get(SENT_KEY, []);
+    if (!Array.isArray(sent) || !sent.length) { return base; }
+
+    var seenOffers = {};
+    base.forEach(function (a) { if (a.offreId) { seenOffers[a.offreId] = true; } });
+
+    var mine = [];
+    sent.forEach(function (item) {
+      if (email && item.candidateEmail && item.candidateEmail !== email) { return; }
+      if (item.offerId && seenOffers[item.offerId]) { return; }
+      if (item.offerId) { seenOffers[item.offerId] = true; }
+      mine.push(sentToApplication(item));
+    });
+    /* Les candidatures envoyées (les plus récentes) apparaissent en tête. */
+    return mine.concat(base);
+  }
+
+  function getApplications() {
+    return mergeSentApplications(SS.store.get(S.applications, []));
+  }
 
   function renderRecentApplications() {
     var box = document.getElementById("recent-applications");
@@ -489,8 +571,12 @@
     var card = btn.closest(".appli-card");
 
     if (action === "withdraw") {
-      var apps = getApplications().filter(function (a) { return a.id !== id; });
-      SS.store.set(S.applications, apps);
+      /* Retirer depuis le bon magasin : seed (S.applications) OU candidatures
+         réellement envoyées (SENT_KEY), sans polluer l'autre. */
+      var seed = SS.store.get(S.applications, []).filter(function (a) { return a.id !== id; });
+      SS.store.set(S.applications, seed);
+      var sent = SS.store.get(SENT_KEY, []).filter(function (a) { return a.id !== id; });
+      SS.store.set(SENT_KEY, sent);
       renderApplications();
       renderRecentApplications();
       updateMetrics();
@@ -518,11 +604,16 @@
     if (action === "save-note") {
       var ta = card.querySelector("textarea");
       var value = ta ? ta.value.trim() : "";
-      var list = getApplications().map(function (a) {
-        if (a.id === id) { a.note = value; }
-        return a;
-      });
-      SS.store.set(S.applications, list);
+      /* Écrire la note dans le magasin qui contient la candidature. */
+      var seed = SS.store.get(S.applications, []);
+      var inSeed = false;
+      seed = seed.map(function (a) { if (a.id === id) { a.note = value; inSeed = true; } return a; });
+      if (inSeed) {
+        SS.store.set(S.applications, seed);
+      } else {
+        var sent = SS.store.get(SENT_KEY, []).map(function (a) { if (a.id === id) { a.note = value; } return a; });
+        SS.store.set(SENT_KEY, sent);
+      }
       renderApplications();
       SS.toast("Note enregistrée.");
     }

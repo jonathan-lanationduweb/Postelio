@@ -55,7 +55,7 @@
   var STATUS_ORDER = ["nouveau", "examiner", "preselection", "entretien", "retenu", "refuse"];
 
   /* Modales (initialisées au chargement). */
-  var refusModal, entretienModal, retenuModal, detailModal, sheetModal;
+  var refusModal, entretienModal, retenuModal, detailModal, sheetModal, cvViewerModal;
   var openRefusModal = null;
 
   /* Données + index. */
@@ -68,22 +68,78 @@
   var lastDragEnd = 0;
   var toastTimer = null;
 
+  /* Clé PARTAGÉE : candidatures réellement envoyées par les candidats depuis
+     une offre (offers.js). Fusionnées dans la colonne « Nouveau » EN PLUS du
+     seed de démonstration, sans casser le drag & drop ni le seed. */
+  var SENT_KEY = "ss_applications_sent";
+
   document.addEventListener("DOMContentLoaded", function () {
     if (!window.EMP || !EMP.ready) { return; }
     if (!document.getElementById("pipeline-board")) { return; }
 
-    CANDS = pipelineSeed();
+    CANDS = pipelineSeed().concat(sentApplications());
     CANDS.forEach(function (c, i) { byId[c.id] = c; seedIndex[c.id] = i; });
 
     initRefusModal();
     initEntretienModal();
     initRetenuModal();
     initDetailModal();
+    initCvViewer();
     initStatusSheet();
     initToolbar();
     renderAll();
     initHorizontalScroll();
   });
+
+  /* ============================================================
+     Candidatures reçues (clé partagée ss_applications_sent)
+     Filtrées sur l'entreprise du recruteur connecté (Fiduciaire Bellecour
+     en démonstration) et converties en cartes candidat normales.
+     ============================================================ */
+  function recruiterCompanyId() {
+    var s = SS.auth.get() || {};
+    return s.companyId || (APP_CONFIG.demoCompany && APP_CONFIG.demoCompany.id) || "";
+  }
+
+  function daysSince(iso) {
+    if (!iso) { return 0; }
+    var d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+    return d < 0 ? 0 : d;
+  }
+
+  function sentApplications() {
+    var sent = SS.store.get(SENT_KEY, []);
+    if (!Array.isArray(sent) || !sent.length) { return []; }
+    var mine = recruiterCompanyId();
+    return sent.filter(function (s) {
+      /* Destinées à ce recruteur (ou toutes si l'entreprise n'est pas connue). */
+      return !mine || !s.companyId || s.companyId === mine;
+    }).map(function (s) {
+      return {
+        id: s.id,
+        nom: s.candidateName || "Candidat",
+        poste: s.candidateMetier || s.offerTitle || "Candidature",
+        offre: s.offerTitle || "—",
+        ville: s.candidateCity || "—",
+        exp: null,                       /* non communiqué par le candidat */
+        skills: [],
+        savoirFaire: [],
+        dispo: "",
+        cv: s.cvFile ? s.cvFile.name : null,
+        cvFile: s.cvFile || null,
+        jours: daysSince(s.date),
+        statut: "nouveau",
+        experience: "",
+        message: s.message || "",
+        email: s.candidateEmail || "",
+        offerId: s.offerId || "",
+        historique: (s.timeline && s.timeline.length)
+          ? s.timeline.map(function (t) { return t.label; })
+          : ["Candidature reçue"],
+        _sent: true
+      };
+    });
+  }
 
   /* ============================================================
      Défilement horizontal du Kanban : molette → horizontal + barre de
@@ -275,7 +331,8 @@
             '<span class="pipeline-card__poste">' + e(c.poste) + "</span></div>" +
           badge +
         "</div>" +
-        '<p class="pipeline-card__meta">' + e(c.ville) + " · " + c.exp + " ans d'expérience</p>" +
+        '<p class="pipeline-card__meta">' + e(c.ville) +
+          (c.exp != null ? " · " + c.exp + " ans d'expérience" : (c._sent ? " · Candidature reçue" : "")) + "</p>" +
         '<div class="pipeline-card__skills">' + skills + "</div>" +
         '<p class="pipeline-card__offer">' + e(c.offre) + "</p>" +
         '<p class="pipeline-card__date">Dernière activité : ' + e(SS.relativeDate(EMP.dateFromToday(-c.jours))) + "</p>" +
@@ -648,7 +705,114 @@
   }
 
   /* ============================================================
-     Modale « Détail candidat » (profil, CV, notes privées, historique)
+     CV simulé (aperçu + visionneuse) — AUCUN appel réseau, AUCUN fichier réel.
+     ============================================================ */
+  /* Nom + date de mise à jour du CV. Les candidatures envoyées portent une
+     vraie date (cvFile.date) ; pour le seed, on dérive une date stable. */
+  function cvMeta(cand) {
+    if (cand.cvFile && cand.cvFile.name) {
+      return { name: cand.cvFile.name, date: cand.cvFile.date || EMP.dateFromToday(-cand.jours) };
+    }
+    return { name: cand.cv || ("CV_" + String(cand.nom || "candidat").replace(/\s+/g, "_") + ".pdf"),
+      date: EMP.dateFromToday(-(cand.jours + 3)) };
+  }
+
+  /* Document de CV factice et stylé, clairement « démonstration ».
+     size : "thumb" (miniature) ou "full" (visionneuse). */
+  function cvDocHtml(cand, size) {
+    var e = SS.escapeHtml;
+    var meta = cvMeta(cand);
+    var contact = [cand.ville, cand.email].filter(Boolean).join(" · ");
+    var skills = (cand.skills || []).slice(0, 4).map(function (s) {
+      return '<span class="cv-doc__chip">' + e(s) + "</span>";
+    }).join("");
+    return '<div class="cv-doc cv-doc--' + (size || "thumb") + '" role="img" aria-label="Aperçu simulé du CV de ' + e(cand.nom) + '">' +
+      '<span class="cv-doc__demo">Aperçu de démonstration</span>' +
+      '<div class="cv-doc__head"><h4>' + e(cand.nom) + "</h4>" +
+        '<p>' + e(cand.poste) + "</p>" +
+        (contact ? '<p class="cv-doc__contact">' + e(contact) + "</p>" : "") +
+      "</div>" +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Expérience</span>' +
+        (cand.experience ? '<p class="cv-doc__text">' + e(cand.experience) + "</p>" : "") +
+        '<span class="cv-doc__bar" style="width:92%"></span><span class="cv-doc__bar" style="width:80%"></span><span class="cv-doc__bar" style="width:66%"></span></div>' +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Formation</span>' +
+        '<span class="cv-doc__bar" style="width:72%"></span><span class="cv-doc__bar" style="width:54%"></span></div>' +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Compétences</span>' +
+        (skills ? '<div class="cv-doc__chips">' + skills + "</div>"
+                : '<span class="cv-doc__bar" style="width:84%"></span><span class="cv-doc__bar" style="width:60%"></span>') + "</div>" +
+      '<p class="cv-doc__file">' + e(meta.name) + "</p>" +
+    "</div>";
+  }
+
+  /* ---- Visionneuse CV (modale large : zoom, télécharger) ---- */
+  function initCvViewer() {
+    if (document.getElementById("cv-viewer")) {
+      cvViewerModal = createModal(document.getElementById("cv-viewer"));
+      return;
+    }
+    var overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.id = "cv-viewer";
+    overlay.hidden = true;
+    overlay.innerHTML =
+      '<div class="modal modal--wide cv-viewer" role="dialog" aria-modal="true" aria-labelledby="cv-viewer-title">' +
+        '<div class="modal__head">' +
+          '<h2 class="modal__title" id="cv-viewer-title">CV du candidat</h2>' +
+          '<button type="button" class="modal-close" data-close aria-label="Fermer la fenêtre">✕</button>' +
+        "</div>" +
+        '<div class="modal__body cv-viewer__body">' +
+          '<div class="cv-viewer__toolbar">' +
+            '<div class="cv-viewer__zoom" role="group" aria-label="Zoom du CV">' +
+              '<button type="button" class="btn btn-outline btn-sm" data-cv-zoom="out" aria-label="Réduire">Zoom −</button>' +
+              '<span class="cv-viewer__level" id="cv-viewer-level" aria-live="polite">100 %</span>' +
+              '<button type="button" class="btn btn-outline btn-sm" data-cv-zoom="in" aria-label="Agrandir">Zoom +</button>' +
+            "</div>" +
+            '<button type="button" class="btn btn-ghost btn-sm" data-cv-download>Télécharger</button>' +
+          "</div>" +
+          '<div class="cv-viewer__stage"><div class="cv-viewer__page" id="cv-viewer-page"></div></div>' +
+        "</div>" +
+        '<div class="modal__actions">' +
+          '<button type="button" class="btn btn-primary" data-close>Fermer</button>' +
+        "</div>" +
+      "</div>";
+    document.body.appendChild(overlay);
+    cvViewerModal = createModal(overlay);
+
+    var zoom = 1;
+    var pageEl = overlay.querySelector("#cv-viewer-page");
+    var levelEl = overlay.querySelector("#cv-viewer-level");
+    function applyZoom() {
+      pageEl.style.transform = "scale(" + zoom + ")";
+      levelEl.textContent = Math.round(zoom * 100) + " %";
+    }
+    overlay.addEventListener("click", function (ev) {
+      var z = ev.target.closest ? ev.target.closest("[data-cv-zoom]") : null;
+      if (z) {
+        zoom = z.getAttribute("data-cv-zoom") === "in" ? Math.min(1.6, zoom + 0.15) : Math.max(0.7, zoom - 0.15);
+        applyZoom();
+        return;
+      }
+      if (ev.target.closest && ev.target.closest("[data-cv-download]")) {
+        SS.toast("Téléchargement du CV (démonstration).");
+      }
+    });
+    cvViewerModal._reset = function () { zoom = 1; applyZoom(); };
+    cvViewerModal._page = pageEl;
+  }
+
+  function openCvViewer(cand, trigger) {
+    if (!cvViewerModal) { return; }
+    var e = SS.escapeHtml;
+    var title = document.getElementById("cv-viewer-title");
+    if (title) { title.textContent = "CV de " + cand.nom; }
+    if (cvViewerModal._page) { cvViewerModal._page.innerHTML = cvDocHtml(cand, "full"); }
+    if (cvViewerModal._reset) { cvViewerModal._reset(); }
+    cvViewerModal.open({ returnTo: trigger || document.activeElement });
+  }
+
+  /* ============================================================
+     Modale « Détail candidat » (profil, CV + aperçu, notes privées,
+     message de candidature, historique, actions)
      ============================================================ */
   function initDetailModal() {
     var overlay = document.getElementById("cand-modal");
@@ -662,15 +826,31 @@
     var refus = SS.store.get(REFUS_KEY, {});
     var st = effectiveStatus(cand, store, refus);
     var notes = getNotes()[cand.id] || "";
+    var meta = cvMeta(cand);
 
     var title = document.getElementById("cand-modal-title");
     if (title) { title.textContent = cand.nom; }
 
-    var skills = cand.skills.map(function (s) { return '<span class="skill-tag">' + e(s) + "</span>"; }).join("");
+    var skills = (cand.skills || []).map(function (s) { return '<span class="skill-tag">' + e(s) + "</span>"; }).join("");
     var sf = (cand.savoirFaire || []).map(function (s) { return '<span class="skill-tag skill-tag--sf">' + e(s) + "</span>"; }).join("");
-    if (!sf) { sf = '<span class="text-muted">—</span>'; }
     var histo = (cand.historique || []).map(function (h) { return "<li>" + e(h) + "</li>"; }).join("");
     if (!histo) { histo = "<li>Candidature reçue " + e(SS.relativeDate(EMP.dateFromToday(-cand.jours))) + "</li>"; }
+    var expLabel = cand.exp != null ? cand.exp + " ans"
+      : (cand._sent ? '<span class="text-muted">Voir le CV</span>' : "—");
+
+    /* Sections conditionnelles. */
+    var messageSec = cand.message
+      ? '<section class="cand-detail__sec"><h3>Message de candidature</h3><p>' + e(cand.message) + "</p></section>"
+      : "";
+    var expSec = cand.experience
+      ? '<section class="cand-detail__sec"><h3>Expérience</h3><p>' + e(cand.experience) + "</p></section>"
+      : "";
+    var skillsSec = skills
+      ? '<section class="cand-detail__sec"><h3>Compétences</h3><div class="pipeline-card__skills">' + skills + "</div></section>"
+      : "";
+    var sfSec = sf
+      ? '<section class="cand-detail__sec"><h3>Savoir-faire Postelio</h3><div class="pipeline-card__skills">' + sf + "</div></section>"
+      : "";
 
     var body = document.getElementById("cand-modal-body");
     body.innerHTML =
@@ -679,21 +859,75 @@
         '<dl class="cand-detail__grid">' +
           "<div><dt>Métier</dt><dd>" + e(cand.poste) + "</dd></div>" +
           "<div><dt>Ville</dt><dd>" + e(cand.ville) + "</dd></div>" +
-          "<div><dt>Expérience</dt><dd>" + cand.exp + " ans</dd></div>" +
-          "<div><dt>Disponibilité</dt><dd>" + e(cand.dispo || "—") + "</dd></div>" +
+          "<div><dt>Expérience</dt><dd>" + expLabel + "</dd></div>" +
+          "<div><dt>Disponibilité</dt><dd>" + (cand.dispo ? e(cand.dispo) : "—") + "</dd></div>" +
           '<div class="cand-detail__wide"><dt>Offre concernée</dt><dd>' + e(cand.offre) + "</dd></div>" +
-          '<div class="cand-detail__wide"><dt>CV</dt><dd><button type="button" class="link-more" data-toast="Ouverture du CV (démonstration).">' + e(cand.cv || "CV.pdf") + "</button></dd></div>" +
         "</dl>" +
-        '<section class="cand-detail__sec"><h3>Expérience</h3><p>' + e(cand.experience || (cand.exp + " ans d'expérience en tant que " + cand.poste + ".")) + "</p></section>" +
-        '<section class="cand-detail__sec"><h3>Compétences</h3><div class="pipeline-card__skills">' + skills + "</div></section>" +
-        '<section class="cand-detail__sec"><h3>Savoir-faire Postelio</h3><div class="pipeline-card__skills">' + sf + "</div></section>" +
+        '<section class="cand-detail__sec cand-cv-sec"><h3>CV du candidat</h3>' +
+          '<div class="cand-cv-sec__grid">' +
+            '<button type="button" class="cand-cv-sec__thumb" data-cv-open aria-label="Ouvrir le CV de ' + e(cand.nom) + '">' +
+              cvDocHtml(cand, "thumb") +
+            "</button>" +
+            '<div class="cand-cv-sec__info">' +
+              '<p class="cand-cv-sec__name"><span aria-hidden="true">📄</span> <strong>' + e(meta.name) + "</strong></p>" +
+              '<p class="text-muted cand-cv-sec__date">CV mis à jour le ' + e(SS.formatDate(meta.date)) + "</p>" +
+              '<div class="cand-cv-sec__actions">' +
+                '<button type="button" class="btn btn-outline btn-sm" data-cv-open>Ouvrir le CV</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-cv-download>Télécharger</button>' +
+              "</div>" +
+            "</div>" +
+          "</div>" +
+        "</section>" +
+        messageSec +
+        expSec +
+        skillsSec +
+        sfSec +
         '<section class="cand-detail__sec"><h3>Notes recruteur <span class="cand-detail__priv">Privé — jamais visible du candidat</span></h3>' +
           '<textarea id="cand-notes" rows="3" placeholder="Vos notes internes sur ce candidat…">' + e(notes) + "</textarea></section>" +
         '<section class="cand-detail__sec"><h3>Historique de candidature</h3><ul class="cand-detail__histo">' + histo + "</ul></section>" +
+        '<section class="cand-detail__sec cand-detail__actions">' +
+          '<div class="cand-actions__primary">' +
+            '<button type="button" class="btn btn-primary btn-sm" data-cand-action="preselection">Présélectionner</button>' +
+            '<button type="button" class="btn btn-accent btn-sm" data-cand-action="entretien">Proposer un entretien</button>' +
+            '<a class="btn btn-outline btn-sm" href="espace-entreprise-messages.html?to=' + encodeURIComponent(cand.nom) +
+              "&poste=" + encodeURIComponent(cand.poste) + "&offre=" + encodeURIComponent(cand.offre) + '">Message</a>' +
+          "</div>" +
+          '<details class="cand-actions__more">' +
+            "<summary>Autres actions</summary>" +
+            '<div class="cand-actions__menu">' +
+              '<button type="button" class="btn btn-ghost btn-sm" data-cand-action="retenu">Retenir</button>' +
+              '<button type="button" class="btn btn-ghost btn-sm" data-cand-action="refuse">Refuser</button>' +
+              '<button type="button" class="btn btn-ghost btn-sm" data-cand-action="archive">Archiver</button>' +
+            "</div>" +
+          "</details>" +
+        "</section>" +
       "</div>";
 
     var ta = document.getElementById("cand-notes");
     if (ta) { ta.addEventListener("input", function () { setNote(cand.id, ta.value); }); }
+
+    /* CV : aperçu → visionneuse ; téléchargement simulé. */
+    body.querySelectorAll("[data-cv-open]").forEach(function (btn) {
+      btn.addEventListener("click", function () { openCvViewer(cand, btn); });
+    });
+    body.querySelectorAll("[data-cv-download]").forEach(function (btn) {
+      btn.addEventListener("click", function () { SS.toast("Téléchargement du CV (démonstration)."); });
+    });
+
+    /* Actions principales + menu secondaire → réutilisent applyStatusChange. */
+    body.querySelectorAll("[data-cand-action]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var action = btn.getAttribute("data-cand-action");
+        if (action === "archive") {
+          SS.toast(cand.nom + " a été archivé(e) (démonstration).");
+          return;
+        }
+        var cur = effectiveStatus(cand, pipelineStore(), SS.store.get(REFUS_KEY, {}));
+        detailModal.close();
+        if (action === cur) { SS.toast(cand.nom + " est déjà à cette étape."); return; }
+        applyStatusChange(cand, action, cur, null);
+      });
+    });
 
     detailModal.open({ returnTo: trigger || document.activeElement });
   }

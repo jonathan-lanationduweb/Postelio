@@ -598,3 +598,256 @@
   font-weight: 600;
   color: var(--c-primary);
 }
+
+/* ===== Modale de candidature préremplie (depuis le profil) ===== */
+/* Centrage de la modale <dialog> (le reset global la fixe en haut à gauche). */
+.apply-modal[open] {
+  inset: 0;
+  margin: auto;
+}
+
+/* Champ fichier « Remplacer » masqué visuellement mais déclenché au clic. */
+#apply-cv-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Offre concernée : bandeau non éditable en tête de modale */
+.apply-offer {
+  display: grid;
+  gap: 0.15rem;
+  background: var(--c-primary-soft, var(--c-accent-soft));
+  border: 1px solid var(--c-line);
+  border-left: 3px solid var(--c-accent);
+  border-radius: var(--radius-m);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.apply-offer__label {
+  font-size: var(--text-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-soft);
+}
+
+.apply-offer__title {
+  font-size: 1.0625rem;
+  color: var(--c-primary-dark);
+  line-height: 1.3;
+}
+
+.apply-offer__company {
+  font-size: var(--text-sm);
+  color: var(--c-ink-soft);
+}
+
+/* Identité préremplie : grille en lecture (réutilisée du profil) */
+.apply-identity {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3) var(--sp-4);
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-m);
+}
+
+.apply-identity dt {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-soft);
+}
+
+.apply-identity dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  color: var(--c-ink);
+  word-break: break-word;
+}
+
+/* Bloc CV joint (aperçu déroulant + actions) */
+.apply-cv {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-m);
+  background: var(--c-surface);
+}
+
+.apply-cv__head {
+  margin-bottom: var(--sp-3);
+}
+
+.apply-cv__title {
+  font-size: var(--text-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-soft);
+}
+
+.apply-cv__file {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.apply-cv__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.apply-cv__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.apply-cv__meta strong {
+  color: var(--c-primary-dark);
+  word-break: break-word;
+}
+
+.apply-cv__meta .text-muted {
+  font-size: var(--text-sm);
+}
+
+.apply-cv__actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.apply-cv__empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  color: var(--c-ink-soft);
+}
+
+.apply-cv__preview {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--c-line);
+}
+
+/* ===== Aperçu de CV simulé (document factice, sans réseau) ===== */
+.cv-doc {
+  position: relative;
+  background: #fff;
+  color: #1a2b27;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-s);
+  box-shadow: var(--shadow-s);
+  padding: 1.1rem 1.2rem;
+  margin: 0 auto;
+  max-width: 420px;
+  overflow: hidden;
+}
+
+.cv-doc__demo {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-accent-dark);
+  background: var(--c-accent-soft);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+}
+
+.cv-doc__head {
+  border-bottom: 2px solid var(--c-accent);
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.cv-doc__head h4 {
+  font-size: 1.15rem;
+  color: var(--c-primary-dark);
+  margin: 0;
+}
+
+.cv-doc__head p {
+  margin: 0.15rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--c-ink-soft);
+}
+
+.cv-doc__contact {
+  font-size: var(--text-xs) !important;
+}
+
+.cv-doc__sec {
+  margin-bottom: 0.7rem;
+}
+
+.cv-doc__label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-primary);
+  margin-bottom: 0.35rem;
+}
+
+.cv-doc__text {
+  font-size: var(--text-sm);
+  color: var(--c-ink);
+  margin: 0 0 0.4rem;
+}
+
+.cv-doc__bar {
+  display: block;
+  height: 7px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--c-line), #e7ece9);
+  margin-bottom: 5px;
+}
+
+.cv-doc__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cv-doc__chip {
+  font-size: var(--text-xs);
+  background: var(--c-accent-soft);
+  color: var(--c-accent-dark);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+.cv-doc__file {
+  margin: 0.8rem 0 0;
+  font-size: var(--text-xs);
+  color: var(--c-ink-soft);
+  border-top: 1px dashed var(--c-line);
+  padding-top: 0.5rem;
+}
+
+/* Responsive : identité sur une colonne, actions empilées (mobile) */
+@media (max-width: 560px) {
+  .apply-identity { grid-template-columns: 1fr; }
+  .apply-cv__actions { margin-left: 0; }
+}

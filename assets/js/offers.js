@@ -233,7 +233,57 @@
     }
   }
 
-  /* ---- Candidature (modale) ---- */
+  /* ============================================================
+     Candidature depuis une offre (§4-8)
+     Le bouton « Postuler » a trois états :
+       – visiteur non connecté  → redirection vers la connexion ;
+       – recruteur connecté     → message (pas de candidature) ;
+       – candidat connecté      → modale préremplie depuis le profil.
+     À l'envoi, la candidature est ajoutée à la clé PARTAGÉE
+     `ss_applications_sent`, lue à la fois par l'espace candidat
+     (« Mes candidatures ») et par l'espace recruteur (colonne « Nouveau »).
+     ============================================================ */
+  var SENT_KEY = "ss_applications_sent";
+  var CV_KEY = "ss_candidate_cv";
+  var PROFILE_KEY = "ss_candidate_profile";
+
+  function getCandidateProfile() { return SS.store.get(PROFILE_KEY, {}) || {}; }
+  function getCandidateCv() { return SS.store.get(CV_KEY, null); }
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+  /* Coordonnées du candidat, réutilisées du profil / de la session. */
+  function candidateFields() {
+    var s = SS.auth.get() || {};
+    var p = getCandidateProfile();
+    return {
+      firstName: s.firstName || "",
+      lastName: s.lastName || "",
+      ville: p.ville || s.city || "",
+      email: s.email || "",
+      phone: p.telephone || p.phone || s.telephone || s.phone || "",
+      metier: p.metier || s.metier || ""
+    };
+  }
+
+  /* Aperçu simulé d'une page de CV (aucun appel réseau) — utilisé par [Voir]. */
+  function cvPreviewHtml(f, cvName) {
+    var e = SS.escapeHtml;
+    var nom = ((f.firstName || "") + " " + (f.lastName || "")).trim() || "Candidat";
+    return '<div class="cv-doc" role="img" aria-label="Aperçu simulé du CV de ' + e(nom) + '">' +
+      '<span class="cv-doc__demo">Aperçu de démonstration</span>' +
+      '<div class="cv-doc__head"><h4>' + e(nom) + "</h4>" +
+        '<p>' + e(f.metier || "Profil professionnel") + "</p>" +
+        '<p class="cv-doc__contact">' + e([f.ville, f.email, f.phone].filter(Boolean).join(" · ")) + "</p></div>" +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Expérience</span>' +
+        '<span class="cv-doc__bar" style="width:92%"></span><span class="cv-doc__bar" style="width:78%"></span><span class="cv-doc__bar" style="width:64%"></span></div>' +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Formation</span>' +
+        '<span class="cv-doc__bar" style="width:70%"></span><span class="cv-doc__bar" style="width:52%"></span></div>' +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Compétences</span>' +
+        '<span class="cv-doc__bar" style="width:84%"></span><span class="cv-doc__bar" style="width:60%"></span></div>' +
+      '<p class="cv-doc__file">' + e(cvName || "CV.pdf") + "</p>" +
+    "</div>";
+  }
+
   function setupApplyModal(offer) {
     var dialog = document.getElementById("apply-modal");
     var openBtn = document.getElementById("apply-button");
@@ -245,30 +295,170 @@
       return;
     }
 
-    var titleEl = dialog.querySelector("#apply-offer-title");
-    if (titleEl) { titleEl.textContent = offer.titre + " — " + offer.entrepriseNom; }
+    /* CV retenu pour CETTE candidature : par défaut celui du profil, mais
+       « Remplacer » permet d'en simuler un autre (nom seulement). */
+    var cvForApplication = getCandidateCv();
 
-    openBtn.addEventListener("click", function () { SS.openModal(dialog); });
+    var titleEl = document.getElementById("apply-offer-title");
+    var companyEl = document.getElementById("apply-offer-company");
+    if (titleEl) { titleEl.textContent = offer.titre; }
+    if (companyEl) { companyEl.textContent = offer.entrepriseNom; }
 
-    /* Nom du fichier CV simulé. */
-    var fileInput = dialog.querySelector("#apply-cv");
-    var fileName = dialog.querySelector(".file-name");
-    if (fileInput && fileName) {
-      fileInput.addEventListener("change", function () {
-        fileName.textContent = fileInput.files.length
-          ? fileInput.files[0].name : "";
+    /* --- Bouton « Postuler » : aiguillage selon l'état de session --- */
+    openBtn.addEventListener("click", function () {
+      if (!SS.auth.isLogged()) {
+        SS.toast("Connectez-vous pour postuler à cette offre.");
+        setTimeout(function () { window.location.href = "connexion.html"; }, 700);
+        return;
+      }
+      if (SS.auth.isEmployer()) {
+        SS.toast("Vous êtes connecté en tant que recruteur : la candidature est réservée aux candidats.");
+        return;
+      }
+      cvForApplication = getCandidateCv();
+      renderIdentity();
+      renderCvBlock();
+      prefillMessage();
+      SS.openModal(dialog);
+    });
+
+    /* --- Identité préremplie --- */
+    function renderIdentity() {
+      var box = document.getElementById("apply-identity");
+      if (!box) { return; }
+      var e = SS.escapeHtml;
+      var f = candidateFields();
+      var rows = [
+        ["Prénom", f.firstName],
+        ["Nom", f.lastName],
+        ["Ville", f.ville],
+        ["E-mail", f.email]
+      ];
+      if (f.phone) { rows.push(["Téléphone", f.phone]); }
+      rows.push(["Métier", f.metier]);
+      box.innerHTML = rows.map(function (r) {
+        return "<div><dt>" + e(r[0]) + "</dt><dd>" + (r[1] ? e(r[1]) : '<span class="text-muted">Non renseigné</span>') + "</dd></div>";
+      }).join("");
+    }
+
+    /* --- Bloc CV (aperçu + Voir + Remplacer) --- */
+    function renderCvBlock() {
+      var box = document.getElementById("apply-cv-block");
+      if (!box) { return; }
+      var e = SS.escapeHtml;
+      var hasCv = !!(cvForApplication && cvForApplication.name);
+      if (!hasCv) {
+        box.innerHTML =
+          '<div class="apply-cv__head"><span class="apply-cv__title">CV joint</span></div>' +
+          '<div class="apply-cv__empty"><p>Aucun CV n\'est encore associé à votre profil.</p>' +
+          '<button type="button" class="btn btn-outline btn-sm" data-cv-action="replace">Joindre un CV</button></div>';
+      } else {
+        box.innerHTML =
+          '<div class="apply-cv__head"><span class="apply-cv__title">CV joint</span></div>' +
+          '<div class="apply-cv__file">' +
+            '<span class="apply-cv__icon" aria-hidden="true">📄</span>' +
+            '<span class="apply-cv__meta"><strong>' + e(cvForApplication.name) + "</strong>" +
+              (cvForApplication.date ? '<span class="text-muted">Mis à jour le ' + e(SS.formatDate(cvForApplication.date)) + "</span>" : "") +
+            "</span>" +
+            '<span class="apply-cv__actions">' +
+              '<button type="button" class="btn btn-ghost btn-sm" data-cv-action="view" aria-expanded="false" aria-controls="apply-cv-preview">Voir</button>' +
+              '<button type="button" class="btn btn-outline btn-sm" data-cv-action="replace">Remplacer</button>' +
+            "</span>" +
+          "</div>" +
+          '<div class="apply-cv__preview" id="apply-cv-preview" hidden></div>';
+      }
+    }
+
+    function prefillMessage() {
+      var ta = document.getElementById("apply-message");
+      if (ta && !ta.value.trim()) {
+        ta.value = "Bonjour, votre offre « " + offer.titre + " » chez " + offer.entrepriseNom +
+          " correspond à ce que je recherche. Vous trouverez mon CV ci-joint ; je reste disponible pour un échange.";
+      }
+    }
+
+    /* Actions du bloc CV (délégation). */
+    var cvFileInput = document.getElementById("apply-cv-file");
+    dialog.addEventListener("click", function (ev) {
+      var btn = ev.target.closest ? ev.target.closest("[data-cv-action]") : null;
+      if (!btn) { return; }
+      var action = btn.getAttribute("data-cv-action");
+      if (action === "replace") {
+        if (cvFileInput) { cvFileInput.click(); }
+      } else if (action === "view") {
+        var panel = document.getElementById("apply-cv-preview");
+        if (!panel) { return; }
+        var willShow = panel.hidden;
+        if (willShow) {
+          panel.innerHTML = cvPreviewHtml(candidateFields(), cvForApplication && cvForApplication.name);
+        }
+        panel.hidden = !willShow;
+        btn.setAttribute("aria-expanded", String(willShow));
+        btn.textContent = willShow ? "Masquer" : "Voir";
+      }
+    });
+
+    if (cvFileInput) {
+      cvFileInput.addEventListener("change", function () {
+        var file = cvFileInput.files && cvFileInput.files[0];
+        if (!file) { return; }
+        /* Upload simulé : on ne lit QUE le nom (aucun contenu envoyé/stocké). */
+        cvForApplication = { name: file.name, date: todayISO() };
+        cvFileInput.value = "";
+        renderCvBlock();
+        SS.toast("CV mis à jour pour cette candidature : " + file.name);
       });
     }
 
-    var form = dialog.querySelector("form");
+    /* --- Envoi de la candidature (§7-8) --- */
+    var form = document.getElementById("apply-form");
+    if (!form) { return; }
     form.addEventListener("submit", function (event) {
       event.preventDefault();
-      if (!validateForm(form)) { return; }
-      /* Démo : aucune donnée n'est envoyée. En production, appel à
-         APP_CONFIG.api.endpoints.applications. */
-      form.hidden = true;
-      var success = dialog.querySelector(".apply-success");
-      if (success) { success.hidden = false; }
+      var f = candidateFields();
+      var ta = document.getElementById("apply-message");
+      var message = ta ? ta.value.trim() : "";
+
+      var sent = SS.store.get(SENT_KEY, []);
+      if (!Array.isArray(sent)) { sent = []; }
+
+      /* Anti-doublon : une seule candidature par (offre + e-mail candidat). */
+      var existing = sent.filter(function (a) {
+        return a.offerId === offer.id && a.candidateEmail === f.email;
+      })[0];
+      if (existing) {
+        existing.message = message;
+        existing.cvFile = cvForApplication && cvForApplication.name
+          ? { name: cvForApplication.name, date: cvForApplication.date || todayISO() } : null;
+        SS.store.set(SENT_KEY, sent);
+        SS.closeModal(dialog);
+        SS.toast("Votre candidature a été mise à jour.");
+        return;
+      }
+
+      var today = todayISO();
+      sent.push({
+        id: "sent-" + offer.id + "-" + Date.now(),
+        candidateName: (f.firstName + " " + f.lastName).trim() || "Candidat",
+        candidateCity: f.ville,
+        candidateEmail: f.email,
+        candidateMetier: f.metier,
+        offerId: offer.id,
+        offerTitle: offer.titre,
+        offerCity: offer.ville || "",
+        companyId: offer.entrepriseId,
+        companyName: offer.entrepriseNom,
+        date: new Date().toISOString(),
+        status: "nouveau",
+        cvFile: (cvForApplication && cvForApplication.name)
+          ? { name: cvForApplication.name, date: cvForApplication.date || today } : null,
+        message: message,
+        timeline: [{ label: "Candidature envoyée", date: today }]
+      });
+      SS.store.set(SENT_KEY, sent);
+
+      SS.closeModal(dialog);
+      SS.toast("Votre candidature a bien été envoyée.");
     });
   }
 
