@@ -64,25 +64,27 @@
         <div class="dash-main">
 
           <section class="dash-block" id="profil" aria-labelledby="h-profil">
-            <h2 id="h-profil">Profil entreprise</h2>
-            <p class="dash-block__hint">Ce profil est votre vitrine côté candidats. Complétez chaque section pour renforcer votre marque employeur.</p>
+            <div class="dash-block__head dash-block__head--split">
+              <h2 id="h-profil">Profil entreprise</h2>
+              <button type="button" class="btn btn-primary btn-sm" id="profil-quickstart">Compléter mon profil en 2 minutes</button>
+            </div>
+            <p class="dash-block__hint">Votre vitrine côté candidats. La plupart des informations sont déjà préremplies&nbsp;: cliquez pour ajuster, tout est enregistré automatiquement.</p>
 
             <div class="card dash-card profil-card">
-              <div class="profile-head">
-                <span class="avatar profile-logo" id="profil-logo" aria-hidden="true">FB</span>
+              <div class="profile-head" id="profil-identity">
+                <span class="avatar profile-logo" aria-hidden="true">FB</span>
                 <span>
-                  <span class="profile-head__name" id="profil-name">Fiduciaire Bellecour</span>
-                  <span class="profile-head__meta"><span id="profil-sector">Finance &amp; Comptabilité</span> · <span id="profil-city">Lyon</span></span>
+                  <span class="profile-head__name">Fiduciaire Bellecour</span>
+                  <span class="profile-head__meta">Finance &amp; Comptabilité · Lyon</span>
                 </span>
               </div>
-
-              <div class="profile-meter" role="img" aria-label="Profil complété à 75 %">
-                <span class="profile-meter__fill-75"></span>
-              </div>
-              <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque : votre logo, une photo de vos locaux.</p>
+              <div id="profil-meter"></div>
             </div>
 
-            <!-- Sections en lecture, éditables à la demande (rendues par JS) -->
+            <!-- Bloc de vérification d'entreprise (rendu par JS) -->
+            <div id="profil-verification"></div>
+
+            <!-- Sections préremplies, éditables en ligne (rendues par JS) -->
             <div id="profil-sections"></div>
           </section>
 

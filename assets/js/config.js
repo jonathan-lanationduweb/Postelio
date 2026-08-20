@@ -74,7 +74,7 @@ window.APP_CONFIG = {
   demoCompany: {
     id: "fiduciaire-bellecour",
     nom: "Fiduciaire Bellecour",
-    contact: "Claire Fontanel"
+    contact: "Claire Martin"
   },
 
   /* Comptes de démonstration — plateforme à deux faces (prototype).

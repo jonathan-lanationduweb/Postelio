@@ -1255,19 +1255,96 @@ body.kanban-dragging, body.kanban-dragging .pipeline-card { cursor: grabbing; }
 .content-menu__list .content-menu__danger { color: var(--c-error); }
 .content-menu__list .content-menu__danger:hover { background: var(--c-error-soft); color: var(--c-error); }
 
-/* ---- Profil entreprise : logo + sections éditables ---- */
+/* ---- Profil entreprise ASSISTÉ : identité, jauge, vérification, sections ---- */
 .profile-logo { width: 56px; height: 56px; border-radius: var(--radius-m); font-size: 1.25rem; }
+.dash-block__head--split { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
+
+/* Jauge de complétion + liste « pour atteindre 100 % » cliquable */
+.profile-meter__pct { font-size: var(--text-sm); color: var(--c-ink); margin: 0 0 var(--sp-2); }
+.profil-todo { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.profil-todo__btn {
+  border: 1px dashed var(--c-border-strong); background: var(--c-surface);
+  color: var(--c-primary); font-size: var(--text-sm); font-weight: 600;
+  padding: 0.35rem 0.75rem; border-radius: var(--radius-pill); cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+.profil-todo__btn:hover { background: var(--c-primary-soft); border-color: var(--c-primary); }
+.profil-todo__btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+/* Bloc de vérification d'entreprise */
+.profil-verif { margin-top: var(--sp-4); border-left: 4px solid var(--c-border-strong); }
+.profil-verif.is-verifie { border-left-color: var(--c-primary); }
+.profil-verif.is-encours { border-left-color: var(--c-accent); }
+.profil-verif__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+.profil-verif__head h3 { margin: 0; font-size: var(--text-base); }
+.profil-verif__list { list-style: none; margin: var(--sp-3) 0; padding: 0; display: grid; gap: 6px; }
+.profil-verif__list li { font-size: var(--text-sm); color: var(--c-ink); }
+.profil-verif__list .is-ok span { color: var(--c-primary); font-weight: 700; }
+.profil-verif__list .is-todo { color: var(--c-ink-soft); }
+.verif-badge {
+  display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs); font-weight: 700;
+  padding: 0.3rem 0.7rem; border-radius: var(--radius-pill);
+  background: var(--c-bg-alt); color: var(--c-ink-soft);
+}
+.verif-badge.is-verifie { background: var(--c-primary-soft); color: var(--c-primary-dark); }
+.verif-badge.is-encours { background: var(--c-accent-soft); color: var(--c-accent-dark); }
+.verif-badge--inline { font-size: 0.68rem; padding: 0.15rem 0.5rem; }
+
+/* En-têtes de section + indicateur « ✓ Enregistré » */
 .profil-block { margin-top: var(--sp-4); }
+.profil-block.is-flash { box-shadow: 0 0 0 2px var(--c-accent); }
 .profil-section__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .profil-section__head h3 { margin: 0; font-size: var(--text-base); }
-.profil-fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-5); margin: var(--sp-3) 0 0; }
-.profil-fields--full { grid-template-columns: 1fr; }
-.profil-fields dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-ink-soft); }
-.profil-fields dd { margin: 2px 0 0; color: var(--c-ink); white-space: pre-line; }
-.profil-block__form { margin-top: var(--sp-3); }
-.profil-block__form .form-actions { margin-top: var(--sp-3); }
+.profil-note { margin: 4px 0 0; }
+.save-badge { font-size: var(--text-xs); font-weight: 700; color: var(--c-primary); opacity: 0; transition: opacity var(--transition); }
+.save-badge.is-shown { opacity: 1; }
+.profil-block__body { margin-top: var(--sp-3); }
+
+/* Champs simples : édition en ligne */
+.profil-fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-5); }
+.profil-field dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-ink-soft); }
+.profil-field__row { display: flex; align-items: center; gap: var(--sp-2); margin: 2px 0 0; }
+.profil-field__val { flex: 1; min-width: 0; color: var(--c-ink); }
+.profil-field__edit { flex-shrink: 0; opacity: 0.75; }
+.profil-field:hover .profil-field__edit { opacity: 1; }
+.profil-inline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.profil-inline__input { flex: 1; min-width: 140px; padding: 0.4rem 0.6rem; border: 1px solid var(--c-border-strong); border-radius: var(--radius-s); font: inherit; }
+.btn-xs { padding: 0.28rem 0.6rem; font-size: var(--text-xs); min-height: 0; line-height: 1.2; }
+
+/* Chips sélectionnables + ajout personnalisé */
+.profil-chips__q { font-weight: 600; margin: 0 0 var(--sp-2); }
+.profil-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.profil-chips .chip { cursor: pointer; }
+.profil-chips .chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.profil-chips__add { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
+.profil-chips__add input { flex: 1; min-width: 0; padding: 0.5rem 0.75rem; border: 1px solid var(--c-border-strong); border-radius: var(--radius-s); font: inherit; }
+
+/* Présentation proposée */
+.profil-presentation__text { margin: 0; color: var(--c-ink); white-space: pre-line; }
+.profil-presentation__suggest { margin: var(--sp-2) 0; padding: var(--sp-3) var(--sp-4); border-left: 3px solid var(--c-accent); background: var(--c-bg-alt); border-radius: var(--radius-s); color: var(--c-ink); font-style: italic; }
+.profil-presentation__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.profil-presentation__form textarea { width: 100%; }
+
+/* Organisation du travail */
+.profil-org__group { margin-bottom: var(--sp-4); }
+.profil-org__group:last-child { margin-bottom: 0; }
+.profil-org__legend { display: block; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-ink-soft); margin-bottom: 6px; }
+.profil-radios { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.profil-radios .chip, .profil-org .chip { cursor: pointer; }
+.profil-org textarea { width: 100%; }
+
+/* Assistant « Compléter en 2 minutes » */
+.modal--wizard { max-width: 560px; }
+.modal--wizard .wizard-progress { display: flex; gap: var(--sp-2); }
+.wp-dot { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--c-bg-alt); color: var(--c-ink-soft); font-size: var(--text-sm); font-weight: 700; }
+.wp-dot.is-on { background: var(--c-primary); color: #fff; }
+.wizard-body h3 { margin: 0 0 var(--sp-3); font-family: var(--font-serif); }
+.wizard-body .field { margin-bottom: var(--sp-3); }
+.wizard-body .field > label { display: block; font-weight: 600; margin-bottom: 6px; }
+.wizard-foot { justify-content: space-between; }
+
 @media (max-width: 768px) {
-  /* Coordonnées (et toutes les sections) : une seule colonne sur mobile. */
+  /* Toutes les sections : une seule colonne sur mobile. */
   .profil-fields { grid-template-columns: 1fr; }
 }
 
