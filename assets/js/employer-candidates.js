@@ -20,7 +20,7 @@
   var REFUS_KEY = "ss_refus_demo";
   var PIPELINE_KEY = "ss_pipeline_v1";
   var NOTES_KEY = "ss_cand_notes_v1";
-  var PIPELINE_SEED_VERSION = 2; /* bump : nouvelle structure (order) + statuts */
+  var PIPELINE_SEED_VERSION = 3; /* bump : jeu de candidats comptables (Fiduciaire Bellecour) */
 
   /* Messages courtois prédéfinis, indexés par motif interne. */
   var COURTOIS = {
@@ -134,40 +134,41 @@
   }
 
   /* ============================================================
-     Données de démonstration (seed enrichi : 10 candidats variés)
+     Données de démonstration (seed : 10 candidats — cabinet comptable
+     Fiduciaire Bellecour ; offres = les 4 offres du cabinet).
      ============================================================ */
   function pipelineSeed() {
     return [
-      { id: "p1", nom: "Julie Martin", poste: "Assistante commerciale", offre: "Assistant(e) commercial(e) — CDI", ville: "Lyon", exp: 4, skills: ["Relation client", "CRM", "Anglais"], savoirFaire: ["Sens du service", "Organisation"], dispo: "Immédiate", cv: "CV_Julie_Martin.pdf", jours: 1, statut: "nouveau",
-        experience: "Quatre ans en administration des ventes, dont deux en gestion d'un portefeuille grands comptes.",
+      { id: "p1", nom: "Camille Reynaud", poste: "Collaboratrice comptable", offre: "Collaborateur / Collaboratrice comptable — CDI", ville: "Lyon", exp: 3, skills: ["Cegid", "Révision comptable", "TVA"], savoirFaire: ["Rigueur", "Confidentialité"], dispo: "Préavis 2 mois", cv: "CV_Camille_Reynaud.pdf", jours: 1, statut: "nouveau",
+        experience: "Trois ans en cabinet d'expertise comptable, gestion d'un portefeuille de TPE (tenue, révision, TVA).",
         historique: ["Candidature reçue", "CV consulté par le recruteur"] },
-      { id: "p2", nom: "Karim Haddad", poste: "Développeur web", offre: "Développeur web full-stack — CDI", ville: "Villeurbanne", exp: 6, skills: ["JavaScript", "PHP", "React"], savoirFaire: ["Autonomie", "Esprit d'équipe"], dispo: "Préavis 1 mois", cv: "CV_Karim_Haddad.pdf", jours: 1, statut: "nouveau",
-        experience: "Six ans en agence puis en éditeur logiciel, sur des applications métier full-stack.",
+      { id: "p2", nom: "Sophie Lemaire", poste: "Assistante comptable", offre: "Assistant / Assistante comptable — CDI", ville: "Villeurbanne", exp: 2, skills: ["Saisie comptable", "Rapprochement bancaire", "GED"], savoirFaire: ["Organisation", "Fiabilité"], dispo: "Immédiate", cv: "CV_Sophie_Lemaire.pdf", jours: 2, statut: "nouveau",
+        experience: "Deux ans en assistanat comptable : saisie des pièces, rapprochements bancaires et classement numérique.",
         historique: ["Candidature reçue"] },
-      { id: "p3", nom: "Camille Reynaud", poste: "Comptable", offre: "Collaborateur comptable — CDI", ville: "Lyon", exp: 3, skills: ["Sage", "Bilan", "TVA"], savoirFaire: ["Rigueur", "Confidentialité"], dispo: "Préavis 2 mois", cv: "CV_Camille_Reynaud.pdf", jours: 2, statut: "examiner",
-        experience: "Trois ans en cabinet d'expertise comptable, gestion d'un portefeuille de TPE.",
+      { id: "p3", nom: "Karim Haddad", poste: "Alternant comptabilité", offre: "Alternant(e) comptabilité — Alternance", ville: "Villeurbanne", exp: 1, skills: ["Comptabilité générale", "Fiscalité (bases)", "Excel"], savoirFaire: ["Curiosité", "Esprit d'équipe"], dispo: "Rentrée de septembre", cv: "CV_Karim_Haddad.pdf", jours: 2, statut: "nouveau",
+        experience: "En préparation d'un DCG, première année d'alternance en cabinet : tenue et découverte de la révision.",
+        historique: ["Candidature reçue"] },
+      { id: "p4", nom: "Léa Dubois", poste: "Collaboratrice comptable", offre: "Collaborateur / Collaboratrice comptable — CDI", ville: "Saint-Priest", exp: 5, skills: ["Sage", "Liasse fiscale", "Bilan"], savoirFaire: ["Autonomie", "Sens du client"], dispo: "Préavis 2 mois", cv: "CV_Lea_Dubois.pdf", jours: 3, statut: "examiner",
+        experience: "Cinq ans en cabinet, gestion complète d'un portefeuille de PME jusqu'à la liasse fiscale.",
         historique: ["Candidature reçue", "Passée à l'étape À examiner"] },
-      { id: "p4", nom: "Léa Dubois", poste: "Conductrice de travaux", offre: "Conducteur de travaux — CDI", ville: "Saint-Étienne", exp: 8, skills: ["Chantier", "Gros œuvre", "Sécurité"], savoirFaire: ["Leadership", "Gestion des priorités"], dispo: "Immédiate", cv: "CV_Lea_Dubois.pdf", jours: 3, statut: "examiner",
-        experience: "Huit ans en pilotage de chantiers de logements collectifs et bâtiments tertiaires.",
+      { id: "p5", nom: "Nadia Cherif", poste: "Assistante comptable", offre: "Assistant / Assistante comptable — CDI", ville: "Vénissieux", exp: 2, skills: ["Saisie comptable", "TVA", "Classement / GED"], savoirFaire: ["Rigueur", "Polyvalence"], dispo: "Immédiate", cv: "CV_Nadia_Cherif.pdf", jours: 4, statut: "examiner",
+        experience: "Deux ans en assistanat comptable en PME : saisie, préparation de TVA et suivi des pièces manquantes.",
         historique: ["Candidature reçue", "Passée à l'étape À examiner"] },
-      { id: "p5", nom: "Malik Benhaddou", poste: "Gestionnaire de paie", offre: "Gestionnaire de paie — CDI", ville: "Lyon", exp: 5, skills: ["Paie", "Silae", "Social"], savoirFaire: ["Fiabilité", "Discrétion"], dispo: "Préavis 1 mois", cv: "CV_Malik_Benhaddou.pdf", jours: 3, statut: "preselection",
-        experience: "Cinq ans en gestion de paie multi-conventions (jusqu'à 300 bulletins/mois).",
+      { id: "p6", nom: "Malik Benhaddou", poste: "Gestionnaire de paie", offre: "Gestionnaire de paie — CDI", ville: "Lyon", exp: 5, skills: ["Silae", "DSN", "Droit social"], savoirFaire: ["Fiabilité", "Discrétion"], dispo: "Préavis 1 mois", cv: "CV_Malik_Benhaddou.pdf", jours: 3, statut: "preselection",
+        experience: "Cinq ans en gestion de paie multi-conventions (jusqu'à 300 bulletins/mois) et déclarations DSN.",
         historique: ["Candidature reçue", "Présélectionné"] },
-      { id: "p6", nom: "Awa Diallo", poste: "Aide-soignante", offre: "Aide-soignant(e) — CDI", ville: "Bron", exp: 7, skills: ["Soins", "Gériatrie", "Écoute"], savoirFaire: ["Empathie", "Travail en équipe"], dispo: "Immédiate", cv: "CV_Awa_Diallo.pdf", jours: 4, statut: "preselection",
-        experience: "Sept ans en EHPAD et service de gériatrie, accompagnement des personnes dépendantes.",
+      { id: "p7", nom: "Awa Diallo", poste: "Assistante comptable", offre: "Assistant / Assistante comptable — CDI", ville: "Bron", exp: 3, skills: ["Rapprochement bancaire", "Saisie comptable", "Pack Office"], savoirFaire: ["Empathie", "Travail en équipe"], dispo: "Immédiate", cv: "CV_Awa_Diallo.pdf", jours: 4, statut: "preselection",
+        experience: "Trois ans en assistanat comptable : saisie, rapprochements et préparation des éléments de révision.",
         historique: ["Candidature reçue", "Présélectionnée"] },
-      { id: "p7", nom: "Thomas Ravel", poste: "Préparateur de commandes", offre: "Préparateur de commandes — CDD", ville: "Corbas", exp: 2, skills: ["CACES 1", "Logistique", "Rigueur"], savoirFaire: ["Ponctualité", "Endurance"], dispo: "Immédiate", cv: "CV_Thomas_Ravel.pdf", jours: 5, statut: "entretien",
-        experience: "Deux ans en entrepôt logistique, préparation et contrôle des commandes.",
+      { id: "p8", nom: "Thomas Girard", poste: "Collaborateur comptable", offre: "Collaborateur / Collaboratrice comptable — CDI", ville: "Écully", exp: 6, skills: ["Cegid", "Déclarations fiscales", "Conseil client"], savoirFaire: ["Leadership", "Sens du client"], dispo: "Préavis 3 mois", cv: "CV_Thomas_Girard.pdf", jours: 5, statut: "entretien",
+        experience: "Six ans en cabinet, portefeuille de TPE/PME et professions libérales, de la tenue au bilan.",
         historique: ["Candidature reçue", "Présélectionné", "Entretien proposé"] },
-      { id: "p8", nom: "Inès Fabre", poste: "Chargée de communication", offre: "Chargé(e) de communication — CDI", ville: "Lyon", exp: 4, skills: ["Réseaux sociaux", "Rédaction", "PAO"], savoirFaire: ["Créativité", "Sens du détail"], dispo: "Préavis 1 mois", cv: "CV_Ines_Fabre.pdf", jours: 6, statut: "entretien",
-        experience: "Quatre ans en communication interne et digitale, pilotage de la ligne éditoriale.",
-        historique: ["Candidature reçue", "Présélectionnée", "Entretien proposé"] },
-      { id: "p9", nom: "Yannick Perrot", poste: "Technicien de maintenance", offre: "Technicien de maintenance — CDI", ville: "Vénissieux", exp: 9, skills: ["Électromécanique", "Dépannage", "GMAO"], savoirFaire: ["Réactivité", "Méthode"], dispo: "Préavis 3 mois", cv: "CV_Yannick_Perrot.pdf", jours: 8, statut: "retenu",
-        experience: "Neuf ans en maintenance industrielle, interventions préventives et curatives.",
-        historique: ["Candidature reçue", "Présélectionné", "Entretien réalisé", "Retenu"] },
-      { id: "p10", nom: "Sophie Lemaire", poste: "Secrétaire administrative", offre: "Secrétaire administrative — CDD", ville: "Lyon", exp: 3, skills: ["Word", "Accueil", "Planning"], savoirFaire: ["Polyvalence", "Amabilité"], dispo: "Immédiate", cv: "CV_Sophie_Lemaire.pdf", jours: 10, statut: "nouveau",
-        experience: "Trois ans en secrétariat administratif et accueil au sein de PME.",
-        historique: ["Candidature reçue"] }
+      { id: "p9", nom: "Julien Moreau", poste: "Gestionnaire de paie", offre: "Gestionnaire de paie — CDI", ville: "Caluire-et-Cuire", exp: 4, skills: ["Paie multi-conventions", "DSN", "Silae"], savoirFaire: ["Réactivité", "Méthode"], dispo: "Préavis 1 mois", cv: "CV_Julien_Moreau.pdf", jours: 6, statut: "entretien",
+        experience: "Quatre ans en gestion de paie en cabinet, multi-conventions et gestion administrative du personnel.",
+        historique: ["Candidature reçue", "Présélectionné", "Entretien proposé"] },
+      { id: "p10", nom: "Sabrina Meyer", poste: "Collaboratrice comptable", offre: "Collaborateur / Collaboratrice comptable — CDI", ville: "Lyon", exp: 7, skills: ["Révision comptable", "Bilan", "Sage / Cegid"], savoirFaire: ["Rigueur", "Autonomie"], dispo: "Préavis 2 mois", cv: "CV_Sabrina_Meyer.pdf", jours: 8, statut: "retenu",
+        experience: "Sept ans en cabinet d'expertise comptable, gestion autonome d'un portefeuille jusqu'à l'établissement du bilan.",
+        historique: ["Candidature reçue", "Présélectionnée", "Entretien réalisé", "Retenue"] }
     ];
   }
 

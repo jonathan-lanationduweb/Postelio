@@ -39,7 +39,7 @@
     render();
   });
 
-  var SEED_VERSION = "2026-08-20-iv-dynamic";
+  var SEED_VERSION = "2026-08-20-iv-comptable";
   var SEED_KEY = "ss_interviews_seed";
 
   function seedIfEmpty() {
@@ -49,17 +49,17 @@
     if (SS.store.get(KEY, null) && !stale) { return; }
     SS.store.set(SEED_KEY, SEED_VERSION);
     SS.store.set(KEY, [
-      { id: "iv1", nom: "Julie Martin", poste: "Assistante commerciale", offre: "Assistant(e) commercial(e) — CDI",
+      { id: "iv1", nom: "Camille Reynaud", poste: "Collaboratrice comptable", offre: "Collaborateur / Collaboratrice comptable — CDI",
         date: EMP.dateFromToday(3), heure: "14:30", duree: "45", format: "Visioconférence",
-        lien: "https://meet.postelio.exemple/julie-martin", instructions: "Merci de vous connecter 5 minutes avant.",
+        lien: "https://meet.postelio.exemple/camille-reynaud", instructions: "Merci de vous connecter 5 minutes avant.",
         statut: "confirme" },
-      { id: "iv2", nom: "Thomas Ravel", poste: "Préparateur de commandes", offre: "Préparateur de commandes — CDI",
+      { id: "iv2", nom: "Malik Benhaddou", poste: "Gestionnaire de paie", offre: "Gestionnaire de paie — CDI",
         date: EMP.dateFromToday(4), heure: "10:00", duree: "30", format: "Dans nos locaux",
         adresse: "12 rue de la République", complement: "Bâtiment B, 2e étage", cp: "69002", ville: "Lyon",
         contact: "Claire Martin", contactTel: "04 72 00 00 00",
         instructions: "Présentez-vous à l'accueil et demandez Claire Martin.",
         statut: "attente" },
-      { id: "iv3", nom: "Inès Fabre", poste: "Chargée de communication", offre: "Chargé(e) de communication — CDD",
+      { id: "iv3", nom: "Thomas Girard", poste: "Collaborateur comptable", offre: "Collaborateur / Collaboratrice comptable — CDI",
         date: EMP.dateFromToday(6), heure: "16:15", duree: "45", format: "Téléphone",
         tel: "06 12 34 56 78", instructions: "Nous vous appellerons sur le numéro renseigné dans votre profil.",
         statut: "nouveau_creneau" }
@@ -175,8 +175,8 @@
 
   function buildModal() {
     var e = SS.escapeHtml;
-    var candidates = ["Julie Martin", "Thomas Ravel", "Inès Fabre", "Camille Reynaud", "Karim Haddad",
-      "Sophie Lemaire", "Léa Dubois", "Malik Benhaddou", "Awa Diallo", "Autre candidat"];
+    var candidates = ["Camille Reynaud", "Sophie Lemaire", "Karim Haddad", "Léa Dubois", "Nadia Cherif",
+      "Malik Benhaddou", "Awa Diallo", "Thomas Girard", "Julien Moreau", "Sabrina Meyer", "Autre candidat"];
 
     overlay = document.createElement("div");
     overlay.className = "modal-overlay";
@@ -195,7 +195,7 @@
             '<div class="field"><label for="iv-nom">Candidat</label>' +
               '<select id="iv-nom">' + candidates.map(function (c) { return '<option>' + e(c) + "</option>"; }).join("") + "</select></div>" +
             '<div class="field"><label for="iv-offre">Offre concernée</label>' +
-              '<input type="text" id="iv-offre" placeholder="Ex. : Assistant(e) commercial(e) — CDI"></div>' +
+              '<input type="text" id="iv-offre" placeholder="Ex. : Collaborateur / Collaboratrice comptable — CDI"></div>' +
             '<div class="form-row">' +
               '<div class="field"><label for="iv-date">Date</label><input type="date" id="iv-date"></div>' +
               '<div class="field"><label for="iv-heure">Heure</label><input type="time" id="iv-heure" value="14:30"></div>' +

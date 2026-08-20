@@ -19,10 +19,10 @@
   };
 
   var SEED = [
-    { id: "c-conducteur", titre: "Une journée avec notre conducteur de travaux", cat: "metiers", type: "Reportage", jours: 5 },
-    { id: "c-atelier", titre: "Découvrez notre atelier et nos équipements", cat: "locaux", type: "Visite", jours: 18 },
-    { id: "c-support", titre: "Comment travaille notre équipe support", cat: "coulisses", type: "Coulisses", jours: 40 },
-    { id: "c-alternants", titre: "Rencontre avec nos alternants et leurs tuteurs", cat: "equipe", type: "Portrait", jours: 62 }
+    { id: "c-collaborateur", titre: "Le métier de collaborateur comptable chez Fiduciaire Bellecour", cat: "metiers", type: "Métier", jours: 5 },
+    { id: "c-cloture", titre: "Comment se déroule une clôture comptable dans notre cabinet", cat: "coulisses", type: "Coulisses", jours: 18 },
+    { id: "c-paie", titre: "Une journée avec notre équipe paie", cat: "metiers", type: "Reportage", jours: 40 },
+    { id: "c-equipe", titre: "Rencontrez l'équipe de Fiduciaire Bellecour", cat: "equipe", type: "Équipe", jours: 62 }
   ];
 
   var openMenu = null;      /* menu […] actuellement ouvert */

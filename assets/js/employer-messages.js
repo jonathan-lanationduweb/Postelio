@@ -39,13 +39,13 @@
 
   /* §15 — candidats sélectionnables (mêmes noms que le pipeline). */
   var SEED_CANDIDATES = [
-    { nom: "Camille Reynaud",  poste: "Comptable",                  offre: "Collaborateur comptable — CDI" },
-    { nom: "Karim Haddad",     poste: "Développeur web",            offre: "Développeur web full-stack — CDI" },
-    { nom: "Sophie Lemaire",   poste: "Secrétaire administrative",  offre: "Secrétaire administrative — CDD" },
-    { nom: "Léa Dubois",       poste: "Conductrice de travaux",     offre: "Conducteur de travaux — CDI" },
-    { nom: "Malik Benhaddou",  poste: "Gestionnaire de paie",       offre: "Gestionnaire de paie — CDI" },
-    { nom: "Awa Diallo",       poste: "Aide-soignante",             offre: "Aide-soignant(e) — CDI" },
-    { nom: "Julie Martin",     poste: "Assistante commerciale",     offre: "Assistant(e) commercial(e) — CDI" }
+    { nom: "Camille Reynaud",  poste: "Collaboratrice comptable",  offre: "Collaborateur / Collaboratrice comptable — CDI" },
+    { nom: "Sophie Lemaire",   poste: "Assistante comptable",      offre: "Assistant / Assistante comptable — CDI" },
+    { nom: "Karim Haddad",     poste: "Alternant comptabilité",    offre: "Alternant(e) comptabilité — Alternance" },
+    { nom: "Léa Dubois",       poste: "Collaboratrice comptable",  offre: "Collaborateur / Collaboratrice comptable — CDI" },
+    { nom: "Malik Benhaddou",  poste: "Gestionnaire de paie",      offre: "Gestionnaire de paie — CDI" },
+    { nom: "Awa Diallo",       poste: "Assistante comptable",      offre: "Assistant / Assistante comptable — CDI" },
+    { nom: "Thomas Girard",    poste: "Collaborateur comptable",   offre: "Collaborateur / Collaboratrice comptable — CDI" }
   ];
 
   /* §16/§17 — modèles de messages, éditables avant envoi, à variables {{…}}. */
@@ -146,36 +146,36 @@
      ============================================================ */
   function seedConversations() {
     return [
-      { id: "m1", nom: "Julie Martin", poste: "Assistante commerciale", offre: "Assistant(e) commercial(e) — CDI",
+      { id: "m1", nom: "Camille Reynaud", poste: "Collaboratrice comptable", offre: "Collaborateur / Collaboratrice comptable — CDI",
         statut: "Entretien à planifier", unread: 2,
         interview: { date: isoDay(3), heure: "14:30", format: "Visioconférence" },
         messages: [
-          { from: "me",   texte: "Bonjour Julie, votre profil correspond bien au poste. Seriez-vous disponible pour un entretien la semaine prochaine ?", date: isoDay(-3) },
+          { from: "me",   texte: "Bonjour Camille, votre expérience en cabinet correspond bien au poste. Seriez-vous disponible pour un entretien la semaine prochaine ?", date: isoDay(-3) },
           { from: "them", texte: "Bonjour, merci beaucoup ! Oui, je suis disponible la semaine prochaine.", date: isoDay(-2) },
           { from: "them", texte: "Faut-il prévoir quelque chose de particulier pour l'entretien ?", date: isoDay(-1) }
         ] },
-      { id: "m2", nom: "Karim Haddad", poste: "Développeur web", offre: "Développeur web full-stack — CDI",
+      { id: "m2", nom: "Karim Haddad", poste: "Alternant comptabilité", offre: "Alternant(e) comptabilité — Alternance",
         statut: "Nouvelle candidature", unread: 1,
         messages: [
-          { from: "them", texte: "Bonjour, ma candidature au poste de développeur est-elle toujours à l'étude ?", date: isoDay(-1) }
+          { from: "them", texte: "Bonjour, ma candidature pour l'alternance en comptabilité est-elle toujours à l'étude ?", date: isoDay(-1) }
         ] },
-      { id: "m3", nom: "Awa Diallo", poste: "Aide-soignante", offre: "Aide-soignant(e) — CDI",
+      { id: "m3", nom: "Awa Diallo", poste: "Assistante comptable", offre: "Assistant / Assistante comptable — CDI",
         statut: "Présélection", unread: 0,
         messages: [
-          { from: "me",   texte: "Bonjour Awa, votre profil nous intéresse. Pourrions-nous échanger par téléphone cette semaine ?", date: isoDay(-4) },
+          { from: "me",   texte: "Bonjour Awa, votre profil nous intéresse pour le poste d'assistante comptable. Pourrions-nous échanger par téléphone cette semaine ?", date: isoDay(-4) },
           { from: "them", texte: "Bonjour, merci beaucoup. Je suis joignable tous les après-midi. Bien à vous.", date: isoDay(-3) }
         ] },
-      { id: "m4", nom: "Camille Reynaud", poste: "Comptable", offre: "Collaborateur comptable — CDI",
+      { id: "m4", nom: "Malik Benhaddou", poste: "Gestionnaire de paie", offre: "Gestionnaire de paie — CDI",
         statut: "En cours d'examen", unread: 0,
         messages: [
-          { from: "them", texte: "Bonjour, je vous confirme mon intérêt pour le poste de comptable.", date: isoDay(-5) },
-          { from: "me",   texte: "Bonjour Camille, merci. Nous étudions votre dossier et revenons vers vous rapidement.", date: isoDay(-4) }
+          { from: "them", texte: "Bonjour, je vous confirme mon intérêt pour le poste de gestionnaire de paie.", date: isoDay(-5) },
+          { from: "me",   texte: "Bonjour Malik, merci. Nous étudions votre dossier et revenons vers vous rapidement.", date: isoDay(-4) }
         ] },
-      { id: "m5", nom: "Malik Benhaddou", poste: "Gestionnaire de paie", offre: "Gestionnaire de paie — CDI",
+      { id: "m5", nom: "Sophie Lemaire", poste: "Assistante comptable", offre: "Assistant / Assistante comptable — CDI",
         statut: "Candidature clôturée", unread: 0, archived: true,
         messages: [
           { from: "them", texte: "Bonjour, je reste disponible si un poste se libère à l'avenir. Merci.", date: isoDay(-12) },
-          { from: "me",   texte: "Merci Malik, nous conservons votre candidature avec attention. Bonne continuation.", date: isoDay(-11) }
+          { from: "me",   texte: "Merci Sophie, nous conservons votre candidature avec attention. Bonne continuation.", date: isoDay(-11) }
         ] }
     ];
   }

@@ -17,9 +17,9 @@
     var e = SS.escapeHtml;
 
     var rows = [
-      { date: EMP.dateFromToday(-12), offre: "Assistant(e) commercial(e) — CDI" },
+      { date: EMP.dateFromToday(-12), offre: "Assistant / Assistante comptable — CDI" },
       { date: EMP.dateFromToday(-48), offre: "Gestionnaire de paie — CDI" },
-      { date: EMP.dateFromToday(-95), offre: "Conducteur de travaux — CDI" }
+      { date: EMP.dateFromToday(-95), offre: "Collaborateur / Collaboratrice comptable — CDI" }
     ];
 
     tbody.innerHTML = rows.map(function (r) {
