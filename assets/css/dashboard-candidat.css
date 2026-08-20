@@ -377,6 +377,101 @@
 .reco-item:last-child { margin-bottom: 0; }
 .reco-item blockquote { margin: 0; font-style: italic; color: var(--c-ink); }
 .reco-item figcaption { margin-top: var(--sp-2); font-size: var(--text-sm); font-weight: 600; color: var(--c-primary-dark); }
+.reco-item__author { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: baseline; margin: 0 0 var(--sp-2); font-weight: 600; }
+.reco-item__author strong { color: var(--c-primary-dark); }
+.reco-item__author span { font-weight: 400; font-size: var(--text-sm); color: var(--c-ink-soft); }
+.reco-item__date { margin-left: auto; font-style: italic; }
+.reco-item__del { position: absolute; top: var(--sp-3); right: var(--sp-3); }
+.reco-item { position: relative; }
+
+/* ============================================================
+   Profil professionnel : identité, statut, sections, cartes
+   ============================================================ */
+.profile-identity__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
+.profile-identity__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.profile-identity__avatar--photo { box-shadow: 0 0 0 3px var(--c-accent); }
+.profile-identity__badges { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.profile-statut { margin-top: var(--sp-4); }
+.profile-statut__label { display: block; font-size: var(--text-sm); font-weight: 600; margin-bottom: var(--sp-2); }
+.profile-statut__opts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.profile-statut__opt { cursor: pointer; }
+.profile-statut__opt:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+.profile-sec { padding: var(--sp-5); margin-bottom: var(--sp-4); }
+.profile-sec.is-flash { box-shadow: 0 0 0 2px var(--c-accent); }
+.profile-sec__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.profile-sec__head h3 { margin: 0; font-size: var(--text-base); }
+.profile-sec__note { margin: 4px 0 0; font-size: var(--text-sm); }
+.profile-sec__body { margin-top: var(--sp-3); }
+.profile-sec__edit { margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--c-line); }
+.profile-subh { font-size: var(--text-sm); color: var(--c-ink-soft); text-transform: uppercase; letter-spacing: 0.04em; margin: var(--sp-3) 0 var(--sp-2); }
+.profile-sec__body > .profile-subh:first-child { margin-top: 0; }
+
+/* Listes de définition (Ce que je recherche) */
+.profile-def { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-5); margin: 0; }
+.profile-def dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-ink-soft); }
+.profile-def dd { margin: 2px 0 0; color: var(--c-ink); }
+.profile-mob { border: 1px solid var(--c-line); border-radius: var(--radius-m); padding: var(--sp-3) var(--sp-4); margin: 0 0 var(--sp-3); }
+.profile-mob legend { font-weight: 600; font-size: var(--text-sm); padding: 0 var(--sp-2); }
+.profile-mob .field--checkbox { display: inline-flex; margin-right: var(--sp-4); }
+
+/* Cartes expérience / formation / réalisation */
+.profile-card { border: 1px solid var(--c-line); border-radius: var(--radius-m); padding: var(--sp-4); margin-bottom: var(--sp-3); position: relative; }
+.profile-card:last-of-type { margin-bottom: 0; }
+.profile-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+.profile-card__head strong { color: var(--c-primary-dark); }
+.profile-card__org { display: block; color: var(--c-ink-soft); font-size: var(--text-sm); }
+.profile-card__dates { font-size: var(--text-sm); color: var(--c-ink-soft); white-space: nowrap; }
+.profile-card__desc { margin: var(--sp-2) 0 0; color: var(--c-ink); font-size: var(--text-sm); }
+.profile-card__missions { margin: var(--sp-2) 0 0; padding-left: 1.1rem; font-size: var(--text-sm); }
+.profile-card__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--sp-2); }
+.profile-card__link { font-weight: 600; font-size: var(--text-sm); }
+.profile-card__img { font-size: var(--text-xs); margin: var(--sp-2) 0 0; }
+.profile-card__actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
+
+/* Compétences : badges avec niveau + éditeur en lignes */
+.skill-badge { display: inline-flex; align-items: center; gap: 6px; padding: 0.3rem 0.7rem; border-radius: var(--radius-pill); background: var(--c-primary-soft); color: var(--c-primary-dark); font-size: var(--text-sm); font-weight: 600; }
+.skill-badge__lvl { font-weight: 400; font-size: var(--text-xs); color: var(--c-ink-soft); }
+.skill-rows { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.skill-row { display: flex; gap: var(--sp-2); }
+.skill-row__name { flex: 1; padding: 0.5rem 0.7rem; border: 1px solid var(--c-border-strong); border-radius: var(--radius-s); font: inherit; }
+.skill-row__lvl { flex: 0 0 auto; }
+
+/* Savoir-faire (top 3 sur le profil) */
+.profile-sf { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; gap: var(--sp-2); }
+.profile-sf li { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-2) 0; border-top: 1px solid var(--c-line); }
+.profile-sf li:first-child { border-top: 0; }
+.profile-sf__t { font-weight: 500; }
+
+/* Listes en ligne (langues, certifs) + liens */
+.profile-inline-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.profile-inline-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.profile-inline-list--plain li { display: list-item; }
+.profile-inline-list--plain { padding-left: 1.1rem; list-style: disc; }
+.profile-links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.profile-links a { font-weight: 600; }
+
+/* Visibilité + CV visible */
+.cv-visibility { font-size: var(--text-sm); margin: var(--sp-2) 0; }
+.profile-visibility { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.profile-visibility li { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: var(--text-sm); }
+
+/* Profil public (modale) */
+.pub-profile__head { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-3) 0; }
+.pub-profile__head .avatar { width: 56px; height: 56px; border-radius: var(--radius-m); background: var(--c-primary-dark); color: #fff; font-size: 1.25rem; }
+.pub-profile__name { display: block; font-family: var(--font-serif); font-size: 1.2rem; color: var(--c-primary-dark); }
+.pub-profile__sec { margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--c-line); }
+.pub-profile__sec h3 { margin: 0 0 var(--sp-2); font-size: var(--text-base); }
+.pub-card { padding: var(--sp-2) 0; }
+.pub-card strong { color: var(--c-primary-dark); }
+.pub-card__dates { display: block; font-size: var(--text-xs); color: var(--c-ink-soft); }
+
+@media (max-width: 768px) {
+  .profile-def { grid-template-columns: 1fr; }
+  .profile-identity__top { flex-direction: column; }
+  .profile-identity__actions { width: 100%; }
+  .skill-row { flex-direction: column; }
+}
 
 /* Suggestions de compétences */
 .skill-suggest { margin-top: var(--sp-3); display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
