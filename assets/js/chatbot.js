@@ -40,7 +40,7 @@
       answer: "Lorsqu'une offre arrive à expiration, un bouton " +
         "« Renouveler pour 10 € » apparaît dans votre " +
         '<a href="espace-entreprise.html">espace entreprise</a>. Le renouvellement ' +
-        "prolonge la publication de 60 jours. Dans ce prototype, le paiement est " +
+        "prolonge la publication de 60 jours. Dans cette version de développement, le paiement est " +
         "entièrement simulé : aucune somme n'est réellement débitée."
     },
     {
@@ -195,7 +195,7 @@
       "« Renouveler pour " + price + " € » apparaît : il remet l'annonce en ligne " +
       "pour " + days + " jours. Tout se passe dans la rubrique Facturation de votre " +
       '<a href="espace-entreprise.html#facturation">espace entreprise</a>. ' +
-      "Dans ce prototype, le paiement est entièrement simulé.", true));
+      "Dans cette version de développement, le paiement est entièrement simulé côté front.", true));
   }
 
   function respondRecruter() {

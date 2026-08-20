@@ -43,7 +43,7 @@ window.APP_CONFIG = {
   /* Paiement simulé — structure prête pour Stripe / WooCommerce. */
   payment: {
     provider: "demo",          /* remplacer par "stripe", "woocommerce"… */
-    publicKey: null,           /* jamais de clé réelle dans le prototype */
+    publicKey: null,           /* jamais de clé réelle dans cette version front */
     renewal: {
       price: 10,
       currency: "EUR",
@@ -63,7 +63,7 @@ window.APP_CONFIG = {
     knowhowComments: "ss_sf_commentaires",
     knowhowViews: "ss_sf_vues",
     knowhowReports: "ss_sf_signalements",
-    /* Espace candidat (prototype) */
+    /* Espace candidat (version front) */
     applications: "ss_candidate_applications",
     favorites: "ss_candidate_favorites",
     alerts: "ss_candidate_alerts",
@@ -77,7 +77,7 @@ window.APP_CONFIG = {
     contact: "Claire Martin"
   },
 
-  /* Comptes de démonstration — plateforme à deux faces (prototype).
+  /* Comptes de démonstration — plateforme à deux faces (version front).
      AUCUN mot de passe réel n'est stocké ni vérifié. */
   demoAccounts: {
     candidate: {

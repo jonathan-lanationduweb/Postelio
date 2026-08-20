@@ -581,7 +581,7 @@ a:hover {
   line-height: 1.7;
 }
 
-/* Newsletter — simulée, cohérente avec le reste du prototype */
+/* Newsletter — simulée, cohérente avec le reste de la version de développement */
 .footer-news {
   margin-top: var(--sp-5);
   display: grid;

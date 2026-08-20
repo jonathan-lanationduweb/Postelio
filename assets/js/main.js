@@ -77,7 +77,7 @@
       }
     },
 
-    /* ---- Session simulée (prototype biface candidat / recruteur) ----
+    /* ---- Session simulée (version front biface candidat / recruteur) ----
        AUCUN mot de passe n'est stocké ni vérifié. La « session » est un
        simple objet en stockage local : { loggedIn, role, firstName, ... }. */
     auth: {
@@ -215,13 +215,13 @@
     var yearEl = document.querySelector("[data-year]");
     if (yearEl) { yearEl.textContent = String(new Date().getFullYear()); }
 
-    /* Newsletter du pied de page — simulée, comme le reste du prototype. */
+    /* Newsletter du pied de page — simulée, comme le reste de la version front. */
     var newsletter = document.querySelector("[data-newsletter]");
     if (newsletter) {
       newsletter.addEventListener("submit", function (event) {
         event.preventDefault();
         newsletter.reset();
-        SS.toast("Inscription enregistrée — prototype : aucun e-mail ne sera envoyé.");
+        SS.toast("Inscription enregistrée — simulation côté front : aucun e-mail n'est envoyé.");
       });
     }
 

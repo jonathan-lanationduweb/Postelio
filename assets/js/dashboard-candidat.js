@@ -13,10 +13,10 @@
   "use strict";
 
   var S = APP_CONFIG.storage;
-  /* Clé locale dédiée aux savoir-faire du candidat (prototype) — non déclarée
+  /* Clé locale dédiée aux savoir-faire du candidat (version front) — non déclarée
      dans config.js, réservée à cet espace. */
   var SF_KEY = "ss_candidate_knowhow";
-  /* Clé locale du CV du candidat (prototype) : on n'enregistre QUE le nom du
+  /* Clé locale du CV du candidat (version front) : on n'enregistre QUE le nom du
      fichier et la date de mise à jour, jamais le contenu du fichier. */
   var CV_KEY = "ss_candidate_cv";
 
@@ -992,7 +992,7 @@
     var from = normalize(profileVille);
     var to = normalize(ville);
     if (from === to) { return 0; }
-    /* On ne sait calculer que depuis Lyon dans ce prototype. */
+    /* On ne sait calculer que depuis Lyon dans cette version front. */
     if (from === "lyon" && DIST_LYON[to] != null) { return DIST_LYON[to]; }
     return null;
   }
@@ -2238,7 +2238,7 @@
       '<div class="form-actions"><button type="button" class="btn btn-primary btn-sm" data-reco-add>Ajouter</button>' +
       '<button type="button" class="btn btn-ghost btn-sm" data-cancel>Annuler</button></div></div>';
     return secCard("recommandations", "Recommandations", addBtn("+ Ajouter une recommandation"), cards + form,
-      "Prototype : l'ajout est simulé (le PDF n'est pas envoyé, seul son nom est conservé).");
+      "Version de développement : l'ajout est simulé côté front (le PDF n'est pas envoyé, seul son nom est conservé).");
   }
   function monthNow() {
     var mois = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];

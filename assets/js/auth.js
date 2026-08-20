@@ -1,5 +1,5 @@
 /**
- * Connexion / inscription simulées (prototype biface candidat / recruteur).
+ * Connexion / inscription simulées (version front biface candidat / recruteur).
  * Aucun vrai mot de passe n'est vérifié ni stocké : la « session » est un
  * simple objet en stockage local ({ loggedIn, role, firstName, ... }) géré
  * par SS.auth (voir main.js).

@@ -101,7 +101,7 @@
           '<input type="text" id="step-tip-' + stepIndex + '" data-step-tip>' +
         "</div>" +
         '<div class="field">' +
-          '<span class="hint">Image de l\'étape (simulée dans ce prototype)</span>' +
+          '<span class="hint">Image de l\'étape (simulée dans cette version de développement)</span>' +
           '<label class="file-drop" for="step-img-' + stepIndex + '">Joindre une image' +
             '<input type="file" id="step-img-' + stepIndex + '" accept="image/*">' +
             '<span class="file-name"></span>' +

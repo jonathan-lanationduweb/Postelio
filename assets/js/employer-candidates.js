@@ -1138,7 +1138,7 @@
       stored[pending.nom] = { nom: pending.nom, offre: pending.offre, message: finalMsg, date: today };
       SS.store.set(REFUS_KEY, stored);
 
-      /* E-mail simulé enregistré dans le prototype (aucun envoi réel — §31). */
+      /* E-mail simulé enregistré côté front (aucun envoi réel — §31). */
       var emails = SS.store.get("ss_emails_sent", []);
       emails.push({ to: pending.nom, offre: pending.offre, sujet: "Votre candidature — " + (pending.offre || "Postelio"), message: finalMsg, date: today, type: "refus" });
       SS.store.set("ss_emails_sent", emails);

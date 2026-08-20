@@ -1,6 +1,6 @@
-# Postelio — prototype
+# Postelio — version de développement
 
-**Postelio** est une plateforme française de l'emploi **multi-secteurs** (commerce, informatique, BTP, santé, logistique, comptabilité, hôtellerie, artisanat… et une part d'administratif). Slogan : _« L'emploi qui vous correspond. »_ Le prototype réunit :
+**Postelio** est une plateforme française de l'emploi **multi-secteurs** (commerce, informatique, BTP, santé, logistique, comptabilité, hôtellerie, artisanat… et une part d'administratif). Slogan : _« L'emploi qui vous correspond. »_ Cette version front réunit :
 
 - un moteur de recherche d'offres (filtres, tri, pagination) ;
 - un annuaire d'entreprises avec fiches détaillées ;
@@ -11,7 +11,7 @@
 - un **chatbot** présent sur toutes les pages, avec saisie libre et analyse d'intention ;
 - une **intro cinématique** pilotée par le scroll sur l'accueil.
 
-> ⚠️ **Prototype de démonstration** : toutes les offres, entreprises, coordonnées et personnes sont fictives. Aucun paiement réel, aucune donnée bancaire, aucune clé d'API. Les sessions et données sont conservées dans le navigateur (localStorage), sans mot de passe stocké.
+> ⚠️ **Version de développement (données de démonstration)** : toutes les offres, entreprises, coordonnées et personnes sont fictives. Aucun paiement réel, aucune donnée bancaire, aucune clé d'API. Les sessions et données sont conservées dans le navigateur (localStorage), sans mot de passe stocké.
 
 ## Les deux faces de la plateforme
 
@@ -39,7 +39,7 @@ Sans compte, on peut **chercher et lire** librement toutes les offres et fiches.
 - Photographies locales (Pexels, WebP, crédits dans `assets/images/photos/credits.md`).
 - Micro-interactions légères.
 
-## Lancer le prototype
+## Lancer la version de développement
 
 Les pages chargent leurs données via `fetch()` sur les fichiers JSON : il faut donc **un petit serveur local** (l'ouverture directe d'un fichier HTML par double-clic bloque le chargement des données).
 
@@ -167,7 +167,7 @@ postelio/
 - Familles de métiers et secteurs → **taxonomies** ; statut des offres → statut de publication ou meta.
 - `assets/css` et `assets/js` s'enfilent tels quels (`wp_enqueue_*`) ; seuls les `fetch()` locaux passent à l'API REST ou au rendu PHP.
 
-## Limites connues du prototype
+## Limites connues de la version de développement
 
 - Les données (offres publiées, candidatures, renouvellements, session) ne sont conservées que dans le navigateur (localStorage) ; aucun mot de passe n'y est stocké.
 - Le nombre de candidatures reçues et certains indicateurs sont illustratifs (valeurs de démonstration).
