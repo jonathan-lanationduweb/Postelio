@@ -66,8 +66,10 @@ postelio/
 ├── entreprise-detail.html   Fiche entreprise + ses offres
 ├── connexion.html           Connexion (rôle candidat/recruteur en boutons segmentés) + comptes démo
 ├── inscription.html         Création de compte : choix du rôle puis formulaire candidat ou recruteur
-├── espace-candidat.html     Tableau de bord candidat (candidatures, favoris, alertes, profil, messages)
-├── espace-entreprise.html   Tableau de bord recruteur (offres, candidatures, profil, facturation, messages)
+├── espace-candidat.html     Espace candidat (monopage : rubriques par ancre, tiroir mobile)
+├── espace-entreprise.html   Espace recruteur — tableau de bord (vue d'ensemble)
+├── espace-entreprise-*.html Espace recruteur — pages dédiées : offres, candidatures,
+│                            entretiens, messages, profil, contenus, facturation, parametres
 ├── publier-offre.html       Formulaire de publication en 6 étapes (réservé aux recruteurs connectés)
 ├── paiement.html            Paiement simulé du renouvellement (10 € / 30 jours)
 ├── recherche-guidee.html    Recherche guidée en pleine page (le quiz s'ouvre aussi en panneau ailleurs)
@@ -114,8 +116,10 @@ postelio/
 | `filters.js` | Filtres, tri, compteur et pagination de la page offres. |
 | `companies.js` | Annuaire, entreprises mises en avant, fiche entreprise. |
 | `blog.js` | Blog : liste, catégories, recherche, article, articles associés, newsletter simulée, JSON-LD `Article`. |
-| `dashboard.js` | Tableau de bord **recruteur** : indicateurs, liste d'offres, désactivation/renouvellement, **modale de refus** (reformulation courtoise), facturation. Garde `require("employer")`. |
-| `dashboard-candidat.js` | Tableau de bord **candidat** : candidatures + statuts + timeline, message reçu (« Voir le message »), notification, recommandations, favoris, alertes, profil. Garde `require("candidate")`. Seed de démo versionné. |
+| `dash-shell.js` | Coquille de l'espace **candidat** (monopage) : routage par ancre (une rubrique visible à la fois), tiroir mobile, footer compact. |
+| `dashboard-candidat.js` | Espace **candidat** : candidatures + statuts + timeline, message reçu (« Voir le message »), notification, recommandations, favoris, alertes, profil professionnel + savoir-faire. Garde `require("candidate")`. Seed de démo versionné. |
+| `employer-shell.js` | Coquille de l'espace **recruteur** (multi-pages) : garde `require("employer")`, barre latérale groupée + état actif par page, tiroir mobile, footer compact, redirections des anciennes URLs `espace-entreprise.html#xxx`, helpers partagés `window.EMP`. |
+| `employer-*.js` | Modules par page recruteur : `-dashboard` (indicateurs + à-faire), `-offers`, `-candidates` (pipeline + **modale de refus** courtoise), `-interviews`, `-messages`, `-profile`, `-content`, `-billing`, `-settings`. |
 | `publish.js` | Publication d'offre en 6 étapes (validation, aperçu, enregistrement local). Réservé aux recruteurs. |
 | `payment.js` | Paiement **simulé** du renouvellement : met à jour le statut de l'offre. |
 | `auth.js` | Connexion / inscription : choix du rôle, comptes démo, création de session `SS.auth`, redirection vers l'espace. |
