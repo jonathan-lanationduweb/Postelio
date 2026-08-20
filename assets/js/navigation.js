@@ -115,12 +115,23 @@
         if (t === "statut" || t === "vue") { return "notif-dot--ok"; }
         return "notif-dot--neutral";
       }
+      function notifGroup(time) {
+        var t = (time || "").toLowerCase();
+        if (t.indexOf("hier") !== -1) { return "hier"; }
+        if (t.indexOf("aujourd") === -1 && /\bj\b|jour/.test(t)) { return "older"; }
+        return "today";
+      }
+      function notifItemHtml(n, i) {
+        return '<li><a role="menuitem" class="notif-item' + (n.read ? "" : " is-unread") + '" href="' + n.href + '" data-notif-i="' + i + '">' +
+          '<span class="notif-dot ' + dotClass(n.type) + '" aria-hidden="true"></span>' +
+          '<span class="notif-item__body"><span class="notif-item__text">' + e(n.text) + "</span>" +
+          '<span class="notif-item__time">' + e(n.time) + "</span></span></a></li>";
+      }
       function notifItems() {
-        return notifs.map(function (n, i) {
-          return '<li><a role="menuitem" class="notif-item' + (n.read ? "" : " is-unread") + '" href="' + n.href + '" data-notif-i="' + i + '">' +
-            '<span class="notif-dot ' + dotClass(n.type) + '" aria-hidden="true"></span>' +
-            '<span class="notif-item__body"><span class="notif-item__text">' + e(n.text) + "</span>" +
-            '<span class="notif-item__time">' + e(n.time) + "</span></span></a></li>";
+        var groups = { today: [], hier: [], older: [] };
+        notifs.forEach(function (n, i) { groups[notifGroup(n.time)].push(notifItemHtml(n, i)); });
+        return [["today", "Aujourd'hui"], ["hier", "Hier"], ["older", "Plus ancien"]].map(function (g) {
+          return groups[g[0]].length ? '<li class="notif-group" aria-hidden="true">' + g[1] + "</li>" + groups[g[0]].join("") : "";
         }).join("");
       }
       var bellSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';

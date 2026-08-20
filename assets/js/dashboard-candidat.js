@@ -569,6 +569,25 @@
     refusee: "Candidature non retenue"
   };
 
+  var currentAppFilter = "toutes";
+  var APP_FILTERS = [["toutes", "Toutes"], ["encours", "En cours"], ["entretien", "Entretien"], ["decision", "Décision"], ["cloturees", "Clôturées"]];
+  var RELANCE_KEY = "ss_cand_relances";
+  var RELANCE_DELAY = 7; /* jours sans activité avant de proposer une relance */
+
+  function appCategory(statut) {
+    if (statut === "entretien" || statut === "entretien-realise") { return "entretien"; }
+    if (statut === "offre-recue" || statut === "recue") { return "decision"; }
+    if (statut === "non-retenue" || statut === "refusee" || statut === "retiree") { return "cloturees"; }
+    return "encours";
+  }
+  function lastActivityDate(a) {
+    var dates = (a.timeline || []).map(function (s) { return s.date; }).filter(Boolean);
+    if (a.dateMaj) { dates.push(a.dateMaj); }
+    if (a.dateEnvoi) { dates.push(a.dateEnvoi); }
+    dates.sort();
+    return dates.length ? dates[dates.length - 1] : a.dateEnvoi;
+  }
+
   function renderApplications() {
     var box = document.getElementById("applications-list");
     if (!box) { return; }
@@ -582,8 +601,33 @@
     }
 
     var e = SS.escapeHtml;
-    box.innerHTML = apps.map(function (a) {
+    var relances = SS.store.get(RELANCE_KEY, {}) || {};
+
+    /* Onglets de filtre + compteurs (§8). */
+    var counts = { toutes: apps.length, encours: 0, entretien: 0, decision: 0, cloturees: 0 };
+    apps.forEach(function (a) { counts[appCategory(a.statut || "envoyee")]++; });
+    if (!counts[currentAppFilter]) { currentAppFilter = "toutes"; }
+    var tabs = '<div class="appli-tabs" role="tablist" aria-label="Filtrer mes candidatures">' +
+      APP_FILTERS.map(function (fl) {
+        var on = fl[0] === currentAppFilter;
+        return '<button type="button" class="offers-tab chip" role="tab" aria-selected="' + on + '" data-appfilter="' + fl[0] + '">' +
+          e(fl[1]) + ' <span class="offers-tab__count">' + counts[fl[0]] + "</span></button>";
+      }).join("") + "</div>";
+
+    var visible = apps.filter(function (a) { return currentAppFilter === "toutes" || appCategory(a.statut || "envoyee") === currentAppFilter; });
+
+    var cardsHtml = visible.length ? visible.map(function (a) {
       var statut = a.statut || "envoyee";
+      var lastAct = lastActivityDate(a);
+      var staleDays = daysBetween(lastAct);
+      var canRelance = appCategory(statut) === "encours" && staleDays != null && staleDays >= RELANCE_DELAY;
+      var relanceBlock = "";
+      if (relances[a.id]) {
+        relanceBlock = '<p class="appli-relance appli-relance--done text-muted">Relance envoyée le ' + e(SS.formatDate(relances[a.id])) + ".</p>";
+      } else if (canRelance) {
+        relanceBlock = '<div class="appli-relance notice"><span>Sans nouvelle depuis ' + staleDays + " jours.</span>" +
+          '<button type="button" class="btn btn-outline btn-sm" data-relance="' + e(a.id) + '">Envoyer une relance</button></div>';
+      }
       var timeline = (a.timeline || []).map(function (step) {
         var when = step.date ? " — " + e(SS.formatDate(step.date)) : "";
         return '<li class="' + (step.next ? "is-next" : "") + '">' + e(step.label) + when + "</li>";
@@ -608,11 +652,13 @@
         '<div class="appli-card__top">' +
           "<div><strong>" + e(a.offreTitre) + "</strong><br>" +
           '<span class="text-muted">' + e(a.entreprise) + " — " + e(a.ville) +
-          " · Envoyée " + e(SS.relativeDate(a.dateEnvoi)) + "</span></div>" +
+          " · Envoyée " + e(SS.relativeDate(a.dateEnvoi)) + "</span>" +
+          '<span class="appli-card__activity text-muted">Dernière activité : ' + e(SS.relativeDate(lastAct)) + "</span></div>" +
           '<span class="status-badge status-' + e(statut) + '">' + e(STATUT_LABEL[statut] || statut) + "</span>" +
         "</div>" +
         friseHtml(statut) +
         '<ul class="appli-timeline">' + timeline + "</ul>" +
+        relanceBlock +
         noteBlock +
         messageBlock +
         '<div class="appli-actions">' +
@@ -631,8 +677,23 @@
           '<button type="button" class="btn btn-primary btn-sm" data-action="save-note" data-id="' + e(a.id) + '">Enregistrer la note</button>' +
         "</div>" +
       "</article>";
-    }).join("");
+    }).join("") : '<div class="empty-state empty-state--inline"><p>Aucune candidature dans cette catégorie.</p></div>';
 
+    box.innerHTML = tabs + cardsHtml;
+
+    box.querySelectorAll("[data-appfilter]").forEach(function (b) {
+      b.addEventListener("click", function () { currentAppFilter = b.getAttribute("data-appfilter"); renderApplications(); });
+    });
+    box.querySelectorAll("[data-relance]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var id = b.getAttribute("data-relance");
+        var store = SS.store.get(RELANCE_KEY, {}) || {};
+        store[id] = today();
+        SS.store.set(RELANCE_KEY, store);
+        renderApplications();
+        SS.toast("Relance envoyée à l'entreprise (démonstration).");
+      });
+    });
     box.querySelectorAll("button[data-action]").forEach(function (btn) {
       btn.addEventListener("click", function () { onAppAction(btn); });
     });

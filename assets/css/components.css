@@ -421,6 +421,7 @@
 .notif-item__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .notif-item__text { font-size: 0.9rem; line-height: 1.35; }
 .notif-item__time { font-size: var(--text-xs); color: var(--c-ink-soft); }
+.notif-group { padding: 8px 14px 2px; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-ink-soft); font-weight: 700; }
 .notif-empty { padding: 18px 12px; text-align: center; color: var(--c-ink-soft); font-size: var(--text-sm); border-top: 1px solid var(--c-line); margin: 0; }
 @media (max-width: 640px) {
   .notif-dropdown { position: fixed; left: 12px; right: 12px; top: auto; width: auto; max-width: none; }
