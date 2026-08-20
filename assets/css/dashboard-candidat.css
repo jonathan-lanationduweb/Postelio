@@ -456,6 +456,7 @@
 .cv-visibility { font-size: var(--text-sm); margin: var(--sp-2) 0; }
 .profile-visibility { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
 .profile-visibility li { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: var(--text-sm); }
+.profile-visibility__ctrl select { max-width: 260px; margin: 0; padding: 0.35rem 0.6rem; }
 
 /* Profil public (modale) */
 .pub-profile__head { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-3) 0; }

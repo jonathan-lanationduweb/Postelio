@@ -851,6 +851,15 @@
     var sfSec = sf
       ? '<section class="cand-detail__sec"><h3>Savoir-faire Postelio</h3><div class="pipeline-card__skills">' + sf + "</div></section>"
       : "";
+    /* Coordonnées : le recruteur a accès au CV, il voit donc les coordonnées
+       complètes du candidat (indépendamment des réglages de visibilité). */
+    var candSlug = (cand.nom || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "");
+    var candEmail = cand.email || (candSlug + "@exemple.fr");
+    var candTel = cand.tel || "06 12 34 56 78";
+    var coordSec = '<section class="cand-detail__sec"><h3>Coordonnées</h3>' +
+      '<dl class="cand-detail__grid"><div><dt>E-mail</dt><dd>' + e(candEmail) + "</dd></div>" +
+      "<div><dt>Téléphone</dt><dd>" + e(candTel) + "</dd></div></dl>" +
+      '<p class="text-muted cand-detail__coordnote">Coordonnées accessibles car vous avez reçu la candidature et son CV.</p></section>';
 
     var body = document.getElementById("cand-modal-body");
     body.innerHTML =
@@ -878,6 +887,7 @@
             "</div>" +
           "</div>" +
         "</section>" +
+        coordSec +
         messageSec +
         expSec +
         skillsSec +

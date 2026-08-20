@@ -76,7 +76,7 @@
      candidatures ou du profil change. Les navigateurs ayant un ancien seed en
      cache sont ainsi régénérés, sinon les nouveautés (profil enrichi, message
      reçu, statut « non retenue ») resteraient invisibles. */
-  var SEED_VERSION = "2026-08-20-profil-emploi";
+  var SEED_VERSION = "2026-08-20-profil-visibilite";
   var SEED_KEY = "ss_seed_version";
 
   function seedIfEmpty() {
@@ -260,6 +260,9 @@
       ],
       certifications: [],
       liens: { linkedin: "linkedin.com/in/jonathan-davy", portfolio: "", github: "github.com/jdavy", site: "" },
+      telephone: "06 12 34 56 78",
+      /* Visibilité des coordonnées (le candidat choisit ; par défaut privé). */
+      visibility: { email: "prive", tel: "apres-candidature" },
       hasPhoto: false,
       dateMaj: "2026-08-15"
     };
@@ -1364,6 +1367,7 @@
     wireCertifications(box);
     wireRecommandations2(box);
     wireLiens(box);
+    wireVisibilite(box);
   }
 
   function secCard(id, title, action, body, note) {
@@ -1923,15 +1927,36 @@
   }
 
   /* ---- 16 : Visibilité des informations (lecture, concis) ---- */
+  var VIS_EMAIL = [["prive", "Privé"], ["recruteurs", "Visible par les recruteurs"]];
+  var VIS_TEL = [["apres-candidature", "Visible après candidature"], ["recruteurs", "Visible par les recruteurs"], ["masque", "Masqué"]];
   function sectionVisibilite() {
+    var p = getProfile();
+    var vis = p.visibility || {};
+    function opt(list, cur) { return list.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === (cur || list[0][0]) ? " selected" : "") + ">" + SS.escapeHtml(o[1]) + "</option>"; }).join(""); }
     var body = '<ul class="profile-visibility">' +
       '<li><span>CV</span><span class="badge badge--remote">Visible par les recruteurs</span></li>' +
-      '<li><span>Disponibilité & statut</span><span class="badge badge--remote">Visible</span></li>' +
-      '<li><span>Téléphone</span><span class="badge badge--neutral">Visible après candidature</span></li>' +
-      '<li><span>E-mail</span><span class="badge badge--neutral">Privé</span></li>' +
+      '<li><span>Disponibilité &amp; statut</span><span class="badge badge--remote">Visible</span></li>' +
+      '<li><span>Savoir-faire &amp; réalisations</span><span class="badge badge--remote">Public</span></li>' +
+      '<li class="profile-visibility__ctrl"><label for="vis-email">E-mail</label>' +
+        '<select id="vis-email" data-vis="email">' + opt(VIS_EMAIL, vis.email) + "</select></li>" +
+      '<li class="profile-visibility__ctrl"><label for="vis-tel">Téléphone</label>' +
+        '<select id="vis-tel" data-vis="tel">' + opt(VIS_TEL, vis.tel) + "</select></li>" +
       "</ul>" +
-      '<p class="profile-sec__note text-muted">Vos coordonnées personnelles ne sont jamais affichées publiquement.</p>';
-    return secCard("visibilite", "Visibilité des informations", "", body);
+      '<p class="profile-sec__note text-muted">Vous choisissez si votre e-mail et votre téléphone sont visibles. ' +
+      '<strong>Important :</strong> lorsqu\'un recruteur consulte votre CV, il y voit toutes vos coordonnées, quel que soit ce réglage.</p>';
+    return secCard("visibilite", "Paramètres de visibilité", "", body);
+  }
+  function wireVisibilite(box) {
+    var sec = box.querySelector('.profile-sec[data-section="visibilite"]');
+    if (!sec) { return; }
+    sec.querySelectorAll("[data-vis]").forEach(function (selEl) {
+      selEl.addEventListener("change", function () {
+        var p = getProfile(); p.visibility = p.visibility || {};
+        p.visibility[selEl.getAttribute("data-vis")] = selEl.value;
+        setProfile(p);
+        SS.toast("Préférence de visibilité enregistrée.");
+      });
+    });
   }
 
   /* ---- 3 : Profil public (ce que voit un recruteur) ---- */
@@ -1948,6 +1973,12 @@
     var statutLabel = (p.statutVisible !== false) ? (STATUT_OPTS.filter(function (o) { return o.v === (p.statut || "active"); })[0] || {}).l : null;
     var dispoLabel = p.disponibilite === "À partir d'une date" && p.dispoDate ? "Disponible à partir du " + SS.formatDate(p.dispoDate) : (p.disponibilite ? "Disponible " + p.disponibilite.toLowerCase() : "");
     var cvName = (getCv() || {}).name;
+    var sess = SS.auth.get() || {};
+    var vis = p.visibility || {};
+    var coord = '<ul class="pub-summary">' +
+      "<li><strong>E-mail</strong> " + (vis.email === "recruteurs" ? e(sess.email || "—") : '<span class="text-muted">Communiqué après mise en relation</span>') + "</li>" +
+      "<li><strong>Téléphone</strong> " + (vis.tel === "recruteurs" ? e(p.telephone || "—") : (vis.tel === "masque" ? '<span class="text-muted">Non communiqué</span>' : '<span class="text-muted">Communiqué après candidature</span>')) + "</li>" +
+      "</ul><p class=\"form-hint\">Ces coordonnées figurent aussi sur le CV, que le recruteur peut consulter.</p>";
     var resume = (p.presentation ? "<p>" + e(p.presentation.split(".")[0] + ".") + "</p>" : "") +
       '<ul class="pub-summary">' +
         "<li><strong>Poste recherché</strong> " + e(p.metier || "—") + "</li>" +
@@ -2005,6 +2036,7 @@
         (badges.length ? '<div class="profile-identity__badges">' + badges.map(function (b) { return '<span class="badge badge--accent">' + e(b) + "</span>"; }).join("") + "</div>" : "") +
         block("Résumé", resume) +
         block("CV", cvBlock) +
+        block("Coordonnées", coord) +
         block("Ce que je recherche", recherche) +
         block("À propos", p.presentation ? "<p>" + e(p.presentation).replace(/\n/g, "<br>") + "</p>" : "") +
         block("Expériences", exp) +
