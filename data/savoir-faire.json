@@ -5,45 +5,140 @@
     "resume": "De la pesée des ingrédients au coup de lame final : la méthode complète d'un artisan boulanger pour obtenir une baguette dorée, alvéolée et vraiment croustillante à la maison.",
     "metier": "Boulanger",
     "categorie": "Fabrication & recettes",
-    "auteur": { "nom": "Marc Chevalier", "metier": "Artisan boulanger", "entreprise": "Boulangerie du Fournil Doré", "entrepriseId": null, "ville": "Tours" },
+    "auteur": {
+      "nom": "Marc Chevalier",
+      "metier": "Artisan boulanger",
+      "entreprise": "Boulangerie du Fournil Doré",
+      "entrepriseId": null,
+      "ville": "Tours"
+    },
     "difficulte": "intermediaire",
     "difficulteLabel": "Intermédiaire",
     "duree": "4 h 30 au total",
     "dureeDetail": [
-      { "label": "Préparation", "valeur": "45 min" },
-      { "label": "Repos & pointage", "valeur": "3 h" },
-      { "label": "Cuisson", "valeur": "22 min" }
+      {
+        "label": "Préparation",
+        "valeur": "45 min"
+      },
+      {
+        "label": "Repos & pointage",
+        "valeur": "3 h"
+      },
+      {
+        "label": "Cuisson",
+        "valeur": "22 min"
+      }
     ],
-    "materiel": ["500 g de farine de tradition T65", "350 g d'eau à 20 °C", "9 g de sel", "3 g de levure fraîche", "Un four avec pierre ou plaque épaisse", "Une lame de boulanger (ou lame de rasoir)", "Un linge fariné pour l'apprêt"],
+    "materiel": [
+      "500 g de farine de tradition T65",
+      "350 g d'eau à 20 °C",
+      "9 g de sel",
+      "3 g de levure fraîche",
+      "Un four avec pierre ou plaque épaisse",
+      "Une lame de boulanger (ou lame de rasoir)",
+      "Un linge fariné pour l'apprêt"
+    ],
     "intro": "La baguette de tradition n'a que quatre ingrédients : tout se joue donc dans les gestes et les temps de repos. Voici la méthode que j'applique chaque matin au fournil, adaptée pour un four domestique. Prenez votre temps sur le pointage : c'est lui qui donne le goût.",
     "etapes": [
-      { "titre": "Le frasage et l'autolyse", "texte": "Mélangez la farine et l'eau, sans le sel ni la levure, juste assez pour ne plus voir de farine sèche. Couvrez et laissez reposer 30 minutes : cette autolyse détend la pâte et développe les arômes.", "conseil": "Une eau trop chaude tue le goût : restez autour de 20 °C.", "image": null },
-      { "titre": "Le pétrissage", "texte": "Ajoutez le sel et la levure émiettée. Pétrissez 8 à 10 minutes à la main en étirant et repliant la pâte, jusqu'à ce qu'elle devienne lisse et se détache des doigts.", "conseil": null, "image": null },
-      { "titre": "Le pointage avec rabats", "texte": "Laissez pousser 3 heures à température ambiante, en faisant un rabat (replier la pâte sur elle-même) toutes les heures. La pâte gagne en force et en alvéoles.", "conseil": "Mouillez légèrement vos mains pour les rabats : la pâte ne collera pas.", "image": "assets/images/sf-atelier.svg" },
-      { "titre": "La division et le façonnage", "texte": "Divisez la pâte en trois pâtons de 280 g environ. Préformez en boudins, laissez détendre 20 minutes, puis allongez en baguettes en serrant bien la soudure. Déposez-les en couche dans un linge fariné.", "conseil": null, "image": null },
-      { "titre": "La grigne et la cuisson", "texte": "Préchauffez le four à 250 °C avec la plaque à l'intérieur et un récipient d'eau en bas. Lamez chaque baguette de 3 coups de lame rapides, presque à l'horizontale, puis enfournez 20 à 22 minutes.", "conseil": "Le coup de buée des 5 premières minutes fait toute la croûte : ne pas ouvrir le four.", "image": null }
+      {
+        "titre": "Le frasage et l'autolyse",
+        "texte": "Mélangez la farine et l'eau, sans le sel ni la levure, juste assez pour ne plus voir de farine sèche. Couvrez et laissez reposer 30 minutes : cette autolyse détend la pâte et développe les arômes.",
+        "conseil": "Une eau trop chaude tue le goût : restez autour de 20 °C.",
+        "image": null
+      },
+      {
+        "titre": "Le pétrissage",
+        "texte": "Ajoutez le sel et la levure émiettée. Pétrissez 8 à 10 minutes à la main en étirant et repliant la pâte, jusqu'à ce qu'elle devienne lisse et se détache des doigts.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Le pointage avec rabats",
+        "texte": "Laissez pousser 3 heures à température ambiante, en faisant un rabat (replier la pâte sur elle-même) toutes les heures. La pâte gagne en force et en alvéoles.",
+        "conseil": "Mouillez légèrement vos mains pour les rabats : la pâte ne collera pas.",
+        "image": "assets/images/sf-atelier.svg"
+      },
+      {
+        "titre": "La division et le façonnage",
+        "texte": "Divisez la pâte en trois pâtons de 280 g environ. Préformez en boudins, laissez détendre 20 minutes, puis allongez en baguettes en serrant bien la soudure. Déposez-les en couche dans un linge fariné.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "La grigne et la cuisson",
+        "texte": "Préchauffez le four à 250 °C avec la plaque à l'intérieur et un récipient d'eau en bas. Lamez chaque baguette de 3 coups de lame rapides, presque à l'horizontale, puis enfournez 20 à 22 minutes.",
+        "conseil": "Le coup de buée des 5 premières minutes fait toute la croûte : ne pas ouvrir le four.",
+        "image": null
+      }
     ],
-    "conseils": ["Pesez tout, même l'eau : en boulangerie, le volume ment, le poids jamais.", "Une pâte un peu collante donne un meilleur pain qu'une pâte trop farinée.", "Laissez ressuer les baguettes 20 minutes sur une grille avant de couper."],
-    "erreurs": ["Mettre le sel en contact direct avec la levure dès le début.", "Écraser la pâte au façonnage et perdre toutes les alvéoles.", "Enfourner dans un four pas assez chaud « pour aller plus vite »."],
+    "conseils": [
+      "Pesez tout, même l'eau : en boulangerie, le volume ment, le poids jamais.",
+      "Une pâte un peu collante donne un meilleur pain qu'une pâte trop farinée.",
+      "Laissez ressuer les baguettes 20 minutes sur une grille avant de couper."
+    ],
+    "erreurs": [
+      "Mettre le sel en contact direct avec la levure dès le début.",
+      "Écraser la pâte au façonnage et perdre toutes les alvéoles.",
+      "Enfourner dans un four pas assez chaud « pour aller plus vite »."
+    ],
     "resultat": "Trois baguettes dorées, à la croûte fine qui chante en sortant du four, avec une mie crème et bien alvéolée. Elles se conservent une journée dans un linge — jamais dans un sac plastique.",
     "image": "assets/images/photos/sf-baguette.webp",
     "imageAlt": "Un boulanger souriant dispose des baguettes fraîchement cuites sur une grille",
     "galerie": [
-      { "image": "assets/images/photos/sf-baguette.webp", "alt": "Baguettes dorées en fin de cuisson" },
-      { "image": "assets/images/sf-atelier.svg", "alt": "Plan de travail pendant le façonnage" },
-      { "image": "assets/images/sf-resultat.svg", "alt": "Résultat final présenté" }
+      {
+        "image": "assets/images/photos/sf-baguette.webp",
+        "alt": "Baguettes dorées en fin de cuisson"
+      },
+      {
+        "image": "assets/images/sf-atelier.svg",
+        "alt": "Plan de travail pendant le façonnage"
+      },
+      {
+        "image": "assets/images/sf-resultat.svg",
+        "alt": "Résultat final présenté"
+      }
     ],
     "datePublication": "2026-07-06",
     "vues": 412,
     "statut": "publie",
     "notes": {
       "total": 19,
-      "criteres": { "clarte": 4.7, "conseils": 4.8, "facilite": 4.0, "resultat": 4.6, "generale": 4.6 },
-      "repartition": { "5": 13, "4": 4, "3": 2, "2": 0, "1": 0 }
+      "criteres": {
+        "clarte": 4.7,
+        "conseils": 4.8,
+        "facilite": 4,
+        "resultat": 4.6,
+        "generale": 4.6
+      },
+      "repartition": {
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 4,
+        "5": 13
+      }
     },
     "commentaires": [
-      { "auteur": "Sylvie R.", "date": "2026-07-12", "note": 5, "titre": "Enfin une vraie croûte !", "texte": "Troisième essai en suivant la méthode à la lettre, et le coup de buée change tout. Merci pour la précision sur la température de l'eau.", "resultat": "Baguettes bien alvéolées, croûte croustillante.", "teste": true, "reponsePro": "Merci Sylvie ! Si la mie vous semble encore serrée, essayez d'ajouter 10 g d'eau la prochaine fois." },
-      { "auteur": "Antoine", "date": "2026-07-09", "note": 4, "titre": "Très clair, mais prévoyez du temps", "texte": "Les explications sont limpides. Le façonnage demande un peu d'entraînement, mes premières baguettes étaient un peu tordues mais délicieuses.", "resultat": "Goût excellent, forme à retravailler.", "teste": true, "reponsePro": null }
+      {
+        "auteur": "Sylvie R.",
+        "date": "2026-07-12",
+        "note": 5,
+        "titre": "Enfin une vraie croûte !",
+        "texte": "Troisième essai en suivant la méthode à la lettre, et le coup de buée change tout. Merci pour la précision sur la température de l'eau.",
+        "resultat": "Baguettes bien alvéolées, croûte croustillante.",
+        "teste": true,
+        "reponsePro": "Merci Sylvie ! Si la mie vous semble encore serrée, essayez d'ajouter 10 g d'eau la prochaine fois."
+      },
+      {
+        "auteur": "Antoine",
+        "date": "2026-07-09",
+        "note": 4,
+        "titre": "Très clair, mais prévoyez du temps",
+        "texte": "Les explications sont limpides. Le façonnage demande un peu d'entraînement, mes premières baguettes étaient un peu tordues mais délicieuses.",
+        "resultat": "Goût excellent, forme à retravailler.",
+        "teste": true,
+        "reponsePro": null
+      }
     ]
   },
   {
@@ -52,43 +147,132 @@
     "resume": "Une méthode d'organisation simple, issue du secrétariat classique et adaptée au numérique, pour ne plus jamais laisser une boîte de réception déborder.",
     "metier": "Assistante de gestion",
     "categorie": "Organisation & méthodes",
-    "auteur": { "nom": "Claire Fontanel", "metier": "Assistante de gestion", "entreprise": "Fiduciaire Bellecour", "entrepriseId": "fiduciaire-bellecour", "ville": "Lyon" },
+    "auteur": {
+      "nom": "Claire Fontanel",
+      "metier": "Assistante de gestion",
+      "entreprise": "Fiduciaire Bellecour",
+      "entrepriseId": "fiduciaire-bellecour",
+      "ville": "Lyon"
+    },
     "difficulte": "facile",
     "difficulteLabel": "Facile",
     "duree": "1 h de mise en place, puis 30 min par jour",
     "dureeDetail": [
-      { "label": "Mise en place", "valeur": "1 h" },
-      { "label": "Routine quotidienne", "valeur": "2 × 15 min" }
+      {
+        "label": "Mise en place",
+        "valeur": "1 h"
+      },
+      {
+        "label": "Routine quotidienne",
+        "valeur": "2 × 15 min"
+      }
     ],
-    "materiel": ["Votre messagerie habituelle (aucun outil payant)", "4 dossiers de classement : À traiter, En attente, À lire, Archives", "Un agenda pour les tâches datées"],
+    "materiel": [
+      "Votre messagerie habituelle (aucun outil payant)",
+      "4 dossiers de classement : À traiter, En attente, À lire, Archives",
+      "Un agenda pour les tâches datées"
+    ],
     "intro": "Au cabinet, je reçois entre 80 et 120 e-mails par jour pour trois experts-comptables. Cette méthode, inspirée des bannettes de courrier papier, me permet de garder une boîte de réception vide chaque soir — sans y passer ma journée.",
     "etapes": [
-      { "titre": "Créer les 4 bannettes", "texte": "Créez quatre dossiers dans votre messagerie : « À traiter » (action de plus de 2 minutes), « En attente » (vous attendez une réponse), « À lire » (informatif, sans action), « Archives » (terminé). Supprimez tous vos anciens dossiers thématiques : la recherche par mot-clé les remplace.", "conseil": "Résistez à l'envie de créer un 5e dossier : c'est le début de la fin.", "image": null },
-      { "titre": "Vider, pas traiter", "texte": "Deux fois par jour (idéalement 9 h et 14 h), parcourez la boîte de réception e-mail par e-mail. Chaque message part dans une bannette ou reçoit une réponse immédiate s'il demande moins de 2 minutes. Objectif : boîte de réception vide en 15 minutes.", "conseil": "Traitez toujours du plus ancien au plus récent, sinon les vieux messages s'enterrent.", "image": "assets/images/photos/sf-organisation.webp" },
-      { "titre": "Planifier les vraies tâches", "texte": "Les e-mails de la bannette « À traiter » deviennent des créneaux dans l'agenda : une réponse complexe est une tâche, pas un e-mail. Bloquez un créneau quotidien pour la vider.", "conseil": null, "image": null },
-      { "titre": "Relancer grâce à « En attente »", "texte": "Chaque vendredi, ouvrez la bannette « En attente » : tout message de plus de 5 jours ouvrés déclenche une relance courtoise. Vous ne perdrez plus jamais le fil d'un dossier.", "conseil": "Une relance simple : « Je me permets de revenir vers vous au sujet de… ». Courte et datée.", "image": null }
+      {
+        "titre": "Créer les 4 bannettes",
+        "texte": "Créez quatre dossiers dans votre messagerie : « À traiter » (action de plus de 2 minutes), « En attente » (vous attendez une réponse), « À lire » (informatif, sans action), « Archives » (terminé). Supprimez tous vos anciens dossiers thématiques : la recherche par mot-clé les remplace.",
+        "conseil": "Résistez à l'envie de créer un 5e dossier : c'est le début de la fin.",
+        "image": null
+      },
+      {
+        "titre": "Vider, pas traiter",
+        "texte": "Deux fois par jour (idéalement 9 h et 14 h), parcourez la boîte de réception e-mail par e-mail. Chaque message part dans une bannette ou reçoit une réponse immédiate s'il demande moins de 2 minutes. Objectif : boîte de réception vide en 15 minutes.",
+        "conseil": "Traitez toujours du plus ancien au plus récent, sinon les vieux messages s'enterrent.",
+        "image": "assets/images/photos/sf-organisation.webp"
+      },
+      {
+        "titre": "Planifier les vraies tâches",
+        "texte": "Les e-mails de la bannette « À traiter » deviennent des créneaux dans l'agenda : une réponse complexe est une tâche, pas un e-mail. Bloquez un créneau quotidien pour la vider.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Relancer grâce à « En attente »",
+        "texte": "Chaque vendredi, ouvrez la bannette « En attente » : tout message de plus de 5 jours ouvrés déclenche une relance courtoise. Vous ne perdrez plus jamais le fil d'un dossier.",
+        "conseil": "Une relance simple : « Je me permets de revenir vers vous au sujet de… ». Courte et datée.",
+        "image": null
+      }
     ],
-    "conseils": ["Désactivez les notifications : c'est vous qui allez aux e-mails, pas l'inverse.", "Une règle automatique peut envoyer les newsletters directement dans « À lire ».", "Le soir, une boîte vide est un vrai signal de fin de journée pour le cerveau."],
-    "erreurs": ["Garder des e-mails « sous les yeux pour ne pas oublier » : c'est l'agenda qui sert à ça.", "Créer des dizaines de dossiers thématiques impossibles à maintenir.", "Répondre au fil de l'eau toute la journée et perdre toute concentration."],
+    "conseils": [
+      "Désactivez les notifications : c'est vous qui allez aux e-mails, pas l'inverse.",
+      "Une règle automatique peut envoyer les newsletters directement dans « À lire ».",
+      "Le soir, une boîte vide est un vrai signal de fin de journée pour le cerveau."
+    ],
+    "erreurs": [
+      "Garder des e-mails « sous les yeux pour ne pas oublier » : c'est l'agenda qui sert à ça.",
+      "Créer des dizaines de dossiers thématiques impossibles à maintenir.",
+      "Répondre au fil de l'eau toute la journée et perdre toute concentration."
+    ],
     "resultat": "Une boîte de réception vide chaque soir, aucune relance oubliée et environ une heure gagnée par jour. La méthode fonctionne aussi bien pour une assistante qui gère plusieurs boîtes que pour un artisan seul.",
     "image": "assets/images/photos/sf-organisation.webp",
     "imageAlt": "Une assistante au casque audio classe des documents devant son écran",
     "galerie": [
-      { "image": "assets/images/photos/sf-organisation.webp", "alt": "Les quatre bannettes de classement" },
-      { "image": "assets/images/sf-resultat.svg", "alt": "Boîte de réception vidée en fin de journée" }
+      {
+        "image": "assets/images/photos/sf-organisation.webp",
+        "alt": "Les quatre bannettes de classement"
+      },
+      {
+        "image": "assets/images/sf-resultat.svg",
+        "alt": "Boîte de réception vidée en fin de journée"
+      }
     ],
     "datePublication": "2026-07-15",
     "vues": 286,
     "statut": "publie",
     "notes": {
       "total": 24,
-      "criteres": { "clarte": 4.9, "conseils": 4.7, "facilite": 4.8, "resultat": 4.5, "generale": 4.8 },
-      "repartition": { "5": 20, "4": 3, "3": 1, "2": 0, "1": 0 }
+      "criteres": {
+        "clarte": 4.9,
+        "conseils": 4.7,
+        "facilite": 4.8,
+        "resultat": 4.5,
+        "generale": 4.8
+      },
+      "repartition": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 3,
+        "5": 20
+      }
     },
     "commentaires": [
-      { "auteur": "Medhi", "date": "2026-07-18", "note": 5, "titre": "Adopté en trois jours", "texte": "Je suis artisan et je croulais sous les demandes de devis. La bannette « En attente » à elle seule vaut la lecture : plus aucun client oublié.", "resultat": "Boîte vide tous les soirs depuis une semaine.", "teste": true, "reponsePro": "Merci Medhi ! Pour les devis, pensez aussi à une règle automatique qui les marque d'une couleur." },
-      { "auteur": "Pauline B.", "date": "2026-07-16", "note": 5, "titre": "Simple et réaliste", "texte": "Enfin une méthode qui ne demande pas d'application payante. La règle des 2 minutes est redoutable d'efficacité.", "resultat": null, "teste": false, "reponsePro": null },
-      { "auteur": "J-Marc", "date": "2026-07-15", "note": 4, "titre": "Très bien, un bémol", "texte": "Excellente base. En revanche avec deux boîtes partagées, je conseille de faire la routine trois fois par jour plutôt que deux.", "resultat": "Adapté avec un passage supplémentaire le midi.", "teste": true, "reponsePro": null }
+      {
+        "auteur": "Medhi",
+        "date": "2026-07-18",
+        "note": 5,
+        "titre": "Adopté en trois jours",
+        "texte": "Je suis artisan et je croulais sous les demandes de devis. La bannette « En attente » à elle seule vaut la lecture : plus aucun client oublié.",
+        "resultat": "Boîte vide tous les soirs depuis une semaine.",
+        "teste": true,
+        "reponsePro": "Merci Medhi ! Pour les devis, pensez aussi à une règle automatique qui les marque d'une couleur."
+      },
+      {
+        "auteur": "Pauline B.",
+        "date": "2026-07-16",
+        "note": 5,
+        "titre": "Simple et réaliste",
+        "texte": "Enfin une méthode qui ne demande pas d'application payante. La règle des 2 minutes est redoutable d'efficacité.",
+        "resultat": null,
+        "teste": false,
+        "reponsePro": null
+      },
+      {
+        "auteur": "J-Marc",
+        "date": "2026-07-15",
+        "note": 4,
+        "titre": "Très bien, un bémol",
+        "texte": "Excellente base. En revanche avec deux boîtes partagées, je conseille de faire la routine trois fois par jour plutôt que deux.",
+        "resultat": "Adapté avec un passage supplémentaire le midi.",
+        "teste": true,
+        "reponsePro": null
+      }
     ]
   },
   {
@@ -97,46 +281,146 @@
     "resume": "Un parqueteur professionnel détaille la pose d'un parquet flottant dans une pièce de 20 m², du calepinage initial aux plinthes, avec les astuces qui évitent les grincements.",
     "metier": "Parqueteur",
     "categorie": "Pose & rénovation",
-    "auteur": { "nom": "Julien Marek", "metier": "Parqueteur", "entreprise": "Atelier Marek Sols", "entrepriseId": null, "ville": "Rennes" },
+    "auteur": {
+      "nom": "Julien Marek",
+      "metier": "Parqueteur",
+      "entreprise": "Atelier Marek Sols",
+      "entrepriseId": null,
+      "ville": "Rennes"
+    },
     "difficulte": "intermediaire",
     "difficulteLabel": "Intermédiaire",
     "duree": "1 journée pour 20 m²",
     "dureeDetail": [
-      { "label": "Acclimatation des lames", "valeur": "48 h avant" },
-      { "label": "Préparation du sol", "valeur": "2 h" },
-      { "label": "Pose", "valeur": "4 à 5 h" }
+      {
+        "label": "Acclimatation des lames",
+        "valeur": "48 h avant"
+      },
+      {
+        "label": "Préparation du sol",
+        "valeur": "2 h"
+      },
+      {
+        "label": "Pose",
+        "valeur": "4 à 5 h"
+      }
     ],
-    "materiel": ["Lames de parquet (+ 8 % de chutes)", "Sous-couche acoustique", "Cales de dilatation de 8 mm", "Scie sauteuse ou scie radiale", "Mètre, équerre, crayon, cordeau", "Maillet et tire-lame", "Plinthes et colle adaptée"],
+    "materiel": [
+      "Lames de parquet (+ 8 % de chutes)",
+      "Sous-couche acoustique",
+      "Cales de dilatation de 8 mm",
+      "Scie sauteuse ou scie radiale",
+      "Mètre, équerre, crayon, cordeau",
+      "Maillet et tire-lame",
+      "Plinthes et colle adaptée"
+    ],
     "intro": "Le parquet flottant a la réputation d'être facile. C'est vrai — à condition de passer plus de temps à préparer qu'à poser. Neuf problèmes sur dix (grincements, lames qui se soulèvent, dernière rangée en biais) viennent des trente premières minutes de chantier.",
     "etapes": [
-      { "titre": "Laisser le parquet s'acclimater", "texte": "Stockez les paquets fermés, à plat, dans la pièce à équiper pendant 48 heures. Le bois s'adapte à la température et à l'humidité ambiantes : cette étape évite les joints qui s'ouvrent l'hiver.", "conseil": null, "image": null },
-      { "titre": "Contrôler et préparer le sol", "texte": "Le sol doit être propre, sec et plan : moins de 5 mm de creux sous une règle de 2 m. Au-delà, un ragréage s'impose. Déroulez ensuite la sous-couche, lés bord à bord, ruban adhésif sur les jonctions.", "conseil": "Passez la règle en étoile, pas seulement dans un sens : les creux se cachent en diagonale.", "image": null },
-      { "titre": "Faire le calepinage", "texte": "Mesurez la largeur de la pièce et calculez la largeur de la dernière rangée. Si elle fait moins de 5 cm, recoupez la première rangée pour équilibrer. Posez toujours les lames dans le sens de la lumière principale.", "conseil": "Dix minutes de calcul évitent une dernière rangée ridicule le long du mur le plus visible.", "image": "assets/images/photos/sf-parquet.webp" },
-      { "titre": "Poser les trois premières rangées", "texte": "Commencez le long du mur le plus droit, cales de 8 mm entre lames et mur. Décalez les joints d'au moins 30 cm d'une rangée à l'autre. Emboîtez à l'angle puis rabattez, sans forcer au maillet directement sur la rive.", "conseil": null, "image": null },
-      { "titre": "Gérer les obstacles et la dernière rangée", "texte": "Aux tuyaux, percez un trou du diamètre + 16 mm puis sciez un V discret recollé derrière. La dernière rangée se mesure lame par lame et se serre au tire-lame.", "conseil": null, "image": null },
-      { "titre": "Retirer les cales et poser les plinthes", "texte": "Après pose complète, retirez toutes les cales et fixez les plinthes au mur — jamais au parquet, qui doit rester libre de bouger. Le joint de dilatation disparaît dessous.", "conseil": "Une plinthe collée au parquet bloque la dilatation : c'est la cause n° 1 des soulèvements.", "image": null }
+      {
+        "titre": "Laisser le parquet s'acclimater",
+        "texte": "Stockez les paquets fermés, à plat, dans la pièce à équiper pendant 48 heures. Le bois s'adapte à la température et à l'humidité ambiantes : cette étape évite les joints qui s'ouvrent l'hiver.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Contrôler et préparer le sol",
+        "texte": "Le sol doit être propre, sec et plan : moins de 5 mm de creux sous une règle de 2 m. Au-delà, un ragréage s'impose. Déroulez ensuite la sous-couche, lés bord à bord, ruban adhésif sur les jonctions.",
+        "conseil": "Passez la règle en étoile, pas seulement dans un sens : les creux se cachent en diagonale.",
+        "image": null
+      },
+      {
+        "titre": "Faire le calepinage",
+        "texte": "Mesurez la largeur de la pièce et calculez la largeur de la dernière rangée. Si elle fait moins de 5 cm, recoupez la première rangée pour équilibrer. Posez toujours les lames dans le sens de la lumière principale.",
+        "conseil": "Dix minutes de calcul évitent une dernière rangée ridicule le long du mur le plus visible.",
+        "image": "assets/images/photos/sf-parquet.webp"
+      },
+      {
+        "titre": "Poser les trois premières rangées",
+        "texte": "Commencez le long du mur le plus droit, cales de 8 mm entre lames et mur. Décalez les joints d'au moins 30 cm d'une rangée à l'autre. Emboîtez à l'angle puis rabattez, sans forcer au maillet directement sur la rive.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Gérer les obstacles et la dernière rangée",
+        "texte": "Aux tuyaux, percez un trou du diamètre + 16 mm puis sciez un V discret recollé derrière. La dernière rangée se mesure lame par lame et se serre au tire-lame.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Retirer les cales et poser les plinthes",
+        "texte": "Après pose complète, retirez toutes les cales et fixez les plinthes au mur — jamais au parquet, qui doit rester libre de bouger. Le joint de dilatation disparaît dessous.",
+        "conseil": "Une plinthe collée au parquet bloque la dilatation : c'est la cause n° 1 des soulèvements.",
+        "image": null
+      }
     ],
-    "conseils": ["Achetez tous les paquets du même lot de fabrication pour éviter les différences de teinte.", "Mélangez les lames de plusieurs paquets pendant la pose pour répartir les nuances.", "Gardez deux lames d'avance dans un placard pour une réparation future."],
-    "erreurs": ["Poser sur un sol qui n'est ni propre ni plan.", "Oublier les cales de dilatation en se disant que « ça ira ».", "Taper au maillet directement sur la languette et la casser."],
+    "conseils": [
+      "Achetez tous les paquets du même lot de fabrication pour éviter les différences de teinte.",
+      "Mélangez les lames de plusieurs paquets pendant la pose pour répartir les nuances.",
+      "Gardez deux lames d'avance dans un placard pour une réparation future."
+    ],
+    "erreurs": [
+      "Poser sur un sol qui n'est ni propre ni plan.",
+      "Oublier les cales de dilatation en se disant que « ça ira ».",
+      "Taper au maillet directement sur la languette et la casser."
+    ],
     "resultat": "Un sol stable et silencieux, aux rangées équilibrées, qui ne bougera pas au fil des saisons. Comptez une journée pour une pièce de 20 m² à deux, en travaillant sans précipitation.",
     "image": "assets/images/photos/sf-parquet.webp",
     "imageAlt": "Un artisan pose des lames de parquet au maillet",
     "galerie": [
-      { "image": "assets/images/photos/sf-parquet.webp", "alt": "Pose des premières rangées de lames" },
-      { "image": "assets/images/sf-outils.svg", "alt": "Outillage du parqueteur" },
-      { "image": "assets/images/sf-resultat.svg", "alt": "Pièce terminée avec plinthes posées" }
+      {
+        "image": "assets/images/photos/sf-parquet.webp",
+        "alt": "Pose des premières rangées de lames"
+      },
+      {
+        "image": "assets/images/sf-outils.svg",
+        "alt": "Outillage du parqueteur"
+      },
+      {
+        "image": "assets/images/sf-resultat.svg",
+        "alt": "Pièce terminée avec plinthes posées"
+      }
     ],
     "datePublication": "2026-06-28",
     "vues": 358,
     "statut": "publie",
     "notes": {
       "total": 15,
-      "criteres": { "clarte": 4.6, "conseils": 4.9, "facilite": 3.8, "resultat": 4.5, "generale": 4.5 },
-      "repartition": { "5": 9, "4": 5, "3": 0, "2": 1, "1": 0 }
+      "criteres": {
+        "clarte": 4.6,
+        "conseils": 4.9,
+        "facilite": 3.8,
+        "resultat": 4.5,
+        "generale": 4.5
+      },
+      "repartition": {
+        "1": 0,
+        "2": 1,
+        "3": 0,
+        "4": 5,
+        "5": 9
+      }
     },
     "commentaires": [
-      { "auteur": "Fred29", "date": "2026-07-03", "note": 5, "titre": "Le calepinage change tout", "texte": "J'avais déjà posé du flottant deux fois « au feeling ». Avec le calcul de la dernière rangée, le rendu est incomparable. Merci pour l'astuce des plinthes.", "resultat": "20 m² posés en une journée, aucune lame qui grince.", "teste": true, "reponsePro": "Bien joué Fred ! Le calepinage, c'est 80 % du métier sur ce type de pose." },
-      { "auteur": "Nadia", "date": "2026-06-30", "note": 4, "titre": "Précis et honnête", "texte": "La liste des erreurs à éviter correspond exactement à ce qui m'était arrivé dans l'ancien appartement. Je poserai la semaine prochaine en suivant la méthode.", "resultat": null, "teste": false, "reponsePro": null }
+      {
+        "auteur": "Fred29",
+        "date": "2026-07-03",
+        "note": 5,
+        "titre": "Le calepinage change tout",
+        "texte": "J'avais déjà posé du flottant deux fois « au feeling ». Avec le calcul de la dernière rangée, le rendu est incomparable. Merci pour l'astuce des plinthes.",
+        "resultat": "20 m² posés en une journée, aucune lame qui grince.",
+        "teste": true,
+        "reponsePro": "Bien joué Fred ! Le calepinage, c'est 80 % du métier sur ce type de pose."
+      },
+      {
+        "auteur": "Nadia",
+        "date": "2026-06-30",
+        "note": 4,
+        "titre": "Précis et honnête",
+        "texte": "La liste des erreurs à éviter correspond exactement à ce qui m'était arrivé dans l'ancien appartement. Je poserai la semaine prochaine en suivant la méthode.",
+        "resultat": null,
+        "teste": false,
+        "reponsePro": null
+      }
     ]
   },
   {
@@ -145,42 +429,119 @@
     "resume": "Contrôle, nettoyage des cosses et test de charge : un mécanicien explique l'entretien simple qui évite 80 % des pannes de batterie au premier froid.",
     "metier": "Mécanicien automobile",
     "categorie": "Entretien & réparation",
-    "auteur": { "nom": "Karim Bensaïd", "metier": "Mécanicien automobile", "entreprise": "Garage des Oliviers", "entrepriseId": null, "ville": "Marseille" },
+    "auteur": {
+      "nom": "Karim Bensaïd",
+      "metier": "Mécanicien automobile",
+      "entreprise": "Garage des Oliviers",
+      "entrepriseId": null,
+      "ville": "Marseille"
+    },
     "difficulte": "facile",
     "difficulteLabel": "Facile",
     "duree": "20 minutes",
     "dureeDetail": [
-      { "label": "Contrôle visuel", "valeur": "5 min" },
-      { "label": "Nettoyage", "valeur": "10 min" },
-      { "label": "Test de tension", "valeur": "5 min" }
+      {
+        "label": "Contrôle visuel",
+        "valeur": "5 min"
+      },
+      {
+        "label": "Nettoyage",
+        "valeur": "10 min"
+      },
+      {
+        "label": "Test de tension",
+        "valeur": "5 min"
+      }
     ],
-    "materiel": ["Gants et lunettes de protection", "Clé plate de 10 (le plus souvent)", "Brosse métallique ou brosse à cosses", "Bicarbonate de soude et eau", "Graisse pour cosses (ou vaseline technique)", "Multimètre à 15 € (facultatif mais recommandé)"],
+    "materiel": [
+      "Gants et lunettes de protection",
+      "Clé plate de 10 (le plus souvent)",
+      "Brosse métallique ou brosse à cosses",
+      "Bicarbonate de soude et eau",
+      "Graisse pour cosses (ou vaseline technique)",
+      "Multimètre à 15 € (facultatif mais recommandé)"
+    ],
     "intro": "Chaque automne, la moitié des dépannages que je fais concernent des batteries. Dans la plupart des cas, vingt minutes d'entretien auraient suffi. Voici le contrôle que je recommande à tous mes clients, réalisable sans aucune connaissance en mécanique.",
     "etapes": [
-      { "titre": "Sécuriser l'intervention", "texte": "Moteur coupé, contact retiré, frein à main serré. Mettez les gants et les lunettes : l'électrolyte d'une batterie est corrosif. Repérez la borne + (rouge) et la borne − (noire).", "conseil": "Retirez montre et bagues métalliques : un court-circuit avec une batterie fait très mal.", "image": null },
-      { "titre": "Inspecter la batterie", "texte": "Cherchez des traces blanches ou verdâtres sur les cosses (sulfatation), un boîtier gonflé ou fissuré, des fixations desserrées. Un boîtier déformé = remplacement direct, on ne discute pas.", "conseil": null, "image": null },
-      { "titre": "Nettoyer les cosses", "texte": "Débranchez d'abord la borne − puis la borne +. Nettoyez cosses et bornes à la brosse métallique avec une pâte de bicarbonate et d'eau, puis séchez. Rebranchez dans l'ordre inverse : + d'abord, − ensuite, et serrez fermement.", "conseil": "L'ordre de débranchement n'est pas un détail : il évite tout court-circuit via la carrosserie.", "image": "assets/images/photos/sf-mecanique.webp" },
-      { "titre": "Protéger et tester", "texte": "Appliquez une fine couche de graisse sur les cosses. Au multimètre, moteur éteint depuis quelques heures : 12,6 V = batterie en forme ; 12,4 V = à surveiller ; sous 12,2 V = faites-la tester en atelier avant les premiers froids.", "conseil": null, "image": null }
+      {
+        "titre": "Sécuriser l'intervention",
+        "texte": "Moteur coupé, contact retiré, frein à main serré. Mettez les gants et les lunettes : l'électrolyte d'une batterie est corrosif. Repérez la borne + (rouge) et la borne − (noire).",
+        "conseil": "Retirez montre et bagues métalliques : un court-circuit avec une batterie fait très mal.",
+        "image": null
+      },
+      {
+        "titre": "Inspecter la batterie",
+        "texte": "Cherchez des traces blanches ou verdâtres sur les cosses (sulfatation), un boîtier gonflé ou fissuré, des fixations desserrées. Un boîtier déformé = remplacement direct, on ne discute pas.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Nettoyer les cosses",
+        "texte": "Débranchez d'abord la borne − puis la borne +. Nettoyez cosses et bornes à la brosse métallique avec une pâte de bicarbonate et d'eau, puis séchez. Rebranchez dans l'ordre inverse : + d'abord, − ensuite, et serrez fermement.",
+        "conseil": "L'ordre de débranchement n'est pas un détail : il évite tout court-circuit via la carrosserie.",
+        "image": "assets/images/photos/sf-mecanique.webp"
+      },
+      {
+        "titre": "Protéger et tester",
+        "texte": "Appliquez une fine couche de graisse sur les cosses. Au multimètre, moteur éteint depuis quelques heures : 12,6 V = batterie en forme ; 12,4 V = à surveiller ; sous 12,2 V = faites-la tester en atelier avant les premiers froids.",
+        "conseil": null,
+        "image": null
+      }
     ],
-    "conseils": ["Une batterie a une durée de vie de 4 à 6 ans : notez sa date d'achat au marqueur sur le boîtier.", "Sur les petits trajets répétés, la batterie ne se recharge jamais complètement : une bonne balade de 30 minutes par mois lui fait du bien.", "Si le démarrage devient paresseux par temps doux, n'attendez pas l'hiver pour la faire tester."],
-    "erreurs": ["Débrancher la borne + en premier.", "Nettoyer les cosses sans protection ni rinçage.", "Ignorer un voyant batterie « qui finit toujours par s'éteindre »."],
+    "conseils": [
+      "Une batterie a une durée de vie de 4 à 6 ans : notez sa date d'achat au marqueur sur le boîtier.",
+      "Sur les petits trajets répétés, la batterie ne se recharge jamais complètement : une bonne balade de 30 minutes par mois lui fait du bien.",
+      "Si le démarrage devient paresseux par temps doux, n'attendez pas l'hiver pour la faire tester."
+    ],
+    "erreurs": [
+      "Débrancher la borne + en premier.",
+      "Nettoyer les cosses sans protection ni rinçage.",
+      "Ignorer un voyant batterie « qui finit toujours par s'éteindre »."
+    ],
     "resultat": "Des cosses propres et protégées, une tension vérifiée et l'assurance de passer l'hiver sans la panne la plus banale — et la plus évitable — de l'automobile.",
     "image": "assets/images/photos/sf-mecanique.webp",
     "imageAlt": "Un mécanicien contrôle le moteur d'une voiture",
     "galerie": [
-      { "image": "assets/images/photos/sf-mecanique.webp", "alt": "Contrôle de la batterie au multimètre" },
-      { "image": "assets/images/sf-outils.svg", "alt": "Petit outillage nécessaire" }
+      {
+        "image": "assets/images/photos/sf-mecanique.webp",
+        "alt": "Contrôle de la batterie au multimètre"
+      },
+      {
+        "image": "assets/images/sf-outils.svg",
+        "alt": "Petit outillage nécessaire"
+      }
     ],
     "datePublication": "2026-07-18",
     "vues": 197,
     "statut": "publie",
     "notes": {
       "total": 11,
-      "criteres": { "clarte": 4.8, "conseils": 4.6, "facilite": 4.9, "resultat": 4.4, "generale": 4.7 },
-      "repartition": { "5": 8, "4": 3, "3": 0, "2": 0, "1": 0 }
+      "criteres": {
+        "clarte": 4.8,
+        "conseils": 4.6,
+        "facilite": 4.9,
+        "resultat": 4.4,
+        "generale": 4.7
+      },
+      "repartition": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 3,
+        "5": 8
+      }
     },
     "commentaires": [
-      { "auteur": "Lucie", "date": "2026-07-20", "note": 5, "titre": "Accessible même pour une débutante", "texte": "Première fois que j'ouvre le capot pour autre chose que le lave-glace. Tout est expliqué, y compris l'ordre des bornes. Ma batterie affichait 12,5 V, je suis rassurée.", "resultat": "Contrôle fait en 25 minutes, cosses nettoyées.", "teste": true, "reponsePro": "Parfait Lucie ! À 12,5 V vous êtes tranquille. Recontrôlez juste avant les premières gelées." }
+      {
+        "auteur": "Lucie",
+        "date": "2026-07-20",
+        "note": 5,
+        "titre": "Accessible même pour une débutante",
+        "texte": "Première fois que j'ouvre le capot pour autre chose que le lave-glace. Tout est expliqué, y compris l'ordre des bornes. Ma batterie affichait 12,5 V, je suis rassurée.",
+        "resultat": "Contrôle fait en 25 minutes, cosses nettoyées.",
+        "teste": true,
+        "reponsePro": "Parfait Lucie ! À 12,5 V vous êtes tranquille. Recontrôlez juste avant les premières gelées."
+      }
     ]
   },
   {
@@ -189,44 +550,133 @@
     "resume": "La trame d'entretien utilisée par une responsable RH pour évaluer sérieusement un candidat en trois quarts d'heure, sans questions pièges et sans discrimination.",
     "metier": "Responsable RH",
     "categorie": "Conseils de métier",
-    "auteur": { "nom": "Nathalie Vasseur", "metier": "Responsable des ressources humaines", "entreprise": "Groupe Horizon BTP", "entrepriseId": "horizon-btp", "ville": "Nantes" },
+    "auteur": {
+      "nom": "Nathalie Vasseur",
+      "metier": "Responsable des ressources humaines",
+      "entreprise": "Groupe Horizon BTP",
+      "entrepriseId": "horizon-btp",
+      "ville": "Nantes"
+    },
     "difficulte": "intermediaire",
     "difficulteLabel": "Intermédiaire",
     "duree": "45 min d'entretien + 15 min de préparation",
     "dureeDetail": [
-      { "label": "Préparation", "valeur": "15 min" },
-      { "label": "Entretien", "valeur": "45 min" },
-      { "label": "Compte rendu", "valeur": "10 min" }
+      {
+        "label": "Préparation",
+        "valeur": "15 min"
+      },
+      {
+        "label": "Entretien",
+        "valeur": "45 min"
+      },
+      {
+        "label": "Compte rendu",
+        "valeur": "10 min"
+      }
     ],
-    "materiel": ["La fiche de poste à jour", "Le CV annoté du candidat", "Une grille d'évaluation à 4 critères maximum", "Un bureau calme, téléphone en silencieux"],
+    "materiel": [
+      "La fiche de poste à jour",
+      "Le CV annoté du candidat",
+      "Une grille d'évaluation à 4 critères maximum",
+      "Un bureau calme, téléphone en silencieux"
+    ],
     "intro": "Un entretien mal structuré évalue surtout l'aisance orale du candidat — pas sa capacité à tenir le poste. Cette trame en cinq temps, que j'utilise pour tous nos recrutements, du compagnon au poste administratif, fiabilise la décision et fait bonne impression aux candidats.",
     "etapes": [
-      { "titre": "Préparer 4 critères, pas 15", "texte": "Avant l'entretien, choisissez les quatre compétences réellement décisives pour le poste et notez pour chacune une question concrète. Tout le reste s'apprend ou se vérifie autrement (tests, références, période d'essai).", "conseil": "Si tout est prioritaire, rien ne l'est : quatre critères tiennent dans une tête pendant 45 minutes.", "image": null },
-      { "titre": "Accueillir et cadrer (5 min)", "texte": "Présentez le déroulé : « Je vais vous présenter le poste, puis nous parlerons de votre parcours, et vous aurez un temps pour vos questions. » Un candidat qui sait où il va est un candidat qui répond mieux.", "conseil": null, "image": null },
-      { "titre": "Faire raconter des situations vécues (25 min)", "texte": "Pour chaque critère, demandez un exemple précis et vécu : « Racontez-moi une fois où vous avez géré un client mécontent. » Creusez : quel était le contexte, qu'avez-vous fait vous-même, quel a été le résultat ? Le passé prédit mieux que les intentions.", "conseil": "Méfiez-vous des réponses en « on » : ramenez toujours au « je ».", "image": "assets/images/photos/sf-entretien-rh.webp" },
-      { "titre": "Présenter le poste honnêtement (10 min)", "texte": "Décrivez le quotidien réel, y compris les contraintes : horaires, déplacements, périodes de charge. Un candidat qui accepte en connaissance de cause reste ; un candidat séduit par une version embellie part dans les six mois.", "conseil": null, "image": null },
-      { "titre": "Conclure avec un engagement daté (5 min)", "texte": "Laissez un vrai temps de questions, puis annoncez la suite : « Vous aurez une réponse d'ici vendredi. » Et tenez parole, y compris pour les refus — c'est votre réputation d'employeur qui se joue.", "conseil": "Remplissez la grille dans les 10 minutes qui suivent, jamais « en fin de journée ».", "image": null }
+      {
+        "titre": "Préparer 4 critères, pas 15",
+        "texte": "Avant l'entretien, choisissez les quatre compétences réellement décisives pour le poste et notez pour chacune une question concrète. Tout le reste s'apprend ou se vérifie autrement (tests, références, période d'essai).",
+        "conseil": "Si tout est prioritaire, rien ne l'est : quatre critères tiennent dans une tête pendant 45 minutes.",
+        "image": null
+      },
+      {
+        "titre": "Accueillir et cadrer (5 min)",
+        "texte": "Présentez le déroulé : « Je vais vous présenter le poste, puis nous parlerons de votre parcours, et vous aurez un temps pour vos questions. » Un candidat qui sait où il va est un candidat qui répond mieux.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Faire raconter des situations vécues (25 min)",
+        "texte": "Pour chaque critère, demandez un exemple précis et vécu : « Racontez-moi une fois où vous avez géré un client mécontent. » Creusez : quel était le contexte, qu'avez-vous fait vous-même, quel a été le résultat ? Le passé prédit mieux que les intentions.",
+        "conseil": "Méfiez-vous des réponses en « on » : ramenez toujours au « je ».",
+        "image": "assets/images/photos/sf-entretien-rh.webp"
+      },
+      {
+        "titre": "Présenter le poste honnêtement (10 min)",
+        "texte": "Décrivez le quotidien réel, y compris les contraintes : horaires, déplacements, périodes de charge. Un candidat qui accepte en connaissance de cause reste ; un candidat séduit par une version embellie part dans les six mois.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Conclure avec un engagement daté (5 min)",
+        "texte": "Laissez un vrai temps de questions, puis annoncez la suite : « Vous aurez une réponse d'ici vendredi. » Et tenez parole, y compris pour les refus — c'est votre réputation d'employeur qui se joue.",
+        "conseil": "Remplissez la grille dans les 10 minutes qui suivent, jamais « en fin de journée ».",
+        "image": null
+      }
     ],
-    "conseils": ["Posez les mêmes questions clés à tous les candidats d'un même poste : c'est la base de l'équité.", "Bannissez toute question sur la vie privée, la santé ou la situation familiale : illégal et sans valeur prédictive.", "Un silence de quelques secondes après une réponse amène souvent le complément le plus intéressant."],
-    "erreurs": ["Monopoliser la parole et repartir sans avoir rien appris du candidat.", "Se fier à la première impression des 30 secondes.", "Promettre une réponse rapide et laisser le candidat sans nouvelles."],
+    "conseils": [
+      "Posez les mêmes questions clés à tous les candidats d'un même poste : c'est la base de l'équité.",
+      "Bannissez toute question sur la vie privée, la santé ou la situation familiale : illégal et sans valeur prédictive.",
+      "Un silence de quelques secondes après une réponse amène souvent le complément le plus intéressant."
+    ],
+    "erreurs": [
+      "Monopoliser la parole et repartir sans avoir rien appris du candidat.",
+      "Se fier à la première impression des 30 secondes.",
+      "Promettre une réponse rapide et laisser le candidat sans nouvelles."
+    ],
     "resultat": "Une évaluation comparable d'un candidat à l'autre, une décision argumentée en comité, et des candidats — retenus ou non — qui gardent une bonne image de l'entreprise. Notre taux de rupture de période d'essai a été divisé par deux depuis que toute l'équipe utilise cette trame.",
     "image": "assets/images/photos/sf-entretien-rh.webp",
     "imageAlt": "Vue en plongée d'un entretien de recrutement dans un bureau moderne",
     "galerie": [
-      { "image": "assets/images/photos/sf-entretien-rh.webp", "alt": "Entretien structuré autour d'une grille" },
-      { "image": "assets/images/sf-resultat.svg", "alt": "Grille d'évaluation complétée" }
+      {
+        "image": "assets/images/photos/sf-entretien-rh.webp",
+        "alt": "Entretien structuré autour d'une grille"
+      },
+      {
+        "image": "assets/images/sf-resultat.svg",
+        "alt": "Grille d'évaluation complétée"
+      }
     ],
     "datePublication": "2026-07-11",
     "vues": 243,
     "statut": "publie",
     "notes": {
       "total": 17,
-      "criteres": { "clarte": 4.8, "conseils": 4.9, "facilite": 4.4, "resultat": 4.6, "generale": 4.7 },
-      "repartition": { "5": 13, "4": 3, "3": 1, "2": 0, "1": 0 }
+      "criteres": {
+        "clarte": 4.8,
+        "conseils": 4.9,
+        "facilite": 4.4,
+        "resultat": 4.6,
+        "generale": 4.7
+      },
+      "repartition": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 3,
+        "5": 13
+      }
     },
     "commentaires": [
-      { "auteur": "Gérant TPE", "date": "2026-07-14", "note": 5, "titre": "Utile pour un patron qui recrute seul", "texte": "Je recrute deux personnes par an sans service RH. La règle des 4 critères et les questions sur des situations vécues m'ont fait gagner un temps fou au dernier entretien.", "resultat": "Embauche conclue, période d'essai confirmée.", "teste": true, "reponsePro": "Merci ! Pour une TPE, je conseille aussi de faire relire la grille par un proche du métier avant l'entretien." },
-      { "auteur": "Karine L.", "date": "2026-07-12", "note": 4, "titre": "Trame solide", "texte": "Je suis assistante RH et j'ai proposé cette structure à ma responsable. Le rappel sur les questions interdites devrait être affiché dans tous les bureaux.", "resultat": null, "teste": false, "reponsePro": null }
+      {
+        "auteur": "Gérant TPE",
+        "date": "2026-07-14",
+        "note": 5,
+        "titre": "Utile pour un patron qui recrute seul",
+        "texte": "Je recrute deux personnes par an sans service RH. La règle des 4 critères et les questions sur des situations vécues m'ont fait gagner un temps fou au dernier entretien.",
+        "resultat": "Embauche conclue, période d'essai confirmée.",
+        "teste": true,
+        "reponsePro": "Merci ! Pour une TPE, je conseille aussi de faire relire la grille par un proche du métier avant l'entretien."
+      },
+      {
+        "auteur": "Karine L.",
+        "date": "2026-07-12",
+        "note": 4,
+        "titre": "Trame solide",
+        "texte": "Je suis assistante RH et j'ai proposé cette structure à ma responsable. Le rappel sur les questions interdites devrait être affiché dans tous les bureaux.",
+        "resultat": null,
+        "teste": false,
+        "reponsePro": null
+      }
     ]
   },
   {
@@ -235,45 +685,135 @@
     "resume": "Rebouchage, ponçage, sous-couche et finition : un peintre en bâtiment détaille la remise à neuf d'un mur intérieur fissuré, avec le bon ordre et les bons produits.",
     "metier": "Peintre en bâtiment",
     "categorie": "Pose & rénovation",
-    "auteur": { "nom": "Paulo Ferreira", "metier": "Peintre en bâtiment", "entreprise": "Ferreira Peinture & Déco", "entrepriseId": null, "ville": "Strasbourg" },
+    "auteur": {
+      "nom": "Paulo Ferreira",
+      "metier": "Peintre en bâtiment",
+      "entreprise": "Ferreira Peinture & Déco",
+      "entrepriseId": null,
+      "ville": "Strasbourg"
+    },
     "difficulte": "intermediaire",
     "difficulteLabel": "Intermédiaire",
     "duree": "2 jours (séchages compris)",
     "dureeDetail": [
-      { "label": "Préparation et rebouchage", "valeur": "3 h + séchage" },
-      { "label": "Sous-couche", "valeur": "1 h + 12 h de séchage" },
-      { "label": "Deux couches de finition", "valeur": "2 × 1 h 30" }
+      {
+        "label": "Préparation et rebouchage",
+        "valeur": "3 h + séchage"
+      },
+      {
+        "label": "Sous-couche",
+        "valeur": "1 h + 12 h de séchage"
+      },
+      {
+        "label": "Deux couches de finition",
+        "valeur": "2 × 1 h 30"
+      }
     ],
-    "materiel": ["Enduit de rebouchage et enduit de lissage", "Couteaux à enduire de 10 et 20 cm", "Cale et papier abrasif grain 120 puis 180", "Sous-couche adaptée au support", "Peinture de finition (mat ou velours)", "Rouleau 12 mm, brosse à réchampir, bâche et adhésif de masquage"],
+    "materiel": [
+      "Enduit de rebouchage et enduit de lissage",
+      "Couteaux à enduire de 10 et 20 cm",
+      "Cale et papier abrasif grain 120 puis 180",
+      "Sous-couche adaptée au support",
+      "Peinture de finition (mat ou velours)",
+      "Rouleau 12 mm, brosse à réchampir, bâche et adhésif de masquage"
+    ],
     "intro": "Une belle peinture, c'est 70 % de préparation et 30 % d'application. Sur un mur fissuré ou cloqué, sauter les étapes de fond se voit dès le premier rayon de soleil rasant. Voici la méthode complète que j'applique en chantier de rénovation.",
     "etapes": [
-      { "titre": "Protéger et diagnostiquer", "texte": "Bâchez le sol, masquez plinthes et interrupteurs. Grattez les parties qui s'écaillent et sondez les fissures : une fissure fine se rebouche, une fissure évolutive (plus de 2 mm, qui traverse) demande un avis avant peinture.", "conseil": null, "image": null },
-      { "titre": "Lessiver le mur", "texte": "Lessivez du bas vers le haut avec une lessive dégraissante, puis rincez à l'eau claire et laissez sécher. Peindre sur un mur gras ou poussiéreux, c'est garantir que la peinture n'accroche pas.", "conseil": "Du bas vers le haut : les coulures sur un mur sec laissent des traces définitives.", "image": null },
-      { "titre": "Reboucher puis lisser", "texte": "Ouvrez légèrement les fissures en V au grattoir, dépoussiérez, puis rebouchez en croisant les passes. Une fois sec, appliquez l'enduit de lissage en couche fine sur les zones réparées. Laissez sécher selon la notice.", "conseil": "Deux passes fines valent toujours mieux qu'une passe épaisse qui fissurera en séchant.", "image": "assets/images/photos/sf-peinture.webp" },
-      { "titre": "Poncer et dépoussiérer", "texte": "Poncez au grain 120 puis 180, en lumière rasante avec une baladeuse pour repérer les défauts. Dépoussiérez à la brosse puis au chiffon légèrement humide. Le mur doit être doux sous la paume.", "conseil": null, "image": null },
-      { "titre": "Appliquer la sous-couche", "texte": "La sous-couche uniformise la porosité entre enduits et ancien fond : sans elle, les reprises « flasheront » sous la finition. Appliquez au rouleau en passes croisées et respectez le temps de séchage complet.", "conseil": null, "image": null },
-      { "titre": "Passer les deux couches de finition", "texte": "Réchampissez les angles à la brosse, puis peignez au rouleau par zones de 1 m² en croisant : passe verticale, puis horizontale, puis lissage vertical sans recharger. Deuxième couche après séchage complet.", "conseil": "Terminez toujours votre zone par un lissage dans le même sens, vers la lumière.", "image": null }
+      {
+        "titre": "Protéger et diagnostiquer",
+        "texte": "Bâchez le sol, masquez plinthes et interrupteurs. Grattez les parties qui s'écaillent et sondez les fissures : une fissure fine se rebouche, une fissure évolutive (plus de 2 mm, qui traverse) demande un avis avant peinture.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Lessiver le mur",
+        "texte": "Lessivez du bas vers le haut avec une lessive dégraissante, puis rincez à l'eau claire et laissez sécher. Peindre sur un mur gras ou poussiéreux, c'est garantir que la peinture n'accroche pas.",
+        "conseil": "Du bas vers le haut : les coulures sur un mur sec laissent des traces définitives.",
+        "image": null
+      },
+      {
+        "titre": "Reboucher puis lisser",
+        "texte": "Ouvrez légèrement les fissures en V au grattoir, dépoussiérez, puis rebouchez en croisant les passes. Une fois sec, appliquez l'enduit de lissage en couche fine sur les zones réparées. Laissez sécher selon la notice.",
+        "conseil": "Deux passes fines valent toujours mieux qu'une passe épaisse qui fissurera en séchant.",
+        "image": "assets/images/photos/sf-peinture.webp"
+      },
+      {
+        "titre": "Poncer et dépoussiérer",
+        "texte": "Poncez au grain 120 puis 180, en lumière rasante avec une baladeuse pour repérer les défauts. Dépoussiérez à la brosse puis au chiffon légèrement humide. Le mur doit être doux sous la paume.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Appliquer la sous-couche",
+        "texte": "La sous-couche uniformise la porosité entre enduits et ancien fond : sans elle, les reprises « flasheront » sous la finition. Appliquez au rouleau en passes croisées et respectez le temps de séchage complet.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Passer les deux couches de finition",
+        "texte": "Réchampissez les angles à la brosse, puis peignez au rouleau par zones de 1 m² en croisant : passe verticale, puis horizontale, puis lissage vertical sans recharger. Deuxième couche après séchage complet.",
+        "conseil": "Terminez toujours votre zone par un lissage dans le même sens, vers la lumière.",
+        "image": null
+      }
     ],
-    "conseils": ["Achetez toute la peinture d'un coup et mélangez les pots entre eux : fini les différences de teinte.", "Retirez l'adhésif de masquage quand la peinture est encore légèrement fraîche.", "Notez la référence exacte de la teinte derrière un interrupteur pour les retouches futures."],
-    "erreurs": ["Peindre directement sur les rebouchages sans sous-couche.", "Poncer trop grossièrement et laisser des rayures visibles en lumière rasante.", "Recharger le rouleau au milieu d'une zone et laisser une surépaisseur."],
+    "conseils": [
+      "Achetez toute la peinture d'un coup et mélangez les pots entre eux : fini les différences de teinte.",
+      "Retirez l'adhésif de masquage quand la peinture est encore légèrement fraîche.",
+      "Notez la référence exacte de la teinte derrière un interrupteur pour les retouches futures."
+    ],
+    "erreurs": [
+      "Peindre directement sur les rebouchages sans sous-couche.",
+      "Poncer trop grossièrement et laisser des rayures visibles en lumière rasante.",
+      "Recharger le rouleau au milieu d'une zone et laisser une surépaisseur."
+    ],
     "resultat": "Un mur plan, uniforme, sans traces de reprise ni de rouleau, qui supporte la lumière rasante du matin. Le résultat tient des années parce que le fond a été traité, pas seulement recouvert.",
     "image": "assets/images/photos/sf-peinture.webp",
     "imageAlt": "Une main applique de la peinture au rouleau sur un mur",
     "galerie": [
-      { "image": "assets/images/photos/sf-peinture.webp", "alt": "Application de l'enduit puis de la peinture" },
-      { "image": "assets/images/sf-outils.svg", "alt": "Outillage du peintre" },
-      { "image": "assets/images/sf-resultat.svg", "alt": "Mur terminé et uniforme" }
+      {
+        "image": "assets/images/photos/sf-peinture.webp",
+        "alt": "Application de l'enduit puis de la peinture"
+      },
+      {
+        "image": "assets/images/sf-outils.svg",
+        "alt": "Outillage du peintre"
+      },
+      {
+        "image": "assets/images/sf-resultat.svg",
+        "alt": "Mur terminé et uniforme"
+      }
     ],
     "datePublication": "2026-06-20",
     "vues": 305,
     "statut": "publie",
     "notes": {
       "total": 13,
-      "criteres": { "clarte": 4.5, "conseils": 4.7, "facilite": 3.9, "resultat": 4.6, "generale": 4.4 },
-      "repartition": { "5": 7, "4": 5, "3": 1, "2": 0, "1": 0 }
+      "criteres": {
+        "clarte": 4.5,
+        "conseils": 4.7,
+        "facilite": 3.9,
+        "resultat": 4.6,
+        "generale": 4.4
+      },
+      "repartition": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 5,
+        "5": 7
+      }
     },
     "commentaires": [
-      { "auteur": "Steph & Manon", "date": "2026-06-26", "note": 5, "titre": "Notre salon est méconnaissable", "texte": "On avait toujours repeint « directement ». Avec la sous-couche et le ponçage en lumière rasante, la différence est spectaculaire. Deux jours bien investis.", "resultat": "Mur du salon rénové, aucune trace de reprise.", "teste": true, "reponsePro": "Bravo à vous deux ! Le coup de la baladeuse en lumière rasante, c'est le secret le mieux gardé du métier." }
+      {
+        "auteur": "Steph & Manon",
+        "date": "2026-06-26",
+        "note": 5,
+        "titre": "Notre salon est méconnaissable",
+        "texte": "On avait toujours repeint « directement ». Avec la sous-couche et le ponçage en lumière rasante, la différence est spectaculaire. Deux jours bien investis.",
+        "resultat": "Mur du salon rénové, aucune trace de reprise.",
+        "teste": true,
+        "reponsePro": "Bravo à vous deux ! Le coup de la baladeuse en lumière rasante, c'est le secret le mieux gardé du métier."
+      }
     ]
   },
   {
@@ -282,44 +822,132 @@
     "resume": "Arborescence en 3 niveaux, règles de nommage et dossier « en attente de classement » : la méthode d'un assistant administratif pour que chacun retrouve n'importe quel document en moins d'une minute.",
     "metier": "Assistant administratif",
     "categorie": "Organisation & méthodes",
-    "auteur": { "nom": "David Lemoine", "metier": "Assistant administratif", "entreprise": "Assurances Percheron", "entrepriseId": "assurances-percheron", "ville": "Marseille" },
+    "auteur": {
+      "nom": "David Lemoine",
+      "metier": "Assistant administratif",
+      "entreprise": "Assurances Percheron",
+      "entrepriseId": "assurances-percheron",
+      "ville": "Marseille"
+    },
     "difficulte": "facile",
     "difficulteLabel": "Facile",
     "duree": "Une demi-journée de mise en place",
     "dureeDetail": [
-      { "label": "Conception de l'arborescence", "valeur": "1 h 30" },
-      { "label": "Migration des fichiers existants", "valeur": "2 h" },
-      { "label": "Rédaction de la règle de nommage", "valeur": "30 min" }
+      {
+        "label": "Conception de l'arborescence",
+        "valeur": "1 h 30"
+      },
+      {
+        "label": "Migration des fichiers existants",
+        "valeur": "2 h"
+      },
+      {
+        "label": "Rédaction de la règle de nommage",
+        "valeur": "30 min"
+      }
     ],
-    "materiel": ["Le serveur ou l'espace en ligne existant de l'entreprise", "Une page de règles de nommage (modèle fourni dans les étapes)", "L'accord de l'équipe — indispensable"],
+    "materiel": [
+      "Le serveur ou l'espace en ligne existant de l'entreprise",
+      "Une page de règles de nommage (modèle fourni dans les étapes)",
+      "L'accord de l'équipe — indispensable"
+    ],
     "intro": "Le test qui ne pardonne pas : si votre collègue part deux semaines en congés, retrouvez-vous ses dossiers ? Dans la plupart des TPE, la réponse est non. Ce plan de classement, mis en place dans notre cabinet de 22 personnes, tient en trois règles simples que tout le monde peut appliquer.",
     "etapes": [
-      { "titre": "Limiter l'arborescence à 3 niveaux", "texte": "Niveau 1 : le domaine (Clients, Fournisseurs, RH, Comptabilité…). Niveau 2 : l'entité (le nom du client, du salarié…). Niveau 3 : l'année ou le type de document. Au-delà de trois clics, personne ne range plus rien.", "conseil": "Numérotez les dossiers de niveau 1 (01-Clients, 02-Fournisseurs…) : l'ordre reste stable partout.", "image": null },
-      { "titre": "Fixer une règle de nommage unique", "texte": "Adoptez le format AAAA-MM-JJ_Type_Objet : « 2026-03-15_Devis_Reparation-toiture.pdf ». La date en premier trie chronologiquement tout seul, le type permet de chercher tous les devis d'un dossier en un mot-clé.", "conseil": "Interdisez les mots « final », « vraiment-final » et « v2-ok » : la date fait foi, rien d'autre.", "image": "assets/images/photos/sf-classement.webp" },
-      { "titre": "Créer le sas « À classer »", "texte": "Un unique dossier « 00-A-classer » par personne sert de sas pour les fichiers reçus dans l'urgence. Règle du jeu : il doit être vide chaque vendredi à 17 h. Ce sas évite que le bureau et les téléchargements deviennent des zones de non-droit.", "conseil": null, "image": null },
-      { "titre": "Migrer l'existant sans tout reprendre", "texte": "Ne reclassez pas dix ans d'archives : créez un dossier « Archives-avant-2026 » en l'état, et appliquez le nouveau plan uniquement aux documents actifs. La recherche par mot-clé se charge du passé.", "conseil": "Vouloir tout reprendre est la première cause d'abandon du projet.", "image": null },
-      { "titre": "Écrire la règle sur une page et la faire vivre", "texte": "Rédigez le plan et la règle de nommage sur une seule page, affichée et rangée à la racine du serveur. À chaque nouvelle arrivée dans l'équipe, c'est le document remis le premier jour.", "conseil": null, "image": null }
+      {
+        "titre": "Limiter l'arborescence à 3 niveaux",
+        "texte": "Niveau 1 : le domaine (Clients, Fournisseurs, RH, Comptabilité…). Niveau 2 : l'entité (le nom du client, du salarié…). Niveau 3 : l'année ou le type de document. Au-delà de trois clics, personne ne range plus rien.",
+        "conseil": "Numérotez les dossiers de niveau 1 (01-Clients, 02-Fournisseurs…) : l'ordre reste stable partout.",
+        "image": null
+      },
+      {
+        "titre": "Fixer une règle de nommage unique",
+        "texte": "Adoptez le format AAAA-MM-JJ_Type_Objet : « 2026-03-15_Devis_Reparation-toiture.pdf ». La date en premier trie chronologiquement tout seul, le type permet de chercher tous les devis d'un dossier en un mot-clé.",
+        "conseil": "Interdisez les mots « final », « vraiment-final » et « v2-ok » : la date fait foi, rien d'autre.",
+        "image": "assets/images/photos/sf-classement.webp"
+      },
+      {
+        "titre": "Créer le sas « À classer »",
+        "texte": "Un unique dossier « 00-A-classer » par personne sert de sas pour les fichiers reçus dans l'urgence. Règle du jeu : il doit être vide chaque vendredi à 17 h. Ce sas évite que le bureau et les téléchargements deviennent des zones de non-droit.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Migrer l'existant sans tout reprendre",
+        "texte": "Ne reclassez pas dix ans d'archives : créez un dossier « Archives-avant-2026 » en l'état, et appliquez le nouveau plan uniquement aux documents actifs. La recherche par mot-clé se charge du passé.",
+        "conseil": "Vouloir tout reprendre est la première cause d'abandon du projet.",
+        "image": null
+      },
+      {
+        "titre": "Écrire la règle sur une page et la faire vivre",
+        "texte": "Rédigez le plan et la règle de nommage sur une seule page, affichée et rangée à la racine du serveur. À chaque nouvelle arrivée dans l'équipe, c'est le document remis le premier jour.",
+        "conseil": null,
+        "image": null
+      }
     ],
-    "conseils": ["Le meilleur plan de classement est celui que la personne la plus pressée de l'équipe accepte de suivre.", "Faites une revue de 15 minutes par trimestre : un dossier de niveau 2 qui déborde mérite peut-être un sous-niveau.", "Les documents engageants (contrats, avenants) se classent le jour même, sans passer par le sas."],
-    "erreurs": ["Créer une arborescence de 6 niveaux « pour être précis » que personne ne suivra.", "Laisser chacun garder « son » classement personnel en parallèle.", "Classer par logiciel ou par personne plutôt que par domaine : les outils et les collègues changent, les domaines restent."],
+    "conseils": [
+      "Le meilleur plan de classement est celui que la personne la plus pressée de l'équipe accepte de suivre.",
+      "Faites une revue de 15 minutes par trimestre : un dossier de niveau 2 qui déborde mérite peut-être un sous-niveau.",
+      "Les documents engageants (contrats, avenants) se classent le jour même, sans passer par le sas."
+    ],
+    "erreurs": [
+      "Créer une arborescence de 6 niveaux « pour être précis » que personne ne suivra.",
+      "Laisser chacun garder « son » classement personnel en parallèle.",
+      "Classer par logiciel ou par personne plutôt que par domaine : les outils et les collègues changent, les domaines restent."
+    ],
     "resultat": "N'importe quel document actif retrouvé en moins d'une minute, par n'importe quel membre de l'équipe, même pendant les congés du titulaire du dossier. Le plan tient depuis deux ans sans dérive, revues trimestrielles comprises.",
     "image": "assets/images/photos/sf-classement.webp",
     "imageAlt": "Classeurs de bureau soigneusement étiquetés et rangés",
     "galerie": [
-      { "image": "assets/images/photos/sf-classement.webp", "alt": "Arborescence en trois niveaux" },
-      { "image": "assets/images/sf-resultat.svg", "alt": "Page de règles de nommage affichée" }
+      {
+        "image": "assets/images/photos/sf-classement.webp",
+        "alt": "Arborescence en trois niveaux"
+      },
+      {
+        "image": "assets/images/sf-resultat.svg",
+        "alt": "Page de règles de nommage affichée"
+      }
     ],
     "datePublication": "2026-07-02",
     "vues": 221,
     "statut": "publie",
     "notes": {
       "total": 16,
-      "criteres": { "clarte": 4.7, "conseils": 4.6, "facilite": 4.7, "resultat": 4.5, "generale": 4.6 },
-      "repartition": { "5": 11, "4": 4, "3": 1, "2": 0, "1": 0 }
+      "criteres": {
+        "clarte": 4.7,
+        "conseils": 4.6,
+        "facilite": 4.7,
+        "resultat": 4.5,
+        "generale": 4.6
+      },
+      "repartition": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 4,
+        "5": 11
+      }
     },
     "commentaires": [
-      { "auteur": "Isabelle", "date": "2026-07-08", "note": 5, "titre": "Adopté au cabinet", "texte": "Secrétaire dans un cabinet médical, j'ai appliqué la règle de nommage et le sas « À classer ». L'astuce des dossiers numérotés est toute bête et change tout.", "resultat": "Serveur réorganisé en une matinée.", "teste": true, "reponsePro": "Merci Isabelle ! Dans le médical, pensez à ajouter l'identifiant patient dans l'objet du fichier, jamais dans le nom du dossier partagé." },
-      { "auteur": "Tom", "date": "2026-07-05", "note": 4, "titre": "Simple et applicable", "texte": "La règle des 3 niveaux nous a obligés à simplifier, et honnêtement ça fait du bien. On a gardé un niveau 4 pour un seul gros client, l'exception confirme la règle.", "resultat": null, "teste": true, "reponsePro": null }
+      {
+        "auteur": "Isabelle",
+        "date": "2026-07-08",
+        "note": 5,
+        "titre": "Adopté au cabinet",
+        "texte": "Secrétaire dans un cabinet médical, j'ai appliqué la règle de nommage et le sas « À classer ». L'astuce des dossiers numérotés est toute bête et change tout.",
+        "resultat": "Serveur réorganisé en une matinée.",
+        "teste": true,
+        "reponsePro": "Merci Isabelle ! Dans le médical, pensez à ajouter l'identifiant patient dans l'objet du fichier, jamais dans le nom du dossier partagé."
+      },
+      {
+        "auteur": "Tom",
+        "date": "2026-07-05",
+        "note": 4,
+        "titre": "Simple et applicable",
+        "texte": "La règle des 3 niveaux nous a obligés à simplifier, et honnêtement ça fait du bien. On a gardé un niveau 4 pour un seul gros client, l'exception confirme la règle.",
+        "resultat": null,
+        "teste": true,
+        "reponsePro": null
+      }
     ]
   },
   {
@@ -328,48 +956,263 @@
     "resume": "Choix des vivaces, préparation du sol drainant et paillage minéral : une paysagiste explique pas à pas la création d'un massif durable, beau toute l'année et presque sans entretien.",
     "metier": "Paysagiste",
     "categorie": "Aménagement & extérieur",
-    "auteur": { "nom": "Émilie Roche", "metier": "Paysagiste", "entreprise": "Les Jardins d'Émilie", "entrepriseId": null, "ville": "Toulouse" },
+    "auteur": {
+      "nom": "Émilie Roche",
+      "metier": "Paysagiste",
+      "entreprise": "Les Jardins d'Émilie",
+      "entrepriseId": null,
+      "ville": "Toulouse"
+    },
     "difficulte": "confirme",
     "difficulteLabel": "Confirmé",
     "duree": "Un week-end pour 10 m²",
     "dureeDetail": [
-      { "label": "Préparation du sol", "valeur": "1 journée" },
-      { "label": "Plantation", "valeur": "3 h" },
-      { "label": "Paillage et finitions", "valeur": "2 h" }
+      {
+        "label": "Préparation du sol",
+        "valeur": "1 journée"
+      },
+      {
+        "label": "Plantation",
+        "valeur": "3 h"
+      },
+      {
+        "label": "Paillage et finitions",
+        "valeur": "2 h"
+      }
     ],
-    "materiel": ["Bêche, croc et râteau", "Gravier concassé 10/20 (drainage) et pouzzolane ou gravier décoratif (paillage)", "Toile de paillage biodégradable (facultatif)", "Vivaces adaptées au sec : lavande, gaura, euphorbe, sauge de Jérusalem, achillée, stipa", "Compost mûr (une brouette pour 10 m²)"],
+    "materiel": [
+      "Bêche, croc et râteau",
+      "Gravier concassé 10/20 (drainage) et pouzzolane ou gravier décoratif (paillage)",
+      "Toile de paillage biodégradable (facultatif)",
+      "Vivaces adaptées au sec : lavande, gaura, euphorbe, sauge de Jérusalem, achillée, stipa",
+      "Compost mûr (une brouette pour 10 m²)"
+    ],
     "intro": "Avec les étés toulousains, j'ai arrêté de proposer des massifs qui réclament l'arrosage quotidien. Un massif sec bien conçu demande de l'eau la première année, puis plus rien — à condition de soigner le drainage et de choisir des plantes qui aiment vraiment la sécheresse, pas seulement qui la tolèrent.",
     "etapes": [
-      { "titre": "Choisir l'emplacement et dessiner", "texte": "Un massif sec veut du soleil au moins 6 heures par jour et déteste les cuvettes où l'eau stagne l'hiver. Dessinez des courbes larges plutôt que des lignes droites, et prévoyez la hauteur adulte des plantes : les grandes (gaura, stipa) au fond ou au centre.", "conseil": null, "image": null },
-      { "titre": "Préparer un sol qui draine", "texte": "Décaissez sur 25 cm, ameublissez le fond au croc, puis incorporez un tiers de gravier concassé à la terre sur toute la profondeur. En sol argileux, montez le massif en butte de 15 à 20 cm : la pluie doit fuir, pas s'installer.", "conseil": "C'est l'humidité de l'hiver qui tue les plantes de sec, pas le froid : le drainage n'est pas négociable.", "image": "assets/images/photos/sf-jardin.webp" },
-      { "titre": "Planter serré, mais pas trop", "texte": "Plantez en godets plutôt qu'en gros sujets : ils s'enracinent mieux. Comptez 5 à 6 plants par m², en groupes impairs de 3 ou 5 de la même variété. Habillez les racines, arrosez copieusement à la plantation — c'est le seul grand arrosage de leur vie.", "conseil": "Un godet à 3 € rattrape un pot de 3 litres en deux saisons, pour cinq fois moins cher.", "image": null },
-      { "titre": "Pailler en minéral", "texte": "Étalez 5 à 7 cm de pouzzolane ou de gravier sur toute la surface, en dégageant le collet des plantes. Le paillage minéral garde la fraîcheur, bloque les herbes indésirables et restitue la chaleur qu'aiment ces plantes.", "conseil": null, "image": null },
-      { "titre": "Accompagner la première année", "texte": "Arrosez une fois tous les 15 jours le premier été, seulement si les jeunes pousses fatiguent. Dès la deuxième année : plus d'arrosage, une taille légère des lavandes après floraison, et le nettoyage des graminées en mars. C'est tout.", "conseil": "Résistez à l'envie d'arroser « pour faire plaisir » : les racines doivent descendre chercher l'eau.", "image": null }
+      {
+        "titre": "Choisir l'emplacement et dessiner",
+        "texte": "Un massif sec veut du soleil au moins 6 heures par jour et déteste les cuvettes où l'eau stagne l'hiver. Dessinez des courbes larges plutôt que des lignes droites, et prévoyez la hauteur adulte des plantes : les grandes (gaura, stipa) au fond ou au centre.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Préparer un sol qui draine",
+        "texte": "Décaissez sur 25 cm, ameublissez le fond au croc, puis incorporez un tiers de gravier concassé à la terre sur toute la profondeur. En sol argileux, montez le massif en butte de 15 à 20 cm : la pluie doit fuir, pas s'installer.",
+        "conseil": "C'est l'humidité de l'hiver qui tue les plantes de sec, pas le froid : le drainage n'est pas négociable.",
+        "image": "assets/images/photos/sf-jardin.webp"
+      },
+      {
+        "titre": "Planter serré, mais pas trop",
+        "texte": "Plantez en godets plutôt qu'en gros sujets : ils s'enracinent mieux. Comptez 5 à 6 plants par m², en groupes impairs de 3 ou 5 de la même variété. Habillez les racines, arrosez copieusement à la plantation — c'est le seul grand arrosage de leur vie.",
+        "conseil": "Un godet à 3 € rattrape un pot de 3 litres en deux saisons, pour cinq fois moins cher.",
+        "image": null
+      },
+      {
+        "titre": "Pailler en minéral",
+        "texte": "Étalez 5 à 7 cm de pouzzolane ou de gravier sur toute la surface, en dégageant le collet des plantes. Le paillage minéral garde la fraîcheur, bloque les herbes indésirables et restitue la chaleur qu'aiment ces plantes.",
+        "conseil": null,
+        "image": null
+      },
+      {
+        "titre": "Accompagner la première année",
+        "texte": "Arrosez une fois tous les 15 jours le premier été, seulement si les jeunes pousses fatiguent. Dès la deuxième année : plus d'arrosage, une taille légère des lavandes après floraison, et le nettoyage des graminées en mars. C'est tout.",
+        "conseil": "Résistez à l'envie d'arroser « pour faire plaisir » : les racines doivent descendre chercher l'eau.",
+        "image": null
+      }
     ],
-    "conseils": ["Achetez vos plantes chez un producteur local : elles sont déjà acclimatées à votre région.", "Trois variétés en grande quantité font plus d'effet que quinze variétés en un exemplaire.", "Gardez une zone du massif sans paillage pour les semis spontanés : le massif se renouvellera tout seul."],
-    "erreurs": ["Planter des vivaces de sec dans une terre riche et arrosée : elles filent, s'affaissent et meurent en deux ans.", "Poser une bâche plastique sous le gravier : le sol meurt dessous, l'eau ruisselle.", "Tailler les lavandes dans le vieux bois : elles ne repartent jamais."],
+    "conseils": [
+      "Achetez vos plantes chez un producteur local : elles sont déjà acclimatées à votre région.",
+      "Trois variétés en grande quantité font plus d'effet que quinze variétés en un exemplaire.",
+      "Gardez une zone du massif sans paillage pour les semis spontanés : le massif se renouvellera tout seul."
+    ],
+    "erreurs": [
+      "Planter des vivaces de sec dans une terre riche et arrosée : elles filent, s'affaissent et meurent en deux ans.",
+      "Poser une bâche plastique sous le gravier : le sol meurt dessous, l'eau ruisselle.",
+      "Tailler les lavandes dans le vieux bois : elles ne repartent jamais."
+    ],
     "resultat": "Un massif structuré, fleuri de mai à octobre, qui bruisse de pollinisateurs et traverse les canicules sans une goutte d'eau à partir de la deuxième année. L'entretien annuel tient en une matinée.",
     "image": "assets/images/photos/sf-jardin.webp",
     "imageAlt": "Des mains plantent de jeunes plants dans la terre du jardin",
     "galerie": [
-      { "image": "assets/images/photos/sf-jardin.webp", "alt": "Le massif sec en fleur" },
-      { "image": "assets/images/sf-outils.svg", "alt": "Outillage de plantation" },
-      { "image": "assets/images/sf-resultat.svg", "alt": "Vue d'ensemble du massif terminé" }
+      {
+        "image": "assets/images/photos/sf-jardin.webp",
+        "alt": "Le massif sec en fleur"
+      },
+      {
+        "image": "assets/images/sf-outils.svg",
+        "alt": "Outillage de plantation"
+      },
+      {
+        "image": "assets/images/sf-resultat.svg",
+        "alt": "Vue d'ensemble du massif terminé"
+      }
     ],
     "datePublication": "2026-06-14",
     "vues": 389,
     "statut": "publie",
     "notes": {
       "total": 21,
-      "criteres": { "clarte": 4.6, "conseils": 4.8, "facilite": 3.7, "resultat": 4.8, "generale": 4.6 },
-      "repartition": { "5": 15, "4": 4, "3": 1, "2": 1, "1": 0 }
+      "criteres": {
+        "clarte": 4.6,
+        "conseils": 4.8,
+        "facilite": 3.7,
+        "resultat": 4.8,
+        "generale": 4.6
+      },
+      "repartition": {
+        "1": 0,
+        "2": 1,
+        "3": 1,
+        "4": 4,
+        "5": 15
+      }
     },
     "commentaires": [
-      { "auteur": "Bernard34", "date": "2026-06-22", "note": 5, "titre": "Le drainage, encore le drainage", "texte": "J'avais perdu deux lavandes l'hiver dernier, je comprends enfin pourquoi. Massif refait en butte avec le gravier dans la terre : tout a bien repris.", "resultat": "10 m² plantés, reprise à 100 % après un mois.", "teste": true, "reponsePro": "Exactement Bernard : chez nous c'est presque toujours l'eau d'hiver qui tue, jamais le sec d'été. Belle continuation à votre massif !" },
-      { "auteur": "Chloé", "date": "2026-06-17", "note": 4, "titre": "Superbe, mais physique", "texte": "Le décaissement sur 25 cm, c'est du sport ! Le résultat en vaut la peine. La liste de plantes est parfaite pour le Sud-Ouest.", "resultat": "Massif de 8 m² réalisé sur deux week-ends.", "teste": true, "reponsePro": null }
+      {
+        "auteur": "Bernard34",
+        "date": "2026-06-22",
+        "note": 5,
+        "titre": "Le drainage, encore le drainage",
+        "texte": "J'avais perdu deux lavandes l'hiver dernier, je comprends enfin pourquoi. Massif refait en butte avec le gravier dans la terre : tout a bien repris.",
+        "resultat": "10 m² plantés, reprise à 100 % après un mois.",
+        "teste": true,
+        "reponsePro": "Exactement Bernard : chez nous c'est presque toujours l'eau d'hiver qui tue, jamais le sec d'été. Belle continuation à votre massif !"
+      },
+      {
+        "auteur": "Chloé",
+        "date": "2026-06-17",
+        "note": 4,
+        "titre": "Superbe, mais physique",
+        "texte": "Le décaissement sur 25 cm, c'est du sport ! Le résultat en vaut la peine. La liste de plantes est parfaite pour le Sud-Ouest.",
+        "resultat": "Massif de 8 m² réalisé sur deux week-ends.",
+        "teste": true,
+        "reponsePro": null
+      }
     ]
+  },
+  {
+    "id": "cloture-comptable-fiduciaire",
+    "titre": "Préparer une clôture comptable mensuelle : notre méthode",
+    "resume": "La méthode de notre cabinet pour fiabiliser une clôture mensuelle : des contrôles préparatoires à la synthèse remise au client, étape par étape.",
+    "metier": "Collaborateur comptable",
+    "categorie": "Organisation & méthodes",
+    "auteur": {
+      "nom": "Fiduciaire Bellecour",
+      "metier": "Cabinet d'expertise comptable",
+      "entreprise": "Fiduciaire Bellecour",
+      "entrepriseId": "fiduciaire-bellecour",
+      "ville": "Lyon"
+    },
+    "difficulte": "intermediaire",
+    "difficulteLabel": "Intermédiaire",
+    "duree": "45 minutes",
+    "dureeDetail": [
+      {
+        "label": "Contrôle des pièces",
+        "valeur": "15 min"
+      },
+      {
+        "label": "Rapprochements & révision",
+        "valeur": "25 min"
+      },
+      {
+        "label": "Synthèse",
+        "valeur": "5 min"
+      }
+    ],
+    "materiel": [
+      "Balance générale du mois",
+      "Relevés bancaires",
+      "Justificatifs et factures",
+      "Logiciel comptable (Sage / Cegid)"
+    ],
+    "intro": "Une clôture mensuelle fiable évite les mauvaises surprises au bilan. Voici la méthode que nous appliquons chez Fiduciaire Bellecour pour chaque dossier, afin de livrer au client une situation juste et exploitable.",
+    "etapes": [
+      {
+        "titre": "1. Contrôler les pièces",
+        "texte": "Vérifiez que toutes les pièces du mois sont saisies et rattachées au bon dossier : factures d'achat et de vente, notes de frais, relevés. Repérez les pièces manquantes et relancez le client.",
+        "conseil": "Une pièce manquante repérée tôt évite une écriture d'attente à corriger plus tard.",
+        "image": null
+      },
+      {
+        "titre": "2. Vérifier les rapprochements bancaires",
+        "texte": "Rapprochez chaque compte bancaire avec les relevés : le solde comptable doit correspondre au solde réel. Justifiez chaque écart (chèques non débités, virements en cours).",
+        "conseil": "Un rapprochement non soldé cache souvent une double saisie ou un oubli.",
+        "image": null
+      },
+      {
+        "titre": "3. Passer les écritures manquantes",
+        "texte": "Enregistrez les écritures récurrentes : abonnements, amortissements du mois, provisions, salaires et charges sociales. Contrôlez la TVA collectée et déductible.",
+        "conseil": "Tenez une check-list des récurrences par dossier pour ne rien oublier.",
+        "image": null
+      },
+      {
+        "titre": "4. Contrôler les comptes",
+        "texte": "Analysez les comptes de tiers (clients, fournisseurs) et les comptes sensibles (attente, 471). Lettrez ce qui peut l'être et justifiez les soldes anormaux.",
+        "conseil": "Un compte d'attente doit toujours revenir à zéro avant la clôture.",
+        "image": null
+      },
+      {
+        "titre": "5. Préparer la synthèse",
+        "texte": "Éditez la balance et un tableau de bord simple (chiffre d'affaires, marge, trésorerie) et rédigez un court commentaire pour le client. Archivez les justificatifs de clôture.",
+        "conseil": "Un commentaire clair vaut mieux qu'un tableau que le client ne lira pas.",
+        "image": null
+      }
+    ],
+    "conseils": [
+      "Toujours partir d'une check-list par dossier.",
+      "Justifier chaque solde plutôt que « forcer » un rapprochement.",
+      "Documenter la clôture pour le collaborateur qui reprendra le dossier."
+    ],
+    "erreurs": [
+      "Clôturer avec un compte d'attente non soldé.",
+      "Oublier les écritures récurrentes (amortissements, provisions).",
+      "Ne pas relancer le client pour les pièces manquantes."
+    ],
+    "resultat": "Une situation mensuelle fiable, des comptes justifiés et une synthèse claire remise au client dans les délais.",
+    "image": "assets/images/sf-atelier.svg",
+    "imageAlt": "Poste de travail comptable pendant une clôture",
+    "galerie": [
+      {
+        "image": "assets/images/sf-atelier.svg",
+        "alt": "Poste de travail comptable"
+      },
+      {
+        "image": "assets/images/sf-resultat.svg",
+        "alt": "Synthèse de clôture remise au client"
+      }
+    ],
+    "datePublication": "2026-08-13",
+    "vues": 214,
+    "notes": {
+      "total": 12,
+      "criteres": {
+        "clarte": 4.8,
+        "conseils": 4.7,
+        "facilite": 4.2,
+        "resultat": 4.6,
+        "generale": 4.6
+      },
+      "repartition": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 3,
+        "5": 8
+      }
+    },
+    "commentaires": [
+      {
+        "auteur": "Nadia C.",
+        "date": "2026-08-05",
+        "note": 5,
+        "titre": "Check-list adoptée",
+        "texte": "La check-list des récurrences m'a fait gagner un temps fou sur mes clôtures.",
+        "resultat": "Clôtures plus rapides et plus sûres.",
+        "teste": true,
+        "reponsePro": "Merci Nadia ! Pensez à la personnaliser par typologie de client."
+      }
+    ],
+    "statut": "publie"
   }
 ]
-
-
-
