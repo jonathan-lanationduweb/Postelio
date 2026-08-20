@@ -223,6 +223,29 @@
         if (b) { b.href = contactHref; }
       });
 
+      /* Suivre l'entreprise (candidats connectés uniquement, §23). */
+      var followBtn = document.getElementById("company-follow-btn");
+      if (followBtn && window.SS && SS.auth && SS.auth.isCandidate && SS.auth.isCandidate()) {
+        var FOLLOWED_KEY = "ss_candidate_followed";
+        followBtn.hidden = false;
+        var syncFollow = function () {
+          var list = SS.store.get(FOLLOWED_KEY, []) || [];
+          var on = list.indexOf(company.id) !== -1;
+          followBtn.textContent = on ? "✓ Entreprise suivie" : "Suivre cette entreprise";
+          followBtn.setAttribute("aria-pressed", on ? "true" : "false");
+          followBtn.classList.toggle("is-following", on);
+        };
+        syncFollow();
+        followBtn.addEventListener("click", function () {
+          var list = SS.store.get(FOLLOWED_KEY, []) || [];
+          var i = list.indexOf(company.id);
+          if (i === -1) { list.push(company.id); SS.toast("Vous suivez désormais " + company.nom + "."); }
+          else { list.splice(i, 1); SS.toast("Vous ne suivez plus " + company.nom + "."); }
+          SS.store.set(FOLLOWED_KEY, list);
+          syncFollow();
+        });
+      }
+
       /* Offres actuellement disponibles — même composant que la page Offres. */
       var offersBox = document.getElementById("company-offers");
       var companyOffers = offers.filter(function (o) { return o.entrepriseId === company.id; });

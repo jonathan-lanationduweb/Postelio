@@ -70,6 +70,14 @@
 /* CTA « voir toutes les offres » sous les recommandations */
 .cand-reco-more { margin-top: var(--sp-3); }
 
+/* Entreprises suivies */
+.followed-card { padding: var(--sp-4); display: flex; justify-content: space-between; gap: var(--sp-4); align-items: center; flex-wrap: wrap; }
+.followed-card + .followed-card { margin-top: var(--sp-3); }
+.followed-card__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.followed-card__body > strong { color: var(--c-primary-dark); }
+.followed-card__new { font-size: var(--text-sm); color: var(--c-primary); font-weight: 600; }
+.followed-card__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+
 /* Sous-titre de section avec lien d'action à droite. */
 .cand-subhead {
   display: flex;

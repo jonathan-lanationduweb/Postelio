@@ -251,6 +251,7 @@
 .badge--confirme { background: #efe6f0; color: #6b4e71; }
 .badge--moderation { background: var(--c-info-soft); color: var(--c-ink-soft); border: 1px dashed var(--c-border-strong); }
 .badge--verified { background: var(--c-primary-soft); color: var(--c-primary-dark); font-weight: 700; }
+.btn.is-following { background: var(--c-primary-soft); border-color: var(--c-primary); color: var(--c-primary-dark); }
 .verified-note { display: inline-block; margin: 0 0 var(--sp-3); }
 .verified-tick {
   display: inline-grid; place-items: center; width: 18px; height: 18px; vertical-align: middle;

@@ -40,6 +40,7 @@
     initToasts();
     renderRecommendations();
     renderFavorites();
+    renderFollowedCompanies();
     renderAlerts();
     bindAlertForm();
     renderProfile();
@@ -112,7 +113,11 @@
         { metier: "Développeur web", lieu: "Lyon", rayon: "30", contrat: "CDI", teletravail: true, frequence: "quotidienne" }
       ]);
     }
+    if (!SS.store.get(FOLLOWED_KEY, null)) {
+      SS.store.set(FOLLOWED_KEY, ["fiduciaire-bellecour"]);
+    }
   }
+  var FOLLOWED_KEY = "ss_candidate_followed";
 
   function defaultApplications() {
     return [
@@ -1109,6 +1114,53 @@
       box.innerHTML = html || '<div class="empty-state"><p>Vos offres favorites ne sont plus disponibles.</p></div>';
       box.querySelectorAll("[data-unfav]").forEach(function (btn) {
         btn.addEventListener("click", function () { toggleFavorite(btn.getAttribute("data-unfav")); });
+      });
+    }).catch(function () { SS.dataError(box); });
+  }
+
+  /* ---- Entreprises suivies (§23) ---- */
+  function renderFollowedCompanies() {
+    var box = document.getElementById("followed-companies");
+    if (!box) { return; }
+    var followed = SS.store.get(FOLLOWED_KEY, []) || [];
+    if (!followed.length) {
+      box.innerHTML = '<div class="empty-state empty-state--inline"><p>Vous ne suivez aucune entreprise.</p>' +
+        '<p><a class="btn btn-outline btn-sm" href="entreprises.html">Découvrir des entreprises</a></p></div>';
+      return;
+    }
+    var e = SS.escapeHtml;
+    Promise.all([SS.getCompanies(), SS.getActiveOffers()]).then(function (res) {
+      var companies = res[0] || [], offers = res[1] || [];
+      var byId = {}; companies.forEach(function (c) { byId[c.id] = c; });
+      box.innerHTML = followed.map(function (id) {
+        var c = byId[id];
+        if (!c) { return ""; }
+        var comp = offers.filter(function (o) { return o.entrepriseId === id; })
+          .sort(function (a, b) { return new Date(b.datePublication) - new Date(a.datePublication); });
+        var newest = comp[0];
+        var hint = comp.length
+          ? '<span class="followed-card__new">' + comp.length + " offre" + (comp.length > 1 ? "s" : "") + " en ligne" + (newest ? " · dernière publiée " + e(SS.relativeDate(newest.datePublication)) : "") + "</span>"
+          : '<span class="text-muted">Aucune offre en ce moment.</span>';
+        return '<article class="card followed-card">' +
+            '<div class="followed-card__body">' +
+              "<strong>" + e(c.nom) + (c.verifie ? ' <span class="verified-tick" title="' + e(c.verifieLabel || "Entreprise vérifiée") + '">✓</span>' : "") + "</strong>" +
+              '<span class="text-muted">' + e(c.secteur) + " · " + e(c.ville) + "</span>" +
+              hint +
+            "</div>" +
+            '<div class="followed-card__actions">' +
+              (newest ? '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(newest.id) + '">Voir l\'offre</a>' : "") +
+              '<a class="btn btn-ghost btn-sm" href="entreprise-detail.html?id=' + encodeURIComponent(c.id) + '">Voir la fiche</a>' +
+              '<button type="button" class="btn btn-ghost btn-sm" data-unfollow="' + e(c.id) + '">Ne plus suivre</button>' +
+            "</div>" +
+          "</article>";
+      }).join("") || '<div class="empty-state empty-state--inline"><p>Ces entreprises ne sont plus disponibles.</p></div>';
+      box.querySelectorAll("[data-unfollow]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var next = (SS.store.get(FOLLOWED_KEY, []) || []).filter(function (x) { return x !== btn.getAttribute("data-unfollow"); });
+          SS.store.set(FOLLOWED_KEY, next);
+          renderFollowedCompanies();
+          SS.toast("Vous ne suivez plus cette entreprise.");
+        });
       });
     }).catch(function () { SS.dataError(box); });
   }
