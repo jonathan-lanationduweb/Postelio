@@ -783,7 +783,29 @@ a.dash-nav__group:focus-visible { outline: none; box-shadow: var(--shadow-focus)
   .todo-item__action { margin-left: auto; }
 }
 
-/* ---- Mes offres : cartes enrichies ---- */
+/* ---- Mes offres : actions rapides, onglets, cartes enrichies ---- */
+.offers-quick { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.offers-menu { position: relative; }
+.offers-menu > summary { list-style: none; cursor: pointer; }
+.offers-menu > summary::-webkit-details-marker { display: none; }
+.offers-menu__pop {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20;
+  min-width: 220px; max-height: 300px; overflow: auto;
+  background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-m); padding: var(--sp-2);
+}
+.offers-menu__pop a { display: block; padding: 0.5rem 0.7rem; border-radius: var(--radius-s); color: var(--c-ink); text-decoration: none; font-size: var(--text-sm); }
+.offers-menu__pop a:hover { background: var(--c-primary-soft); }
+.offers-menu__pop p { margin: 0; padding: 0.5rem 0.7rem; }
+
+.offers-tabs { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.offers-tab { cursor: pointer; }
+.offers-tab[aria-selected="true"] { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+.offers-tab:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.offers-tab__count { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: var(--radius-pill); background: var(--c-bg-alt); color: var(--c-ink-soft); font-size: 0.7rem; font-weight: 700; }
+.offers-tab[aria-selected="true"] .offers-tab__count { background: rgba(255,255,255,0.25); color: #fff; }
+.offer-card--draft { border-style: dashed; }
+
 .offers-list { display: grid; gap: var(--sp-4); }
 .offer-card { display: grid; gap: var(--sp-4); }
 .offer-card__head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-3); }
@@ -1346,6 +1368,52 @@ body.kanban-dragging, body.kanban-dragging .pipeline-card { cursor: grabbing; }
 @media (max-width: 768px) {
   /* Toutes les sections : une seule colonne sur mobile. */
   .profil-fields { grid-template-columns: 1fr; }
+}
+
+/* ---- Publication d'offre : tunnel court en 3 étapes ---- */
+.pub-app { margin: var(--sp-5) 0 var(--sp-8); }
+.pub-steps { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-4); flex-wrap: wrap; }
+.pub-step { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 160px; padding: 0.6rem 0.9rem; border: 1px solid var(--c-line); border-radius: var(--radius-m); background: var(--c-surface); color: var(--c-ink-soft); font-weight: 600; font-size: var(--text-sm); }
+.pub-step__n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--c-bg-alt); color: var(--c-ink-soft); font-size: var(--text-xs); }
+.pub-step.is-active { border-color: var(--c-primary); color: var(--c-primary-dark); }
+.pub-step.is-active .pub-step__n { background: var(--c-primary); color: #fff; }
+.pub-step.is-done .pub-step__n { background: var(--c-primary-soft); color: var(--c-primary-dark); }
+.pub-body { padding: var(--sp-5); }
+.pub-body > h2 { margin-top: 0; }
+.pub-foot { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-4); }
+.pub-foot [data-next], .pub-foot [data-publish] { margin-left: auto; }
+.pub-draft-banner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.pub-draft-banner__actions { display: flex; gap: var(--sp-2); }
+.pub-templates { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.pub-templates .chip { cursor: pointer; }
+.pub-desc-tools { margin-bottom: var(--sp-2); }
+.pub-checks { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.pub-check { display: inline-flex; align-items: center; gap: 6px; padding: 0.45rem 0.8rem; border: 1px solid var(--c-border-strong); border-radius: var(--radius-m); font-size: var(--text-sm); cursor: pointer; background: var(--c-surface); }
+.pub-check.is-on { background: var(--c-primary-soft); border-color: var(--c-primary); color: var(--c-primary-dark); }
+.pub-check input { accent-color: var(--c-primary); }
+
+/* Aperçu de la fiche offre */
+.pub-preview { border: 1px solid var(--c-line); border-radius: var(--radius-m); padding: var(--sp-5); background: var(--c-bg-alt); }
+.pub-preview__head { display: flex; align-items: center; gap: var(--sp-3); }
+.pub-preview__head .avatar { width: 48px; height: 48px; border-radius: var(--radius-m); background: var(--c-primary-dark); color: #fff; }
+.pub-preview__head h3 { margin: 0; font-family: var(--font-serif); color: var(--c-primary-dark); }
+.pub-preview__meta { margin: 2px 0 0; color: var(--c-ink-soft); font-size: var(--text-sm); }
+.pub-preview__tags { list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 0; margin: var(--sp-3) 0; }
+.pub-preview__tags li { font-size: var(--text-xs); padding: 0.25rem 0.65rem; border-radius: var(--radius-pill); background: var(--c-surface); border: 1px solid var(--c-line); color: var(--c-ink); }
+.pub-preview__salary { font-weight: 700; color: var(--c-primary); margin: 0 0 var(--sp-3); }
+.pub-preview__desc { color: var(--c-ink); margin: 0 0 var(--sp-3); }
+.pub-preview__list { margin-bottom: var(--sp-3); }
+.pub-preview__list h4 { margin: 0 0 4px; font-size: var(--text-sm); }
+.pub-preview__list ul { margin: 0; padding-left: 1.1rem; }
+.pub-preview__skills { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.pub-success { text-align: center; }
+.pub-success__mark { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--c-primary); color: #fff; font-size: 1.6rem; margin-bottom: var(--sp-3); }
+
+@media (max-width: 768px) {
+  /* Assistant plein largeur, une étape à la fois, actions fixes en bas (§27). */
+  .pub-step { min-width: 100%; }
+  .pub-foot { position: sticky; bottom: 0; background: var(--c-bg); padding: var(--sp-3) 0; border-top: 1px solid var(--c-line); z-index: 5; }
+  .pub-foot [data-draft] { order: 3; width: 100%; }
 }
 
 /* ---- Facturation : formule, historique, moyen de paiement ---- */

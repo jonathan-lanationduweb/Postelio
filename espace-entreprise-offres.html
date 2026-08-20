@@ -64,10 +64,13 @@
         <div class="dash-main">
 
           <section class="dash-block" id="offres" aria-labelledby="h-offres">
-            <div class="dash-block__head">
+            <div class="dash-block__head dash-block__head--split">
               <h2 id="h-offres">Mes offres</h2>
-              <a class="btn btn-accent btn-sm" href="publier-offre.html">Publier une offre</a>
+              <div class="offers-quick" id="offers-quick">
+                <a class="btn btn-accent btn-sm" href="publier-offre.html">+ Publier une offre</a>
+              </div>
             </div>
+            <div class="offers-tabs" id="offers-tabs" role="tablist" aria-label="Filtrer les offres"></div>
             <div id="dashboard-offers" class="offers-list">
               <p class="text-muted">Chargement de vos offres…</p>
             </div>
