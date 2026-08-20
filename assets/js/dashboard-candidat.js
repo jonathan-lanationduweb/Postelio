@@ -1098,10 +1098,12 @@
   /* ============================================================
      Mes entretiens
      ============================================================ */
+  var CONFIRM_KEY = "ss_cand_interviews_confirmed";
+
   function defaultInterviews() {
     return [
-      { date: "2026-08-21", heure: "14:00", poste: "Développeur web junior", entreprise: "Pixel & Co", entrepriseId: "pixel-and-co", offreId: "dev-web-junior-pixel-lille", mode: "Visioconférence" },
-      { date: "2026-08-26", heure: "10:30", poste: "Office manager", entreprise: "TechNexis", entrepriseId: "technexis", offreId: "office-manager-technexis-lille", mode: "Sur site — Lille" }
+      { id: "civ1", date: "2026-08-21", heure: "14:00", poste: "Développeur web junior", entreprise: "Pixel & Co", entrepriseId: "pixel-and-co", offreId: "dev-web-junior-pixel-lille", mode: "Visioconférence", statut: "propose" },
+      { id: "civ2", date: "2026-08-26", heure: "10:30", poste: "Office manager", entreprise: "TechNexis", entrepriseId: "technexis", offreId: "office-manager-technexis-lille", mode: "Sur site — Lille", statut: "confirme" }
     ];
   }
 
@@ -1110,6 +1112,7 @@
     if (!box) { return; }
     var list = defaultInterviews();
     var e = SS.escapeHtml;
+    var confirmed = SS.store.get(CONFIRM_KEY, {});
 
     if (!list.length) {
       box.innerHTML = '<div class="empty-state"><h3>Aucun entretien programmé</h3>' +
@@ -1120,21 +1123,38 @@
     box.innerHTML = list.map(function (it) {
       var jour = new Date(it.date);
       var jourLabel = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"][jour.getDay()];
+      var isConfirmed = it.statut === "confirme" || confirmed[it.id];
+      var badge = isConfirmed
+        ? '<span class="status-badge status-preselection">Confirmé</span>'
+        : '<span class="status-badge status-envoyee">À confirmer</span>';
+      var confirmBtn = isConfirmed ? "" :
+        '<button type="button" class="btn btn-primary btn-sm" data-confirm-iv="' + e(it.id) + '">Confirmer ce rendez-vous</button>';
       return '<article class="interview-card">' +
         '<div class="interview-card__date"><span class="interview-card__day">' + e(jourLabel) + "</span>" +
           "<b>" + e(SS.formatDate(it.date)) + "</b><span>" + e(it.heure) + "</span></div>" +
         '<div class="interview-card__info">' +
-          "<strong>" + e(it.poste) + "</strong><br>" +
+          "<strong>" + e(it.poste) + "</strong> " + badge + "<br>" +
           '<span class="text-muted">' + e(it.entreprise) + "</span>" +
           '<div class="interview-card__mode"><span class="badge badge--remote">' + e(it.mode) + "</span></div>" +
         "</div>" +
         '<div class="interview-card__actions">' +
+          confirmBtn +
           '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(it.offreId) + '">Voir l\'offre</a>' +
           '<a class="btn btn-ghost btn-sm" href="#messages">Message</a>' +
-          '<button type="button" class="btn btn-ghost btn-sm" data-toast="Entretien ajouté à votre agenda (démonstration).">Ajouter à mon agenda</button>' +
         "</div>" +
       "</article>";
     }).join("");
+
+    box.querySelectorAll("[data-confirm-iv]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-confirm-iv");
+        var c = SS.store.get(CONFIRM_KEY, {});
+        c[id] = true;
+        SS.store.set(CONFIRM_KEY, c);
+        renderInterviews();
+        SS.toast("Rendez-vous confirmé — l'entreprise en est informée.");
+      });
+    });
   }
 
   /* ============================================================
