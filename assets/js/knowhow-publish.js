@@ -207,6 +207,21 @@
       custom.push(pub);
       SS.store.set(APP_CONFIG.storage.customKnowhow, custom);
 
+      /* Cohérence (BUG-02) : un savoir-faire publié par un candidat apparaît
+         aussi dans « Mes savoir-faire » de l'espace candidat (clé
+         ss_candidate_knowhow, format du tableau de bord). */
+      if (SS.param && SS.param("type") === "candidat") {
+        var CAND_SF_KEY = "ss_candidate_knowhow";
+        var mine = SS.store.get(CAND_SF_KEY, []);
+        mine.unshift({
+          id: pub.id, titre: pub.titre, resume: pub.resume,
+          categorie: pub.categorieLabel || pub.categorie || "",
+          competences: pub.competences || [],
+          note: 0, avis: 0, vues: 0, date: pub.datePublication
+        });
+        SS.store.set(CAND_SF_KEY, mine);
+      }
+
       var link = document.getElementById("khw-published-link");
       if (link) { link.href = "savoir-faire-detail.html?id=" + encodeURIComponent(pub.id); }
     }

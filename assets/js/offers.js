@@ -5,7 +5,7 @@
 (function () {
   "use strict";
 
-  var SAVE_KEY = "ss_offres_enregistrees";
+  var SAVE_KEY = (window.APP_CONFIG && APP_CONFIG.storage && APP_CONFIG.storage.favorites) || "ss_candidate_favorites"; /* clé unifiée avec « Mes favoris » du candidat */
   var BOOKMARK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M6 4h12v17l-6-4.5L6 21z"/></svg>';

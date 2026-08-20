@@ -9,7 +9,7 @@
   var state = { offers: [], filtered: [], page: 1, savedOnly: false };
 
   function savedIds() {
-    return SS.store.get("ss_offres_enregistrees", []);
+    return SS.store.get((window.APP_CONFIG && APP_CONFIG.storage && APP_CONFIG.storage.favorites) || "ss_candidate_favorites", []);
   }
 
   function updateSavedCount() {

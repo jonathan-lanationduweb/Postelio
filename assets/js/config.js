@@ -18,23 +18,23 @@ window.APP_CONFIG = {
   },
 
   /* Futures API — à connecter plus tard. Exemple pour WordPress :
-     baseUrl: "https://www.supersecretaire.fr/wp-json" */
+     baseUrl: "https://www.postelio.fr/wp-json" */
   api: {
     baseUrl: null,
     endpoints: {
       offers: "/wp/v2/offre",
       companies: "/wp/v2/entreprise",
       articles: "/wp/v2/posts",
-      applications: "/supersecretaire/v1/candidatures",
-      contact: "/supersecretaire/v1/contact",
-      newsletter: "/supersecretaire/v1/newsletter",
-      chatbot: "/supersecretaire/v1/chatbot",
+      applications: "/postelio/v1/candidatures",
+      contact: "/postelio/v1/contact",
+      newsletter: "/postelio/v1/newsletter",
+      chatbot: "/postelio/v1/chatbot",
       savoirFaire: "/wp/v2/savoir-faire",
-      knowhowRatings: "/supersecretaire/v1/savoir-faire/notes",
-      knowhowComments: "/supersecretaire/v1/savoir-faire/commentaires",
-      knowhowReports: "/supersecretaire/v1/savoir-faire/signalements",
-      guidedSearch: "/supersecretaire/v1/recherche-guidee",
-      recommendations: "/supersecretaire/v1/recommandations",
+      knowhowRatings: "/postelio/v1/savoir-faire/notes",
+      knowhowComments: "/postelio/v1/savoir-faire/commentaires",
+      knowhowReports: "/postelio/v1/savoir-faire/signalements",
+      guidedSearch: "/postelio/v1/recherche-guidee",
+      recommendations: "/postelio/v1/recommandations",
       geocoding: "https://api-adresse.data.gouv.fr/search/", /* API Adresse — service public, sans clé */
       companiesDirectory: null /* ex. API Recherche d'entreprises */
     }
