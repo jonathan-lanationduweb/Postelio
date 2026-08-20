@@ -1175,10 +1175,10 @@ a.dash-metric:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 .dash-quick { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-5); }
 @media (max-width: 600px) { .dash-quick .btn { flex: 1 1 100%; } }
 
-/* Barre de défilement horizontale dupliquée EN HAUT du pipeline (synchronisée
-   par JS avec #pipeline-wrap) — pour scroller sans descendre en bas de zone. */
-.pipeline-scrolltop { overflow-x: auto; overflow-y: hidden; margin-bottom: 6px; }
-.pipeline-scrolltop > div { height: 1px; }
+/* Défilement horizontal du Kanban : barre native discrète (sous le board),
+   + Shift+molette, + glisser sur une zone vide (curseur « grab »). */
+.pipeline-wrap.is-panning { cursor: grabbing; user-select: none; }
+.pipeline-wrap.is-panning .pipeline-card { pointer-events: none; }
 
 /* Messagerie : réponses types + retours à la ligne dans les bulles. */
 .conv-msg__text { white-space: pre-line; }

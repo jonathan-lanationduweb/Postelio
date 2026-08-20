@@ -94,37 +94,43 @@
     var wrap = document.getElementById("pipeline-wrap");
     if (!wrap) { return; }
 
-    /* 1. Molette verticale → défilement horizontal (quand il y a débordement). */
+    /* Pas de barre de défilement en haut : le défilement horizontal se fait
+       naturellement (barre native discrète sous le board), + Shift+molette,
+       + trackpad horizontal (natif), + glisser sur une zone vide du board. */
+
+    /* 1. Shift + molette → défilement horizontal. */
     wrap.addEventListener("wheel", function (ev) {
       if (wrap.scrollWidth <= wrap.clientWidth) { return; }
-      if (Math.abs(ev.deltaY) <= Math.abs(ev.deltaX)) { return; }
-      wrap.scrollLeft += ev.deltaY;
+      if (!ev.shiftKey) { return; }
+      wrap.scrollLeft += (ev.deltaY || ev.deltaX);
       ev.preventDefault();
     }, { passive: false });
 
-    /* 2. Barre de défilement en haut : un proxy synchronisé avec le pipeline. */
-    var top = document.createElement("div");
-    top.className = "pipeline-scrolltop";
-    top.setAttribute("aria-hidden", "true");
-    var inner = document.createElement("div");
-    top.appendChild(inner);
-    wrap.parentNode.insertBefore(top, wrap);
-
-    function sync() {
-      inner.style.width = wrap.scrollWidth + "px";
-      top.style.display = wrap.scrollWidth > wrap.clientWidth ? "block" : "none";
-    }
-    var lock = false;
-    top.addEventListener("scroll", function () {
-      if (lock) { return; } lock = true; wrap.scrollLeft = top.scrollLeft; lock = false;
+    /* 2. Glisser-déposer horizontal sur une zone VIDE du board (comme Trello).
+       Ne s'active pas sur une carte, un bouton ou une zone de dépôt de carte. */
+    var panning = false, startX = 0, startScroll = 0, moved = false;
+    wrap.addEventListener("pointerdown", function (ev) {
+      if (ev.button !== 0) { return; }
+      if (ev.target.closest(".pipeline-card, button, a, input, select, textarea")) { return; }
+      panning = true; moved = false;
+      startX = ev.clientX; startScroll = wrap.scrollLeft;
+      wrap.classList.add("is-panning");
     });
-    wrap.addEventListener("scroll", function () {
-      if (lock) { return; } lock = true; top.scrollLeft = wrap.scrollLeft; lock = false;
+    window.addEventListener("pointermove", function (ev) {
+      if (!panning) { return; }
+      var dx = ev.clientX - startX;
+      if (Math.abs(dx) > 3) { moved = true; }
+      wrap.scrollLeft = startScroll - dx;
     });
-    sync();
-    window.addEventListener("resize", sync);
-    /* Recalcule après un rendu du pipeline (filtres, changement de vue). */
-    document.addEventListener("pipeline:rendered", sync);
+    window.addEventListener("pointerup", function () {
+      if (!panning) { return; }
+      panning = false;
+      wrap.classList.remove("is-panning");
+    });
+    /* Évite de déclencher un clic après un pan. */
+    wrap.addEventListener("click", function (ev) {
+      if (moved) { ev.stopPropagation(); ev.preventDefault(); moved = false; }
+    }, true);
   }
 
   /* ============================================================

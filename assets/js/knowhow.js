@@ -825,17 +825,15 @@
   document.addEventListener("DOMContentLoaded", function () {
     var cta = document.getElementById("share-savoirfaire-cta");
     if (!cta || !window.SS || !SS.auth) { return; }
+    /* La publication ne se lance PLUS depuis la page publique : le CTA mène à
+       l'espace de l'utilisateur (Mes savoir-faire / Contenus entreprise). */
     var s = SS.auth.get();
     if (!s) {
       cta.href = "connexion.html";
-      return;
-    }
-    if (SS.auth.isEmployer()) {
-      cta.href = "publier-savoir-faire.html?type=entreprise";
-      cta.textContent = "Publier un contenu entreprise";
+    } else if (SS.auth.isEmployer()) {
+      cta.href = "espace-entreprise-contenus.html";
     } else {
-      cta.href = "publier-savoir-faire.html?type=candidat";
-      cta.textContent = "Partager mon savoir-faire";
+      cta.href = "espace-candidat.html#savoir-faire";
     }
   });
 })();
