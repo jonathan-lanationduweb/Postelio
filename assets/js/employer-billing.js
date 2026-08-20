@@ -23,12 +23,14 @@
     ];
 
     tbody.innerHTML = rows.map(function (r) {
+      /* Le bouton [Télécharger] est fictif : aucun fichier réel n'est produit.
+         Le toast est géré par employer-shell (data-toast). */
       return "<tr>" +
         '<td data-label="Date">' + e(SS.formatDate(r.date)) + "</td>" +
         '<td data-label="Offre">' + e(r.offre) + "</td>" +
         '<td data-label="Montant">10&nbsp;€</td>' +
         '<td data-label="Statut"><span class="badge badge--remote">Payé</span></td>' +
-        '<td data-label="Facture"><button type="button" class="btn btn-ghost btn-sm" data-toast="Téléchargement de la facture (démonstration).">Facture</button></td>' +
+        '<td data-label="Facture"><button type="button" class="btn btn-outline btn-sm" data-toast="Facture téléchargée (démonstration).">Télécharger</button></td>' +
       "</tr>";
     }).join("");
   }

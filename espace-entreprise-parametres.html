@@ -65,27 +65,121 @@
 
           <section class="dash-block" id="parametres" aria-labelledby="h-parametres">
             <h2 id="h-parametres">Paramètres</h2>
-            <div class="card dash-card">
-              <div class="form-field">
-                <label class="auth-role"><input type="checkbox" checked> Recevoir un e-mail à chaque nouvelle candidature</label>
+            <p class="dash-block__hint">Gérez vos notifications, votre compte et votre session. Ces réglages sont simulés pour la démonstration.</p>
+
+            <div class="settings-grid">
+
+              <!-- Notifications -->
+              <div class="card dash-card">
+                <h3>Notifications</h3>
+                <p class="text-muted">Choisissez les e-mails que vous souhaitez recevoir.</p>
+                <form id="notif-form" class="settings-checks">
+                  <label class="settings-check"><input type="checkbox" name="candidature" checked> <span>Nouvelle candidature</span></label>
+                  <label class="settings-check"><input type="checkbox" name="message" checked> <span>Nouveau message</span></label>
+                  <label class="settings-check"><input type="checkbox" name="expiration" checked> <span>Rappel avant expiration d'une offre</span></label>
+                  <label class="settings-check"><input type="checkbox" name="entretien" checked> <span>Entretien à venir</span></label>
+                  <label class="settings-check"><input type="checkbox" name="lettre"> <span>Lettre d'information recruteurs</span></label>
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                  </div>
+                </form>
               </div>
-              <div class="form-field" style="margin-top:var(--sp-2);">
-                <label class="auth-role"><input type="checkbox" checked> Recevoir un rappel avant l'expiration d'une offre</label>
+
+              <!-- Compte -->
+              <div class="card dash-card">
+                <h3>Compte</h3>
+                <p class="text-muted">Vos informations de connexion. Le mot de passe n'est jamais affiché ni stocké.</p>
+
+                <dl class="settings-account" id="account-view">
+                  <div><dt>Nom</dt><dd id="account-name-val">Claire Martin</dd></div>
+                  <div><dt>E-mail professionnel</dt><dd id="account-email-val">claire.martin@fiduciaire-bellecour.exemple.fr</dd></div>
+                  <div><dt>Mot de passe</dt><dd>••••••••••</dd></div>
+                </dl>
+                <div class="form-actions" id="account-view-actions">
+                  <button type="button" class="btn btn-outline btn-sm" id="account-edit-btn">Modifier</button>
+                </div>
+
+                <form class="settings-account-form" id="account-form" hidden>
+                  <div class="field">
+                    <label for="account-name">Nom</label>
+                    <input type="text" id="account-name" name="name" autocomplete="name">
+                  </div>
+                  <div class="field">
+                    <label for="account-email">E-mail professionnel</label>
+                    <input type="email" id="account-email" name="email" autocomplete="email">
+                  </div>
+                  <div class="field">
+                    <label for="account-password">Nouveau mot de passe</label>
+                    <input type="password" id="account-password" name="password" autocomplete="new-password" placeholder="Laisser vide pour ne pas changer">
+                    <span class="hint">Champ de démonstration : aucun mot de passe n'est enregistré.</span>
+                  </div>
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="account-cancel-btn">Annuler</button>
+                  </div>
+                </form>
               </div>
-              <div class="form-field" style="margin-top:var(--sp-2);">
-                <label class="auth-role"><input type="checkbox"> Recevoir la lettre d'information recruteurs</label>
+
+              <!-- Préférences -->
+              <div class="card dash-card">
+                <h3>Préférences</h3>
+                <p class="text-muted">Adaptez l'affichage de votre espace.</p>
+                <form id="prefs-form" class="settings-prefs">
+                  <div class="field">
+                    <label for="pref-lang">Langue</label>
+                    <select id="pref-lang" name="lang">
+                      <option value="fr">Français</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="pref-tz">Fuseau horaire</label>
+                    <select id="pref-tz" name="tz">
+                      <option value="europe-paris">(UTC+01:00) Paris, Bruxelles</option>
+                      <option value="europe-london">(UTC+00:00) Londres, Lisbonne</option>
+                      <option value="america-montreal">(UTC−05:00) Montréal</option>
+                    </select>
+                  </div>
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                  </div>
+                </form>
               </div>
-              <div class="form-actions" style="margin-top:var(--sp-4);">
-                <button type="button" class="btn btn-primary" data-toast="Préférences enregistrées (démonstration).">Enregistrer les préférences</button>
+
+              <!-- Confidentialité / Session -->
+              <div class="card dash-card">
+                <h3>Confidentialité &amp; session</h3>
+                <p class="text-muted">Vous êtes connecté(e) au compte de démonstration recruteur.</p>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-outline" id="logout-btn">Se déconnecter</button>
+                </div>
+
+                <div class="danger-zone">
+                  <h4 class="danger-zone__title">Zone dangereuse</h4>
+                  <p class="text-muted">La suppression d'un compte est définitive et retire vos offres et contenus.</p>
+                  <button type="button" class="btn btn-danger btn-sm" id="delete-account-btn">Supprimer mon compte</button>
+                </div>
               </div>
-            </div>
-            <div class="card dash-card" style="margin-top:var(--sp-4);">
-              <h3>Session</h3>
-              <p class="text-muted">Vous êtes connecté(e) au compte de démonstration recruteur.</p>
-              <button type="button" class="btn btn-ghost" id="logout-btn">Se déconnecter</button>
+
             </div>
           </section>
 
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation de suppression de compte (accessible, focus piégé) -->
+    <div class="modal-overlay" id="delete-account-modal" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" aria-describedby="delete-account-text">
+        <div class="modal__head">
+          <h2 class="modal__title" id="delete-account-title">Supprimer mon compte&nbsp;?</h2>
+          <button type="button" class="modal-close" data-close aria-label="Fermer">✕</button>
+        </div>
+        <div class="modal__body">
+          <p id="delete-account-text">Cette action est définitive : vos offres, contenus et messages seraient supprimés. Cette démonstration ne supprime rien réellement.</p>
+        </div>
+        <div class="modal__actions">
+          <button type="button" class="btn btn-ghost" data-close>Annuler</button>
+          <button type="button" class="btn btn-danger" id="delete-account-confirm">Supprimer définitivement</button>
         </div>
       </div>
     </div>

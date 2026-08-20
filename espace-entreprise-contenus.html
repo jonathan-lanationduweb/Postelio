@@ -66,12 +66,39 @@
           <section class="dash-block" id="contenus" aria-labelledby="h-contenus">
             <div class="dash-block__head">
               <h2 id="h-contenus">Contenus entreprise</h2>
-              <a class="btn btn-accent btn-sm" href="publier-savoir-faire.html">Publier un contenu</a>
+              <a class="btn btn-accent btn-sm" href="publier-savoir-faire.html?type=entreprise">+ Créer un contenu</a>
             </div>
-            <p class="dash-block__hint">Ces contenus renforcent votre marque employeur : ils donnent envie aux candidats de vous rejoindre avant même de postuler.</p>
-            <div id="contents-list"></div>
+            <p class="dash-block__hint">Votre marque employeur : montrez vos métiers, votre équipe et votre environnement de travail.</p>
+
+            <div class="content-filters" role="group" aria-label="Filtrer les contenus par catégorie" id="content-filters">
+              <button type="button" class="chip" data-filter="tous" aria-pressed="true">Tous</button>
+              <button type="button" class="chip" data-filter="metiers" aria-pressed="false">Métiers</button>
+              <button type="button" class="chip" data-filter="coulisses" aria-pressed="false">Coulisses</button>
+              <button type="button" class="chip" data-filter="equipe" aria-pressed="false">Équipe</button>
+              <button type="button" class="chip" data-filter="locaux" aria-pressed="false">Locaux</button>
+              <button type="button" class="chip" data-filter="conseils" aria-pressed="false">Conseils</button>
+            </div>
+
+            <div id="contents-list" aria-live="polite"></div>
           </section>
 
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation de suppression d'un contenu (accessible, focus piégé) -->
+    <div class="modal-overlay" id="content-delete-modal" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="content-delete-title" aria-describedby="content-delete-text">
+        <div class="modal__head">
+          <h2 class="modal__title" id="content-delete-title">Supprimer ce contenu&nbsp;?</h2>
+          <button type="button" class="modal-close" data-close aria-label="Fermer">✕</button>
+        </div>
+        <div class="modal__body">
+          <p id="content-delete-text">Cette action retire le contenu de votre marque employeur. Cette démonstration ne supprime rien réellement.</p>
+        </div>
+        <div class="modal__actions">
+          <button type="button" class="btn btn-ghost" data-close>Annuler</button>
+          <button type="button" class="btn btn-danger" id="content-delete-confirm">Supprimer</button>
         </div>
       </div>
     </div>

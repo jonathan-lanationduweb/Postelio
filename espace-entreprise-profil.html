@@ -65,6 +65,8 @@
 
           <section class="dash-block" id="profil" aria-labelledby="h-profil">
             <h2 id="h-profil">Profil entreprise</h2>
+            <p class="dash-block__hint">Ce profil est votre vitrine côté candidats. Complétez chaque section pour renforcer votre marque employeur.</p>
+
             <div class="card dash-card profil-card">
               <div class="profile-head">
                 <span class="avatar profile-logo" id="profil-logo" aria-hidden="true">FB</span>
@@ -78,28 +80,10 @@
                 <span class="profile-meter__fill-75"></span>
               </div>
               <p class="profile-meter__label"><strong>75&nbsp;%</strong> — il manque : votre logo, une photo de vos locaux.</p>
-
-              <div class="profil-section">
-                <div class="profil-section__head">
-                  <h3>Présentation de l'entreprise</h3>
-                  <button type="button" class="btn btn-outline btn-sm" id="profil-edit-btn">Modifier</button>
-                </div>
-                <p id="profil-desc-view">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</p>
-                <form class="profil-desc-form" id="profil-desc-form" hidden>
-                  <div class="form-field">
-                    <label class="visually-hidden" for="profil-desc">Présentation de l'entreprise</label>
-                    <textarea id="profil-desc" rows="5">Cabinet d'expertise comptable lyonnais accompagnant TPE, PME et professions libérales : comptabilité, paie, conseil et gestion sociale.</textarea>
-                  </div>
-                  <div class="form-actions">
-                    <button type="button" class="btn btn-primary btn-sm" id="profil-desc-save">Enregistrer</button>
-                    <button type="button" class="btn btn-ghost btn-sm" id="profil-desc-cancel">Annuler</button>
-                  </div>
-                </form>
-              </div>
-
-              <div class="profile-actions">
-              </div>
             </div>
+
+            <!-- Sections en lecture, éditables à la demande (rendues par JS) -->
+            <div id="profil-sections"></div>
           </section>
 
         </div>

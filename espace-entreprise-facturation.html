@@ -65,12 +65,21 @@
 
           <section class="dash-block" id="facturation" aria-labelledby="h-facturation">
             <h2 id="h-facturation">Facturation</h2>
-            <div class="card dash-card">
-              <h3>Renouvellement d'offre — 10&nbsp;€ / 30 jours</h3>
-              <p class="text-muted">Pas d'abonnement : vous ne payez que lorsque vous prolongez une offre arrivée à expiration. Chaque renouvellement remet l'annonce en ligne pour 30&nbsp;jours.</p>
+            <p class="dash-block__hint">Suivez vos renouvellements d'offres et votre moyen de paiement. Tout est simulé : aucune transaction réelle n'a lieu.</p>
+
+            <!-- Votre formule : renouvellement à l'unité, sans abonnement -->
+            <div class="card dash-card billing-plan">
+              <div class="billing-plan__body">
+                <p class="billing-plan__eyebrow">Votre formule</p>
+                <p class="billing-plan__title">Renouvellement à l'unité</p>
+                <p class="billing-plan__meta">10&nbsp;€ / 30 jours · Aucun abonnement</p>
+                <p class="text-muted">Vous ne payez que lorsque vous prolongez une offre arrivée à expiration. Chaque renouvellement remet l'annonce en ligne pour 30&nbsp;jours.</p>
+              </div>
+              <p class="billing-plan__price"><strong>10&nbsp;€</strong><span>/ 30 jours</span></p>
             </div>
 
-            <h3 style="margin-top:var(--sp-5);">Historique des paiements</h3>
+            <!-- Historique des paiements (tableau → cartes sur mobile via data-label) -->
+            <h3 class="billing-subhead">Historique des paiements</h3>
             <div class="table-wrap">
               <table class="data-table">
                 <caption class="visually-hidden">Historique de vos renouvellements d'offres</caption>
@@ -89,12 +98,20 @@
               </table>
             </div>
 
-            <div class="card dash-card" style="margin-top:var(--sp-5);">
+            <!-- Moyen de paiement -->
+            <div class="card dash-card billing-method">
               <h3>Moyen de paiement</h3>
-              <p>Carte bancaire <strong>•••• •••• •••• 4242</strong> — expire 09/29 <span class="badge badge--neutral">Démonstration</span></p>
-              <div class="form-actions" style="margin-top:var(--sp-3);">
-                <button type="button" class="btn btn-ghost btn-sm" data-toast="Gestion des moyens de paiement (démonstration).">Modifier la carte</button>
+              <div class="billing-method__row">
+                <div class="billing-method__card">
+                  <span class="billing-method__badge" aria-hidden="true">VISA</span>
+                  <span>
+                    <strong>Carte principale · Visa •••• 4242</strong>
+                    <span class="text-muted">Expire 09/29</span>
+                  </span>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" data-toast="Moyen de paiement modifié (démonstration).">Modifier</button>
               </div>
+              <p class="billing-method__note">Paiement simulé — aucune donnée bancaire réelle.</p>
             </div>
           </section>
 
