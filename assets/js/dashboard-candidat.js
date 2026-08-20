@@ -16,6 +16,9 @@
   /* Clé locale dédiée aux savoir-faire du candidat (prototype) — non déclarée
      dans config.js, réservée à cet espace. */
   var SF_KEY = "ss_candidate_knowhow";
+  /* Clé locale du CV du candidat (prototype) : on n'enregistre QUE le nom du
+     fichier et la date de mise à jour, jamais le contenu du fichier. */
+  var CV_KEY = "ss_candidate_cv";
 
   document.addEventListener("DOMContentLoaded", function () {
     /* 1. Garde d'accès : réservé aux candidats connectés. */
@@ -71,7 +74,7 @@
      candidatures ou du profil change. Les navigateurs ayant un ancien seed en
      cache sont ainsi régénérés, sinon les nouveautés (profil enrichi, message
      reçu, statut « non retenue ») resteraient invisibles. */
-  var SEED_VERSION = "2026-08-19-tdb-candidat";
+  var SEED_VERSION = "2026-08-20-tdb-candidat-cv";
   var SEED_KEY = "ss_seed_version";
 
   function seedIfEmpty() {
@@ -85,6 +88,9 @@
     }
     if (staleSeed || !SS.store.get(SF_KEY, null)) {
       SS.store.set(SF_KEY, defaultSavoirFaire());
+    }
+    if (staleSeed || !SS.store.get(CV_KEY, null)) {
+      SS.store.set(CV_KEY, defaultCv());
     }
     if (staleSeed) { SS.store.set(SEED_KEY, SEED_VERSION); }
 
@@ -207,9 +213,19 @@
       disponibilite: "Immédiate",
       mobilite: "30 km autour de Lyon",
       realisations: "",
-      recommandations: "« Jonathan est rigoureux et curieux. Il a su prendre en main nos projets rapidement. » — Responsable technique, Studio Digital Lyon"
+      recommandations: "« Jonathan est rigoureux et curieux. Il a su prendre en main nos projets rapidement. » — Responsable technique, Studio Digital Lyon",
+      dateMaj: "2026-08-15"
     };
   }
+
+  /* CV de démonstration : nom de fichier + date récente (aucun contenu stocké). */
+  function defaultCv() {
+    return { name: "CV_Jonathan_Davy.pdf", date: "2026-08-12" };
+  }
+  function getCv() { return SS.store.get(CV_KEY, null); }
+  function setCv(v) { SS.store.set(CV_KEY, v); }
+  function hasCv() { var c = getCv(); return !!(c && c.name); }
+  function today() { return new Date().toISOString().slice(0, 10); }
 
   function defaultSavoirFaire() {
     return [
@@ -280,6 +296,7 @@
       next.ville = val("sc-ville");
       next.rayon = val("sc-rayon");
       next.contrat = val("sc-contrat");
+      next.dateMaj = today();
       setProfile(next);
       renderSearchCriteria();
       renderRecommendations();
@@ -872,7 +889,6 @@
      proposer des conseils actionnables. */
   var PROFILE_FIELDS = [
     { key: "presentation", label: "Présentation", type: "textarea", weight: 15, tip: "Compléter votre présentation", placeholder: "Quelques lignes sur votre parcours et vos objectifs…" },
-    { key: "cv", label: "CV", type: "text", weight: 15, tip: "Ajouter votre CV", placeholder: "Lien ou nom de votre fichier CV" },
     { key: "experiences", label: "Expériences", type: "textarea", weight: 12, tip: "Détailler vos expériences", placeholder: "Vos expériences professionnelles" },
     { key: "formation", label: "Formation", type: "text", weight: 10, tip: "Ajouter votre formation", placeholder: "Votre diplôme le plus élevé" },
     { key: "competences", label: "Compétences", type: "tags", weight: 12, tip: "Ajouter vos compétences", placeholder: "HTML, CSS, JavaScript, travail en équipe…" },
@@ -894,6 +910,9 @@
       if (fieldFilled(profile, f)) { pct += f.weight; }
       else { missing.push(f); }
     });
+    /* CV : +15 % s'il est importé (basé sur ss_candidate_cv, pas sur le profil). */
+    if (hasCv()) { pct += 15; }
+    else { missing.push({ key: "cv", label: "CV", weight: 15, tip: "Importer votre CV" }); }
     /* Savoir-faire : +5 % si au moins un est publié. */
     var hasSF = SS.store.get(SF_KEY, []).length > 0;
     if (hasSF) { pct += 5; } else { missing.push({ key: "savoirFaire", label: "Savoir-faire", weight: 5, link: "#savoir-faire", verb: "Publier un savoir-faire" }); }
@@ -905,7 +924,85 @@
 
   function renderProfile() {
     renderProfileCompletion();
+    renderProfileDates();
+    renderCv();
     renderProfileSections();
+  }
+
+  /* Dates de mise à jour (profil + CV). Simple affichage — prépare une future
+     relance ; la logique de relance n'est pas développée ici. */
+  function renderProfileDates() {
+    var box = document.getElementById("profile-dates");
+    if (!box) { return; }
+    var profile = getProfile();
+    var cv = getCv();
+    var e = SS.escapeHtml;
+    var profDate = profile.dateMaj ? SS.formatDate(profile.dateMaj) : "—";
+    var cvDate = (cv && cv.name && cv.date) ? SS.formatDate(cv.date) : "—";
+    box.innerHTML =
+      '<p class="profile-dates__item">Profil mis à jour le : <strong>' + e(profDate) + "</strong></p>" +
+      '<p class="profile-dates__item">CV mis à jour le : <strong>' + e(cvDate) + "</strong></p>";
+  }
+
+  /* Sous-section « Mon CV » : import simulé (nom du fichier lu côté navigateur,
+     aucun envoi ni stockage du contenu). */
+  function renderCv() {
+    var box = document.getElementById("profile-cv");
+    if (!box) { return; }
+    var cv = getCv();
+    var e = SS.escapeHtml;
+    var head = '<div class="profile-row__head"><h3>Mon CV</h3></div>';
+    var input = '<input type="file" id="cv-file-input" accept=".pdf,.doc,.docx" class="sr-only" tabindex="-1" aria-hidden="true">';
+
+    if (!hasCv()) {
+      box.innerHTML = head +
+        '<div class="empty-state empty-state--inline">' +
+          "<p>Aucun CV importé.</p>" +
+          '<p><button type="button" class="btn btn-primary btn-sm" data-cv-action="import">Importer mon CV</button></p>' +
+        "</div>" + input;
+    } else {
+      box.innerHTML = head +
+        '<div class="cand-cv__file">' +
+          '<span class="cand-cv__icon" aria-hidden="true">📄</span>' +
+          '<span class="cand-cv__meta"><strong>' + e(cv.name) + "</strong>" +
+          '<span class="text-muted">Mis à jour le ' + e(SS.formatDate(cv.date)) + "</span></span>" +
+        "</div>" +
+        '<div class="form-actions">' +
+          '<button type="button" class="btn btn-outline btn-sm" data-cv-action="replace">Remplacer</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-cv-action="delete">Supprimer</button>' +
+        "</div>" + input;
+    }
+
+    var fileInput = box.querySelector("#cv-file-input");
+    box.querySelectorAll("[data-cv-action]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var action = btn.getAttribute("data-cv-action");
+        if (action === "import" || action === "replace") {
+          if (fileInput) { fileInput.click(); }
+        } else if (action === "delete") {
+          if (!window.confirm("Supprimer votre CV ?")) { return; }
+          setCv({ name: "", date: "" });
+          renderCv();
+          renderProfileDates();
+          renderProfileCompletion();
+          SS.toast("CV supprimé.");
+        }
+      });
+    });
+
+    if (fileInput) {
+      fileInput.addEventListener("change", function () {
+        var file = fileInput.files && fileInput.files[0];
+        if (!file) { return; }
+        /* On ne lit QUE le nom du fichier : aucun contenu n'est envoyé ni stocké. */
+        setCv({ name: file.name, date: today() });
+        fileInput.value = "";
+        renderCv();
+        renderProfileDates();
+        renderProfileCompletion();
+        SS.toast("CV importé : " + file.name);
+      });
+    }
   }
 
   function renderProfileCompletion() {
@@ -1036,6 +1133,7 @@
       } else {
         profile[key] = input.value.trim();
       }
+      profile.dateMaj = today();
       setProfile(profile);
       renderProfile();
       /* Le métier / la localisation du profil alimentent aussi la recherche. */
@@ -1059,7 +1157,7 @@
         '<div class="empty-state"><h3>Montrez ce que vous savez faire</h3>' +
         "<p>Publiez votre premier savoir-faire : une méthode, un tour de main, un retour d'expérience. " +
         "C'est ce qui vous distingue des autres candidats.</p>" +
-        '<p><a class="btn btn-primary" href="publier-savoir-faire.html?type=candidat">Publier un savoir-faire</a></p></div>';
+        '<p><a class="btn btn-primary" href="publier-savoir-faire.html?type=candidat">Ajouter un savoir-faire</a></p></div>';
       return;
     }
 
@@ -1102,9 +1200,34 @@
 
   function defaultInterviews() {
     return [
-      { id: "civ1", date: "2026-08-21", heure: "14:00", poste: "Développeur web junior", entreprise: "Pixel & Co", entrepriseId: "pixel-and-co", offreId: "dev-web-junior-pixel-lille", mode: "Visioconférence", statut: "propose" },
-      { id: "civ2", date: "2026-08-26", heure: "10:30", poste: "Office manager", entreprise: "TechNexis", entrepriseId: "technexis", offreId: "office-manager-technexis-lille", mode: "Sur site — Lille", statut: "confirme" }
+      { id: "civ1", date: "2026-08-21", heure: "14:00", poste: "Développeur web junior", entreprise: "Pixel & Co", entrepriseId: "pixel-and-co", offreId: "dev-web-junior-pixel-lille", format: "Visioconférence", lieu: "Lien de connexion envoyé par e-mail avant le rendez-vous", statut: "propose" },
+      { id: "civ2", date: "2026-08-26", heure: "10:30", poste: "Office manager", entreprise: "TechNexis", entrepriseId: "technexis", offreId: "office-manager-technexis-lille", format: "Sur place", lieu: "45 rue Nationale, 59000 Lille", statut: "confirme" }
     ];
+  }
+
+  /* État effectif d'un entretien : combine le statut seedé et l'action du
+     candidat persistée dans CONFIRM_KEY. Rétro-compat : une ancienne valeur
+     `true` (avant enrichissement) signifie « confirmé ». */
+  function ivStatus(it, store) {
+    var rec = store[it.id];
+    if (rec === true) { return { status: "confirme" }; }
+    if (rec && rec.status) { return rec; }
+    return { status: it.statut || "propose" };
+  }
+
+  function setIvStatus(id, rec) {
+    var store = SS.store.get(CONFIRM_KEY, {});
+    store[id] = rec;
+    SS.store.set(CONFIRM_KEY, store);
+  }
+
+  function ivBadge(status) {
+    switch (status) {
+      case "confirme": return '<span class="status-badge status-recue">Confirmé</span>';
+      case "nouveau-creneau": return '<span class="status-badge status-preselection">Nouveau créneau proposé</span>';
+      case "refuse": return '<span class="status-badge status-refusee">Refusé</span>';
+      default: return '<span class="status-badge status-envoyee">À confirmer</span>';
+    }
   }
 
   function renderInterviews() {
@@ -1112,67 +1235,167 @@
     if (!box) { return; }
     var list = defaultInterviews();
     var e = SS.escapeHtml;
-    var confirmed = SS.store.get(CONFIRM_KEY, {});
+    var store = SS.store.get(CONFIRM_KEY, {});
 
     if (!list.length) {
-      box.innerHTML = '<div class="empty-state"><h3>Aucun entretien programmé</h3>' +
-        "<p>Vos rendez-vous avec les entreprises apparaîtront ici dès qu'un entretien sera fixé.</p></div>";
+      box.innerHTML = emptyState("Aucun entretien programmé",
+        "Vos rendez-vous avec les entreprises apparaîtront ici dès qu'un entretien sera fixé.",
+        "offres.html", "Trouver des offres");
       return;
     }
 
     box.innerHTML = list.map(function (it) {
+      var st = ivStatus(it, store);
+      var status = st.status;
+      var isPropose = status === "propose";
       var jour = new Date(it.date);
       var jourLabel = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"][jour.getDay()];
-      var isConfirmed = it.statut === "confirme" || confirmed[it.id];
-      var badge = isConfirmed
-        ? '<span class="status-badge status-preselection">Confirmé</span>'
-        : '<span class="status-badge status-envoyee">À confirmer</span>';
-      var confirmBtn = isConfirmed ? "" :
-        '<button type="button" class="btn btn-primary btn-sm" data-confirm-iv="' + e(it.id) + '">Confirmer ce rendez-vous</button>';
+
+      var proposalText = isPropose
+        ? '<p class="interview-card__propose"><strong>' + e(it.entreprise) + " vous propose un entretien.</strong></p>"
+        : "";
+      var lieuLine = it.lieu
+        ? '<p class="interview-card__lieu text-muted">' + e(it.lieu) + "</p>"
+        : "";
+      var creneauInfo = (status === "nouveau-creneau" && st.creneau)
+        ? '<p class="interview-card__note text-muted">Vous avez proposé : ' + e(SS.formatDate(st.creneau.date)) +
+            (st.creneau.heure ? " à " + e(st.creneau.heure) : "") + ".</p>"
+        : "";
+
+      var actions = isPropose
+        ? '<button type="button" class="btn btn-primary btn-sm" data-iv-action="confirm" data-iv="' + e(it.id) + '">Confirmer</button>' +
+          '<button type="button" class="btn btn-outline btn-sm" data-iv-action="reschedule" data-iv="' + e(it.id) + '" aria-expanded="false" aria-controls="iv-slot-' + e(it.id) + '">Proposer un autre créneau</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-iv-action="refuse" data-iv="' + e(it.id) + '">Refuser</button>'
+        : '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(it.offreId) + '">Voir l\'offre</a>' +
+          '<a class="btn btn-ghost btn-sm" href="#messages">Message</a>';
+
+      var slotForm = isPropose
+        ? '<form class="interview-card__slot" id="iv-slot-' + e(it.id) + '" data-iv="' + e(it.id) + '" novalidate hidden>' +
+            '<div class="form-row">' +
+              '<div class="field"><label for="iv-date-' + e(it.id) + '">Nouvelle date</label><input type="date" id="iv-date-' + e(it.id) + '"></div>' +
+              '<div class="field"><label for="iv-heure-' + e(it.id) + '">Heure</label><input type="time" id="iv-heure-' + e(it.id) + '"></div>' +
+            "</div>" +
+            '<div class="form-actions">' +
+              '<button type="submit" class="btn btn-primary btn-sm">Envoyer la proposition</button>' +
+              '<button type="button" class="btn btn-ghost btn-sm" data-iv-action="cancel-slot" data-iv="' + e(it.id) + '">Annuler</button>' +
+            "</div>" +
+          "</form>"
+        : "";
+
       return '<article class="interview-card">' +
         '<div class="interview-card__date"><span class="interview-card__day">' + e(jourLabel) + "</span>" +
           "<b>" + e(SS.formatDate(it.date)) + "</b><span>" + e(it.heure) + "</span></div>" +
         '<div class="interview-card__info">' +
-          "<strong>" + e(it.poste) + "</strong> " + badge + "<br>" +
+          "<strong>" + e(it.poste) + "</strong> " + ivBadge(status) + "<br>" +
           '<span class="text-muted">' + e(it.entreprise) + "</span>" +
-          '<div class="interview-card__mode"><span class="badge badge--remote">' + e(it.mode) + "</span></div>" +
+          proposalText +
+          '<div class="interview-card__mode"><span class="badge badge--remote">' + e(it.format) + "</span></div>" +
+          lieuLine +
+          creneauInfo +
         "</div>" +
-        '<div class="interview-card__actions">' +
-          confirmBtn +
-          '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(it.offreId) + '">Voir l\'offre</a>' +
-          '<a class="btn btn-ghost btn-sm" href="#messages">Message</a>' +
-        "</div>" +
+        '<div class="interview-card__actions">' + actions + "</div>" +
+        slotForm +
       "</article>";
     }).join("");
 
-    box.querySelectorAll("[data-confirm-iv]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var id = btn.getAttribute("data-confirm-iv");
-        var c = SS.store.get(CONFIRM_KEY, {});
-        c[id] = true;
-        SS.store.set(CONFIRM_KEY, c);
+    box.querySelectorAll("[data-iv-action]").forEach(function (btn) {
+      btn.addEventListener("click", function () { onInterviewAction(btn); });
+    });
+    box.querySelectorAll(".interview-card__slot").forEach(function (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var id = form.getAttribute("data-iv");
+        var d = document.getElementById("iv-date-" + id);
+        var h = document.getElementById("iv-heure-" + id);
+        var dateVal = d ? d.value : "";
+        if (!dateVal) {
+          SS.toast("Choisissez une date pour votre proposition.");
+          if (d) { d.focus(); }
+          return;
+        }
+        setIvStatus(id, { status: "nouveau-creneau", creneau: { date: dateVal, heure: h ? h.value : "" } });
         renderInterviews();
-        SS.toast("Rendez-vous confirmé — l'entreprise en est informée.");
+        SS.toast("Nouveau créneau proposé (démonstration).");
       });
     });
+  }
+
+  function onInterviewAction(btn) {
+    var id = btn.getAttribute("data-iv");
+    var action = btn.getAttribute("data-iv-action");
+
+    if (action === "confirm") {
+      setIvStatus(id, { status: "confirme" });
+      renderInterviews();
+      updateMetrics();
+      SS.toast("Rendez-vous confirmé — l'entreprise en est informée.");
+      return;
+    }
+    if (action === "refuse") {
+      if (!window.confirm("Refuser cette proposition d'entretien ?")) { return; }
+      setIvStatus(id, { status: "refuse" });
+      renderInterviews();
+      SS.toast("Proposition d'entretien refusée.");
+      return;
+    }
+    if (action === "reschedule") {
+      var form = document.getElementById("iv-slot-" + id);
+      if (form) {
+        var open = form.hidden;
+        form.hidden = !open;
+        btn.setAttribute("aria-expanded", String(open));
+        if (open) { var f = form.querySelector("input"); if (f) { f.focus(); } }
+      }
+      return;
+    }
+    if (action === "cancel-slot") {
+      var form2 = document.getElementById("iv-slot-" + id);
+      if (form2) { form2.hidden = true; }
+      var toggle = document.querySelector('[data-iv-action="reschedule"][data-iv="' + id + '"]');
+      if (toggle) { toggle.setAttribute("aria-expanded", "false"); toggle.focus(); }
+      return;
+    }
   }
 
   /* ============================================================
      Messages (messagerie simple, 2 conversations démo)
      ============================================================ */
+  /* Récupère un message de refus courtois côté recruteur s'il en existe un
+     (clé partagée ss_refus_demo, écrite par l'espace entreprise). */
+  function refusFromStore() {
+    var r = SS.store.get("ss_refus_demo", {}) || {};
+    var keys = Object.keys(r);
+    for (var i = 0; i < keys.length; i++) {
+      if (r[keys[i]] && r[keys[i]].message) { return r[keys[i]]; }
+    }
+    return null;
+  }
+
   function defaultConversations() {
+    var refus = refusFromStore();
+    var refusText = (refus && refus.message)
+      ? refus.message
+      : "Bonjour Jonathan, nous vous remercions sincèrement pour l'intérêt porté à notre entreprise. Après une étude attentive, nous avons retenu un autre profil pour ce poste. Nous conservons votre candidature et reviendrons vers vous si une opportunité correspond à votre parcours. Nous vous souhaitons une pleine réussite dans vos recherches.";
+    var refusDate = (refus && refus.date) ? refus.date : "2026-08-04";
     return [
       {
-        id: "conv-pixel", entreprise: "Pixel & Co", poste: "Développeur web junior", entrepriseId: "pixel-and-co",
+        id: "conv-pixel", entreprise: "Pixel & Co", poste: "Développeur web junior", candidature: "Développeur web junior", entrepriseId: "pixel-and-co",
         messages: [
           { from: "them", date: "2026-08-14", text: "Bonjour Jonathan, nous avons bien reçu votre candidature et souhaiterions vous rencontrer. Seriez-vous disponible le 21 août à 14 h en visioconférence ?" },
           { from: "me", date: "2026-08-14", text: "Bonjour, merci beaucoup ! Le 21 août à 14 h me convient parfaitement." }
         ]
       },
       {
-        id: "conv-technexis", entreprise: "TechNexis", poste: "Office manager", entrepriseId: "technexis",
+        id: "conv-technexis", entreprise: "TechNexis", poste: "Office manager", candidature: "Office manager", entrepriseId: "technexis",
         messages: [
           { from: "them", date: "2026-08-13", text: "Bonjour, votre profil a retenu notre attention pour le poste d'office manager. Pourriez-vous nous préciser vos disponibilités pour un premier échange ?" }
+        ]
+      },
+      {
+        id: "conv-refus", entreprise: "Pixel & Co", poste: "Chef de projet digital", candidature: "Chef de projet digital", entrepriseId: "pixel-and-co",
+        messages: [
+          { from: "me", date: "2026-07-28", text: "Bonjour, je vous adresse ma candidature pour le poste de chef de projet digital. Je reste à votre disposition pour tout complément." },
+          { from: "them", date: refusDate, text: refusText }
         ]
       }
     ];
@@ -1187,7 +1410,9 @@
     _conversations = _conversations || defaultConversations();
 
     if (!_conversations.length) {
-      box.innerHTML = '<div class="empty-state"><p>Aucune conversation pour le moment.</p></div>';
+      box.classList.remove("is-thread-open");
+      box.innerHTML = '<div class="empty-state"><h3>Aucune conversation pour le moment.</h3>' +
+        "<p>Vos échanges avec les entreprises apparaîtront ici.</p></div>";
       return;
     }
     if (!_activeConv) { _activeConv = _conversations[0].id; }
@@ -1214,8 +1439,12 @@
     box.innerHTML =
       '<div class="msg-list" role="list" aria-label="Conversations">' + listHtml + "</div>" +
       '<div class="msg-thread">' +
-        '<div class="msg-thread__head"><strong>' + e(conv.entreprise) + "</strong>" +
-          '<span class="text-muted">' + e(conv.poste) + "</span></div>" +
+        '<div class="msg-thread__head">' +
+          '<button type="button" class="btn btn-ghost btn-sm msg-back" data-msg-back>← Conversations</button>' +
+          '<strong class="msg-thread__name" tabindex="-1">' + e(conv.entreprise) + "</strong>" +
+          '<span class="text-muted">' + e(conv.poste) + "</span>" +
+          '<span class="msg-thread__context">Candidature : ' + e(conv.candidature || conv.poste) + "</span>" +
+        "</div>" +
         '<div class="msg-thread__body">' + bubbles + "</div>" +
         '<form class="msg-reply" data-conv="' + e(conv.id) + '">' +
           '<label class="sr-only" for="msg-reply-input">Votre réponse</label>' +
@@ -1224,11 +1453,20 @@
         "</form>" +
       "</div>";
 
-    box.querySelectorAll("[data-conv]").forEach(function (el) {
-      if (el.classList.contains("msg-conv")) {
-        el.addEventListener("click", function () { _activeConv = el.getAttribute("data-conv"); renderMessages(); });
-      }
+    box.querySelectorAll(".msg-conv").forEach(function (el) {
+      el.addEventListener("click", function () {
+        _activeConv = el.getAttribute("data-conv");
+        renderMessages();
+        box.classList.add("is-thread-open"); /* mobile : bascule vers le fil */
+        var name = box.querySelector(".msg-thread__name");
+        if (name) { name.focus(); }
+      });
     });
+
+    var back = box.querySelector("[data-msg-back]");
+    if (back) {
+      back.addEventListener("click", function () { box.classList.remove("is-thread-open"); });
+    }
 
     var form = box.querySelector(".msg-reply");
     if (form) {
@@ -1237,8 +1475,10 @@
         var ta = form.querySelector("textarea");
         var text = ta ? ta.value.trim() : "";
         if (!text) { SS.toast("Écrivez un message avant d'envoyer."); return; }
-        conv.messages.push({ from: "me", date: new Date().toISOString().slice(0, 10), text: text });
+        conv.messages.push({ from: "me", date: today(), text: text });
+        var wasOpen = box.classList.contains("is-thread-open");
         renderMessages();
+        if (wasOpen) { box.classList.add("is-thread-open"); }
         SS.toast("Message envoyé (démonstration).");
       });
     }

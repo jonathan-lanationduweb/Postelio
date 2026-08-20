@@ -701,6 +701,14 @@ a.dash-nav__group:focus-visible { outline: none; box-shadow: var(--shadow-focus)
 .status-non-retenue { background: var(--c-error-soft); color: var(--c-error); }
 .status-retiree { background: var(--c-bg-alt); color: var(--c-ink-soft); }
 
+/* Statuts d'entretien — badges très différenciés (§8, page Entretiens) */
+.status-badge--dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.status-badge--confirme { background: var(--c-success); color: #fff; }        /* vert plein */
+.status-badge--attente { background: var(--c-accent-soft); color: var(--c-accent-dark); } /* orange */
+.status-badge--creneau { background: var(--c-info-soft); color: #1e4f7a; }    /* bleu / info */
+.status-badge--annule { background: var(--c-bg-alt); color: #a23b3b; }        /* gris / rouge atténué */
+.status-badge--realise { background: var(--c-primary-soft); color: var(--c-primary-dark); } /* vert atténué */
+
 /* Connexion / inscription : rôles, démo, choix */
 .auth-roles { border: 1px solid var(--c-line); border-radius: var(--radius-m); padding: 10px 12px; }
 .auth-roles legend { font-size: var(--text-sm); font-weight: 600; padding: 0 4px; }
@@ -953,11 +961,60 @@ body.kanban-dragging, body.kanban-dragging .pipeline-card { cursor: grabbing; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
 
 /* ---- Entretiens ---- */
-.interview-card { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-4); }
-.interview-card__when { font-weight: 700; color: var(--c-primary-dark); }
+
+/* A. En-tête : phrase descriptive → bouton → espace net avant la liste */
+.iv-head { margin: var(--sp-3) 0 var(--sp-6); }
+.iv-head__hint { color: var(--c-ink-soft); max-width: 62ch; margin: 0 0 var(--sp-4); }
+
+/* D. Cartes d'entretien — liseré de couleur par statut (renfort visuel) */
+.interview-card { display: grid; gap: var(--sp-1); margin-bottom: var(--sp-4); border-left: 4px solid var(--c-line); }
+.interview-card[data-statut="confirme"] { border-left-color: var(--c-success); }
+.interview-card[data-statut="attente"] { border-left-color: var(--c-accent); }
+.interview-card[data-statut="nouveau_creneau"] { border-left-color: #3a72a8; }
+.interview-card[data-statut="annule"] { border-left-color: #c98b8b; }
+.interview-card[data-statut="realise"] { border-left-color: var(--c-primary); }
+.interview-card__when { font-weight: 700; color: var(--c-primary-dark); margin: var(--sp-1) 0 0; }
 .interview-card__who strong { font-size: 1.05rem; }
-.interview-card__who .text-muted { margin-left: var(--sp-2); font-size: var(--text-sm); }
-.interview-card__mode { font-size: var(--text-sm); color: var(--c-ink-soft); margin: 0; }
+.interview-card__who .text-muted { font-size: var(--text-sm); }
+.interview-card__mode,
+.interview-card__offer { font-size: var(--text-sm); color: var(--c-ink-soft); margin: 0; }
+.interview-card .row-actions { margin-top: var(--sp-2); align-items: center; }
+
+/* Menu « … » d'actions par carte (disclosure natif, accessible) */
+.row-menu { position: relative; display: inline-block; }
+.row-menu > summary { list-style: none; cursor: pointer; min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.row-menu > summary::-webkit-details-marker { display: none; }
+.row-menu > summary:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.row-menu__pop {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 220px;
+  display: grid; padding: var(--sp-2); gap: 2px;
+  background: var(--c-surface); border: 1px solid var(--c-line);
+  border-radius: var(--radius-m); box-shadow: var(--shadow-m);
+}
+.row-menu__pop button {
+  min-height: 44px; text-align: left; padding: var(--sp-2) var(--sp-3);
+  background: none; border: 0; border-radius: var(--radius-s); cursor: pointer;
+  color: var(--c-ink); font-size: var(--text-sm);
+}
+.row-menu__pop button:hover { background: var(--c-primary-soft); }
+.row-menu__pop button:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.row-menu__pop .row-menu__danger { color: var(--c-error); }
+.row-menu__pop .row-menu__danger:hover { background: var(--c-error-soft); }
+
+/* Champs dynamiques de la modale : espacement au-dessus des blocs par format */
+.iv-fmt { border-top: 1px dashed var(--c-line); padding-top: var(--sp-4); margin-top: var(--sp-1); }
+
+/* Le pied d'actions bascule form / aperçu — [hidden] doit l'emporter sur le
+   display:flex de .modal__actions (sinon les deux barres s'affichent). */
+#iv-modal .modal__actions[hidden] { display: none; }
+
+/* C. Aperçu avant envoi */
+.iv-preview__lead { color: var(--c-ink-soft); margin: 0 0 var(--sp-4); }
+.iv-preview__grid { display: grid; gap: var(--sp-3); margin: 0; }
+.iv-preview__grid > div { display: grid; gap: 2px; padding-bottom: var(--sp-3); border-bottom: 1px solid var(--c-line); }
+.iv-preview__grid > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.iv-preview__grid dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-ink-soft); }
+.iv-preview__grid dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
 
 /* ---- Messagerie ---- */
 .messaging {

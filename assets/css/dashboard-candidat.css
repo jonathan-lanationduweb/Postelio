@@ -269,6 +269,45 @@
 .profile-row__edit textarea,
 .profile-row__edit input { width: 100%; }
 
+/* Dates de mise à jour (profil + CV) */
+.profile-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-5);
+  margin-top: var(--sp-3);
+}
+.profile-dates__item {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--c-ink-soft);
+}
+.profile-dates__item strong { color: var(--c-ink); }
+
+/* Sous-section « Mon CV » */
+.cand-cv { margin-top: var(--sp-4); }
+.cand-cv .profile-row__head { margin-bottom: var(--sp-3); }
+.cand-cv__file {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-m);
+  background: var(--c-bg-alt);
+  margin-bottom: var(--sp-3);
+}
+.cand-cv__icon { font-size: 1.6rem; line-height: 1; }
+.cand-cv__meta { display: flex; flex-direction: column; min-width: 0; }
+.cand-cv__meta strong { color: var(--c-primary-dark); word-break: break-word; }
+.cand-cv__meta .text-muted { font-size: var(--text-sm); }
+
+/* État vide compact (dans une carte, sans bordure pointillée pleine hauteur) */
+.empty-state--inline {
+  padding: var(--sp-4) 0 0;
+  border: 0;
+  text-align: left;
+}
+
 /* ============================================================
    Mes savoir-faire
    ============================================================ */
@@ -346,11 +385,30 @@
 .interview-card__date span:last-child { display: block; font-weight: 650; color: var(--c-accent-dark); }
 .interview-card__mode { margin-top: var(--sp-2); }
 .interview-card__actions { display: flex; flex-direction: column; gap: var(--sp-2); }
+.interview-card__propose { margin: var(--sp-2) 0 0; color: var(--c-ink); }
+.interview-card__lieu { margin: var(--sp-2) 0 0; font-size: var(--text-sm); }
+.interview-card__note { margin: var(--sp-2) 0 0; font-size: var(--text-sm); font-style: italic; }
+
+/* Formulaire « Proposer un autre créneau » : occupe toute la largeur de la
+   carte (4e enfant de la grille) sur sa propre ligne. */
+.interview-card__slot {
+  grid-column: 1 / -1;
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--c-line);
+}
+.interview-card__slot .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+.interview-card__slot input { width: 100%; }
 
 @media (max-width: 720px) {
   .interview-card { grid-template-columns: 1fr; }
   .interview-card__date { min-width: 0; display: flex; gap: var(--sp-3); align-items: baseline; justify-content: center; }
   .interview-card__actions { flex-direction: row; flex-wrap: wrap; }
+  .interview-card__slot .form-row { grid-template-columns: 1fr; }
 }
 
 /* ============================================================
@@ -426,11 +484,25 @@
 .msg-reply textarea { flex: 1; width: 100%; resize: vertical; margin: 0; }
 .msg-reply .btn { flex-shrink: 0; }
 
+/* Contexte de l'offre dans l'en-tête du fil + bouton retour (mobile). */
+.msg-thread__context {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--c-ink-soft);
+  margin-top: 2px;
+}
+.msg-thread__name:focus-visible { outline: none; box-shadow: var(--shadow-focus); border-radius: var(--radius-s); }
+.msg-back { display: none; align-self: flex-start; margin-bottom: var(--sp-2); padding-left: 0; }
+
 @media (max-width: 720px) {
-  .msg-app { grid-template-columns: 1fr; }   /* pas de scroll horizontal en mobile */
-  .msg-list { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--c-line); }
-  .msg-conv { border-bottom: 0; border-right: 1px solid var(--c-line); min-width: 200px; }
-  .msg-conv.is-active { box-shadow: inset 0 -3px 0 var(--c-primary); }
+  /* Mobile : liste seule, puis fil en plein écran avec retour (pas de scroll
+     horizontal). Bascule pilotée par .is-thread-open (posée en JS). */
+  .msg-app { grid-template-columns: 1fr; }
+  .msg-list { border-right: 0; border-bottom: 1px solid var(--c-line); }
+  .msg-thread { display: none; }
+  .msg-app.is-thread-open .msg-list { display: none; }
+  .msg-app.is-thread-open .msg-thread { display: flex; }
+  .msg-back { display: inline-flex; }
   .msg-bubble { max-width: 90%; }
 }
 
