@@ -35,8 +35,18 @@
       "Sens de l'accueil, discrétion et calme face aux situations d'urgence",
       "Bonne orthographe et aisance avec les outils informatiques"
     ],
-    "competences": ["Accueil physique et téléphonique", "Terminologie médicale", "Gestion d'agendas", "Tiers payant et feuilles de soins", "Frappe de comptes rendus"],
-    "avantages": ["Mutuelle prise en charge à 80 %", "Planning fixe connu un mois à l'avance", "Cabinet accessible en métro (Foch)"],
+    "competences": [
+      "Accueil physique et téléphonique",
+      "Terminologie médicale",
+      "Gestion d'agendas",
+      "Tiers payant et feuilles de soins",
+      "Frappe de comptes rendus"
+    ],
+    "avantages": [
+      "Mutuelle prise en charge à 80 %",
+      "Planning fixe connu un mois à l'avance",
+      "Cabinet accessible en métro (Foch)"
+    ],
     "email": "recrutement@tilleuls.exemple.fr"
   },
   {
@@ -75,8 +85,18 @@
       "Organisation et fiabilité dans le suivi de dossiers nombreux",
       "Aisance avec Excel et les outils de gestion documentaire"
     ],
-    "competences": ["Rédaction de courriers", "Suivi de dossiers de sous-traitance", "Excel", "Classement et archivage", "Standard téléphonique"],
-    "avantages": ["Tickets restaurant", "Prime de fin de contrat", "Parking sur site"],
+    "competences": [
+      "Rédaction de courriers",
+      "Suivi de dossiers de sous-traitance",
+      "Excel",
+      "Classement et archivage",
+      "Standard téléphonique"
+    ],
+    "avantages": [
+      "Tickets restaurant",
+      "Prime de fin de contrat",
+      "Parking sur site"
+    ],
     "email": "recrutement@horizonbtp.exemple.fr"
   },
   {
@@ -115,8 +135,19 @@
       "Polyvalence, autonomie et sens pratique",
       "Aisance relationnelle avec des interlocuteurs variés"
     ],
-    "competences": ["Services généraux", "Préparation de la paie", "Onboarding", "Gestion de prestataires", "Organisation d'événements"],
-    "avantages": ["Télétravail partiel", "Titres restaurant", "Intéressement", "Budget formation"],
+    "competences": [
+      "Services généraux",
+      "Préparation de la paie",
+      "Onboarding",
+      "Gestion de prestataires",
+      "Organisation d'événements"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Titres restaurant",
+      "Intéressement",
+      "Budget formation"
+    ],
     "email": "recrutement@technexis.exemple.fr"
   },
   {
@@ -155,8 +186,19 @@
       "Diplomatie, anticipation et parfaite discrétion",
       "Très bonne expression écrite et sens de l'organisation"
     ],
-    "competences": ["Gestion d'agendas complexes", "Organisation de réunions", "Rédaction de comptes rendus", "Suivi d'appels d'offres", "Coordination transverse"],
-    "avantages": ["Télétravail partiel", "Prime de participation", "Mutuelle du bâtiment", "Bureau individuel"],
+    "competences": [
+      "Gestion d'agendas complexes",
+      "Organisation de réunions",
+      "Rédaction de comptes rendus",
+      "Suivi d'appels d'offres",
+      "Coordination transverse"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Prime de participation",
+      "Mutuelle du bâtiment",
+      "Bureau individuel"
+    ],
     "email": "recrutement@horizonbtp.exemple.fr"
   },
   {
@@ -195,8 +237,18 @@
       "Sens du service, dynamisme et goût du travail en équipe",
       "Sensibilité à la mode et présentation soignée"
     ],
-    "competences": ["Vente conseil", "Encaissement", "Merchandising", "Fidélisation client", "Gestion des stocks"],
-    "avantages": ["Réductions sur les collections", "Primes sur objectifs", "Mutuelle d'entreprise"],
+    "competences": [
+      "Vente conseil",
+      "Encaissement",
+      "Merchandising",
+      "Fidélisation client",
+      "Gestion des stocks"
+    ],
+    "avantages": [
+      "Réductions sur les collections",
+      "Primes sur objectifs",
+      "Mutuelle d'entreprise"
+    ],
     "email": "recrutement@mode-et-vous.exemple.fr"
   },
   {
@@ -235,8 +287,19 @@
       "Goût de la prospection et de la négociation",
       "Autonomie, ténacité et fibre technique"
     ],
-    "competences": ["Prospection B2B", "Démonstration produit", "Négociation", "CRM", "Closing"],
-    "avantages": ["Variable déplafonné", "Voiture de fonction", "Télétravail partiel", "Titres restaurant"],
+    "competences": [
+      "Prospection B2B",
+      "Démonstration produit",
+      "Négociation",
+      "CRM",
+      "Closing"
+    ],
+    "avantages": [
+      "Variable déplafonné",
+      "Voiture de fonction",
+      "Télétravail partiel",
+      "Titres restaurant"
+    ],
     "email": "recrutement@technexis.exemple.fr"
   },
   {
@@ -275,8 +338,19 @@
       "Leadership, exemplarité et sens du résultat",
       "Aisance avec les outils de pilotage commercial"
     ],
-    "competences": ["Management d'équipe", "Pilotage du CA", "Gestion des stocks", "Merchandising", "Reporting commercial"],
-    "avantages": ["Primes sur objectifs", "Réductions sur les collections", "Mutuelle d'entreprise", "Perspectives d'évolution régionale"],
+    "competences": [
+      "Management d'équipe",
+      "Pilotage du CA",
+      "Gestion des stocks",
+      "Merchandising",
+      "Reporting commercial"
+    ],
+    "avantages": [
+      "Primes sur objectifs",
+      "Réductions sur les collections",
+      "Mutuelle d'entreprise",
+      "Perspectives d'évolution régionale"
+    ],
     "email": "recrutement@mode-et-vous.exemple.fr"
   },
   {
@@ -315,8 +389,19 @@
       "Bases solides en JavaScript, HTML/CSS et un framework moderne",
       "Curiosité, rigueur et envie d'apprendre en équipe"
     ],
-    "competences": ["JavaScript", "HTML / CSS", "React ou Vue", "Git", "API REST"],
-    "avantages": ["Télétravail partiel", "Matériel Apple", "Budget formation annuel", "Locaux modernes"],
+    "competences": [
+      "JavaScript",
+      "HTML / CSS",
+      "React ou Vue",
+      "Git",
+      "API REST"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Matériel Apple",
+      "Budget formation annuel",
+      "Locaux modernes"
+    ],
     "email": "recrutement@pixel-and-co.exemple.fr"
   },
   {
@@ -355,8 +440,19 @@
       "Sens du service, pédagogie et patience",
       "Aisance avec les logiciels de gestion et les outils de ticketing"
     ],
-    "competences": ["Support utilisateur", "Diagnostic d'incidents", "Outils de ticketing", "Bases de données", "Pédagogie"],
-    "avantages": ["Télétravail partiel", "Titres restaurant", "Prime de fin de contrat", "Formation aux produits"],
+    "competences": [
+      "Support utilisateur",
+      "Diagnostic d'incidents",
+      "Outils de ticketing",
+      "Bases de données",
+      "Pédagogie"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Titres restaurant",
+      "Prime de fin de contrat",
+      "Formation aux produits"
+    ],
     "email": "recrutement@technexis.exemple.fr"
   },
   {
@@ -395,8 +491,19 @@
       "Rigueur, sens de l'organisation et aisance relationnelle",
       "Culture web et compréhension des enjeux techniques"
     ],
-    "competences": ["Gestion de projet", "Cadrage client", "Méthodes agiles", "Suivi budgétaire", "Relation client"],
-    "avantages": ["Télétravail partiel", "Matériel Apple", "Budget formation annuel", "Intéressement"],
+    "competences": [
+      "Gestion de projet",
+      "Cadrage client",
+      "Méthodes agiles",
+      "Suivi budgétaire",
+      "Relation client"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Matériel Apple",
+      "Budget formation annuel",
+      "Intéressement"
+    ],
     "email": "recrutement@pixel-and-co.exemple.fr"
   },
   {
@@ -435,8 +542,18 @@
       "Sens du contact, douceur et discrétion",
       "Rigueur dans le respect des protocoles d'hygiène"
     ],
-    "competences": ["Soins de base", "Prise de constantes", "Hygiène et asepsie", "Accompagnement des patients", "Travail en équipe médicale"],
-    "avantages": ["Mutuelle prise en charge à 80 %", "Planning fixe connu un mois à l'avance", "Cabinet accessible en métro (Foch)"],
+    "competences": [
+      "Soins de base",
+      "Prise de constantes",
+      "Hygiène et asepsie",
+      "Accompagnement des patients",
+      "Travail en équipe médicale"
+    ],
+    "avantages": [
+      "Mutuelle prise en charge à 80 %",
+      "Planning fixe connu un mois à l'avance",
+      "Cabinet accessible en métro (Foch)"
+    ],
     "email": "recrutement@tilleuls.exemple.fr"
   },
   {
@@ -475,8 +592,19 @@
       "Sens de l'organisation, écoute et discrétion",
       "Aisance avec les outils informatiques et les agendas en ligne"
     ],
-    "competences": ["Gestion d'agendas médicaux", "Suivi de dossiers patients", "Accueil téléphonique", "Terminologie médicale", "Coordination des soins"],
-    "avantages": ["Télétravail partiel", "Prime de qualité mensuelle", "Formation initiale rémunérée", "Matériel fourni"],
+    "competences": [
+      "Gestion d'agendas médicaux",
+      "Suivi de dossiers patients",
+      "Accueil téléphonique",
+      "Terminologie médicale",
+      "Coordination des soins"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Prime de qualité mensuelle",
+      "Formation initiale rémunérée",
+      "Matériel fourni"
+    ],
     "email": "jobs@novasante.exemple.fr"
   },
   {
@@ -515,8 +643,19 @@
       "Capacité d'organisation, leadership et rigueur budgétaire",
       "Maîtrise de la lecture de plans et des règles de sécurité"
     ],
-    "competences": ["Pilotage de chantier", "Lecture de plans", "Gestion budgétaire", "Encadrement d'équipes", "Sécurité chantier"],
-    "avantages": ["Véhicule de service", "Prime de participation", "Mutuelle du bâtiment", "Perspectives d'évolution"],
+    "competences": [
+      "Pilotage de chantier",
+      "Lecture de plans",
+      "Gestion budgétaire",
+      "Encadrement d'équipes",
+      "Sécurité chantier"
+    ],
+    "avantages": [
+      "Véhicule de service",
+      "Prime de participation",
+      "Mutuelle du bâtiment",
+      "Perspectives d'évolution"
+    ],
     "email": "recrutement@horizonbtp.exemple.fr"
   },
   {
@@ -555,8 +694,19 @@
       "Leadership de terrain et sens de l'organisation",
       "Bonne connaissance des règles de sécurité"
     ],
-    "competences": ["Encadrement de terrain", "Lecture de plans", "Organisation de chantier", "Gestion des approvisionnements", "Sécurité chantier"],
-    "avantages": ["Véhicule de service", "Prime de participation", "Paniers repas", "Promotion interne"],
+    "competences": [
+      "Encadrement de terrain",
+      "Lecture de plans",
+      "Organisation de chantier",
+      "Gestion des approvisionnements",
+      "Sécurité chantier"
+    ],
+    "avantages": [
+      "Véhicule de service",
+      "Prime de participation",
+      "Paniers repas",
+      "Promotion interne"
+    ],
     "email": "recrutement@horizonbtp.exemple.fr"
   },
   {
@@ -595,8 +745,19 @@
       "Rigueur, précision et sens de l'analyse",
       "Maîtrise des logiciels de métré et du tableur"
     ],
-    "competences": ["Métré et quantitatifs", "Lecture de plans", "Chiffrage", "Consultation fournisseurs", "Logiciels de métré"],
-    "avantages": ["Télétravail partiel", "Tickets restaurant", "Prime de fin de contrat", "Bureau d'études équipé"],
+    "competences": [
+      "Métré et quantitatifs",
+      "Lecture de plans",
+      "Chiffrage",
+      "Consultation fournisseurs",
+      "Logiciels de métré"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Tickets restaurant",
+      "Prime de fin de contrat",
+      "Bureau d'études équipé"
+    ],
     "email": "recrutement@horizonbtp.exemple.fr"
   },
   {
@@ -635,8 +796,19 @@
       "Rigueur, rapidité et esprit d'équipe",
       "Aptitude au travail en environnement réfrigéré ; CACES 1 un plus"
     ],
-    "competences": ["Préparation de commandes", "Picking vocal", "Palettisation", "Respect de la chaîne du froid", "CACES 1"],
-    "avantages": ["Prime de froid", "Panier repas", "Indemnités de fin de mission", "Formation assurée à la prise de poste"],
+    "competences": [
+      "Préparation de commandes",
+      "Picking vocal",
+      "Palettisation",
+      "Respect de la chaîne du froid",
+      "CACES 1"
+    ],
+    "avantages": [
+      "Prime de froid",
+      "Panier repas",
+      "Indemnités de fin de mission",
+      "Formation assurée à la prise de poste"
+    ],
     "email": "recrutement@distrifrais.exemple.fr"
   },
   {
@@ -675,8 +847,19 @@
       "Leadership, sens de l'organisation et culture du résultat",
       "Maîtrise des outils WMS et du pilotage par indicateurs"
     ],
-    "competences": ["Gestion des flux logistiques", "Management d'équipe", "WMS", "Pilotage d'indicateurs", "Normes HACCP"],
-    "avantages": ["13e mois", "Prime sur objectifs", "Mutuelle d'entreprise", "Poste à responsabilités"],
+    "competences": [
+      "Gestion des flux logistiques",
+      "Management d'équipe",
+      "WMS",
+      "Pilotage d'indicateurs",
+      "Normes HACCP"
+    ],
+    "avantages": [
+      "13e mois",
+      "Prime sur objectifs",
+      "Mutuelle d'entreprise",
+      "Poste à responsabilités"
+    ],
     "email": "recrutement@distrifrais.exemple.fr"
   },
   {
@@ -715,8 +898,19 @@
       "2 ans d'expérience minimum sur un poste similaire",
       "Rigueur, autonomie et sens du service client"
     ],
-    "competences": ["Tenue et révision comptable", "Déclarations fiscales", "Établissement de bilans", "Logiciels de production comptable", "Conseil client"],
-    "avantages": ["Télétravail partiel", "Prime de bilan", "Titres restaurant", "Parcours de formation diplômante"],
+    "competences": [
+      "Tenue et révision comptable",
+      "Déclarations fiscales",
+      "Établissement de bilans",
+      "Logiciels de production comptable",
+      "Conseil client"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Prime de bilan",
+      "Titres restaurant",
+      "Parcours de formation diplômante"
+    ],
     "email": "recrutement@rivage-associes.exemple.fr"
   },
   {
@@ -755,8 +949,19 @@
       "Goût des chiffres et envie d'apprendre le métier en cabinet",
       "Rigueur, curiosité et sens de l'organisation"
     ],
-    "competences": ["Saisie comptable", "Rapprochements bancaires", "Déclarations de TVA", "Numérisation des pièces", "Tableur"],
-    "avantages": ["Tuteur dédié", "Titres restaurant", "Cadre formateur", "Perspective d'embauche"],
+    "competences": [
+      "Saisie comptable",
+      "Rapprochements bancaires",
+      "Déclarations de TVA",
+      "Numérisation des pièces",
+      "Tableur"
+    ],
+    "avantages": [
+      "Tuteur dédié",
+      "Titres restaurant",
+      "Cadre formateur",
+      "Perspective d'embauche"
+    ],
     "email": "recrutement@rivage-associes.exemple.fr"
   },
   {
@@ -795,8 +1000,19 @@
       "Aisance relationnelle, écoute et sens de l'organisation",
       "Intérêt pour les métiers de la tech apprécié"
     ],
-    "competences": ["Sourcing", "Conduite d'entretiens", "Relation candidat", "Marque employeur", "Suivi d'indicateurs de recrutement"],
-    "avantages": ["Télétravail partiel", "Titres restaurant", "Intéressement", "Budget formation"],
+    "competences": [
+      "Sourcing",
+      "Conduite d'entretiens",
+      "Relation candidat",
+      "Marque employeur",
+      "Suivi d'indicateurs de recrutement"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Titres restaurant",
+      "Intéressement",
+      "Budget formation"
+    ],
     "email": "recrutement@technexis.exemple.fr"
   },
   {
@@ -835,8 +1051,19 @@
       "Fibre commerciale, ténacité et sens du contact",
       "Permis B indispensable pour les déplacements"
     ],
-    "competences": ["Prospection", "Estimation de biens", "Négociation", "Relation client", "Suivi de dossiers de vente"],
-    "avantages": ["Commissions attractives", "Véhicule de service", "Téléphone et outils fournis", "Ambiance d'équipe"],
+    "competences": [
+      "Prospection",
+      "Estimation de biens",
+      "Négociation",
+      "Relation client",
+      "Suivi de dossiers de vente"
+    ],
+    "avantages": [
+      "Commissions attractives",
+      "Véhicule de service",
+      "Téléphone et outils fournis",
+      "Ambiance d'équipe"
+    ],
     "email": "recrutement@atrium-immobilier.exemple.fr"
   },
   {
@@ -875,8 +1102,19 @@
       "Rigueur, sens du service et diplomatie",
       "Connaissance de la réglementation des baux d'habitation"
     ],
-    "competences": ["Gestion locative", "Rédaction de baux", "Quittancement", "Relation propriétaires / locataires", "Réglementation des baux"],
-    "avantages": ["Télétravail partiel", "Téléphone et outils fournis", "Mutuelle d'entreprise", "Ambiance d'équipe conviviale"],
+    "competences": [
+      "Gestion locative",
+      "Rédaction de baux",
+      "Quittancement",
+      "Relation propriétaires / locataires",
+      "Réglementation des baux"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Téléphone et outils fournis",
+      "Mutuelle d'entreprise",
+      "Ambiance d'équipe conviviale"
+    ],
     "email": "recrutement@atrium-immobilier.exemple.fr"
   },
   {
@@ -915,8 +1153,19 @@
       "Sens de l'accueil, dynamisme et résistance au rythme",
       "Esprit d'équipe et présentation soignée"
     ],
-    "competences": ["Service en salle", "Prise de commandes", "Encaissement", "Relation client", "Mise en place"],
-    "avantages": ["Deux jours de repos consécutifs", "Repas fournis", "Pourboires partagés", "Formation assurée en salle"],
+    "competences": [
+      "Service en salle",
+      "Prise de commandes",
+      "Encaissement",
+      "Relation client",
+      "Mise en place"
+    ],
+    "avantages": [
+      "Deux jours de repos consécutifs",
+      "Repas fournis",
+      "Pourboires partagés",
+      "Formation assurée en salle"
+    ],
     "email": "recrutement@comptoir-des-halles.exemple.fr"
   },
   {
@@ -955,8 +1204,19 @@
       "Sens du service, présentation soignée et diplomatie",
       "Anglais courant ; une seconde langue est un plus"
     ],
-    "competences": ["Check-in / check-out", "Gestion des réservations", "Facturation", "Anglais professionnel", "Conciergerie"],
-    "avantages": ["Deux jours de repos consécutifs", "Repas fournis", "Mutuelle d'entreprise", "Cadre face au Vieux-Port"],
+    "competences": [
+      "Check-in / check-out",
+      "Gestion des réservations",
+      "Facturation",
+      "Anglais professionnel",
+      "Conciergerie"
+    ],
+    "avantages": [
+      "Deux jours de repos consécutifs",
+      "Repas fournis",
+      "Mutuelle d'entreprise",
+      "Cadre face au Vieux-Port"
+    ],
     "email": "recrutement@comptoir-des-halles.exemple.fr"
   },
   {
@@ -995,8 +1255,19 @@
       "Passion du métier et souci du produit bien fait",
       "Ponctualité et goût du travail en équipe"
     ],
-    "competences": ["Pétrissage et façonnage", "Travail du levain", "Cuisson", "Viennoiserie", "Règles d'hygiène (HACCP)"],
-    "avantages": ["Deux jours de repos consécutifs", "Pain et viennoiseries offerts", "Prime de fin d'année", "Fournil neuf et climatisé"],
+    "competences": [
+      "Pétrissage et façonnage",
+      "Travail du levain",
+      "Cuisson",
+      "Viennoiserie",
+      "Règles d'hygiène (HACCP)"
+    ],
+    "avantages": [
+      "Deux jours de repos consécutifs",
+      "Pain et viennoiseries offerts",
+      "Prime de fin d'année",
+      "Fournil neuf et climatisé"
+    ],
     "email": "recrutement@fournil-augustin.exemple.fr"
   },
   {
@@ -1035,8 +1306,19 @@
       "Précision, minutie et sens du travail bien fait",
       "Aisance avec les machines traditionnelles et numériques appréciée"
     ],
-    "competences": ["Lecture de plans", "Usinage et assemblage", "Finitions", "Pose sur chantier", "Machines à commande numérique"],
-    "avantages": ["Atelier équipé de machines numériques", "Prime sur projets livrés", "Formation aux nouvelles techniques", "Projets variés"],
+    "competences": [
+      "Lecture de plans",
+      "Usinage et assemblage",
+      "Finitions",
+      "Pose sur chantier",
+      "Machines à commande numérique"
+    ],
+    "avantages": [
+      "Atelier équipé de machines numériques",
+      "Prime sur projets livrés",
+      "Formation aux nouvelles techniques",
+      "Projets variés"
+    ],
     "email": "recrutement@ateliers-ferronato.exemple.fr"
   },
   {
@@ -1075,8 +1357,19 @@
       "Aptitude au port de charges et au travail matinal",
       "Esprit d'équipe et respect des consignes de sécurité"
     ],
-    "competences": ["Manutention", "Tri de marchandises", "Contrôle des colis", "Filmage et étiquetage", "Règles de sécurité"],
-    "avantages": ["Formation assurée à la prise de poste", "Panier repas", "Indemnités de fin de mission", "Possibilité d'embauche"],
+    "competences": [
+      "Manutention",
+      "Tri de marchandises",
+      "Contrôle des colis",
+      "Filmage et étiquetage",
+      "Règles de sécurité"
+    ],
+    "avantages": [
+      "Formation assurée à la prise de poste",
+      "Panier repas",
+      "Indemnités de fin de mission",
+      "Possibilité d'embauche"
+    ],
     "email": "recrutement@distrifrais.exemple.fr"
   },
   {
@@ -1115,8 +1408,19 @@
       "Première expérience en conduite de chariots appréciée",
       "Rigueur, vigilance et esprit d'équipe"
     ],
-    "competences": ["Conduite CACES 1-3-5", "Réception marchandises", "Stockage en racks", "Réapprovisionnement", "Respect de la chaîne du froid"],
-    "avantages": ["Prime de froid", "Panier repas", "13e mois", "Mutuelle d'entreprise"],
+    "competences": [
+      "Conduite CACES 1-3-5",
+      "Réception marchandises",
+      "Stockage en racks",
+      "Réapprovisionnement",
+      "Respect de la chaîne du froid"
+    ],
+    "avantages": [
+      "Prime de froid",
+      "Panier repas",
+      "13e mois",
+      "Mutuelle d'entreprise"
+    ],
     "email": "recrutement@distrifrais.exemple.fr"
   },
   {
@@ -1155,8 +1459,19 @@
       "2 à 5 ans d'expérience en livraison, idéalement en frais",
       "Ponctualité, autonomie et sens du service client"
     ],
-    "competences": ["Conduite PL", "Respect de la chaîne du froid", "Relation client", "Gestion des bons de livraison", "Sécurité routière"],
-    "avantages": ["Prime de livraison", "Panier repas", "Mutuelle d'entreprise", "Tournées régulières"],
+    "competences": [
+      "Conduite PL",
+      "Respect de la chaîne du froid",
+      "Relation client",
+      "Gestion des bons de livraison",
+      "Sécurité routière"
+    ],
+    "avantages": [
+      "Prime de livraison",
+      "Panier repas",
+      "Mutuelle d'entreprise",
+      "Tournées régulières"
+    ],
     "email": "recrutement@distrifrais.exemple.fr"
   },
   {
@@ -1195,8 +1510,19 @@
       "Rigueur avec la manipulation d'argent",
       "Disponibilité le samedi"
     ],
-    "competences": ["Encaissement", "Accueil client", "Gestion de caisse", "Programme de fidélité", "Rendu de monnaie"],
-    "avantages": ["Formation assurée en magasin", "Réductions sur les collections", "Planning stable", "Mutuelle d'entreprise"],
+    "competences": [
+      "Encaissement",
+      "Accueil client",
+      "Gestion de caisse",
+      "Programme de fidélité",
+      "Rendu de monnaie"
+    ],
+    "avantages": [
+      "Formation assurée en magasin",
+      "Réductions sur les collections",
+      "Planning stable",
+      "Mutuelle d'entreprise"
+    ],
     "email": "recrutement@mode-et-vous.exemple.fr"
   },
   {
@@ -1235,8 +1561,19 @@
       "Goût du contact et sensibilité à la mode",
       "Motivation, dynamisme et esprit d'équipe"
     ],
-    "competences": ["Vente conseil", "Encaissement", "Merchandising", "Relation client", "Travail en équipe"],
-    "avantages": ["Tuteur dédié", "Réductions sur les collections", "Perspective d'embauche", "Formation au métier"],
+    "competences": [
+      "Vente conseil",
+      "Encaissement",
+      "Merchandising",
+      "Relation client",
+      "Travail en équipe"
+    ],
+    "avantages": [
+      "Tuteur dédié",
+      "Réductions sur les collections",
+      "Perspective d'embauche",
+      "Formation au métier"
+    ],
     "email": "recrutement@mode-et-vous.exemple.fr"
   },
   {
@@ -1275,8 +1612,19 @@
       "Sens du commerce, leadership et exemplarité",
       "Aisance avec les outils de pilotage"
     ],
-    "competences": ["Animation d'équipe", "Pilotage des ventes", "Merchandising", "Gestion des plannings", "Relation client"],
-    "avantages": ["Primes sur objectifs", "Réductions sur les collections", "Mutuelle d'entreprise", "Perspectives d'évolution"],
+    "competences": [
+      "Animation d'équipe",
+      "Pilotage des ventes",
+      "Merchandising",
+      "Gestion des plannings",
+      "Relation client"
+    ],
+    "avantages": [
+      "Primes sur objectifs",
+      "Réductions sur les collections",
+      "Mutuelle d'entreprise",
+      "Perspectives d'évolution"
+    ],
     "email": "recrutement@mode-et-vous.exemple.fr"
   },
   {
@@ -1315,8 +1663,19 @@
       "Ponctualité et rigueur avec la caisse",
       "Disponibilité tôt le matin ou le week-end selon planning"
     ],
-    "competences": ["Vente au comptoir", "Encaissement", "Conseil client", "Mise en vitrine", "Hygiène alimentaire"],
-    "avantages": ["Formation au poste assurée", "Pain et viennoiseries offerts", "Prime de fin d'année", "Planning fixe"],
+    "competences": [
+      "Vente au comptoir",
+      "Encaissement",
+      "Conseil client",
+      "Mise en vitrine",
+      "Hygiène alimentaire"
+    ],
+    "avantages": [
+      "Formation au poste assurée",
+      "Pain et viennoiseries offerts",
+      "Prime de fin d'année",
+      "Planning fixe"
+    ],
     "email": "recrutement@fournil-augustin.exemple.fr"
   },
   {
@@ -1355,8 +1714,19 @@
       "Créativité, minutie et sens du détail",
       "Rigueur dans le respect des recettes et de l'hygiène"
     ],
-    "competences": ["Pâtes et crèmes", "Montage d'entremets", "Finitions", "Création de recettes", "Règles d'hygiène (HACCP)"],
-    "avantages": ["Deux jours de repos consécutifs", "Produits offerts", "Prime de fin d'année", "Laboratoire moderne"],
+    "competences": [
+      "Pâtes et crèmes",
+      "Montage d'entremets",
+      "Finitions",
+      "Création de recettes",
+      "Règles d'hygiène (HACCP)"
+    ],
+    "avantages": [
+      "Deux jours de repos consécutifs",
+      "Produits offerts",
+      "Prime de fin d'année",
+      "Laboratoire moderne"
+    ],
     "email": "recrutement@fournil-augustin.exemple.fr"
   },
   {
@@ -1395,8 +1765,19 @@
       "Motivation, ponctualité et goût du travail manuel",
       "Aptitude au travail tôt le matin"
     ],
-    "competences": ["Pétrissage", "Façonnage", "Cuisson", "Hygiène alimentaire", "Travail en équipe"],
-    "avantages": ["Tuteur dédié", "Pain et viennoiseries offerts", "Cadre formateur", "Perspective d'embauche"],
+    "competences": [
+      "Pétrissage",
+      "Façonnage",
+      "Cuisson",
+      "Hygiène alimentaire",
+      "Travail en équipe"
+    ],
+    "avantages": [
+      "Tuteur dédié",
+      "Pain et viennoiseries offerts",
+      "Cadre formateur",
+      "Perspective d'embauche"
+    ],
     "email": "recrutement@fournil-augustin.exemple.fr"
   },
   {
@@ -1435,8 +1816,19 @@
       "Rapidité, propreté et esprit d'équipe",
       "Résistance au rythme du service"
     ],
-    "competences": ["Préparations de base", "Dressage", "Hygiène alimentaire (HACCP)", "Entretien du poste", "Travail en brigade"],
-    "avantages": ["Formation en cuisine assurée", "Repas fournis", "Deux jours de repos consécutifs", "Évolution possible vers chef de partie"],
+    "competences": [
+      "Préparations de base",
+      "Dressage",
+      "Hygiène alimentaire (HACCP)",
+      "Entretien du poste",
+      "Travail en brigade"
+    ],
+    "avantages": [
+      "Formation en cuisine assurée",
+      "Repas fournis",
+      "Deux jours de repos consécutifs",
+      "Évolution possible vers chef de partie"
+    ],
     "email": "recrutement@comptoir-des-halles.exemple.fr"
   },
   {
@@ -1475,8 +1867,19 @@
       "Sens du service, autonomie et leadership de terrain",
       "Bonne présentation et notions d'anglais"
     ],
-    "competences": ["Service en salle", "Encadrement de commis", "Conseil client", "Coordination cuisine-salle", "Encaissement"],
-    "avantages": ["Deux jours de repos consécutifs", "Repas fournis", "Pourboires partagés", "Cadre face au Vieux-Port"],
+    "competences": [
+      "Service en salle",
+      "Encadrement de commis",
+      "Conseil client",
+      "Coordination cuisine-salle",
+      "Encaissement"
+    ],
+    "avantages": [
+      "Deux jours de repos consécutifs",
+      "Repas fournis",
+      "Pourboires partagés",
+      "Cadre face au Vieux-Port"
+    ],
     "email": "recrutement@comptoir-des-halles.exemple.fr"
   },
   {
@@ -1515,8 +1918,19 @@
       "Rapidité d'exécution et discrétion",
       "Disponibilité sur toute la saison estivale"
     ],
-    "competences": ["Entretien des chambres", "Réfection des lits", "Gestion du linge", "Protocoles d'hygiène", "Sens du détail"],
-    "avantages": ["Formation assurée à la prise de poste", "Repas fournis", "Horaires de journée", "Cadre face au Vieux-Port"],
+    "competences": [
+      "Entretien des chambres",
+      "Réfection des lits",
+      "Gestion du linge",
+      "Protocoles d'hygiène",
+      "Sens du détail"
+    ],
+    "avantages": [
+      "Formation assurée à la prise de poste",
+      "Repas fournis",
+      "Horaires de journée",
+      "Cadre face au Vieux-Port"
+    ],
     "email": "recrutement@comptoir-des-halles.exemple.fr"
   },
   {
@@ -1555,8 +1969,19 @@
       "5 à 10 ans d'expérience en développement back-end",
       "Maîtrise d'un langage serveur, des API REST et des bases de données"
     ],
-    "competences": ["Node.js ou PHP", "Architecture logicielle", "API REST", "Bases de données", "CI/CD"],
-    "avantages": ["Télétravail complet possible", "Matériel Apple", "Budget formation annuel", "Intéressement"],
+    "competences": [
+      "Node.js ou PHP",
+      "Architecture logicielle",
+      "API REST",
+      "Bases de données",
+      "CI/CD"
+    ],
+    "avantages": [
+      "Télétravail complet possible",
+      "Matériel Apple",
+      "Budget formation annuel",
+      "Intéressement"
+    ],
     "email": "recrutement@pixel-and-co.exemple.fr"
   },
   {
@@ -1595,8 +2020,19 @@
       "Premières bases en HTML/CSS et JavaScript",
       "Curiosité, rigueur et envie d'apprendre"
     ],
-    "competences": ["HTML / CSS", "JavaScript", "Git", "Bases de données", "Travail en équipe"],
-    "avantages": ["Tuteur dédié", "Matériel Apple", "Télétravail partiel", "Perspective d'embauche"],
+    "competences": [
+      "HTML / CSS",
+      "JavaScript",
+      "Git",
+      "Bases de données",
+      "Travail en équipe"
+    ],
+    "avantages": [
+      "Tuteur dédié",
+      "Matériel Apple",
+      "Télétravail partiel",
+      "Perspective d'embauche"
+    ],
     "email": "recrutement@pixel-and-co.exemple.fr"
   },
   {
@@ -1635,8 +2071,19 @@
       "2 à 5 ans d'expérience en conception d'interfaces",
       "Maîtrise de Figma et culture des systèmes de design"
     ],
-    "competences": ["Recherche utilisateur", "Wireframing", "Figma", "Design system", "Prototypage"],
-    "avantages": ["Mission 100 % télétravail", "Projets variés", "Équipe créative bienveillante", "Collaboration au long cours"],
+    "competences": [
+      "Recherche utilisateur",
+      "Wireframing",
+      "Figma",
+      "Design system",
+      "Prototypage"
+    ],
+    "avantages": [
+      "Mission 100 % télétravail",
+      "Projets variés",
+      "Équipe créative bienveillante",
+      "Collaboration au long cours"
+    ],
     "email": "recrutement@pixel-and-co.exemple.fr"
   },
   {
@@ -1675,8 +2122,19 @@
       "Première expérience ou stage en marketing digital",
       "Aisance rédactionnelle et goût des chiffres"
     ],
-    "competences": ["SEO / SEA", "Réseaux sociaux", "E-mailing", "Google Analytics", "Rédaction web"],
-    "avantages": ["Télétravail partiel", "Matériel Apple", "Budget formation annuel", "Locaux modernes"],
+    "competences": [
+      "SEO / SEA",
+      "Réseaux sociaux",
+      "E-mailing",
+      "Google Analytics",
+      "Rédaction web"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Matériel Apple",
+      "Budget formation annuel",
+      "Locaux modernes"
+    ],
     "email": "recrutement@pixel-and-co.exemple.fr"
   },
   {
@@ -1715,8 +2173,19 @@
       "Aisance rédactionnelle et à l'aise avec les réseaux sociaux",
       "Curiosité, autonomie et esprit d'initiative"
     ],
-    "competences": ["Réseaux sociaux", "Rédaction web", "E-mailing", "Veille", "Reporting"],
-    "avantages": ["Tuteur dédié", "Matériel fourni", "Cadre formateur", "Perspective d'alternance ou d'embauche"],
+    "competences": [
+      "Réseaux sociaux",
+      "Rédaction web",
+      "E-mailing",
+      "Veille",
+      "Reporting"
+    ],
+    "avantages": [
+      "Tuteur dédié",
+      "Matériel fourni",
+      "Cadre formateur",
+      "Perspective d'alternance ou d'embauche"
+    ],
     "email": "recrutement@pixel-and-co.exemple.fr"
   },
   {
@@ -1755,8 +2224,19 @@
       "Maîtrise de Linux, des réseaux et d'un cloud public",
       "Rigueur, sens du service et culture de la sécurité"
     ],
-    "competences": ["Linux", "Réseaux", "Cloud", "Sécurité", "Scripting / IaC"],
-    "avantages": ["Télétravail partiel", "Titres restaurant", "Intéressement", "Budget formation et certifications"],
+    "competences": [
+      "Linux",
+      "Réseaux",
+      "Cloud",
+      "Sécurité",
+      "Scripting / IaC"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Titres restaurant",
+      "Intéressement",
+      "Budget formation et certifications"
+    ],
     "email": "recrutement@technexis.exemple.fr"
   },
   {
@@ -1795,8 +2275,19 @@
       "Bases en programmation et en bases de données",
       "Curiosité, rigueur et esprit d'équipe"
     ],
-    "competences": ["Programmation orientée objet", "SQL", "Git", "Tests", "Méthodes agiles"],
-    "avantages": ["Tuteur dédié", "Télétravail partiel", "Titres restaurant", "Perspective d'embauche"],
+    "competences": [
+      "Programmation orientée objet",
+      "SQL",
+      "Git",
+      "Tests",
+      "Méthodes agiles"
+    ],
+    "avantages": [
+      "Tuteur dédié",
+      "Télétravail partiel",
+      "Titres restaurant",
+      "Perspective d'embauche"
+    ],
     "email": "recrutement@technexis.exemple.fr"
   },
   {
@@ -1835,8 +2326,19 @@
       "Bonne élocution, orthographe correcte et discrétion",
       "À l'aise avec les outils informatiques"
     ],
-    "competences": ["Accueil téléphonique", "Prise de rendez-vous", "Orientation des demandes", "Saisie informatique", "Discrétion"],
-    "avantages": ["Formation initiale rémunérée", "Télétravail partiel après montée en compétences", "Prime de qualité mensuelle", "Horaires choisis par trimestre"],
+    "competences": [
+      "Accueil téléphonique",
+      "Prise de rendez-vous",
+      "Orientation des demandes",
+      "Saisie informatique",
+      "Discrétion"
+    ],
+    "avantages": [
+      "Formation initiale rémunérée",
+      "Télétravail partiel après montée en compétences",
+      "Prime de qualité mensuelle",
+      "Horaires choisis par trimestre"
+    ],
     "email": "jobs@novasante.exemple.fr"
   },
   {
@@ -1875,8 +2377,19 @@
       "Leadership bienveillant et sens du résultat",
       "Aisance avec les indicateurs et les outils de pilotage"
     ],
-    "competences": ["Animation d'équipe", "Pilotage d'indicateurs", "Écoute qualité", "Gestion de plannings", "Formation continue"],
-    "avantages": ["Télétravail partiel", "Prime sur objectifs", "Horaires choisis par trimestre", "Perspectives d'évolution"],
+    "competences": [
+      "Animation d'équipe",
+      "Pilotage d'indicateurs",
+      "Écoute qualité",
+      "Gestion de plannings",
+      "Formation continue"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Prime sur objectifs",
+      "Horaires choisis par trimestre",
+      "Perspectives d'évolution"
+    ],
     "email": "jobs@novasante.exemple.fr"
   },
   {
@@ -1915,8 +2428,19 @@
       "Sens de l'organisation, discrétion et aisance relationnelle",
       "À l'aise avec les outils bureautiques"
     ],
-    "competences": ["Administration du personnel", "Sourcing", "Organisation de formations", "Suivi d'indicateurs", "Bureautique"],
-    "avantages": ["Tuteur dédié", "Télétravail partiel", "Cadre formateur", "Perspective d'embauche"],
+    "competences": [
+      "Administration du personnel",
+      "Sourcing",
+      "Organisation de formations",
+      "Suivi d'indicateurs",
+      "Bureautique"
+    ],
+    "avantages": [
+      "Tuteur dédié",
+      "Télétravail partiel",
+      "Cadre formateur",
+      "Perspective d'embauche"
+    ],
     "email": "jobs@novasante.exemple.fr"
   },
   {
@@ -1955,8 +2479,19 @@
       "2 à 5 ans d'expérience, idéalement en cabinet",
       "Rigueur, discrétion et sens du service client"
     ],
-    "competences": ["Établissement de la paie", "DSN", "Conventions collectives", "Administration du personnel", "Logiciel de paie"],
-    "avantages": ["Télétravail partiel", "Prime de bilan", "Titres restaurant", "Parcours de formation"],
+    "competences": [
+      "Établissement de la paie",
+      "DSN",
+      "Conventions collectives",
+      "Administration du personnel",
+      "Logiciel de paie"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Prime de bilan",
+      "Titres restaurant",
+      "Parcours de formation"
+    ],
     "email": "recrutement@rivage-associes.exemple.fr"
   },
   {
@@ -1995,8 +2530,19 @@
       "Première expérience ou stage en audit apprécié",
       "Rigueur, esprit d'analyse et sens du détail"
     ],
-    "competences": ["Techniques d'audit", "Révision comptable", "Analyse financière", "Rédaction de synthèses", "Tableur avancé"],
-    "avantages": ["Télétravail partiel", "Prime de mission", "Titres restaurant", "Parcours vers le DEC"],
+    "competences": [
+      "Techniques d'audit",
+      "Révision comptable",
+      "Analyse financière",
+      "Rédaction de synthèses",
+      "Tableur avancé"
+    ],
+    "avantages": [
+      "Télétravail partiel",
+      "Prime de mission",
+      "Titres restaurant",
+      "Parcours vers le DEC"
+    ],
     "email": "recrutement@rivage-associes.exemple.fr"
   },
   {
@@ -2035,8 +2581,19 @@
       "Goût du travail en équipe et du travail en extérieur",
       "Ponctualité et respect des règles de sécurité"
     ],
-    "competences": ["Coffrage", "Ferraillage", "Coulage du béton", "Lecture de plans", "Sécurité chantier"],
-    "avantages": ["Paniers repas", "Prime de participation", "Mutuelle du bâtiment", "Promotion interne"],
+    "competences": [
+      "Coffrage",
+      "Ferraillage",
+      "Coulage du béton",
+      "Lecture de plans",
+      "Sécurité chantier"
+    ],
+    "avantages": [
+      "Paniers repas",
+      "Prime de participation",
+      "Mutuelle du bâtiment",
+      "Promotion interne"
+    ],
     "email": "recrutement@horizonbtp.exemple.fr"
   },
   {
@@ -2075,8 +2632,221 @@
       "Aptitude au travail physique en extérieur",
       "Ponctualité et esprit d'équipe"
     ],
-    "competences": ["Aide de chantier", "Approvisionnement", "Outils manuels", "Sécurité chantier", "Travail en équipe"],
-    "avantages": ["Formation sécurité assurée", "Paniers repas", "Indemnités de fin de mission", "Possibilité d'embauche"],
+    "competences": [
+      "Aide de chantier",
+      "Approvisionnement",
+      "Outils manuels",
+      "Sécurité chantier",
+      "Travail en équipe"
+    ],
+    "avantages": [
+      "Formation sécurité assurée",
+      "Paniers repas",
+      "Indemnités de fin de mission",
+      "Possibilité d'embauche"
+    ],
     "email": "recrutement@horizonbtp.exemple.fr"
+  },
+  {
+    "entrepriseId": "fiduciaire-bellecour",
+    "entrepriseNom": "Fiduciaire Bellecour",
+    "ville": "Lyon",
+    "departement": "Rhône (69)",
+    "tempsTravail": "Temps plein — 35h",
+    "categorie": "finance-comptabilite",
+    "categorieLabel": "Finance & Comptabilité",
+    "teletravail": "partiel",
+    "datePublication": "2026-08-14",
+    "dateExpiration": "2026-10-14",
+    "statut": "active",
+    "avantages": [
+      "Télétravail jusqu'à 2 jours/semaine",
+      "Tickets restaurant",
+      "Mutuelle prise en charge",
+      "Formations régulières"
+    ],
+    "email": "recrutement@fiduciaire-bellecour.exemple.fr",
+    "id": "collab-comptable-fiduciaire-lyon",
+    "titre": "Collaborateur / Collaboratrice comptable",
+    "contrat": "CDI",
+    "duree": null,
+    "salaire": "32 000 à 38 000 € brut / an",
+    "salaireAnnuel": 35000,
+    "niveauEtude": "bac2",
+    "niveauEtudeLabel": "Bac +2",
+    "experience": "2-5",
+    "experienceLabel": "2 à 5 ans",
+    "resume": "Gérez un portefeuille de TPE/PME : saisie, révision, déclarations fiscales et bilan, en lien direct avec les clients du cabinet.",
+    "description": "Au sein de notre équipe comptabilité, vous prenez en charge un portefeuille de dossiers de TPE, PME et professions libérales, de la tenue à l'établissement du bilan, avec l'appui d'un expert-comptable référent.",
+    "missions": [
+      "Tenir et réviser la comptabilité d'un portefeuille de clients",
+      "Établir les déclarations fiscales (TVA, IS, CVAE)",
+      "Préparer le bilan et la liasse fiscale",
+      "Conseiller les clients sur leur gestion courante",
+      "Participer aux clôtures mensuelles et annuelles"
+    ],
+    "profil": [
+      "Bac +2 minimum (BTS CG, DUT GEA, DCG) ",
+      "2 ans d'expérience minimum en cabinet",
+      "Maîtrise d'un logiciel comptable et du Pack Office",
+      "Rigueur, autonomie et sens du client"
+    ],
+    "competences": [
+      "Révision comptable",
+      "Déclarations fiscales",
+      "Établissement de bilan",
+      "Relation client",
+      "Sage / Cegid"
+    ]
+  },
+  {
+    "entrepriseId": "fiduciaire-bellecour",
+    "entrepriseNom": "Fiduciaire Bellecour",
+    "ville": "Lyon",
+    "departement": "Rhône (69)",
+    "tempsTravail": "Temps plein — 35h",
+    "categorie": "finance-comptabilite",
+    "categorieLabel": "Finance & Comptabilité",
+    "teletravail": "partiel",
+    "datePublication": "2026-08-14",
+    "dateExpiration": "2026-10-14",
+    "statut": "active",
+    "avantages": [
+      "Télétravail jusqu'à 2 jours/semaine",
+      "Tickets restaurant",
+      "Mutuelle prise en charge",
+      "Formations régulières"
+    ],
+    "email": "recrutement@fiduciaire-bellecour.exemple.fr",
+    "id": "gestionnaire-paie-fiduciaire-lyon",
+    "titre": "Gestionnaire de paie",
+    "contrat": "CDI",
+    "duree": null,
+    "salaire": "30 000 à 36 000 € brut / an",
+    "salaireAnnuel": 33000,
+    "niveauEtude": "bac2",
+    "niveauEtudeLabel": "Bac +2",
+    "experience": "2-5",
+    "experienceLabel": "2 à 5 ans",
+    "resume": "Produisez les paies d'un portefeuille multi-conventions et gérez les déclarations sociales et la gestion administrative du personnel.",
+    "description": "Rattaché(e) au pôle social, vous gérez un portefeuille de paies multi-conventions pour nos clients, des bulletins aux déclarations sociales, et conseillez sur la gestion administrative du personnel.",
+    "missions": [
+      "Établir les bulletins de paie multi-conventions",
+      "Réaliser les déclarations sociales (DSN)",
+      "Gérer les entrées/sorties et soldes de tout compte",
+      "Conseiller les clients en droit social courant",
+      "Assurer une veille sociale"
+    ],
+    "profil": [
+      "Bac +2 en paie ou gestion",
+      "2 à 5 ans d'expérience en cabinet ou en entreprise",
+      "Maîtrise d'un logiciel de paie (Silae apprécié)",
+      "Discrétion et rigueur"
+    ],
+    "competences": [
+      "Paie multi-conventions",
+      "DSN",
+      "Droit social",
+      "Silae",
+      "Gestion administrative RH"
+    ]
+  },
+  {
+    "entrepriseId": "fiduciaire-bellecour",
+    "entrepriseNom": "Fiduciaire Bellecour",
+    "ville": "Lyon",
+    "departement": "Rhône (69)",
+    "tempsTravail": "Temps plein — 35h",
+    "categorie": "finance-comptabilite",
+    "categorieLabel": "Finance & Comptabilité",
+    "teletravail": "partiel",
+    "datePublication": "2026-08-14",
+    "dateExpiration": "2026-10-14",
+    "statut": "active",
+    "avantages": [
+      "Télétravail jusqu'à 2 jours/semaine",
+      "Tickets restaurant",
+      "Mutuelle prise en charge",
+      "Formations régulières"
+    ],
+    "email": "recrutement@fiduciaire-bellecour.exemple.fr",
+    "id": "assistant-comptable-fiduciaire-lyon",
+    "titre": "Assistant / Assistante comptable",
+    "contrat": "CDI",
+    "duree": null,
+    "salaire": "26 000 à 30 000 € brut / an",
+    "salaireAnnuel": 28000,
+    "niveauEtude": "bac",
+    "niveauEtudeLabel": "Bac",
+    "experience": "debutant",
+    "experienceLabel": "Débutant accepté",
+    "resume": "Épaulez les collaborateurs comptables : saisie, rapprochements et classement. Débutant accepté, formation assurée en interne.",
+    "description": "Vous assistez les collaborateurs comptables dans la tenue des dossiers : saisie des pièces, rapprochements bancaires et préparation des éléments de révision. Un poste idéal pour débuter, avec un accompagnement dédié.",
+    "missions": [
+      "Saisir les pièces comptables",
+      "Réaliser les rapprochements bancaires",
+      "Classer et numériser les documents",
+      "Préparer les éléments pour la révision",
+      "Assurer le lien avec les clients pour les pièces manquantes"
+    ],
+    "profil": [
+      "Bac ou Bac +2 en comptabilité",
+      "Débutant accepté — formation assurée en interne",
+      "Sérieux, organisation et envie d'apprendre"
+    ],
+    "competences": [
+      "Saisie comptable",
+      "Rapprochement bancaire",
+      "Classement / GED",
+      "Pack Office"
+    ]
+  },
+  {
+    "entrepriseId": "fiduciaire-bellecour",
+    "entrepriseNom": "Fiduciaire Bellecour",
+    "ville": "Lyon",
+    "departement": "Rhône (69)",
+    "tempsTravail": "Temps plein — 35h",
+    "categorie": "finance-comptabilite",
+    "categorieLabel": "Finance & Comptabilité",
+    "teletravail": "partiel",
+    "datePublication": "2026-08-14",
+    "dateExpiration": "2026-10-14",
+    "statut": "active",
+    "avantages": [
+      "Télétravail jusqu'à 2 jours/semaine",
+      "Tickets restaurant",
+      "Mutuelle prise en charge",
+      "Formations régulières"
+    ],
+    "email": "recrutement@fiduciaire-bellecour.exemple.fr",
+    "id": "alternant-comptabilite-fiduciaire-lyon",
+    "titre": "Alternant(e) comptabilité",
+    "contrat": "Alternance",
+    "duree": "12 à 24 mois",
+    "salaire": "Rémunération selon barème alternance",
+    "salaireAnnuel": null,
+    "niveauEtude": "bac3",
+    "niveauEtudeLabel": "Bac +3",
+    "experience": "debutant",
+    "experienceLabel": "Débutant accepté",
+    "resume": "Préparez votre DCG/DSCG en alternance au sein d'un cabinet formateur : montée en compétences progressive sur des dossiers variés.",
+    "description": "Dans le cadre de votre DCG ou DSCG, vous rejoignez notre équipe en alternance et montez progressivement en compétences sur la tenue, la révision et les déclarations, encadré(e) par un tuteur dédié.",
+    "missions": [
+      "Participer à la tenue comptable des dossiers",
+      "Assister à la révision et aux clôtures",
+      "Préparer des déclarations fiscales simples",
+      "Se former aux outils du cabinet"
+    ],
+    "profil": [
+      "Préparation d'un DCG / DSCG (Bac +2 à Bac +3)",
+      "Motivation et curiosité",
+      "Rigueur et esprit d'équipe"
+    ],
+    "competences": [
+      "Comptabilité générale",
+      "Fiscalité (bases)",
+      "Outils numériques"
+    ]
   }
 ]
