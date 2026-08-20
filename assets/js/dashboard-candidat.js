@@ -56,6 +56,25 @@
       logout.addEventListener("click", function () { SS.auth.logout(); });
     }
 
+    /* Suppression de compte (candidat) : efface les données candidat de cet
+       appareil puis déconnecte. Simulation côté front (aucun back-office). */
+    var del = document.getElementById("delete-account-btn");
+    if (del) {
+      del.addEventListener("click", function () {
+        if (!window.confirm("Supprimer définitivement votre compte et toutes vos données de cet appareil ? Cette action est irréversible.")) { return; }
+        try {
+          var toRemove = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (/^ss_candidate|^ss_cand_|^ss_applications_sent$|^ss_seed_version$|^ss_notifs_candidate$/.test(k)) { toRemove.push(k); }
+          }
+          toRemove.forEach(function (k) { localStorage.removeItem(k); });
+        } catch (e) { /* stockage indisponible */ }
+        SS.toast("Compte supprimé. À bientôt sur Postelio.");
+        setTimeout(function () { SS.auth.logout("index.html"); }, 600);
+      });
+    }
+
     /* 6. Indicateurs cohérents avec les données. */
     updateMetrics();
 

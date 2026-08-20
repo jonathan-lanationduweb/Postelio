@@ -137,8 +137,18 @@
     openBtn.addEventListener("click", function () { modal.open({ returnTo: openBtn }); });
     confirmBtn.addEventListener("click", function () {
       modal.close(false);
-      /* Démonstration : rien n'est réellement supprimé. */
-      SS.toast("Suppression simulée (démonstration).");
+      /* Efface les données recruteur de cet appareil puis déconnecte
+         (simulation côté front, en attendant le back-office). */
+      try {
+        var rm = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (/^ss_company|^ss_offer_overrides$|^ss_custom_offers$|^ss_offre_brouillon$|^ss_pipeline_v1$|^ss_refus_demo$|^ss_cand_notes_v1$|^ss_interviews|^ss_employer_settings$|^ss_emails_sent$|^ss_payments$|^ss_notifs_employer$/.test(k)) { rm.push(k); }
+        }
+        rm.forEach(function (k) { localStorage.removeItem(k); });
+      } catch (e) { /* stockage indisponible */ }
+      SS.toast("Compte supprimé. À bientôt sur Postelio.");
+      setTimeout(function () { SS.auth.logout("index.html"); }, 600);
     });
   }
 

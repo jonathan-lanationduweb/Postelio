@@ -42,6 +42,8 @@
 .settings-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--sp-4); }
 .settings-group { padding: var(--sp-5); }
 .settings-group__title { font-size: var(--text-base); margin: 0 0 var(--sp-3); color: var(--c-primary-dark); }
+.settings-group--danger { border-color: var(--c-error, #c0392b); }
+.settings-group--danger .settings-group__title { color: var(--c-error, #c0392b); }
 .settings-group .field--checkbox { margin-bottom: var(--sp-2); }
 .settings-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .settings-row__value { letter-spacing: 2px; color: var(--c-ink-soft); }
