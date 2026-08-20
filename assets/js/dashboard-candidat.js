@@ -551,12 +551,15 @@
         '<ul class="appli-timeline">' + timeline + "</ul>" +
         noteBlock +
         messageBlock +
-        '<div class="form-actions" style="margin-top: var(--sp-3); display:flex; gap: var(--sp-2); flex-wrap: wrap;">' +
+        '<div class="appli-actions">' +
           (a.offreId ? '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(a.offreId) + '">Voir l\'offre</a>' : "") +
-          (a.entrepriseId ? '<a class="btn btn-ghost btn-sm" href="entreprise-detail.html?id=' + encodeURIComponent(a.entrepriseId) + '">Voir l\'entreprise</a>' : "") +
-          '<a class="btn btn-ghost btn-sm" href="#messages">Envoyer un message</a>' +
-          '<button type="button" class="btn btn-ghost btn-sm" data-action="note" data-id="' + e(a.id) + '">Ajouter une note</button>' +
-          '<button type="button" class="btn btn-ghost btn-sm" data-action="withdraw" data-id="' + e(a.id) + '">Retirer ma candidature</button>' +
+          '<details class="appli-menu"><summary class="btn btn-ghost btn-sm">…</summary>' +
+            '<div class="fav-card__menu-pop">' +
+              (a.entrepriseId ? '<a href="entreprise-detail.html?id=' + encodeURIComponent(a.entrepriseId) + '">Voir l\'entreprise</a>' : "") +
+              '<a href="#messages">Envoyer un message</a>' +
+              '<button type="button" data-action="note" data-id="' + e(a.id) + '">Ajouter une note</button>' +
+              '<button type="button" class="is-danger" data-action="withdraw" data-id="' + e(a.id) + '">Retirer ma candidature</button>' +
+            "</div></details>" +
         "</div>" +
         '<div data-note-editor hidden style="margin-top: var(--sp-3);">' +
           '<div class="field"><label for="note-' + e(a.id) + '">Note personnelle <span class="text-muted">(visible uniquement par vous)</span></label>' +

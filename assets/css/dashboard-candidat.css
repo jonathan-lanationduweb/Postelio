@@ -356,6 +356,15 @@
 /* Note personnelle (privée) sur une candidature */
 .appli-note__label { margin: 0 0 4px; font-size: var(--text-sm); color: var(--c-ink-soft); }
 
+/* Actions d'une candidature : action principale + menu … */
+.appli-actions { display: flex; gap: var(--sp-2); align-items: center; margin-top: var(--sp-3); }
+.appli-menu { position: relative; }
+.appli-menu > summary { list-style: none; cursor: pointer; }
+.appli-menu > summary::-webkit-details-marker { display: none; }
+.appli-menu .fav-card__menu-pop { left: 0; right: auto; }
+.appli-menu .fav-card__menu-pop a { display: block; padding: 0.5rem 0.7rem; border-radius: var(--radius-s); color: var(--c-ink); text-decoration: none; }
+.appli-menu .fav-card__menu-pop a:hover { background: var(--c-primary-soft); }
+
 /* Réalisations (projets) */
 .realisation-item { position: relative; padding: var(--sp-3) 0; border-top: 1px solid var(--c-line); }
 .realisation-item:first-child { border-top: 0; }
