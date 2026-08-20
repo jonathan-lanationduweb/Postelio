@@ -2417,6 +2417,33 @@
     return '<p class="interview-card__lieu text-muted">' + e(it.lien || "Lien de connexion disponible avant le rendez-vous.") + "</p>";
   }
 
+  /* Préparation d'entretien (§16) + débrief après entretien (§17). */
+  var IV_PREP_KEY = "ss_cand_iv_prep";
+  var IV_DEBRIEF_KEY = "ss_cand_iv_debrief";
+  var IV_PREP_ITEMS = [["offre", "Relire l'offre"], ["entreprise", "Consulter l'entreprise"], ["candidature", "Relire ma candidature"], ["questions", "Préparer mes questions"]];
+  var IV_RATINGS = ["Très bien", "Bien", "Moyen", "Difficile"];
+  function ivPrepHtml(it) {
+    var prep = (SS.store.get(IV_PREP_KEY, {}) || {})[it.id] || {};
+    return '<div class="interview-prep" data-iv="' + it.id + '"><h4>Préparer mon entretien</h4>' +
+      '<ul class="interview-prep__list">' + IV_PREP_ITEMS.map(function (p) {
+        return '<li><label class="field--checkbox"><input type="checkbox" data-prep="' + p[0] + '"' + (prep[p[0]] ? " checked" : "") + "><span>" + SS.escapeHtml(p[1]) + "</span></label></li>";
+      }).join("") + "</ul>" +
+      '<a class="btn btn-ghost btn-sm" href="blog.html">Voir les conseils</a></div>';
+  }
+  function ivDebriefHtml(it) {
+    var d = (SS.store.get(IV_DEBRIEF_KEY, {}) || {})[it.id] || {};
+    return '<div class="interview-debrief" data-iv="' + it.id + '"><h4>Comment s\'est passé votre entretien&nbsp;?</h4>' +
+      '<div class="iv-rating">' + IV_RATINGS.map(function (r) {
+        return '<button type="button" class="chip" aria-pressed="' + (d.rating === r) + '" data-iv-rating="' + SS.escapeHtml(r) + '">' + SS.escapeHtml(r) + "</button>";
+      }).join("") + "</div>" +
+      '<div class="interview-debrief__note">' +
+        (d.note ? '<p class="appli-note__label"><strong>Note personnelle</strong> · visible uniquement par vous</p><p>' + SS.escapeHtml(d.note) + "</p>" : "") +
+        '<button type="button" class="btn btn-ghost btn-sm" data-iv-note-toggle>' + (d.note ? "Modifier ma note" : "Ajouter une note personnelle") + "</button>" +
+        '<div class="interview-debrief__editor" hidden><textarea rows="2" placeholder="Vos impressions (privé)">' + SS.escapeHtml(d.note || "") + "</textarea>" +
+        '<button type="button" class="btn btn-primary btn-sm" data-iv-note-save>Enregistrer</button></div>' +
+      "</div></div>";
+  }
+
   function renderInterviews() {
     var box = document.getElementById("interviews-list");
     if (!box) { return; }
@@ -2477,6 +2504,10 @@
           "</form>"
         : "";
 
+      var tab = ivTabOf(it, store);
+      var prepBlock = (tab === "confirmer" || tab === "avenir") ? ivPrepHtml(it) : "";
+      var debriefBlock = (tab === "passes") ? ivDebriefHtml(it) : "";
+
       return '<article class="interview-card">' +
         '<div class="interview-card__date"><span class="interview-card__day">' + e(jourLabel) + "</span>" +
           "<b>" + e(SS.formatDate(it.date)) + "</b><span>" + e(it.heure) + "</span></div>" +
@@ -2490,6 +2521,8 @@
         "</div>" +
         '<div class="interview-card__actions">' + actions + "</div>" +
         slotForm +
+        prepBlock +
+        debriefBlock +
       "</article>";
     }).join("") : '<div class="empty-state empty-state--inline"><p>Aucun entretien dans cet onglet.</p></div>';
 
@@ -2517,6 +2550,54 @@
         renderInterviews();
         SS.toast("Nouveau créneau proposé (démonstration).");
       });
+    });
+
+    /* Préparation d'entretien : cases à cocher persistées (§16). */
+    box.querySelectorAll(".interview-prep").forEach(function (block) {
+      var id = block.getAttribute("data-iv");
+      block.querySelectorAll("[data-prep]").forEach(function (cb) {
+        cb.addEventListener("change", function () {
+          var store = SS.store.get(IV_PREP_KEY, {}) || {};
+          store[id] = store[id] || {};
+          store[id][cb.getAttribute("data-prep")] = cb.checked;
+          SS.store.set(IV_PREP_KEY, store);
+        });
+      });
+    });
+
+    /* Débrief après entretien : ressenti + note privée (§17). */
+    box.querySelectorAll(".interview-debrief").forEach(function (block) {
+      var id = block.getAttribute("data-iv");
+      block.querySelectorAll("[data-iv-rating]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var store = SS.store.get(IV_DEBRIEF_KEY, {}) || {};
+          store[id] = store[id] || {};
+          store[id].rating = b.getAttribute("data-iv-rating");
+          SS.store.set(IV_DEBRIEF_KEY, store);
+          block.querySelectorAll("[data-iv-rating]").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+          b.setAttribute("aria-pressed", "true");
+          SS.toast("Ressenti enregistré (privé).");
+        });
+      });
+      var toggle = block.querySelector("[data-iv-note-toggle]");
+      var editor = block.querySelector(".interview-debrief__editor");
+      if (toggle && editor) {
+        toggle.addEventListener("click", function () {
+          editor.hidden = !editor.hidden;
+          if (!editor.hidden) { var ta = editor.querySelector("textarea"); if (ta) { ta.focus(); } }
+        });
+      }
+      var save = block.querySelector("[data-iv-note-save]");
+      if (save) {
+        save.addEventListener("click", function () {
+          var store = SS.store.get(IV_DEBRIEF_KEY, {}) || {};
+          store[id] = store[id] || {};
+          store[id].note = (block.querySelector("textarea").value || "").trim();
+          SS.store.set(IV_DEBRIEF_KEY, store);
+          renderInterviews();
+          SS.toast("Note enregistrée (privée).");
+        });
+      }
     });
   }
 
