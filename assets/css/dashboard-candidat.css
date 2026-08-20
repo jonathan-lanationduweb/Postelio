@@ -414,6 +414,9 @@
 /* ============================================================
    Mes entretiens
    ============================================================ */
+/* Onglets des entretiens (À confirmer / À venir / Passés / Annulés) */
+.iv-tabs { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+
 .interview-card {
   background: var(--c-surface);
   border: 1px solid var(--c-line);
@@ -424,6 +427,8 @@
   gap: var(--sp-5);
   align-items: center;
 }
+.interview-card__details { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: 3px; font-size: var(--text-sm); color: var(--c-ink); }
+.interview-card__details strong { color: var(--c-primary-dark); }
 .interview-card + .interview-card { margin-top: var(--sp-4); }
 .interview-card__date {
   text-align: center;

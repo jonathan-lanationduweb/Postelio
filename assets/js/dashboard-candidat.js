@@ -1521,8 +1521,9 @@
 
   function defaultInterviews() {
     return [
-      { id: "civ1", date: "2026-08-21", heure: "14:00", poste: "Développeur web junior", entreprise: "Pixel & Co", entrepriseId: "pixel-and-co", offreId: "dev-web-junior-pixel-lille", format: "Visioconférence", lieu: "Lien de connexion envoyé par e-mail avant le rendez-vous", statut: "propose" },
-      { id: "civ2", date: "2026-08-26", heure: "10:30", poste: "Office manager", entreprise: "TechNexis", entrepriseId: "technexis", offreId: "office-manager-technexis-lille", format: "Sur place", lieu: "45 rue Nationale, 59000 Lille", statut: "confirme" }
+      { id: "civ1", date: "2026-08-21", heure: "14:00", poste: "Développeur web junior", entreprise: "Pixel & Co", entrepriseId: "pixel-and-co", offreId: "dev-web-junior-pixel-lille", format: "Visioconférence", lien: "Lien de connexion envoyé par e-mail avant le rendez-vous", statut: "propose" },
+      { id: "civ2", date: "2026-08-26", heure: "10:30", poste: "Office manager", entreprise: "TechNexis", entrepriseId: "technexis", offreId: "office-manager-technexis-lille", format: "Sur place", adresse: "45 rue Nationale, 59000 Lille", contact: "Camille Roy, responsable RH", instructions: "Présentez-vous à l'accueil au 2e étage, muni d'une pièce d'identité.", statut: "confirme" },
+      { id: "civ3", date: "2026-07-30", heure: "11:00", poste: "Technicien support logiciel", entreprise: "TechNexis", entrepriseId: "technexis", offreId: "technicien-support-technexis-lille", format: "Téléphone", statut: "passe" }
     ];
   }
 
@@ -1551,6 +1552,36 @@
     }
   }
 
+  var currentIvTab = "confirmer";
+  var IV_TABS = [["confirmer", "À confirmer"], ["avenir", "À venir"], ["passes", "Passés"], ["annules", "Annulés"]];
+
+  /* Onglet d'un entretien selon son statut effectif et sa date. */
+  function ivTabOf(it, store) {
+    var status = ivStatus(it, store).status;
+    if (status === "refuse") { return "annules"; }
+    if (status === "propose" || status === "nouveau-creneau") { return "confirmer"; }
+    /* confirmé : à venir ou passé selon la date */
+    if (status === "passe") { return "passes"; }
+    return (daysBetween(it.date) != null && daysBetween(it.date) > 0) ? "passes" : "avenir";
+  }
+
+  /* Bloc d'informations propre au format de l'entretien (§15). */
+  function ivFormatInfo(it) {
+    var e = SS.escapeHtml;
+    if (it.format === "Sur place") {
+      return '<ul class="interview-card__details">' +
+        (it.adresse ? "<li><strong>Adresse :</strong> " + e(it.adresse) + "</li>" : "") +
+        (it.contact ? "<li><strong>Contact :</strong> " + e(it.contact) + "</li>" : "") +
+        (it.instructions ? "<li><strong>Accès :</strong> " + e(it.instructions) + "</li>" : "") +
+      "</ul>";
+    }
+    if (it.format === "Téléphone") {
+      return '<p class="interview-card__lieu text-muted">L\'entreprise vous contactera au numéro indiqué dans votre profil.</p>';
+    }
+    /* Visioconférence */
+    return '<p class="interview-card__lieu text-muted">' + e(it.lien || "Lien de connexion disponible avant le rendez-vous.") + "</p>";
+  }
+
   function renderInterviews() {
     var box = document.getElementById("interviews-list");
     if (!box) { return; }
@@ -1558,14 +1589,24 @@
     var e = SS.escapeHtml;
     var store = SS.store.get(CONFIRM_KEY, {});
 
-    if (!list.length) {
-      box.innerHTML = emptyState("Aucun entretien programmé",
-        "Vos rendez-vous avec les entreprises apparaîtront ici dès qu'un entretien sera fixé.",
-        "offres.html", "Trouver des offres");
-      return;
+    /* Répartition par onglet + compteurs. */
+    var counts = { confirmer: 0, avenir: 0, passes: 0, annules: 0 };
+    list.forEach(function (it) { counts[ivTabOf(it, store)]++; });
+    if (!counts[currentIvTab]) {
+      var first = IV_TABS.filter(function (t) { return counts[t[0]]; })[0];
+      if (first) { currentIvTab = first[0]; }
     }
 
-    box.innerHTML = list.map(function (it) {
+    var tabsHtml = '<div class="iv-tabs" role="tablist" aria-label="Filtrer les entretiens">' +
+      IV_TABS.map(function (t) {
+        var on = t[0] === currentIvTab;
+        return '<button type="button" class="offers-tab chip" role="tab" aria-selected="' + on + '" data-iv-tab="' + t[0] + '">' +
+          e(t[1]) + ' <span class="offers-tab__count">' + counts[t[0]] + "</span></button>";
+      }).join("") + "</div>";
+
+    var visible = list.filter(function (it) { return ivTabOf(it, store) === currentIvTab; });
+
+    var cardsHtml = visible.length ? visible.map(function (it) {
       var st = ivStatus(it, store);
       var status = st.status;
       var isPropose = status === "propose";
@@ -1574,9 +1615,6 @@
 
       var proposalText = isPropose
         ? '<p class="interview-card__propose"><strong>' + e(it.entreprise) + " vous propose un entretien.</strong></p>"
-        : "";
-      var lieuLine = it.lieu
-        ? '<p class="interview-card__lieu text-muted">' + e(it.lieu) + "</p>"
         : "";
       var creneauInfo = (status === "nouveau-creneau" && st.creneau)
         ? '<p class="interview-card__note text-muted">Vous avez proposé : ' + e(SS.formatDate(st.creneau.date)) +
@@ -1587,7 +1625,8 @@
         ? '<button type="button" class="btn btn-primary btn-sm" data-iv-action="confirm" data-iv="' + e(it.id) + '">Confirmer</button>' +
           '<button type="button" class="btn btn-outline btn-sm" data-iv-action="reschedule" data-iv="' + e(it.id) + '" aria-expanded="false" aria-controls="iv-slot-' + e(it.id) + '">Proposer un autre créneau</button>' +
           '<button type="button" class="btn btn-ghost btn-sm" data-iv-action="refuse" data-iv="' + e(it.id) + '">Refuser</button>'
-        : '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(it.offreId) + '">Voir l\'offre</a>' +
+        : (status === "confirme" ? '<button type="button" class="btn btn-outline btn-sm" data-iv-action="calendar" data-iv="' + e(it.id) + '">Ajouter à mon calendrier</button>' : "") +
+          '<a class="btn btn-ghost btn-sm" href="offre-detail.html?id=' + encodeURIComponent(it.offreId) + '">Voir l\'offre</a>' +
           '<a class="btn btn-ghost btn-sm" href="#messages">Message</a>';
 
       var slotForm = isPropose
@@ -1611,14 +1650,19 @@
           '<span class="text-muted">' + e(it.entreprise) + "</span>" +
           proposalText +
           '<div class="interview-card__mode"><span class="badge badge--remote">' + e(it.format) + "</span></div>" +
-          lieuLine +
+          ivFormatInfo(it) +
           creneauInfo +
         "</div>" +
         '<div class="interview-card__actions">' + actions + "</div>" +
         slotForm +
       "</article>";
-    }).join("");
+    }).join("") : '<div class="empty-state empty-state--inline"><p>Aucun entretien dans cet onglet.</p></div>';
 
+    box.innerHTML = tabsHtml + cardsHtml;
+
+    box.querySelectorAll("[data-iv-tab]").forEach(function (btn) {
+      btn.addEventListener("click", function () { currentIvTab = btn.getAttribute("data-iv-tab"); renderInterviews(); });
+    });
     box.querySelectorAll("[data-iv-action]").forEach(function (btn) {
       btn.addEventListener("click", function () { onInterviewAction(btn); });
     });
@@ -1659,6 +1703,10 @@
       SS.toast("Proposition d'entretien refusée.");
       return;
     }
+    if (action === "calendar") {
+      addToCalendar(id);
+      return;
+    }
     if (action === "reschedule") {
       var form = document.getElementById("iv-slot-" + id);
       if (form) {
@@ -1675,6 +1723,37 @@
       var toggle = document.querySelector('[data-iv-action="reschedule"][data-iv="' + id + '"]');
       if (toggle) { toggle.setAttribute("aria-expanded", "false"); toggle.focus(); }
       return;
+    }
+  }
+
+  /* Génère un fichier .ics et déclenche son téléchargement (§16, local, sans
+     aucune connexion à un agenda externe). */
+  function addToCalendar(id) {
+    var it = defaultInterviews().filter(function (x) { return x.id === id; })[0];
+    if (!it) { return; }
+    var start = (it.date || "").replace(/-/g, "") + "T" + (it.heure || "09:00").replace(":", "") + "00";
+    var endH = String((parseInt((it.heure || "09:00").split(":")[0], 10) || 9) + 1).padStart(2, "0");
+    var end = (it.date || "").replace(/-/g, "") + "T" + endH + (it.heure || "09:00").split(":")[1] + "00";
+    var loc = it.adresse || (it.format === "Visioconférence" ? "Visioconférence" : it.format);
+    var ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Postelio//Demo//FR", "BEGIN:VEVENT",
+      "UID:" + it.id + "@postelio.demo",
+      "DTSTART:" + start, "DTEND:" + end,
+      "SUMMARY:Entretien " + it.poste + " — " + it.entreprise,
+      "LOCATION:" + loc,
+      "DESCRIPTION:Entretien Postelio (démonstration).",
+      "END:VEVENT", "END:VCALENDAR"
+    ].join("\r\n");
+    try {
+      var blob = new Blob([ics], { type: "text/calendar" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "entretien-" + it.id + ".ics";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      SS.toast("Entretien ajouté à votre calendrier (fichier .ics téléchargé).");
+    } catch (err) {
+      SS.toast("Ajout au calendrier (démonstration).");
     }
   }
 
@@ -1822,8 +1901,12 @@
     /* Consultées : candidatures ayant dépassé le stade « envoyée ». */
     var consultees = apps.filter(function (a) { return (a.statut || "envoyee") !== "envoyee"; }).length;
     setText("metric-views", consultees);
-    /* Entretiens : rendez-vous programmés. */
-    setText("metric-entretiens", defaultInterviews().length);
+    /* Entretiens : rendez-vous à venir ou à confirmer (hors passés/annulés). */
+    var ivStore = SS.store.get(CONFIRM_KEY, {});
+    var ivActive = defaultInterviews().filter(function (it) {
+      var t = ivTabOf(it, ivStore); return t === "confirmer" || t === "avenir";
+    }).length;
+    setText("metric-entretiens", ivActive);
     setText("metric-favorites", SS.store.get(S.favorites, []).length);
     var recoBox = document.getElementById("reco-list");
     var reco = recoBox && recoBox.dataset.recoCount ? recoBox.dataset.recoCount : 4;
