@@ -66,11 +66,49 @@
           <section class="dash-block" id="candidatures" aria-labelledby="h-candidatures">
             <div class="dash-block__head">
               <h2 id="h-candidatures">Candidatures</h2>
-              <p class="dash-block__hint">Faites glisser vos candidats d'une étape à l'autre grâce aux actions de chaque carte.</p>
+              <p class="dash-block__hint">Glissez-déposez vos candidats d'une étape à l'autre, ou utilisez le bouton « Changer le statut » de chaque carte.</p>
             </div>
-            <div class="pipeline-wrap">
-              <div class="pipeline" id="pipeline-board" aria-label="Pipeline de recrutement"></div>
+
+            <div class="pipeline-toolbar">
+              <div class="pipeline-filters" role="group" aria-label="Filtrer les candidatures">
+                <div class="field field--search">
+                  <label for="flt-search">Recherche candidat</label>
+                  <input type="search" id="flt-search" placeholder="Nom, métier, ville, compétence…" autocomplete="off">
+                </div>
+                <div class="field">
+                  <label for="flt-offre">Offre</label>
+                  <select id="flt-offre"><option value="">Toutes</option></select>
+                </div>
+                <div class="field">
+                  <label for="flt-date">Date</label>
+                  <select id="flt-date">
+                    <option value="">Toutes</option>
+                    <option value="2">2 derniers jours</option>
+                    <option value="7">7 derniers jours</option>
+                    <option value="14">14 derniers jours</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="flt-exp">Expérience</label>
+                  <select id="flt-exp">
+                    <option value="">Toutes</option>
+                    <option value="0-2">0 à 2 ans</option>
+                    <option value="3-5">3 à 5 ans</option>
+                    <option value="6">6 ans et +</option>
+                  </select>
+                </div>
+              </div>
+              <div class="pipeline-views" role="group" aria-label="Type d'affichage">
+                <button type="button" class="view-btn is-active" data-view="kanban" aria-pressed="true">Kanban</button>
+                <button type="button" class="view-btn" data-view="liste" aria-pressed="false">Liste</button>
+              </div>
             </div>
+
+            <div class="pipeline-wrap" id="pipeline-wrap">
+              <div class="pipeline" id="pipeline-board" aria-label="Pipeline de recrutement, glisser-déposer"></div>
+            </div>
+            <div class="pipeline-list" id="pipeline-list" hidden></div>
+            <div class="pipeline-mobile" id="pipeline-mobile" aria-label="Liste des candidatures"></div>
           </section>
 
         </div>
@@ -107,6 +145,91 @@
         <button type="button" class="btn btn-outline" data-refus-close>Annuler</button>
         <button type="button" class="btn btn-primary" id="refus-confirm">Confirmer le refus</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modale : proposer un entretien (workflow au drop vers Entretien) -->
+  <div class="modal-overlay" id="entretien-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="entretien-modal-title">
+      <div class="modal__head">
+        <h2 class="modal__title" id="entretien-modal-title">Proposer un entretien</h2>
+        <button type="button" class="modal-close" data-close aria-label="Fermer la fenêtre">✕</button>
+      </div>
+      <form class="modal__body" id="entretien-form" onsubmit="return false">
+        <div class="field-row">
+          <div class="field">
+            <label for="ent-date">Date</label>
+            <input type="date" id="ent-date" required>
+          </div>
+          <div class="field">
+            <label for="ent-heure">Heure</label>
+            <input type="time" id="ent-heure" value="10:00" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ent-format">Format</label>
+          <select id="ent-format">
+            <option value="Visio">Visioconférence</option>
+            <option value="Téléphone">Téléphone</option>
+            <option value="Locaux">Dans nos locaux</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ent-lieu">Lieu / lien</label>
+          <input type="text" id="ent-lieu" placeholder="Adresse du rendez-vous ou lien de connexion">
+        </div>
+        <div class="field">
+          <label for="ent-message">Message au candidat</label>
+          <textarea id="ent-message" rows="4">Bonjour, nous serions ravis d'échanger avec vous lors d'un entretien. Confirmez-vous votre disponibilité ?</textarea>
+        </div>
+      </form>
+      <div class="modal__actions">
+        <button type="button" class="btn btn-outline" data-close>Annuler</button>
+        <button type="button" class="btn btn-primary" id="ent-confirm">Envoyer l'invitation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale : confirmation « candidat retenu » (workflow au drop vers Retenu) -->
+  <div class="modal-overlay" id="retenu-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="retenu-modal-title" aria-describedby="retenu-modal-text">
+      <div class="modal__head">
+        <h2 class="modal__title" id="retenu-modal-title">Confirmer le candidat retenu</h2>
+        <button type="button" class="modal-close" data-close aria-label="Fermer la fenêtre">✕</button>
+      </div>
+      <div class="modal__body">
+        <p id="retenu-modal-text">Confirmer que ce candidat est retenu ?</p>
+      </div>
+      <div class="modal__actions">
+        <button type="button" class="btn btn-outline" data-close>Annuler</button>
+        <button type="button" class="btn btn-primary" id="retenu-confirm">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale : détail candidat (profil, CV, notes recruteur privées, historique) -->
+  <div class="modal-overlay" id="cand-modal" hidden>
+    <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="cand-modal-title">
+      <div class="modal__head">
+        <h2 class="modal__title" id="cand-modal-title">Détail du candidat</h2>
+        <button type="button" class="modal-close" data-close aria-label="Fermer la fenêtre">✕</button>
+      </div>
+      <div class="modal__body" id="cand-modal-body"></div>
+      <div class="modal__actions">
+        <a class="btn btn-ghost" href="espace-entreprise-messages.html">Voir les messages</a>
+        <button type="button" class="btn btn-primary" data-close>Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom-sheet / menu accessible « Changer le statut » (clavier + mobile) -->
+  <div class="modal-overlay status-sheet-overlay" id="status-sheet" hidden>
+    <div class="modal status-sheet" role="dialog" aria-modal="true" aria-labelledby="status-sheet-title">
+      <div class="modal__head">
+        <h2 class="modal__title" id="status-sheet-title">Changer le statut</h2>
+        <button type="button" class="modal-close" data-close aria-label="Fermer la fenêtre">✕</button>
+      </div>
+      <div class="modal__body" id="status-sheet-body"></div>
     </div>
   </div>
 

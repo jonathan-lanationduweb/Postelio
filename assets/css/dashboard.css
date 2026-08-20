@@ -821,6 +821,128 @@
 .pipeline-card .row-actions { gap: 6px; }
 .pipeline-card .row-actions .btn { flex: 1 1 auto; }
 
+/* ---- Kanban Trello : barre d'outils (filtres + bascule de vue) ---- */
+.pipeline-toolbar {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--sp-4); flex-wrap: wrap; margin-top: var(--sp-4);
+}
+.pipeline-filters { display: flex; flex-wrap: wrap; gap: var(--sp-3); flex: 1 1 auto; }
+.pipeline-filters .field { margin: 0; min-width: 150px; }
+.pipeline-filters .field--search { flex: 1 1 220px; min-width: 200px; }
+.pipeline-filters label { display: block; font-size: var(--text-xs); font-weight: 600; color: var(--c-ink-soft); margin-bottom: 4px; }
+.pipeline-filters input, .pipeline-filters select { width: 100%; min-height: 44px; }
+.pipeline-views {
+  display: inline-flex; gap: 2px; background: var(--c-bg-alt);
+  border: 1px solid var(--c-line); border-radius: var(--radius-pill); padding: 3px; flex-shrink: 0;
+}
+.view-btn {
+  min-height: 38px; padding: 0 var(--sp-4); border-radius: var(--radius-pill);
+  font-weight: 600; font-size: var(--text-sm); color: var(--c-ink-soft);
+  background: transparent; border: 0; cursor: pointer; transition: background var(--transition), color var(--transition);
+}
+.view-btn:hover { color: var(--c-primary-dark); }
+.view-btn.is-active { background: var(--c-surface); color: var(--c-primary-dark); box-shadow: var(--shadow-s); }
+.view-btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+/* ---- Cartes : en-tête (nom + pastille de statut) ---- */
+.pipeline-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); }
+.pipeline-card__top .pipeline-card__id { min-width: 0; }
+/* Dans le kanban, la colonne porte déjà le statut : on masque la pastille
+   sauf pour la zone Décision (badge vert « Retenu » / rouge « Refusé »). */
+.pipeline .pipeline-card:not([data-status="retenu"]):not([data-status="refuse"]) .status-badge { display: none; }
+
+/* ---- Glisser-déposer ---- */
+.pipeline-card { cursor: grab; transition: box-shadow var(--transition), opacity var(--transition); }
+.pipeline-card:hover { box-shadow: var(--shadow-s); }
+.pipeline-card:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.pipeline-card.is-dragging { opacity: 0.5; cursor: grabbing; }
+body.kanban-dragging, body.kanban-dragging .pipeline-card { cursor: grabbing; }
+.pipeline-col__list { min-height: 56px; border-radius: var(--radius-s); transition: background var(--transition), box-shadow var(--transition); }
+.pipeline-col__list.is-drop-target { background: var(--c-primary-soft); box-shadow: inset 0 0 0 2px var(--c-primary); }
+
+/* ---- Colonne « Décision » : deux zones de dépôt étiquetées ---- */
+.pipeline-col--decision { display: flex; flex-direction: column; }
+.pipeline-col--decision .pipeline-col__zones { display: grid; gap: var(--sp-3); }
+.pipeline-zone { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius-s); padding: var(--sp-2); }
+.pipeline-zone__head {
+  display: flex; align-items: center; gap: 6px; padding: 2px 4px var(--sp-2);
+  font-weight: 700; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-ink-soft);
+}
+.pipeline-zone__head .pipeline-col__count { margin-left: auto; }
+.zone-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.zone-dot--retenu { background: var(--c-success); }
+.zone-dot--refuse { background: var(--c-error); }
+.pipeline-zone[data-zone="retenu"] .pipeline-col__count { background: var(--c-success); }
+.pipeline-zone[data-zone="refuse"] .pipeline-col__count { background: var(--c-error); }
+
+/* ---- Élément filtré (masqué) ---- */
+.is-hidden { display: none !important; }
+
+/* ---- Vue liste (desktop, gestion de gros volumes) ---- */
+.pl-table-wrap { overflow-x: auto; margin-top: var(--sp-4); border: 1px solid var(--c-line); border-radius: var(--radius-m); }
+.pl-table { width: 100%; border-collapse: collapse; background: var(--c-surface); }
+.pl-table th, .pl-table td { text-align: left; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--c-line); vertical-align: middle; }
+.pl-table thead th { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-ink-soft); background: var(--c-bg-alt); }
+.pl-table tbody tr:last-child td { border-bottom: 0; }
+.pl-table .pl-sub { display: block; font-size: var(--text-sm); color: var(--c-primary); font-weight: 600; }
+.pl-actions { white-space: nowrap; }
+.pl-actions .btn { margin-right: var(--sp-2); }
+
+/* ---- Vue mobile : cartes verticales empilées ---- */
+.pipeline-mobile { display: none; gap: var(--sp-3); margin-top: var(--sp-4); }
+.pipeline-mobile .pipeline-card { cursor: pointer; }
+
+/* ---- Bottom-sheet / menu « Changer le statut » ---- */
+.status-sheet__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.status-choice {
+  display: flex; align-items: center; gap: var(--sp-3); width: 100%; min-height: 48px;
+  padding: var(--sp-2) var(--sp-3); text-align: left; cursor: pointer;
+  background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius-m);
+  transition: border-color var(--transition), background var(--transition);
+}
+.status-choice:hover { border-color: var(--c-primary); background: var(--c-primary-soft); }
+.status-choice:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.status-choice.is-current { border-color: var(--c-primary); background: var(--c-primary-soft); }
+.status-choice__cur { margin-left: auto; font-size: var(--text-xs); color: var(--c-ink-soft); font-weight: 600; }
+
+/* ---- Toast de déplacement avec bouton [Annuler] ---- */
+.kanban-toast {
+  position: fixed; left: 50%; bottom: var(--sp-6); transform: translate(-50%, 12px);
+  z-index: 1400; display: flex; align-items: center; gap: var(--sp-3);
+  background: var(--c-primary-dark); color: #fff; font-size: var(--text-sm);
+  padding: 0.6rem 0.7rem 0.6rem 1.1rem; border-radius: var(--radius-m); box-shadow: var(--shadow-m);
+  max-width: min(460px, calc(100vw - 2rem)); opacity: 0; pointer-events: none;
+  transition: opacity var(--transition), transform var(--transition);
+}
+.kanban-toast.is-visible { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.kanban-toast__undo {
+  flex-shrink: 0; min-height: 36px; padding: 0 var(--sp-3); border-radius: var(--radius-s);
+  background: var(--c-accent); color: var(--c-primary-dark); font-weight: 700; font-size: var(--text-sm);
+  border: 0; cursor: pointer;
+}
+.kanban-toast__undo:hover { background: #d69127; }
+.kanban-toast__undo:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* ---- Modale détail candidat ---- */
+.modal-overlay .modal--wide { max-width: 640px; }
+.cand-detail__status { margin: 0 0 var(--sp-3); }
+.cand-detail__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-4); margin: 0 0 var(--sp-4); }
+.cand-detail__grid .cand-detail__wide { grid-column: 1 / -1; }
+.cand-detail__grid dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-ink-soft); }
+.cand-detail__grid dd { margin: 2px 0 0; font-weight: 600; }
+.cand-detail__sec { border-top: 1px solid var(--c-line); padding-top: var(--sp-3); margin-top: var(--sp-3); }
+.cand-detail__sec h3 { font-size: var(--text-base); margin-bottom: var(--sp-2); }
+.cand-detail__sec p { color: var(--c-ink-soft); font-size: var(--text-sm); }
+.cand-detail__priv { display: inline-block; margin-left: var(--sp-2); font-size: var(--text-xs); font-weight: 500; color: var(--c-accent-dark); text-transform: none; letter-spacing: 0; }
+.cand-detail__sec textarea { width: 100%; resize: vertical; }
+.cand-detail__histo { list-style: none; margin: 0; padding: 0; }
+.cand-detail__histo li { position: relative; padding: 0 0 8px 18px; font-size: var(--text-sm); color: var(--c-ink-soft); }
+.cand-detail__histo li::before { content: ""; position: absolute; left: 3px; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--c-primary); }
+.skill-tag--sf { background: var(--c-accent-soft); color: var(--c-accent-dark); }
+
+/* Champs côte à côte (date + heure) */
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+
 /* ---- Entretiens ---- */
 .interview-card { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-4); }
 .interview-card__when { font-weight: 700; color: var(--c-primary-dark); }
@@ -880,10 +1002,22 @@
 @media (max-width: 900px) {
   .offer-stats { grid-template-columns: repeat(2, 1fr); }
 
-  /* Pipeline : colonnes empilées verticalement, aucun scroll horizontal */
-  .pipeline-wrap { overflow-x: visible; }
-  .pipeline { flex-direction: column; min-width: 0; }
-  .pipeline-col { flex: 1 1 auto; width: 100%; }
+  /* Candidatures : vue mobile en cartes verticales (pas de Trello horizontal,
+     aucun scroll de page horizontal). Le kanban, la liste et la bascule de vue
+     laissent place à la liste empilée + bottom-sheet « Changer le statut ». */
+  #pipeline-wrap, .pipeline-list, .pipeline-views { display: none !important; }
+  .pipeline-mobile { display: grid; }
+  .pipeline-filters { width: 100%; }
+  .pipeline-filters .field, .pipeline-filters .field--search { min-width: 0; flex: 1 1 100%; }
+
+  /* « Changer le statut » : bottom-sheet ancrée en bas de l'écran. */
+  #status-sheet { align-items: flex-end; padding: 0; }
+  #status-sheet .status-sheet {
+    width: 100%; max-width: none; height: auto; max-height: 85vh;
+    border-radius: var(--radius-l) var(--radius-l) 0 0;
+    animation: sheet-up 220ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  @keyframes sheet-up { from { transform: translateY(100%); } }
 
   /* Messagerie : liste OU fil, bascule au clic */
   .messaging { grid-template-columns: 1fr; min-height: 0; }
