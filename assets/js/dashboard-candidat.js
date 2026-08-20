@@ -1814,20 +1814,24 @@
     var refusDate = (refus && refus.date) ? refus.date : "2026-08-04";
     return [
       {
-        id: "conv-pixel", entreprise: "Pixel & Co", poste: "Développeur web junior", candidature: "Développeur web junior", entrepriseId: "pixel-and-co",
+        id: "conv-pixel", entreprise: "Pixel & Co", poste: "Développeur web junior", candidature: "Développeur web junior",
+        entrepriseId: "pixel-and-co", offreId: "dev-web-junior-pixel-lille", statut: "entretien",
         messages: [
           { from: "them", date: "2026-08-14", text: "Bonjour Jonathan, nous avons bien reçu votre candidature et souhaiterions vous rencontrer. Seriez-vous disponible le 21 août à 14 h en visioconférence ?" },
-          { from: "me", date: "2026-08-14", text: "Bonjour, merci beaucoup ! Le 21 août à 14 h me convient parfaitement." }
+          { from: "me", date: "2026-08-14", text: "Bonjour, merci beaucoup ! Le 21 août à 14 h me convient parfaitement." },
+          { type: "system", date: "2026-08-14", text: "Entretien proposé — 21 août à 14:00 (visioconférence)" }
         ]
       },
       {
-        id: "conv-technexis", entreprise: "TechNexis", poste: "Office manager", candidature: "Office manager", entrepriseId: "technexis",
+        id: "conv-technexis", entreprise: "TechNexis", poste: "Office manager", candidature: "Office manager",
+        entrepriseId: "technexis", offreId: "office-manager-technexis-lille", statut: "preselection",
         messages: [
           { from: "them", date: "2026-08-13", text: "Bonjour, votre profil a retenu notre attention pour le poste d'office manager. Pourriez-vous nous préciser vos disponibilités pour un premier échange ?" }
         ]
       },
       {
-        id: "conv-refus", entreprise: "Pixel & Co", poste: "Chef de projet digital", candidature: "Chef de projet digital", entrepriseId: "pixel-and-co",
+        id: "conv-refus", entreprise: "Pixel & Co", poste: "Chef de projet digital", candidature: "Chef de projet digital",
+        entrepriseId: "pixel-and-co", offreId: "chef-projet-digital-pixel-bordeaux", statut: "non-retenue",
         messages: [
           { from: "me", date: "2026-07-28", text: "Bonjour, je vous adresse ma candidature pour le poste de chef de projet digital. Je reste à votre disposition pour tout complément." },
           { from: "them", date: refusDate, text: refusText }
@@ -1838,6 +1842,30 @@
 
   var _conversations = null;
   var _activeConv = null;
+  var _msgFilter = "tous";
+  var _msgSearch = "";
+  var _readConvs = {};
+
+  var MSG_STATUT_LABEL = { entretien: "Entretien proposé", preselection: "Présélection", "non-retenue": "Candidature non retenue" };
+
+  function convUnread(c) {
+    var last = c.messages.filter(function (m) { return m.type !== "system"; }).slice(-1)[0];
+    return last && last.from === "them" && !_readConvs[c.id];
+  }
+
+  function convMatchesFilter(c) {
+    if (_msgFilter === "nonlus") { return convUnread(c); }
+    if (_msgFilter === "entretiens") { return c.statut === "entretien"; }
+    if (_msgFilter === "candidatures") { return !!c.offreId; }
+    return true;
+  }
+
+  function convMatchesSearch(c) {
+    if (!_msgSearch) { return true; }
+    var q = _msgSearch.toLowerCase();
+    var hay = (c.entreprise + " " + c.poste + " " + c.messages.map(function (m) { return m.text; }).join(" ")).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
 
   function renderMessages() {
     var box = document.getElementById("messages-app");
@@ -1850,35 +1878,62 @@
         "<p>Vos échanges avec les entreprises apparaîtront ici.</p></div>";
       return;
     }
-    if (!_activeConv) { _activeConv = _conversations[0].id; }
 
     var e = SS.escapeHtml;
-    var listHtml = _conversations.map(function (c) {
-      var last = c.messages[c.messages.length - 1];
+    var FILTERS = [["tous", "Tous"], ["nonlus", "Non lus"], ["entretiens", "Entretiens"], ["candidatures", "Candidatures"]];
+    var visibleConvs = _conversations.filter(function (c) { return convMatchesFilter(c) && convMatchesSearch(c); });
+
+    if (!_activeConv || !visibleConvs.some(function (c) { return c.id === _activeConv; })) {
+      _activeConv = visibleConvs.length ? visibleConvs[0].id : _conversations[0].id;
+    }
+
+    var toolbar =
+      '<div class="msg-toolbar">' +
+        '<input type="search" class="msg-search" id="msg-search" placeholder="Rechercher une conversation…" value="' + e(_msgSearch) + '" aria-label="Rechercher une conversation">' +
+        '<div class="msg-filters" role="group" aria-label="Filtrer les messages">' +
+          FILTERS.map(function (f) {
+            return '<button type="button" class="chip" aria-pressed="' + (f[0] === _msgFilter) + '" data-msg-filter="' + f[0] + '">' + e(f[1]) + "</button>";
+          }).join("") +
+        "</div>" +
+      "</div>";
+
+    var listHtml = visibleConvs.length ? visibleConvs.map(function (c) {
+      var last = c.messages.filter(function (m) { return m.type !== "system"; }).slice(-1)[0] || c.messages[c.messages.length - 1];
       var active = c.id === _activeConv;
-      return '<button type="button" class="msg-conv' + (active ? " is-active" : "") + '" data-conv="' + e(c.id) + '" aria-pressed="' + active + '">' +
-        '<span class="msg-conv__name">' + e(c.entreprise) + "</span>" +
+      var unread = convUnread(c);
+      return '<button type="button" class="msg-conv' + (active ? " is-active" : "") + (unread ? " is-unread" : "") + '" data-conv="' + e(c.id) + '" aria-pressed="' + active + '">' +
+        '<span class="msg-conv__name">' + e(c.entreprise) + (unread ? ' <span class="msg-conv__badge" aria-label="Non lu">1</span>' : "") + "</span>" +
         '<span class="msg-conv__poste">' + e(c.poste) + "</span>" +
         '<span class="msg-conv__preview">' + e(last.text.slice(0, 60)) + (last.text.length > 60 ? "…" : "") + "</span>" +
       "</button>";
-    }).join("");
+    }).join("") : '<p class="msg-list__empty text-muted">Aucune conversation ne correspond.</p>';
 
     var conv = _conversations.filter(function (c) { return c.id === _activeConv; })[0] || _conversations[0];
     var bubbles = conv.messages.map(function (m) {
+      if (m.type === "system") {
+        return '<div class="msg-system"><span>' + e(m.text) + "</span></div>";
+      }
       return '<div class="msg-bubble msg-bubble--' + (m.from === "me" ? "me" : "them") + '">' +
         "<p>" + e(m.text) + "</p>" +
         '<span class="msg-bubble__date">' + e(SS.formatDate(m.date)) + "</span>" +
       "</div>";
     }).join("");
 
-    box.innerHTML =
+    var statutLabel = conv.statut ? (MSG_STATUT_LABEL[conv.statut] || conv.statut) : "";
+
+    box.innerHTML = toolbar +
+      '<div class="msg-panels">' +
       '<div class="msg-list" role="list" aria-label="Conversations">' + listHtml + "</div>" +
       '<div class="msg-thread">' +
         '<div class="msg-thread__head">' +
           '<button type="button" class="btn btn-ghost btn-sm msg-back" data-msg-back>← Conversations</button>' +
           '<strong class="msg-thread__name" tabindex="-1">' + e(conv.entreprise) + "</strong>" +
           '<span class="text-muted">' + e(conv.poste) + "</span>" +
-          '<span class="msg-thread__context">Candidature : ' + e(conv.candidature || conv.poste) + "</span>" +
+          '<div class="msg-thread__meta">' +
+            '<span class="msg-thread__context">Candidature : ' + e(conv.candidature || conv.poste) + "</span>" +
+            (statutLabel ? '<span class="status-badge status-' + e(conv.statut) + '">' + e(statutLabel) + "</span>" : "") +
+            (conv.offreId ? '<a class="msg-thread__link" href="#candidatures">Voir la candidature</a>' : "") +
+          "</div>" +
         "</div>" +
         '<div class="msg-thread__body">' + bubbles + "</div>" +
         '<form class="msg-reply" data-conv="' + e(conv.id) + '">' +
@@ -1886,11 +1941,28 @@
           '<textarea id="msg-reply-input" rows="2" placeholder="Écrire une réponse…"></textarea>' +
           '<button type="submit" class="btn btn-primary btn-sm">Envoyer</button>' +
         "</form>" +
+      "</div>" +
       "</div>";
+
+    /* Recherche + filtres */
+    var search = box.querySelector("#msg-search");
+    if (search) {
+      search.addEventListener("input", function () {
+        _msgSearch = search.value;
+        var pos = search.selectionStart;
+        renderMessages();
+        var s2 = document.getElementById("msg-search");
+        if (s2) { s2.focus(); try { s2.setSelectionRange(pos, pos); } catch (e2) {} }
+      });
+    }
+    box.querySelectorAll("[data-msg-filter]").forEach(function (btn) {
+      btn.addEventListener("click", function () { _msgFilter = btn.getAttribute("data-msg-filter"); renderMessages(); });
+    });
 
     box.querySelectorAll(".msg-conv").forEach(function (el) {
       el.addEventListener("click", function () {
         _activeConv = el.getAttribute("data-conv");
+        _readConvs[_activeConv] = true; /* marque lu (§38) */
         renderMessages();
         box.classList.add("is-thread-open"); /* mobile : bascule vers le fil */
         var name = box.querySelector(".msg-thread__name");

@@ -472,13 +472,23 @@
    Messagerie (liste conversations + fil + réponse)
    ============================================================ */
 .msg-app {
-  display: grid;
-  grid-template-columns: minmax(220px, 300px) 1fr;
-  gap: var(--sp-4);
   border: 1px solid var(--c-line);
   border-radius: var(--radius-l);
   overflow: hidden;
   background: var(--c-surface);
+}
+/* Barre de recherche + filtres */
+.msg-toolbar {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--c-line); background: var(--c-bg);
+}
+.msg-search { flex: 1; min-width: 180px; padding: 0.5rem 0.75rem; border: 1px solid var(--c-border-strong); border-radius: var(--radius-m); font: inherit; }
+.msg-filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.msg-filters .chip { cursor: pointer; padding: 0.35rem 0.75rem; font-size: var(--text-sm); }
+.msg-filters .chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.msg-panels {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
 }
 .msg-list {
   display: flex;
@@ -504,6 +514,15 @@
 .msg-conv__poste { display: block; font-size: var(--text-xs); color: var(--c-ink-soft); }
 .msg-conv__preview { display: block; font-size: var(--text-sm); color: var(--c-ink-soft); margin-top: 4px; }
 .msg-conv:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.msg-conv.is-unread .msg-conv__name { font-weight: 700; }
+.msg-conv__badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill); background: var(--c-accent); color: #fff; font-size: 0.68rem; font-weight: 700; vertical-align: middle; }
+.msg-list__empty { padding: var(--sp-4); }
+
+/* Message système (événement) dans le fil */
+.msg-system { text-align: center; margin: var(--sp-2) 0; }
+.msg-system span { display: inline-block; padding: 4px 12px; border-radius: var(--radius-pill); background: var(--c-bg-alt); border: 1px solid var(--c-line); font-size: var(--text-xs); color: var(--c-ink-soft); }
+.msg-thread__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); }
+.msg-thread__link { font-size: var(--text-sm); font-weight: 600; }
 
 .msg-thread { display: flex; flex-direction: column; min-width: 0; }
 .msg-thread__head {
@@ -554,7 +573,7 @@
 @media (max-width: 720px) {
   /* Mobile : liste seule, puis fil en plein écran avec retour (pas de scroll
      horizontal). Bascule pilotée par .is-thread-open (posée en JS). */
-  .msg-app { grid-template-columns: 1fr; }
+  .msg-panels { grid-template-columns: 1fr; }
   .msg-list { border-right: 0; border-bottom: 1px solid var(--c-line); }
   .msg-thread { display: none; }
   .msg-app.is-thread-open .msg-list { display: none; }
