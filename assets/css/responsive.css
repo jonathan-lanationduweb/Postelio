@@ -570,7 +570,8 @@
 
   .container,
   .container--narrow {
-    width: calc(100% - 2rem);
+    /* Plus d'air sur les bords des petits écrans (le texte ne colle pas). */
+    width: calc(100% - 2.5rem);
   }
 
   .grid-4,
