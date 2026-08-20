@@ -95,6 +95,9 @@
             <!-- Notifications de mise à jour de candidature (rempli par dashboard-candidat.js) -->
             <div id="status-notification"></div>
 
+            <!-- À faire aujourd'hui : priorités du jour (rempli par JS) -->
+            <div id="today-todo"></div>
+
             <!-- Ma recherche : critères actifs + édition inline -->
             <div id="search-criteria" class="cand-card cand-search"></div>
 
@@ -105,6 +108,9 @@
               <div class="dash-metric"><b id="metric-entretiens">0</b><span>entretiens</span></div>
               <div class="dash-metric"><b id="metric-favorites">0</b><span>favoris</span></div>
             </div>
+
+            <!-- Résumé de profil : complétion + CV (rempli par JS) -->
+            <div id="profile-summary"></div>
 
             <!-- Candidatures récentes avec frise de progression -->
             <div class="cand-subhead">
@@ -120,6 +126,7 @@
             </div>
             <p class="dash-subtitle">Sélectionnées à partir des critères de votre recherche. <b id="metric-reco" hidden>0</b></p>
             <div id="reco-list" class="cand-reco-grid"></div>
+            <p class="cand-reco-more"><a class="btn btn-outline btn-sm" href="offres.html">Voir toutes les offres pour moi</a></p>
 
             <p class="notice notice--demo" style="margin-top: var(--sp-5);">L'espace candidat est entièrement gratuit.</p>
           </section>
@@ -129,7 +136,10 @@
             <h2>Mon profil professionnel</h2>
             <p class="dash-subtitle">Sur Postelio, on ne montre pas seulement où l'on a travaillé, on montre ce que l'on sait faire.</p>
 
-            <!-- Indicateur de complétion + conseils actionnables -->
+            <!-- Bloc d'identité (avatar, métier, ville, disponibilité, complétion) -->
+            <div id="profile-identity" class="cand-card profile-identity"></div>
+
+            <!-- Conseils actionnables de complétion -->
             <div id="profile-completion" class="cand-card"></div>
 
             <!-- Dates de mise à jour (profil + CV) -->

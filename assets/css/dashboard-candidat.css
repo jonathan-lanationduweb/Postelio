@@ -38,6 +38,30 @@
 }
 .cand-card__title { font-size: var(--text-lg); margin: 0; }
 
+/* À faire aujourd'hui */
+.today-todo { margin-bottom: var(--sp-4); }
+.today-todo .cand-card__title { margin-bottom: var(--sp-3); }
+.todo-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.todo-item { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) 0; border-top: 1px solid var(--c-line); }
+.todo-item:first-child { border-top: 0; }
+.todo-item a { color: var(--c-ink); text-decoration: none; font-weight: 500; }
+.todo-item a:hover { text-decoration: underline; }
+.todo-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--c-ink-soft); }
+.todo-item--urgent .todo-dot { background: var(--c-error, #c0392b); }
+.todo-item--warn .todo-dot { background: var(--c-accent); }
+.todo-item--info .todo-dot { background: var(--c-primary); }
+.todo-item--muted .todo-dot { background: var(--c-border-strong); }
+
+/* Résumé de profil (tableau de bord) */
+.profile-summary { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; margin: var(--sp-4) 0; }
+.profile-summary__body { flex: 1; min-width: 220px; }
+.profile-summary .profile-meter { margin-block: 0 var(--sp-2); }
+.profile-summary__pct { margin: 0; font-size: var(--text-sm); }
+.profile-summary__warn { margin: var(--sp-2) 0 0; font-size: var(--text-sm); color: var(--c-accent-dark); }
+
+/* CTA « voir toutes les offres » sous les recommandations */
+.cand-reco-more { margin-top: var(--sp-3); }
+
 /* Sous-titre de section avec lien d'action à droite. */
 .cand-subhead {
   display: flex;
@@ -296,10 +320,38 @@
   background: var(--c-bg-alt);
   margin-bottom: var(--sp-3);
 }
-.cand-cv__icon { font-size: 1.6rem; line-height: 1; }
+.cand-cv__icon { display: inline-flex; color: var(--c-primary); line-height: 1; }
 .cand-cv__meta { display: flex; flex-direction: column; min-width: 0; }
 .cand-cv__meta strong { color: var(--c-primary-dark); word-break: break-word; }
 .cand-cv__meta .text-muted { font-size: var(--text-sm); }
+.cand-cv__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+.cand-cv__menu { position: relative; }
+.cand-cv__menu > summary { list-style: none; cursor: pointer; }
+.cand-cv__menu > summary::-webkit-details-marker { display: none; }
+.cand-cv__menu-pop { position: absolute; left: 0; top: calc(100% + 6px); z-index: 20; min-width: 160px; background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius-m); box-shadow: var(--shadow-m); padding: var(--sp-2); display: grid; gap: 2px; }
+.cand-cv__menu-pop button { text-align: left; padding: 0.5rem 0.7rem; border: 0; background: transparent; border-radius: var(--radius-s); cursor: pointer; font: inherit; color: var(--c-ink); }
+.cand-cv__menu-pop button:hover { background: var(--c-primary-soft); }
+.cand-cv__menu-pop .is-danger { color: var(--c-error, #c0392b); }
+
+/* Bloc d'identité en tête du profil */
+.profile-identity { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-4); }
+.profile-identity__head { display: flex; align-items: center; gap: var(--sp-3); }
+.profile-identity__avatar { width: 56px; height: 56px; border-radius: var(--radius-m); background: var(--c-primary-dark); color: #fff; font-size: 1.25rem; }
+.profile-identity__info { display: flex; flex-direction: column; gap: 3px; }
+.profile-identity__name { font-family: var(--font-serif); font-size: 1.25rem; color: var(--c-primary-dark); line-height: 1.1; }
+.profile-identity__role { color: var(--c-ink-soft); font-size: var(--text-sm); }
+.profile-identity__dispo { align-self: flex-start; margin-top: 2px; }
+.profile-identity__meter { flex: 1; min-width: 200px; max-width: 280px; }
+.profile-identity__meter .profile-meter { margin-block: 0 var(--sp-2); }
+.profile-identity__meter .profile-meter__label { margin: 0; }
+
+/* Note personnelle (privée) sur une candidature */
+.appli-note__label { margin: 0 0 4px; font-size: var(--text-sm); color: var(--c-ink-soft); }
+
+/* Suggestions de compétences */
+.skill-suggest { margin-top: var(--sp-3); display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.skill-suggest__label { font-size: var(--text-sm); color: var(--c-ink-soft); }
+.skill-suggest .chip { cursor: pointer; font-size: var(--text-sm); }
 
 /* État vide compact (dans une carte, sans bordure pointillée pleine hauteur) */
 .empty-state--inline {

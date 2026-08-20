@@ -33,6 +33,8 @@
     /* 4. Rendu des sections. */
     renderSearchCriteria();
     renderStatusNotification();
+    renderTodayTodo();
+    renderProfileSummary();
     renderRecentApplications();
     renderApplications();
     initToasts();
@@ -520,7 +522,7 @@
       }).join("");
 
       var noteBlock = a.note
-        ? '<p class="notice" data-note style="margin-top: var(--sp-3);"><strong>Ma note :</strong> ' + e(a.note) + "</p>"
+        ? '<div class="notice appli-note" data-note style="margin-top: var(--sp-3);"><p class="appli-note__label"><strong>Note personnelle</strong> · visible uniquement par vous</p><p style="margin:0;">' + e(a.note) + "</p></div>"
         : '<p data-note hidden></p>';
 
       /* Message courtois reçu de l'entreprise : masqué derrière un disclosure. */
@@ -553,8 +555,8 @@
           '<button type="button" class="btn btn-ghost btn-sm" data-action="withdraw" data-id="' + e(a.id) + '">Retirer ma candidature</button>' +
         "</div>" +
         '<div data-note-editor hidden style="margin-top: var(--sp-3);">' +
-          '<div class="field"><label for="note-' + e(a.id) + '">Note personnelle</label>' +
-          '<textarea id="note-' + e(a.id) + '">' + e(a.note || "") + "</textarea></div>" +
+          '<div class="field"><label for="note-' + e(a.id) + '">Note personnelle <span class="text-muted">(visible uniquement par vous)</span></label>' +
+          '<textarea id="note-' + e(a.id) + '" placeholder="Ex. : relancer après l\'entretien.">' + e(a.note || "") + "</textarea></div>" +
           '<button type="button" class="btn btn-primary btn-sm" data-action="save-note" data-id="' + e(a.id) + '">Enregistrer la note</button>' +
         "</div>" +
       "</article>";
@@ -633,6 +635,91 @@
       '<div class="notice notice--demo" style="margin-bottom: var(--sp-4);">' +
         "<strong>Votre candidature chez " + e(a.entreprise) + " a été mise à jour.</strong> " +
         '<a href="#candidatures">Voir mes candidatures</a>' +
+      "</div>";
+  }
+
+  /* ============================================================
+     À faire aujourd'hui (§8) — priorités actionnables du jour
+     ============================================================ */
+  function daysBetween(iso) {
+    if (!iso) { return null; }
+    return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  }
+
+  function renderTodayTodo() {
+    var box = document.getElementById("today-todo");
+    if (!box) { return; }
+    var e = SS.escapeHtml;
+    var items = [];
+
+    /* Entretien à confirmer */
+    var store = SS.store.get(CONFIRM_KEY, {});
+    defaultInterviews().forEach(function (it) {
+      if (ivStatus(it, store).status === "propose") {
+        items.push({ level: "urgent", text: "Entretien à confirmer pour le " + SS.formatDate(it.date), href: "#entretiens" });
+      }
+    });
+
+    /* Nouveau message (dernier message reçu, hors refus) */
+    var convs = _conversations || defaultConversations();
+    convs.forEach(function (c) {
+      var last = c.messages[c.messages.length - 1];
+      if (last && last.from === "them" && c.id !== "conv-refus") {
+        items.push({ level: "warn", text: "1 nouveau message de " + c.entreprise, href: "#messages" });
+      }
+    });
+
+    /* Nouvelles offres correspondantes (compte des recommandations) */
+    var recoBox = document.getElementById("reco-list");
+    var recoN = recoBox && recoBox.dataset.recoCount ? parseInt(recoBox.dataset.recoCount, 10) : 0;
+    if (recoN > 0) {
+      items.push({ level: "info", text: recoN + " offre" + (recoN > 1 ? "s" : "") + " correspond" + (recoN > 1 ? "ent" : "") + " à votre recherche", href: "offres.html" });
+    }
+
+    /* CV ancien (plus de 2 mois) */
+    var cv = getCv();
+    var cvAge = cv && cv.date ? daysBetween(cv.date) : null;
+    if (cvAge != null && cvAge > 60) {
+      items.push({ level: "muted", text: "Votre CV date de plus de 2 mois", href: "#profil" });
+    }
+
+    if (!items.length) {
+      box.innerHTML = '<div class="cand-card today-todo"><h2 class="cand-card__title">À faire aujourd\'hui</h2>' +
+        '<p class="text-muted" style="margin:0;">Rien d\'urgent aujourd\'hui — vous êtes à jour. 👌</p></div>';
+      return;
+    }
+
+    box.innerHTML = '<div class="cand-card today-todo"><h2 class="cand-card__title">À faire aujourd\'hui</h2>' +
+      '<ul class="todo-list">' + items.map(function (it) {
+        return '<li class="todo-item todo-item--' + it.level + '">' +
+          '<span class="todo-dot" aria-hidden="true"></span>' +
+          '<a href="' + e(it.href) + '">' + e(it.text) + "</a></li>";
+      }).join("") + "</ul></div>";
+  }
+
+  /* Résumé de profil sur le tableau de bord (§41). */
+  function renderProfileSummary() {
+    var box = document.getElementById("profile-summary");
+    if (!box) { return; }
+    var profile = getProfile();
+    var res = computeCompletion(profile);
+    var cv = getCv();
+    var e = SS.escapeHtml;
+    var cvAge = cv && cv.date ? daysBetween(cv.date) : null;
+    var cvLine = (cv && cv.name)
+      ? "CV mis à jour " + (cvAge === 0 ? "aujourd'hui" : "il y a " + cvAge + " jour" + (cvAge > 1 ? "s" : ""))
+      : "Aucun CV importé";
+    var stale = daysBetween(profile.dateMaj);
+    var warn = (stale != null && stale > 45)
+      ? '<p class="profile-summary__warn">Vérifiez que vos informations sont toujours à jour.</p>' : "";
+
+    box.innerHTML = '<div class="cand-card profile-summary">' +
+        '<div class="profile-summary__body">' +
+          '<div class="profile-meter" aria-hidden="true"><span style="width:' + res.pct + '%"></span></div>' +
+          '<p class="profile-summary__pct"><strong>' + res.pct + '&nbsp;%</strong> de profil complété · <span class="text-muted">' + e(cvLine) + "</span></p>" +
+          warn +
+        "</div>" +
+        '<a class="btn btn-outline btn-sm" href="#profil">Voir mon profil</a>' +
       "</div>";
   }
 
@@ -768,8 +855,9 @@
 
       box.dataset.recoCount = String(matches.length || pool.length);
       updateMetrics();
+      renderTodayTodo(); /* le nombre d'offres n'est connu qu'ici (chargement async) */
 
-      var top = pool.slice(0, 4);
+      var top = pool.slice(0, 3);
       if (!top.length) {
         box.innerHTML = '<div class="empty-state"><p>Aucune offre à recommander pour le moment.</p></div>';
         return;
@@ -1014,10 +1102,35 @@
   }
 
   function renderProfile() {
+    renderProfileIdentity();
     renderProfileCompletion();
     renderProfileDates();
     renderCv();
     renderProfileSections();
+  }
+
+  /* Bloc d'identité en tête du profil (§25). */
+  function renderProfileIdentity() {
+    var box = document.getElementById("profile-identity");
+    if (!box) { return; }
+    var profile = getProfile();
+    var res = computeCompletion(profile);
+    var e = SS.escapeHtml;
+    var dispo = (profile.disponibilite || "").trim();
+    var dispoTxt = /imm[ée]diat/i.test(dispo) ? "Disponible immédiatement" : "Disponible : " + dispo;
+    box.innerHTML =
+      '<div class="profile-identity__head">' +
+        '<span class="avatar profile-identity__avatar" aria-hidden="true">' + e(SS.auth.initials()) + "</span>" +
+        "<div class=\"profile-identity__info\">" +
+          '<strong class="profile-identity__name">' + e(SS.auth.displayName() || "Candidat") + "</strong>" +
+          '<span class="profile-identity__role">' + e(profile.metier || "") + (profile.ville ? " · " + e(profile.ville) : "") + "</span>" +
+          (dispo ? '<span class="badge badge--remote profile-identity__dispo">' + e(dispoTxt) + "</span>" : "") +
+        "</div>" +
+      "</div>" +
+      '<div class="profile-identity__meter">' +
+        '<div class="profile-meter" aria-hidden="true"><span style="width:' + res.pct + '%"></span></div>' +
+        '<p class="profile-meter__label">Profil complété à <strong>' + res.pct + "&nbsp;%</strong></p>" +
+      "</div>";
   }
 
   /* Dates de mise à jour (profil + CV). Simple affichage — prépare une future
@@ -1037,6 +1150,10 @@
 
   /* Sous-section « Mon CV » : import simulé (nom du fichier lu côté navigateur,
      aucun envoi ni stockage du contenu). */
+  /* Icône document (remplace l'emoji 📄 pour rester cohérent avec le système
+     d'icônes SVG du site). */
+  var ICON_DOC = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>';
+
   function renderCv() {
     var box = document.getElementById("profile-cv");
     if (!box) { return; }
@@ -1054,13 +1171,18 @@
     } else {
       box.innerHTML = head +
         '<div class="cand-cv__file">' +
-          '<span class="cand-cv__icon" aria-hidden="true">📄</span>' +
+          '<span class="cand-cv__icon" aria-hidden="true">' + ICON_DOC + "</span>" +
           '<span class="cand-cv__meta"><strong>' + e(cv.name) + "</strong>" +
           '<span class="text-muted">Mis à jour le ' + e(SS.formatDate(cv.date)) + "</span></span>" +
         "</div>" +
-        '<div class="form-actions">' +
+        '<div class="form-actions cand-cv__actions">' +
+          '<button type="button" class="btn btn-primary btn-sm" data-cv-action="preview">Aperçu</button>' +
           '<button type="button" class="btn btn-outline btn-sm" data-cv-action="replace">Remplacer</button>' +
-          '<button type="button" class="btn btn-ghost btn-sm" data-cv-action="delete">Supprimer</button>' +
+          '<details class="cand-cv__menu"><summary class="btn btn-ghost btn-sm">…</summary>' +
+            '<div class="cand-cv__menu-pop">' +
+              '<button type="button" data-cv-action="download">Télécharger</button>' +
+              '<button type="button" class="is-danger" data-cv-action="delete">Supprimer</button>' +
+            "</div></details>" +
         "</div>" + input;
     }
 
@@ -1070,12 +1192,18 @@
         var action = btn.getAttribute("data-cv-action");
         if (action === "import" || action === "replace") {
           if (fileInput) { fileInput.click(); }
+        } else if (action === "preview") {
+          openCvViewer();
+        } else if (action === "download") {
+          SS.toast("Téléchargement du CV (démonstration).");
         } else if (action === "delete") {
           if (!window.confirm("Supprimer votre CV ?")) { return; }
           setCv({ name: "", date: "" });
           renderCv();
           renderProfileDates();
+          renderProfileIdentity();
           renderProfileCompletion();
+          renderProfileSummary();
           SS.toast("CV supprimé.");
         }
       });
@@ -1090,10 +1218,77 @@
         fileInput.value = "";
         renderCv();
         renderProfileDates();
+        renderProfileIdentity();
         renderProfileCompletion();
+        renderProfileSummary();
         SS.toast("CV importé : " + file.name);
       });
     }
+  }
+
+  /* Aperçu simulé du CV du candidat + visionneuse (zoom), comme côté recruteur
+     (§27). Aucun contenu réel : document factice stylé « démonstration ». */
+  function cvDocHtml() {
+    var e = SS.escapeHtml;
+    var p = getProfile();
+    var s = SS.auth.get() || {};
+    var name = SS.auth.displayName() || "Candidat";
+    var contact = [p.ville || s.city, s.email].filter(Boolean).join(" · ");
+    var skills = (p.competences || []).slice(0, 5).map(function (c) { return '<span class="cv-doc__chip">' + e(c) + "</span>"; }).join("");
+    return '<div class="cv-doc cv-doc--full" role="img" aria-label="Aperçu simulé de votre CV">' +
+      '<span class="cv-doc__demo">Aperçu de démonstration</span>' +
+      '<div class="cv-doc__head"><h4>' + e(name) + "</h4><p>" + e(p.metier || "") + "</p>" +
+        (contact ? '<p class="cv-doc__contact">' + e(contact) + "</p>" : "") + "</div>" +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Expérience</span>' +
+        (p.experiences ? '<p class="cv-doc__text">' + e(p.experiences) + "</p>" : "") + "</div>" +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Formation</span>' +
+        (p.formation ? '<p class="cv-doc__text">' + e(p.formation) + "</p>" : "") + "</div>" +
+      '<div class="cv-doc__sec"><span class="cv-doc__label">Compétences</span>' +
+        (skills ? '<div class="cv-doc__chips">' + skills + "</div>" : "") + "</div>" +
+      '<p class="cv-doc__file">' + e((getCv() || {}).name || "") + "</p>" +
+    "</div>";
+  }
+
+  function openCvViewer() {
+    var e = SS.escapeHtml;
+    var overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.innerHTML =
+      '<div class="modal modal--wide cv-viewer" role="document">' +
+        '<div class="modal__head"><h2 class="modal__title">CV de ' + e(SS.auth.displayName() || "vous") + "</h2>" +
+          '<button type="button" class="modal-close" data-close aria-label="Fermer">✕</button></div>' +
+        '<div class="modal__body cv-viewer__body">' +
+          '<div class="cv-viewer__toolbar">' +
+            '<div class="cv-viewer__zoom" role="group" aria-label="Zoom du CV">' +
+              '<button type="button" class="btn btn-outline btn-sm" data-zoom="out" aria-label="Réduire">Zoom −</button>' +
+              '<span class="cv-viewer__level" aria-live="polite">100 %</span>' +
+              '<button type="button" class="btn btn-outline btn-sm" data-zoom="in" aria-label="Agrandir">Zoom +</button>' +
+            "</div>" +
+            '<span class="cv-viewer__pages text-muted">Page 1 / 1</span>' +
+          "</div>" +
+          '<div class="cv-viewer__stage"><div class="cv-viewer__page">' + cvDocHtml() + "</div></div>" +
+        "</div>" +
+        '<div class="modal__actions"><button type="button" class="btn btn-primary" data-close>Fermer</button></div>' +
+      "</div>";
+    document.body.appendChild(overlay);
+    document.body.classList.add("modal-open");
+
+    var zoom = 1;
+    var page = overlay.querySelector(".cv-viewer__page");
+    var level = overlay.querySelector(".cv-viewer__level");
+    function apply() { page.style.transform = "scale(" + zoom + ")"; level.textContent = Math.round(zoom * 100) + " %"; }
+    overlay.querySelectorAll("[data-zoom]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        zoom = b.getAttribute("data-zoom") === "in" ? Math.min(1.6, zoom + 0.15) : Math.max(0.7, zoom - 0.15);
+        apply();
+      });
+    });
+    function close() { overlay.remove(); document.body.classList.remove("modal-open"); }
+    overlay.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", close); });
+    overlay.addEventListener("click", function (ev) { if (ev.target === overlay) { close(); } });
+    document.addEventListener("keydown", function onEsc(ev) { if (ev.key === "Escape") { close(); document.removeEventListener("keydown", onEsc); } });
   }
 
   function renderProfileCompletion() {
@@ -1114,11 +1309,10 @@
     }).join("");
 
     box.innerHTML =
-      '<div class="profile-meter" aria-hidden="true"><span style="width:' + res.pct + '%"></span></div>' +
-      '<p class="profile-meter__label">Profil complété à <strong>' + res.pct + ' %</strong></p>' +
       (tips.length
-        ? '<div class="profile-tips"><p class="profile-tips__title">Pour aller plus loin :</p><ul>' + tipsHtml + "</ul></div>"
-        : '<p class="notice notice--demo" style="margin-top:var(--sp-3);">Bravo, votre profil est complet !</p>');
+        ? '<div class="profile-tips"><p class="profile-tips__title">Pour compléter votre profil :</p><ul>' + tipsHtml + "</ul></div>"
+        : '<p class="notice notice--demo" style="margin:0;">Bravo, votre profil est complet !</p>');
+    box.hidden = false;
   }
 
   function renderProfileSections() {
@@ -1190,9 +1384,45 @@
 
     box.innerHTML = rows + sfRow + recoRow;
 
+    /* Suggestions de compétences selon le métier (§29). */
+    var compRow = box.querySelector('.profile-row[data-key="competences"] .profile-row__edit .field');
+    if (compRow) {
+      var suggestions = skillSuggestions(profile.metier).filter(function (s) {
+        return (profile.competences || []).map(normalize).indexOf(normalize(s)) === -1;
+      });
+      if (suggestions.length) {
+        var wrap = document.createElement("div");
+        wrap.className = "skill-suggest";
+        wrap.innerHTML = '<span class="skill-suggest__label">Suggestions :</span> ' +
+          suggestions.map(function (s) { return '<button type="button" class="chip" data-skill="' + e(s) + '">+ ' + e(s) + "</button>"; }).join("");
+        compRow.appendChild(wrap);
+        wrap.querySelectorAll("[data-skill]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var input = document.getElementById("pf-competences");
+            if (!input) { return; }
+            var vals = input.value.split(",").map(function (x) { return x.trim(); }).filter(Boolean);
+            vals.push(b.getAttribute("data-skill"));
+            input.value = vals.join(", ");
+            b.remove();
+            input.focus();
+          });
+        });
+      }
+    }
+
     box.querySelectorAll("[data-action]").forEach(function (btn) {
       btn.addEventListener("click", function () { onProfileAction(btn); });
     });
+  }
+
+  /* Petit référentiel de compétences suggérées par famille de métier. */
+  function skillSuggestions(metier) {
+    var m = normalize(metier);
+    if (/develop|web|informat|digital/.test(m)) { return ["HTML / CSS", "JavaScript", "Git", "React", "PHP", "SQL", "Travail en équipe"]; }
+    if (/comptab|paie|financ|gestion/.test(m)) { return ["Comptabilité générale", "Fiscalité", "Sage / Cegid", "Excel", "Paie", "Rigueur"]; }
+    if (/commerc|vente|conseil/.test(m)) { return ["Négociation", "Prospection", "CRM", "Relation client", "Sens du service"]; }
+    if (/assist|secret|administ|office/.test(m)) { return ["Pack Office", "Accueil", "Organisation", "Orthographe", "Gestion d'agenda"]; }
+    return ["Travail en équipe", "Autonomie", "Organisation", "Communication", "Rigueur"];
   }
 
   function onProfileAction(btn) {
