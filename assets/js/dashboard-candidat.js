@@ -1975,52 +1975,148 @@
   }
 
   /* ---- 14-15 : Recommandations (auteur + date, ajout simulé) ---- */
+  /* Champs d'une recommandation (partagés ajout + modification). Lecture par
+     data-rf dans un conteneur donné, pour pouvoir avoir plusieurs formulaires. */
+  function recoFormHtml(r) {
+    var e = SS.escapeHtml; r = r || {};
+    return '<div class="form-row">' +
+        '<div class="field"><label>Qui vous recommande ?</label><input data-rf="nom" value="' + e(r.nom || "") + '" placeholder="Prénom Nom"></div>' +
+        '<div class="field"><label>Fonction</label><input data-rf="role" value="' + e(r.role || "") + '" placeholder="Ex. : Responsable technique"></div>' +
+      "</div>" +
+      '<div class="field"><label>Entreprise</label><input data-rf="entreprise" value="' + e(r.entreprise || "") + '" placeholder="Ex. : Studio Digital Lyon"></div>' +
+      '<div class="field"><label>Recommandation (texte — optionnel si vous joignez une lettre PDF)</label><textarea data-rf="texte" rows="2">' + e(r.texte || "") + "</textarea></div>" +
+      '<div class="field"><label>Lettre de recommandation (PDF, optionnel)</label>' +
+        '<div class="reco-pdf-row">' +
+          '<span class="reco-pdf-current"' + (r.pdf ? "" : " hidden") + ">" + ICON_DOC + ' <strong data-rf-pdf-name>' + e(r.pdf || "") + "</strong>" +
+            ' <button type="button" class="btn btn-ghost btn-xs" data-rf-pdf-clear>Retirer</button></span>' +
+          '<button type="button" class="btn btn-outline btn-sm" data-rf-pdf-btn>' + (r.pdf ? "Remplacer le PDF" : "Joindre un PDF") + "</button>" +
+          '<input type="file" accept=".pdf" class="sr-only" data-rf-pdf-input tabindex="-1" aria-hidden="true">' +
+          '<input type="hidden" data-rf="pdf" value="' + e(r.pdf || "") + '">' +
+        "</div></div>" +
+      '<label class="field--checkbox reco-vis-choice"><input type="checkbox" data-rf="visible"' + (r.visible !== false ? " checked" : "") + "><span>Visible par les recruteurs</span></label>";
+  }
+  function readRecoForm(scope) {
+    function v(n) { var el = scope.querySelector('[data-rf="' + n + '"]'); return el ? (el.value || "").trim() : ""; }
+    var vis = scope.querySelector('[data-rf="visible"]');
+    return { nom: v("nom"), role: v("role"), entreprise: v("entreprise"), texte: v("texte"), pdf: v("pdf"), visible: vis ? vis.checked : true };
+  }
+  /* Câble l'import PDF simulé (nom de fichier uniquement) d'un formulaire reco. */
+  function wireRecoPdf(scope) {
+    var btn = scope.querySelector("[data-rf-pdf-btn]");
+    var input = scope.querySelector("[data-rf-pdf-input]");
+    var hidden = scope.querySelector('[data-rf="pdf"]');
+    var current = scope.querySelector(".reco-pdf-current");
+    var nameEl = scope.querySelector("[data-rf-pdf-name]");
+    var clear = scope.querySelector("[data-rf-pdf-clear]");
+    if (btn && input) { btn.addEventListener("click", function () { input.click(); }); }
+    if (input) {
+      input.addEventListener("change", function () {
+        var file = input.files && input.files[0];
+        if (!file) { return; }
+        hidden.value = file.name;
+        if (nameEl) { nameEl.textContent = file.name; }
+        if (current) { current.hidden = false; }
+        if (btn) { btn.textContent = "Remplacer le PDF"; }
+        input.value = "";
+      });
+    }
+    if (clear) {
+      clear.addEventListener("click", function () {
+        hidden.value = "";
+        if (current) { current.hidden = true; }
+        if (btn) { btn.textContent = "Joindre un PDF"; }
+      });
+    }
+  }
+
   function sectionRecommandations() {
     var p = getProfile();
     var e = SS.escapeHtml;
     var list = p.recommandationsList || [];
     var cards = list.length ? list.map(function (r, i) {
-      var author = [r.nom, r.role, r.entreprise].filter(Boolean).join(" · ");
+      var visible = r.visible !== false;
       return '<figure class="reco-item" data-item="' + i + '">' +
         '<figcaption class="reco-item__author"><strong>' + e(r.nom || "") + "</strong>" +
           (r.role ? '<span>' + e(r.role) + "</span>" : "") +
           (r.entreprise ? '<span>' + e(r.entreprise) + "</span>" : "") +
           (r.date ? '<span class="reco-item__date">' + e(r.date) + "</span>" : "") + "</figcaption>" +
-        '<blockquote>« ' + e(r.texte || "") + " »</blockquote>" +
-        '<button type="button" class="btn btn-ghost btn-xs is-danger reco-item__del" data-reco-del="' + i + '">Retirer</button>' +
+        (r.texte ? '<blockquote>« ' + e(r.texte) + " »</blockquote>" : "") +
+        (r.pdf ? '<p class="reco-item__pdf">' + ICON_DOC + " <strong>" + e(r.pdf) + '</strong> <span class="text-muted">— lettre de recommandation</span></p>' : "") +
+        '<div class="reco-item__foot">' +
+          '<span class="badge ' + (visible ? "badge--remote" : "badge--neutral") + ' reco-item__vis">' + (visible ? "Visible par les recruteurs" : "Masquée") + "</span>" +
+          '<div class="reco-item__actions">' +
+            '<button type="button" class="btn btn-ghost btn-xs" data-reco-vis="' + i + '">' + (visible ? "Masquer" : "Rendre visible") + "</button>" +
+            '<button type="button" class="btn btn-ghost btn-xs" data-reco-edit="' + i + '">Modifier</button>' +
+            '<button type="button" class="btn btn-ghost btn-xs is-danger" data-reco-del="' + i + '">Retirer</button>' +
+          "</div>" +
+        "</div>" +
+        '<div class="reco-edit-inline profile-sec__edit" hidden></div>' +
       "</figure>";
     }).join("") : empty("Aucune recommandation pour l'instant.");
-    var form = '<div class="profile-sec__edit" hidden><div class="form-row">' +
-        f("Qui vous recommande ?", '<input id="reco-nom" placeholder="Prénom Nom">') +
-        f("Fonction", '<input id="reco-role" placeholder="Ex. : Responsable technique">') +
-      "</div>" +
-      f("Entreprise", '<input id="reco-entreprise" placeholder="Ex. : Studio Digital Lyon">') +
-      f("Recommandation", '<textarea id="reco-texte" rows="2"></textarea>') +
+    var form = '<div class="profile-sec__edit reco-add-form" hidden>' + recoFormHtml({ visible: true }) +
       '<div class="form-actions"><button type="button" class="btn btn-primary btn-sm" data-reco-add>Ajouter</button>' +
       '<button type="button" class="btn btn-ghost btn-sm" data-cancel>Annuler</button></div></div>';
     return secCard("recommandations", "Recommandations", addBtn("+ Ajouter une recommandation"), cards + form,
-      "Prototype : l'ajout est simulé, aucun message n'est envoyé.");
+      "Prototype : l'ajout est simulé (le PDF n'est pas envoyé, seul son nom est conservé).");
+  }
+  function monthNow() {
+    var mois = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+    var now = new Date();
+    return mois[now.getMonth()] + " " + now.getFullYear();
   }
   function wireRecommandations2(box) {
     var sec = box.querySelector('.profile-sec[data-section="recommandations"]');
     toggleEditor(sec, "[data-add-toggle]");
+    var addForm = sec.querySelector(".reco-add-form");
+    if (addForm) { wireRecoPdf(addForm); }
     var add = sec.querySelector("[data-reco-add]");
     if (add) {
       add.addEventListener("click", function () {
-        var nom = valOf("reco-nom"), texte = valOf("reco-texte");
-        if (!nom || !texte) { SS.toast("Indiquez au moins le nom et le texte."); return; }
-        var mois = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
-        var now = new Date();
+        var data = readRecoForm(addForm);
+        if (!data.nom || (!data.texte && !data.pdf)) { SS.toast("Indiquez le nom et un texte ou une lettre PDF."); return; }
+        data.date = monthNow();
         var p = getProfile();
-        p.recommandationsList = (p.recommandationsList || []).concat([{
-          nom: nom, role: valOf("reco-role"), entreprise: valOf("reco-entreprise"), texte: texte,
-          date: mois[now.getMonth()] + " " + now.getFullYear()
-        }]);
+        p.recommandationsList = (p.recommandationsList || []).concat([data]);
         saveProfile(p, { toast: "Recommandation ajoutée (démonstration)." });
       });
     }
     sec.querySelectorAll("[data-reco-del]").forEach(function (b) {
       b.addEventListener("click", function () { var p = getProfile(); (p.recommandationsList || []).splice(parseInt(b.getAttribute("data-reco-del"), 10), 1); saveProfile(p, { toast: "Recommandation retirée." }); });
+    });
+    sec.querySelectorAll("[data-reco-vis]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var i = parseInt(b.getAttribute("data-reco-vis"), 10);
+        var p = getProfile(); var r = (p.recommandationsList || [])[i];
+        if (!r) { return; }
+        r.visible = r.visible === false ? true : false;
+        saveProfile(p, { toast: r.visible ? "Recommandation visible par les recruteurs." : "Recommandation masquée." });
+      });
+    });
+    sec.querySelectorAll("[data-reco-edit]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var i = parseInt(b.getAttribute("data-reco-edit"), 10);
+        var fig = sec.querySelector('.reco-item[data-item="' + i + '"]');
+        var editor = fig ? fig.querySelector(".reco-edit-inline") : null;
+        if (!editor) { return; }
+        if (!editor.hidden) { editor.hidden = true; editor.innerHTML = ""; return; }
+        var r = (getProfile().recommandationsList || [])[i] || {};
+        editor.innerHTML = recoFormHtml(r) +
+          '<div class="form-actions"><button type="button" class="btn btn-primary btn-sm" data-reco-save>Enregistrer</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-reco-editcancel>Annuler</button></div>';
+        editor.hidden = false;
+        wireRecoPdf(editor);
+        editor.querySelector("input").focus();
+        editor.querySelector("[data-reco-editcancel]").addEventListener("click", function () { editor.hidden = true; editor.innerHTML = ""; });
+        editor.querySelector("[data-reco-save]").addEventListener("click", function () {
+          var data = readRecoForm(editor);
+          if (!data.nom || (!data.texte && !data.pdf)) { SS.toast("Indiquez le nom et un texte ou une lettre PDF."); return; }
+          var p = getProfile();
+          var cur = (p.recommandationsList || [])[i] || {};
+          data.date = cur.date || monthNow();
+          p.recommandationsList[i] = data;
+          saveProfile(p, { toast: "Recommandation modifiée." });
+        });
+      });
     });
   }
 
@@ -2136,10 +2232,13 @@
     var sfHtml = sf.length ? '<ul class="profile-sf">' + sf.map(function (s) { return "<li><span class=\"profile-sf__t\">" + e(s.titre) + "</span><span class=\"badge badge--accent\">" + String(s.note).replace(".", ",") + "/5</span></li>"; }).join("") + "</ul>" : "";
     var langs = (p.langues || []).map(function (x) { return "<li>" + e(x.langue + " — " + x.niveau) + "</li>"; }).join("");
     var certs = (p.certifications || []).map(function (x) { return "<li>" + e(x) + "</li>"; }).join("");
-    var recos = (p.recommandationsList || []).map(function (r) {
+    /* Seules les recommandations rendues visibles sont montrées au recruteur. */
+    var recos = (p.recommandationsList || []).filter(function (r) { return r.visible !== false; }).map(function (r) {
       return '<figure class="reco-item"><figcaption class="reco-item__author"><strong>' + e(r.nom || "") + "</strong>" +
         (r.role ? "<span>" + e(r.role) + "</span>" : "") + (r.entreprise ? "<span>" + e(r.entreprise) + "</span>" : "") + (r.date ? '<span class="reco-item__date">' + e(r.date) + "</span>" : "") +
-        "</figcaption><blockquote>« " + e(r.texte || "") + " »</blockquote></figure>";
+        "</figcaption>" + (r.texte ? "<blockquote>« " + e(r.texte) + " »</blockquote>" : "") +
+        (r.pdf ? '<p class="reco-item__pdf">' + ICON_DOC + " <strong>" + e(r.pdf) + '</strong> <span class="text-muted">— lettre de recommandation</span></p>' : "") +
+        "</figure>";
     }).join("");
     var liens = [["LinkedIn", (p.liens || {}).linkedin], ["Portfolio", (p.liens || {}).portfolio], ["GitHub", (p.liens || {}).github], ["Site", (p.liens || {}).site]].filter(function (x) { return x[1]; });
     var liensHtml = liens.length ? '<ul class="profile-links">' + liens.map(function (x) { return '<li><a href="' + e(x[1]) + '" target="_blank" rel="noopener">' + e(x[0]) + " ↗</a></li>"; }).join("") + "</ul>" : "";

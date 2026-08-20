@@ -401,7 +401,15 @@
 .reco-item__author strong { color: var(--c-primary-dark); }
 .reco-item__author span { font-weight: 400; font-size: var(--text-sm); color: var(--c-ink-soft); }
 .reco-item__date { margin-left: auto; font-style: italic; }
-.reco-item__del { display: inline-block; }
+.reco-item__pdf { display: flex; align-items: center; gap: 6px; margin: var(--sp-2) 0 0; font-size: var(--text-sm); color: var(--c-primary-dark); }
+.reco-item__pdf svg { color: var(--c-primary); flex-shrink: 0; }
+.reco-item__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-3); }
+.reco-item__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.reco-edit-inline { margin-top: var(--sp-3); }
+.reco-pdf-row { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.reco-pdf-current { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); }
+.reco-pdf-current svg { color: var(--c-primary); }
+.reco-vis-choice { margin-top: var(--sp-2); }
 
 /* ============================================================
    Profil professionnel : identité, statut, sections, cartes
