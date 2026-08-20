@@ -8,6 +8,14 @@
   var conversations = null;
   var currentConvId = null;
 
+  /* Réponses types pré-écrites, éditables avant envoi ({prenom} personnalisé). */
+  var TEMPLATES = [
+    { label: "Proposer un entretien", texte: "Bonjour {prenom},\n\nVotre profil a retenu notre attention. Seriez-vous disponible pour un entretien la semaine prochaine ? Indiquez-moi vos créneaux préférés et le format qui vous convient (visioconférence, téléphone ou dans nos locaux).\n\nBien cordialement,\nClaire Martin — Fiduciaire Bellecour" },
+    { label: "Demander des disponibilités", texte: "Bonjour {prenom},\n\nMerci pour votre candidature. Pourriez-vous m'indiquer vos disponibilités pour un premier échange dans les prochains jours ?\n\nBien cordialement,\nClaire Martin — Fiduciaire Bellecour" },
+    { label: "Accuser réception", texte: "Bonjour {prenom},\n\nJe vous confirme la bonne réception de votre candidature. Nous l'étudions et revenons vers vous très rapidement.\n\nBien cordialement,\nClaire Martin — Fiduciaire Bellecour" },
+    { label: "Demander une pièce", texte: "Bonjour {prenom},\n\nAfin de compléter votre dossier, pourriez-vous me transmettre votre CV à jour (et, le cas échéant, vos références) ?\n\nMerci d'avance,\nClaire Martin — Fiduciaire Bellecour" }
+  ];
+
   document.addEventListener("DOMContentLoaded", function () {
     if (!window.EMP || !EMP.ready) { return; }
     if (!document.getElementById("messaging")) { return; }
@@ -50,13 +58,34 @@
 
     conversations = seedConversations();
 
+    /* Démarrer une conversation vers un candidat précis via ?to=<nom>
+       (bouton « Message » des candidatures). Si aucune conversation n'existe
+       pour ce candidat, on en crée une vide et on l'ouvre. */
+    var to = SS.param ? SS.param("to") : null;
+    if (to) {
+      var existing = conversations.filter(function (c) {
+        return c.nom.toLowerCase() === to.toLowerCase();
+      })[0];
+      if (!existing) {
+        existing = {
+          id: "new-" + to.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          nom: to,
+          poste: SS.param("poste") || "Candidat",
+          offre: SS.param("offre") || "",
+          messages: []
+        };
+        conversations.unshift(existing);
+      }
+      currentConvId = existing.id;
+    }
+
     if (!conversations.length) {
       wrap.innerHTML = '<div class="empty-state"><h3>Aucune conversation pour le moment.</h3>' +
         '<p>Vos échanges avec les candidats apparaîtront ici.</p></div>';
       return;
     }
 
-    currentConvId = conversations[0].id;
+    if (!currentConvId) { currentConvId = conversations[0].id; }
     renderConvList();
     renderThread();
 
@@ -122,8 +151,15 @@
       '</div>' +
       '<div class="conv-body">' + bubbles + '</div>' +
       '<form class="conv-reply" id="conv-reply">' +
+        '<div class="conv-reply__tools">' +
+          '<label class="visually-hidden" for="conv-reply-tpl">Réponse type</label>' +
+          '<select id="conv-reply-tpl" class="conv-reply__tpl" aria-label="Insérer une réponse type">' +
+            '<option value="">Réponse type…</option>' +
+            TEMPLATES.map(function (t, i) { return '<option value="' + i + '">' + e(t.label) + "</option>"; }).join("") +
+          "</select>" +
+        "</div>" +
         '<label class="visually-hidden" for="conv-reply-text">Votre réponse à ' + e(conv.nom) + '</label>' +
-        '<textarea id="conv-reply-text" rows="2" placeholder="Écrivez votre réponse…"></textarea>' +
+        '<textarea id="conv-reply-text" rows="3" placeholder="Écrivez votre réponse…"></textarea>' +
         '<button type="submit" class="btn btn-primary btn-sm">Envoyer</button>' +
       '</form>';
 
@@ -132,6 +168,20 @@
       back.addEventListener("click", function () {
         var wrap = document.getElementById("messaging");
         if (wrap) { wrap.classList.remove("is-thread-open"); }
+      });
+    }
+
+    /* Réponse type → pré-remplit le textarea (éditable avant envoi). */
+    var tpl = threadBox.querySelector("#conv-reply-tpl");
+    var replyField = threadBox.querySelector("#conv-reply-text");
+    if (tpl && replyField) {
+      tpl.addEventListener("change", function () {
+        var t = TEMPLATES[parseInt(tpl.value, 10)];
+        if (!t) { return; }
+        var prenom = String(conv.nom).trim().split(/\s+/)[0] || "";
+        replyField.value = t.texte.replace(/\{prenom\}/g, prenom);
+        replyField.focus();
+        tpl.value = "";
       });
     }
 

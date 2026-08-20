@@ -82,7 +82,50 @@
     initStatusSheet();
     initToolbar();
     renderAll();
+    initHorizontalScroll();
   });
+
+  /* ============================================================
+     Défilement horizontal du Kanban : molette → horizontal + barre de
+     défilement dupliquée EN HAUT du pipeline (synchronisée), pour scroller
+     sans devoir descendre jusqu'en bas de la zone.
+     ============================================================ */
+  function initHorizontalScroll() {
+    var wrap = document.getElementById("pipeline-wrap");
+    if (!wrap) { return; }
+
+    /* 1. Molette verticale → défilement horizontal (quand il y a débordement). */
+    wrap.addEventListener("wheel", function (ev) {
+      if (wrap.scrollWidth <= wrap.clientWidth) { return; }
+      if (Math.abs(ev.deltaY) <= Math.abs(ev.deltaX)) { return; }
+      wrap.scrollLeft += ev.deltaY;
+      ev.preventDefault();
+    }, { passive: false });
+
+    /* 2. Barre de défilement en haut : un proxy synchronisé avec le pipeline. */
+    var top = document.createElement("div");
+    top.className = "pipeline-scrolltop";
+    top.setAttribute("aria-hidden", "true");
+    var inner = document.createElement("div");
+    top.appendChild(inner);
+    wrap.parentNode.insertBefore(top, wrap);
+
+    function sync() {
+      inner.style.width = wrap.scrollWidth + "px";
+      top.style.display = wrap.scrollWidth > wrap.clientWidth ? "block" : "none";
+    }
+    var lock = false;
+    top.addEventListener("scroll", function () {
+      if (lock) { return; } lock = true; wrap.scrollLeft = top.scrollLeft; lock = false;
+    });
+    wrap.addEventListener("scroll", function () {
+      if (lock) { return; } lock = true; top.scrollLeft = wrap.scrollLeft; lock = false;
+    });
+    sync();
+    window.addEventListener("resize", sync);
+    /* Recalcule après un rendu du pipeline (filtres, changement de vue). */
+    document.addEventListener("pipeline:rendered", sync);
+  }
 
   /* ============================================================
      Données de démonstration (seed enrichi : 10 candidats variés)
@@ -205,6 +248,7 @@
     renderList();
     applyFilters();
     updateView();
+    document.dispatchEvent(new CustomEvent("pipeline:rendered"));
   }
 
   function cardHtml(c, status, draggable) {
@@ -230,7 +274,7 @@
         '<p class="pipeline-card__date">Dernière activité : ' + e(SS.relativeDate(EMP.dateFromToday(-c.jours))) + "</p>" +
         '<div class="row-actions">' +
           '<button type="button" class="btn btn-outline btn-sm" data-status-menu data-id="' + e(c.id) + '">Changer le statut</button>' +
-          '<a class="btn btn-ghost btn-sm" href="espace-entreprise-messages.html" data-msg>Message</a>' +
+          '<a class="btn btn-ghost btn-sm" href="espace-entreprise-messages.html?to=' + encodeURIComponent(c.nom) + '&poste=' + encodeURIComponent(c.poste) + '&offre=' + encodeURIComponent(c.offre) + '" data-msg>Message</a>' +
         "</div>" +
       "</article>";
   }

@@ -184,7 +184,9 @@
       var items = entry.items.map(function (it) {
         return navLink(it[0], it[1], e);
       }).join("");
-      return '<p class="dash-nav__group">' + e(entry.label) + "</p>" + items;
+      /* Le libellé de groupe est cliquable : il mène à la 1re page du groupe. */
+      var firstHref = entry.items[0][1];
+      return '<a class="dash-nav__group" href="' + firstHref + '">' + e(entry.label) + "</a>" + items;
     }).join("");
 
     sidebar.innerHTML =
