@@ -950,24 +950,32 @@
       var html = favorites.map(function (id) {
         var o = byId[id];
         if (!o) { return ""; }
-        var expiresSoon = o.dateExpiration && new Date(o.dateExpiration) <= soon;
+        var expiresSoon = o.statut === "active" && o.dateExpiration && new Date(o.dateExpiration) <= soon;
         var expired = o.statut === "expiree";
-        return '<article class="card" style="padding: var(--sp-4); display:flex; justify-content:space-between; gap: var(--sp-3); align-items:center; flex-wrap:wrap;">' +
-          "<div><strong>" + e(o.titre) + "</strong><br>" +
-          '<span class="text-muted">' + e(o.entrepriseNom) + " · " + e(o.ville) + " — " + e(o.contrat) + "</span>" +
-          (expired ? ' <span class="badge badge--expired">Expirée</span>'
-            : expiresSoon ? ' <span class="badge badge--expired">Cette offre expire bientôt</span>' : "") +
+        var remote = SS.teletravailLabel(o.teletravail);
+        var tags = '<span class="badge badge--accent">' + e(o.contrat) + "</span>" +
+          (remote ? '<span class="badge badge--remote">' + e(remote) + "</span>" : "") +
+          (expired ? '<span class="badge badge--expired">Expirée</span>'
+            : expiresSoon ? '<span class="badge badge--expired">Expire bientôt</span>' : "");
+        return '<article class="card fav-card">' +
+          '<div class="fav-card__body">' +
+            "<strong>" + e(o.titre) + "</strong>" +
+            '<span class="text-muted">' + e(o.entrepriseNom) + " · " + e(o.ville) + "</span>" +
+            '<div class="fav-card__tags">' + tags + "</div>" +
+            (o.salaire ? '<span class="fav-card__salary">' + e(o.salaire) + "</span>" : "") +
+            '<span class="fav-card__pub text-muted">Publiée ' + e(SS.relativeDate(o.datePublication)) + "</span>" +
           "</div>" +
-          '<div style="display:flex; gap: var(--sp-2); flex-wrap:wrap;">' +
+          '<div class="fav-card__actions">' +
             '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(o.id) + '">Voir l\'offre</a>' +
-            '<button type="button" class="btn btn-ghost btn-sm" data-unfav="' + e(o.id) + '">Retirer</button>' +
+            '<details class="fav-card__menu"><summary class="btn btn-ghost btn-sm">…</summary>' +
+              '<div class="fav-card__menu-pop"><button type="button" data-unfav="' + e(o.id) + '">Retirer des favoris</button></div>' +
+            "</details>" +
           "</div>" +
         "</article>";
       }).join("");
 
       box.innerHTML = html || '<div class="empty-state"><p>Vos offres favorites ne sont plus disponibles.</p></div>';
       box.querySelectorAll("[data-unfav]").forEach(function (btn) {
-        btn.style.marginTop = "0";
         btn.addEventListener("click", function () { toggleFavorite(btn.getAttribute("data-unfav")); });
       });
     }).catch(function () { SS.dataError(box); });
@@ -994,23 +1002,36 @@
       if (al.metier) { parts.push(e(al.metier)); }
       if (al.lieu) { parts.push(e(al.lieu) + (al.rayon ? " + " + e(al.rayon) + " km" : "")); }
       if (al.contrat) { parts.push(e(al.contrat)); }
+      if (al.niveau) { parts.push(e(al.niveau)); }
+      if (al.experience) { parts.push(e(al.experience)); }
+      if (al.salaireMin) { parts.push("dès " + e(al.salaireMin)); }
       if (al.teletravail) { parts.push("Télétravail"); }
+      var active = al.active !== false;
       var fresh = ((i + 3) % 5) + 1; /* nombre fictif mais stable */
       var freq = al.frequence || "quotidienne";
       var freqOptions = Object.keys(FREQ_LABEL).map(function (k) {
         return '<option value="' + k + '"' + (k === freq ? " selected" : "") + ">" + FREQ_LABEL[k] + "</option>";
       }).join("");
+      /* Lien « voir les nouvelles offres » : préfiltre la page offres. */
+      var searchHref = "offres.html?q=" + encodeURIComponent(al.metier || "") + "&lieu=" + encodeURIComponent(al.lieu || "");
 
-      return '<article class="card alert-card">' +
+      return '<article class="card alert-card' + (active ? "" : " is-inactive") + '">' +
         '<div class="alert-card__main">' +
           "<div><strong>" + (parts.join(" — ") || "Alerte") + "</strong><br>" +
-          '<span class="badge badge--accent">' + fresh + " nouvelle" + (fresh > 1 ? "s" : "") + " offre" + (fresh > 1 ? "s" : "") + " depuis votre dernière visite</span></div>" +
-          "<span class=\"status-badge status-vue\">Alerte activée</span>" +
+          (active
+            ? '<span class="badge badge--accent">' + fresh + " nouvelle" + (fresh > 1 ? "s" : "") + " offre" + (fresh > 1 ? "s" : "") + " depuis votre dernière visite</span>"
+            : '<span class="text-muted">Alerte en pause — vous ne recevez plus de notification.</span>') + "</div>" +
+          '<span class="status-badge ' + (active ? "status-vue" : "status-envoyee") + '">' + (active ? "Activée" : "Désactivée") + "</span>" +
         "</div>" +
         '<div class="alert-card__foot">' +
+          (active ? '<a class="btn btn-outline btn-sm" href="' + searchHref + '">Voir les ' + fresh + " nouvelle" + (fresh > 1 ? "s" : "") + " offre" + (fresh > 1 ? "s" : "") + "</a>" : "") +
           '<div class="field field--inline"><label for="freq-' + i + '">Fréquence</label>' +
             '<select id="freq-' + i + '" data-freq="' + i + '">' + freqOptions + "</select></div>" +
-          '<button type="button" class="btn btn-ghost btn-sm" data-del-alert="' + i + '">Supprimer</button>' +
+          '<details class="alert-card__menu"><summary class="btn btn-ghost btn-sm">…</summary>' +
+            '<div class="alert-card__menu-pop">' +
+              '<button type="button" data-toggle-alert="' + i + '">' + (active ? "Désactiver" : "Réactiver") + "</button>" +
+              '<button type="button" class="is-danger" data-del-alert="' + i + '">Supprimer</button>' +
+            "</div></details>" +
         "</div>" +
       "</article>";
     }).join("");
@@ -1023,6 +1044,15 @@
         SS.store.set(S.alerts, list);
         renderAlerts();
         SS.toast("Alerte supprimée.");
+      });
+    });
+    box.querySelectorAll("[data-toggle-alert]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = parseInt(btn.getAttribute("data-toggle-alert"), 10);
+        var list = SS.store.get(S.alerts, []);
+        if (list[idx]) { list[idx].active = list[idx].active === false; SS.store.set(S.alerts, list); }
+        renderAlerts();
+        SS.toast(list[idx] && list[idx].active ? "Alerte réactivée." : "Alerte désactivée.");
       });
     });
     box.querySelectorAll("[data-freq]").forEach(function (sel) {
@@ -1045,8 +1075,13 @@
         lieu: val("alert-lieu"),
         rayon: val("alert-rayon"),
         contrat: val("alert-contrat"),
+        niveau: val("alert-niveau"),
+        experience: val("alert-experience"),
+        salaireMin: val("alert-salaire"),
+        datePub: val("alert-datepub"),
         teletravail: document.getElementById("alert-teletravail").checked,
-        frequence: val("alert-frequence") || "quotidienne"
+        frequence: val("alert-frequence") || "quotidienne",
+        active: true
       };
       if (!alert.metier && !alert.lieu) {
         SS.toast("Indiquez au moins un métier ou une localisation.");

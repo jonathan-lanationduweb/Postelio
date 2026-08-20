@@ -593,3 +593,29 @@
 }
 .field--inline label { font-size: var(--text-sm); color: var(--c-ink-soft); margin: 0; }
 .field--inline select { margin: 0; }
+.alert-card.is-inactive { opacity: 0.72; }
+.alert-card__menu { position: relative; }
+.alert-card__menu > summary, .fav-card__menu > summary { list-style: none; cursor: pointer; }
+.alert-card__menu > summary::-webkit-details-marker, .fav-card__menu > summary::-webkit-details-marker { display: none; }
+.alert-card__menu-pop, .fav-card__menu-pop {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 170px;
+  background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-m); padding: var(--sp-2); display: grid; gap: 2px;
+}
+.alert-card__menu-pop button, .fav-card__menu-pop button {
+  text-align: left; padding: 0.5rem 0.7rem; border: 0; background: transparent;
+  border-radius: var(--radius-s); cursor: pointer; font: inherit; color: var(--c-ink);
+}
+.alert-card__menu-pop button:hover, .fav-card__menu-pop button:hover { background: var(--c-primary-soft); }
+.alert-card__menu-pop .is-danger, .fav-card__menu-pop .is-danger { color: var(--c-error, #c0392b); }
+
+/* Favoris enrichis */
+.fav-card { padding: var(--sp-4); display: flex; justify-content: space-between; gap: var(--sp-4); align-items: center; flex-wrap: wrap; }
+.fav-card + .fav-card { margin-top: var(--sp-3); }
+.fav-card__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fav-card__body > strong { color: var(--c-primary-dark); }
+.fav-card__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.fav-card__salary { font-weight: 600; color: var(--c-primary); font-size: var(--text-sm); }
+.fav-card__pub { font-size: var(--text-xs); }
+.fav-card__actions { display: flex; gap: var(--sp-2); align-items: center; flex-shrink: 0; }
+.fav-card__menu { position: relative; }

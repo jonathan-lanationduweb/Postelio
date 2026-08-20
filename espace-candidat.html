@@ -206,6 +206,45 @@
               </div>
               <div class="form-row">
                 <div class="field">
+                  <label for="alert-niveau">Niveau d'étude <span class="text-muted">(optionnel)</span></label>
+                  <select id="alert-niveau">
+                    <option value="">Indifférent</option>
+                    <option>Sans diplôme</option>
+                    <option>CAP / BEP</option>
+                    <option>Bac</option>
+                    <option>Bac+2</option>
+                    <option>Bac+3</option>
+                    <option>Bac+5 et plus</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="alert-experience">Expérience <span class="text-muted">(optionnel)</span></label>
+                  <select id="alert-experience">
+                    <option value="">Indifférente</option>
+                    <option>Débutant accepté</option>
+                    <option>1 à 2 ans</option>
+                    <option>3 à 5 ans</option>
+                    <option>Plus de 5 ans</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label for="alert-salaire">Salaire minimum <span class="text-muted">(optionnel)</span></label>
+                  <input id="alert-salaire" type="text" inputmode="numeric" placeholder="Ex. : 28 000 €">
+                </div>
+                <div class="field">
+                  <label for="alert-datepub">Date de publication</label>
+                  <select id="alert-datepub">
+                    <option value="">Peu importe</option>
+                    <option value="1">Dernières 24 h</option>
+                    <option value="7">7 derniers jours</option>
+                    <option value="30">30 derniers jours</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="field">
                   <label for="alert-frequence">Fréquence de notification</label>
                   <select id="alert-frequence">
                     <option value="immediate">Immédiatement</option>
@@ -218,6 +257,7 @@
                   <label for="alert-teletravail">Uniquement les offres proposant du télétravail</label>
                 </div>
               </div>
+              <p class="dash-subtitle" style="margin:0 0 var(--sp-3);">Seuls le métier et la localisation sont nécessaires — les autres critères affinent votre alerte.</p>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Créer l'alerte</button>
               </div>
