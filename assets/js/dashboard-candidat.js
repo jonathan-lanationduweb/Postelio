@@ -76,7 +76,7 @@
      candidatures ou du profil change. Les navigateurs ayant un ancien seed en
      cache sont ainsi régénérés, sinon les nouveautés (profil enrichi, message
      reçu, statut « non retenue ») resteraient invisibles. */
-  var SEED_VERSION = "2026-08-20-tdb-candidat-cv";
+  var SEED_VERSION = "2026-08-20-candidat-structure";
   var SEED_KEY = "ss_seed_version";
 
   function seedIfEmpty() {
@@ -214,8 +214,12 @@
       competences: ["HTML / CSS", "JavaScript", "Git", "Travail en équipe"],
       disponibilite: "Immédiate",
       mobilite: "30 km autour de Lyon",
-      realisations: "",
-      recommandations: "« Jonathan est rigoureux et curieux. Il a su prendre en main nos projets rapidement. » — Responsable technique, Studio Digital Lyon",
+      realisationsList: [
+        { titre: "Site vitrine — Studio Digital Lyon", lien: "https://exemple.fr", description: "Intégration responsive d'un site vitrine (HTML/CSS/JS), optimisation des performances et de l'accessibilité." }
+      ],
+      recommandationsList: [
+        { nom: "Marie Dupont", role: "Responsable technique", entreprise: "Studio Digital Lyon", texte: "Jonathan est rigoureux et curieux. Il a su prendre en main nos projets rapidement et livrer dans les délais." }
+      ],
       dateMaj: "2026-08-15"
     };
   }
@@ -231,9 +235,9 @@
 
   function defaultSavoirFaire() {
     return [
-      { id: "sf-1", titre: "Comment je structure un projet web from scratch", resume: "Ma méthode pour démarrer un projet front-end proprement : arborescence, conventions de nommage et outillage minimal.", note: 4.9, avis: 52, vues: 71, date: "2026-07-20" },
-      { id: "sf-2", titre: "Déboguer efficacement avec les DevTools", resume: "Les réflexes que j'utilise au quotidien pour retrouver l'origine d'un bug rapidement, sans y passer la journée.", note: 4.7, avis: 38, vues: 44, date: "2026-06-30" },
-      { id: "sf-3", titre: "Rendre un site accessible : mes 5 vérifications", resume: "Une check-list concrète pour améliorer l'accessibilité d'un site existant sans tout réécrire.", note: 4.8, avis: 37, vues: 33, date: "2026-06-10" }
+      { id: "sf-1", titre: "Comment je structure un projet web from scratch", resume: "Ma méthode pour démarrer un projet front-end proprement : arborescence, conventions de nommage et outillage minimal.", categorie: "Organisation & méthodes", note: 4.9, avis: 52, vues: 71, date: "2026-07-20" },
+      { id: "sf-2", titre: "Déboguer efficacement avec les DevTools", resume: "Les réflexes que j'utilise au quotidien pour retrouver l'origine d'un bug rapidement, sans y passer la journée.", categorie: "Développement web", note: 4.7, avis: 38, vues: 44, date: "2026-06-30" },
+      { id: "sf-3", titre: "Rendre un site accessible : mes 5 vérifications", resume: "Une check-list concrète pour améliorer l'accessibilité d'un site existant sans tout réécrire.", categorie: "Développement web", note: 4.8, avis: 37, vues: 33, date: "2026-06-10" }
     ];
   }
 
@@ -1107,8 +1111,7 @@
     { key: "formation", label: "Formation", type: "text", weight: 10, tip: "Ajouter votre formation", placeholder: "Votre diplôme le plus élevé" },
     { key: "competences", label: "Compétences", type: "tags", weight: 12, tip: "Ajouter vos compétences", placeholder: "HTML, CSS, JavaScript, travail en équipe…" },
     { key: "disponibilite", label: "Disponibilité", type: "text", weight: 8, tip: "Préciser votre disponibilité", placeholder: "Ex. immédiate, sous 1 mois…" },
-    { key: "mobilite", label: "Mobilité", type: "text", weight: 8, tip: "Indiquer votre mobilité", placeholder: "Ex. 30 km autour de Lyon" },
-    { key: "realisations", label: "Réalisations", type: "textarea", weight: 10, tip: "Présenter une réalisation", placeholder: "Un projet ou une réussite dont vous êtes fier(e)" }
+    { key: "mobilite", label: "Mobilité", type: "text", weight: 8, tip: "Indiquer votre mobilité", placeholder: "Ex. 30 km autour de Lyon" }
   ];
 
   function fieldFilled(profile, f) {
@@ -1127,11 +1130,14 @@
     /* CV : +15 % s'il est importé (basé sur ss_candidate_cv, pas sur le profil). */
     if (hasCv()) { pct += 15; }
     else { missing.push({ key: "cv", label: "CV", weight: 15, tip: "Importer votre CV" }); }
+    /* Réalisations : +10 % si au moins une (section structurée). */
+    if ((profile.realisationsList || []).length) { pct += 10; }
+    else { missing.push({ key: "realisations", label: "Réalisations", weight: 10, tip: "Ajouter une réalisation" }); }
     /* Savoir-faire : +5 % si au moins un est publié. */
     var hasSF = SS.store.get(SF_KEY, []).length > 0;
     if (hasSF) { pct += 5; } else { missing.push({ key: "savoirFaire", label: "Savoir-faire", weight: 5, link: "#savoir-faire", verb: "Publier un savoir-faire" }); }
     /* Recommandation : +5 % si au moins une. */
-    if (profile.recommandations && String(profile.recommandations).trim()) { pct += 5; }
+    if ((profile.recommandationsList || []).length) { pct += 5; }
     else { missing.push({ key: "recommandations", label: "Recommandation", weight: 5, verb: "Ajouter une recommandation" }); }
     return { pct: Math.min(100, pct), missing: missing };
   }
@@ -1402,22 +1408,10 @@
         ? '<span class="profile-row__value">' + sfCount + " savoir-faire publié" + (sfCount > 1 ? "s" : "") + " — visibles par les recruteurs.</span>"
         : '<span class="profile-row__empty">Aucun savoir-faire publié pour l\'instant.</span>') + "</div></div>";
 
-    var recoRow = '<div class="profile-row">' +
-      '<div class="profile-row__head"><h3>Recommandations</h3>' +
-      '<button type="button" class="btn btn-ghost btn-sm" data-action="edit-field" data-key="recommandations" aria-expanded="false">' +
-        (profile.recommandations ? "Modifier" : "Ajouter") + "</button></div>" +
-      '<div class="profile-row__body">' + (profile.recommandations
-        ? '<span class="profile-row__value">' + e(profile.recommandations).replace(/\n/g, "<br>") + "</span>"
-        : '<span class="profile-row__empty">Non renseigné</span>') + "</div>" +
-      '<div class="profile-row__edit" hidden>' +
-        '<div class="field"><label for="pf-recommandations">Recommandation d\'un ancien employeur ou collègue</label>' +
-        '<textarea id="pf-recommandations" rows="3">' + e(profile.recommandations || "") + "</textarea></div>" +
-        '<div class="form-actions">' +
-          '<button type="button" class="btn btn-primary btn-sm" data-action="save-field" data-key="recommandations">Enregistrer</button>' +
-          '<button type="button" class="btn btn-ghost btn-sm" data-action="cancel-field" data-key="recommandations">Annuler</button>' +
-        "</div></div></div>";
+    box.innerHTML = rows + realisationsSectionHtml(profile) + sfRow + recommandationsSectionHtml(profile);
 
-    box.innerHTML = rows + sfRow + recoRow;
+    wireRealisations(box);
+    wireRecommandations(box);
 
     /* Suggestions de compétences selon le métier (§29). */
     var compRow = box.querySelector('.profile-row[data-key="competences"] .profile-row__edit .field');
@@ -1497,6 +1491,145 @@
     }
   }
 
+  /* ---- Réalisations (section structurée : projet, lien, description) §30 ---- */
+  function realisationsSectionHtml(profile) {
+    var e = SS.escapeHtml;
+    var list = profile.realisationsList || [];
+    var cards = list.length ? list.map(function (r, i) {
+      return '<div class="realisation-item">' +
+        "<strong>" + e(r.titre || "Réalisation") + "</strong>" +
+        (r.lien ? ' <a class="realisation-item__link" href="' + e(r.lien) + '" target="_blank" rel="noopener">Voir le lien ↗</a>' : "") +
+        (r.description ? '<p class="realisation-item__desc">' + e(r.description) + "</p>" : "") +
+        '<button type="button" class="btn btn-ghost btn-xs realisation-item__del" data-real-del="' + i + '">Retirer</button>' +
+      "</div>";
+    }).join("") : '<p class="profile-row__empty">Aucune réalisation pour l\'instant.</p>';
+
+    return '<div class="profile-row" data-section="realisations">' +
+      '<div class="profile-row__head"><h3>Réalisations</h3>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-real-toggle aria-expanded="false">+ Ajouter une réalisation</button></div>' +
+      '<div class="profile-row__body">' + cards + "</div>" +
+      '<div class="profile-row__edit realisation-form" hidden>' +
+        '<div class="field"><label for="real-titre">Titre du projet</label><input id="real-titre" placeholder="Ex. : Site e-commerce"></div>' +
+        '<div class="field"><label for="real-lien">Lien (optionnel)</label><input id="real-lien" placeholder="https://…"></div>' +
+        '<div class="field"><label for="real-desc">Description</label><textarea id="real-desc" rows="2" placeholder="Ce que vous avez réalisé, les technologies utilisées…"></textarea></div>' +
+        '<div class="form-actions"><button type="button" class="btn btn-primary btn-sm" data-real-add>Ajouter</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-real-cancel>Annuler</button></div>' +
+      "</div></div>";
+  }
+
+  function wireRealisations(box) {
+    var section = box.querySelector('[data-section="realisations"]');
+    if (!section) { return; }
+    var form = section.querySelector(".realisation-form");
+    var toggle = section.querySelector("[data-real-toggle]");
+    toggle.addEventListener("click", function () {
+      var open = form.hidden; form.hidden = !open; toggle.setAttribute("aria-expanded", String(open));
+      if (open) { var f = form.querySelector("input"); if (f) { f.focus(); } }
+    });
+    var cancel = section.querySelector("[data-real-cancel]");
+    if (cancel) { cancel.addEventListener("click", function () { form.hidden = true; toggle.setAttribute("aria-expanded", "false"); }); }
+    var add = section.querySelector("[data-real-add]");
+    if (add) {
+      add.addEventListener("click", function () {
+        var titre = (document.getElementById("real-titre").value || "").trim();
+        if (!titre) { SS.toast("Indiquez au moins un titre."); return; }
+        var profile = getProfile();
+        profile.realisationsList = (profile.realisationsList || []).concat([{
+          titre: titre,
+          lien: (document.getElementById("real-lien").value || "").trim(),
+          description: (document.getElementById("real-desc").value || "").trim()
+        }]);
+        profile.dateMaj = today();
+        setProfile(profile);
+        renderProfile();
+        SS.toast("Réalisation ajoutée.");
+      });
+    }
+    section.querySelectorAll("[data-real-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var i = parseInt(btn.getAttribute("data-real-del"), 10);
+        var profile = getProfile();
+        (profile.realisationsList || []).splice(i, 1);
+        profile.dateMaj = today();
+        setProfile(profile);
+        renderProfile();
+        SS.toast("Réalisation retirée.");
+      });
+    });
+  }
+
+  /* ---- Recommandations (auteur : nom, fonction, entreprise) §33 ---- */
+  function recommandationsSectionHtml(profile) {
+    var e = SS.escapeHtml;
+    var list = profile.recommandationsList || [];
+    var cards = list.length ? list.map(function (r, i) {
+      var author = [r.nom, r.role, r.entreprise].filter(Boolean).join(" · ");
+      return '<figure class="reco-item">' +
+        '<blockquote>« ' + e(r.texte || "") + " »</blockquote>" +
+        '<figcaption>' + e(author) + "</figcaption>" +
+        '<button type="button" class="btn btn-ghost btn-xs reco-item__del" data-reco-del="' + i + '">Retirer</button>' +
+      "</figure>";
+    }).join("") : '<p class="profile-row__empty">Aucune recommandation pour l\'instant.</p>';
+
+    return '<div class="profile-row" data-section="recommandations">' +
+      '<div class="profile-row__head"><h3>Recommandations</h3>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-reco-toggle aria-expanded="false">+ Ajouter une recommandation</button></div>' +
+      '<div class="profile-row__body">' + cards + "</div>" +
+      '<div class="profile-row__edit reco-form" hidden>' +
+        '<div class="form-row">' +
+          '<div class="field"><label for="reco-nom">Qui vous recommande ?</label><input id="reco-nom" placeholder="Prénom Nom"></div>' +
+          '<div class="field"><label for="reco-role">Fonction</label><input id="reco-role" placeholder="Ex. : Responsable technique"></div>' +
+        "</div>" +
+        '<div class="field"><label for="reco-entreprise">Entreprise</label><input id="reco-entreprise" placeholder="Ex. : Studio Digital Lyon"></div>' +
+        '<div class="field"><label for="reco-texte">Recommandation</label><textarea id="reco-texte" rows="2"></textarea></div>' +
+        '<div class="form-actions"><button type="button" class="btn btn-primary btn-sm" data-reco-add>Ajouter</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-reco-cancel>Annuler</button></div>' +
+      "</div></div>";
+  }
+
+  function wireRecommandations(box) {
+    var section = box.querySelector('[data-section="recommandations"]');
+    if (!section) { return; }
+    var form = section.querySelector(".reco-form");
+    var toggle = section.querySelector("[data-reco-toggle]");
+    toggle.addEventListener("click", function () {
+      var open = form.hidden; form.hidden = !open; toggle.setAttribute("aria-expanded", String(open));
+      if (open) { var f = form.querySelector("input"); if (f) { f.focus(); } }
+    });
+    var cancel = section.querySelector("[data-reco-cancel]");
+    if (cancel) { cancel.addEventListener("click", function () { form.hidden = true; toggle.setAttribute("aria-expanded", "false"); }); }
+    var add = section.querySelector("[data-reco-add]");
+    if (add) {
+      add.addEventListener("click", function () {
+        var texte = (document.getElementById("reco-texte").value || "").trim();
+        var nom = (document.getElementById("reco-nom").value || "").trim();
+        if (!texte || !nom) { SS.toast("Indiquez au moins le nom et le texte."); return; }
+        var profile = getProfile();
+        profile.recommandationsList = (profile.recommandationsList || []).concat([{
+          nom: nom,
+          role: (document.getElementById("reco-role").value || "").trim(),
+          entreprise: (document.getElementById("reco-entreprise").value || "").trim(),
+          texte: texte
+        }]);
+        profile.dateMaj = today();
+        setProfile(profile);
+        renderProfile();
+        SS.toast("Recommandation ajoutée.");
+      });
+    }
+    section.querySelectorAll("[data-reco-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var i = parseInt(btn.getAttribute("data-reco-del"), 10);
+        var profile = getProfile();
+        (profile.recommandationsList || []).splice(i, 1);
+        profile.dateMaj = today();
+        setProfile(profile);
+        renderProfile();
+        SS.toast("Recommandation retirée.");
+      });
+    });
+  }
+
   /* ============================================================
      Mes savoir-faire (fonctionnalité différenciante)
      ============================================================ */
@@ -1535,6 +1668,7 @@
           "<h3>" + e(sf.titre) + "</h3>" +
           '<p class="text-muted">' + e(sf.resume) + "</p>" +
           '<div class="sf-card__meta">' +
+            (sf.categorie ? '<span class="badge badge--neutral">' + e(sf.categorie) + "</span>" : "") +
             '<span class="badge badge--accent">' + String(sf.note).replace(".", ",") + "/5</span>" +
             "<span>" + (sf.avis || 0) + " avis</span>" +
             "<span>" + (sf.vues || 0) + " vues</span>" +
@@ -1542,11 +1676,29 @@
           "</div>" +
         "</div>" +
         '<div class="sf-card__actions">' +
-          '<a class="btn btn-outline btn-sm" href="savoir-faire.html">Voir la page publique</a>' +
+          '<a class="btn btn-outline btn-sm" href="savoir-faire.html">Voir</a>' +
           '<a class="btn btn-ghost btn-sm" href="publier-savoir-faire.html?type=candidat">Modifier</a>' +
+          '<details class="sf-card__menu"><summary class="btn btn-ghost btn-sm">…</summary>' +
+            '<div class="fav-card__menu-pop">' +
+              '<button type="button" data-sf-action="unpublish" data-sf="' + e(sf.id) + '">Dépublier</button>' +
+              '<button type="button" class="is-danger" data-sf-action="delete" data-sf="' + e(sf.id) + '">Supprimer</button>' +
+            "</div></details>" +
         "</div>" +
       "</article>";
     }).join("");
+
+    listBox.querySelectorAll("[data-sf-action]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-sf");
+        var action = btn.getAttribute("data-sf-action");
+        if (action === "delete" && !window.confirm("Supprimer définitivement ce savoir-faire ?")) { return; }
+        var next = SS.store.get(SF_KEY, []).filter(function (x) { return x.id !== id; });
+        SS.store.set(SF_KEY, next);
+        renderSavoirFaire();
+        renderProfile();
+        SS.toast(action === "delete" ? "Savoir-faire supprimé." : "Savoir-faire dépublié.");
+      });
+    });
   }
 
   /* ============================================================
@@ -1994,9 +2146,33 @@
   /* ============================================================
      Paramètres
      ============================================================ */
+  var SETTINGS_KEY = "ss_candidate_settings";
   function fillSettings() {
     var s = SS.auth.get() || {};
-    setValue("set-email", s.email || "");
+    var saved = SS.store.get(SETTINGS_KEY, {}) || {};
+    setValue("set-email", saved.email || s.email || "");
+    setValue("set-tel", saved.tel || "");
+    ["set-notif-offers", "set-notif-status", "set-notif-message", "set-notif-entretien", "set-notif-rappel", "set-notif-news"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && saved[id] != null) { el.checked = !!saved[id]; }
+    });
+    setValue("set-langue", saved.langue || "fr");
+    setValue("set-comm", saved.comm || "quotidienne");
+
+    /* Sauvegarde automatique de chaque réglage (démonstration). */
+    var ids = ["set-email", "set-tel", "set-langue", "set-comm",
+      "set-notif-offers", "set-notif-status", "set-notif-message", "set-notif-entretien", "set-notif-rappel", "set-notif-news"];
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) { return; }
+      var evt = (el.type === "checkbox" || el.tagName === "SELECT") ? "change" : "blur";
+      el.addEventListener(evt, function () {
+        var store = SS.store.get(SETTINGS_KEY, {}) || {};
+        store[id] = el.type === "checkbox" ? el.checked : el.value;
+        SS.store.set(SETTINGS_KEY, store);
+        SS.toast("Préférences enregistrées.");
+      });
+    });
   }
 
   /* ============================================================

@@ -38,6 +38,14 @@
 }
 .cand-card__title { font-size: var(--text-lg); margin: 0; }
 
+/* Paramètres : groupes en cartes */
+.settings-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--sp-4); }
+.settings-group { padding: var(--sp-5); }
+.settings-group__title { font-size: var(--text-base); margin: 0 0 var(--sp-3); color: var(--c-primary-dark); }
+.settings-group .field--checkbox { margin-bottom: var(--sp-2); }
+.settings-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.settings-row__value { letter-spacing: 2px; color: var(--c-ink-soft); }
+
 /* À faire aujourd'hui */
 .today-todo { margin-bottom: var(--sp-4); }
 .today-todo .cand-card__title { margin-bottom: var(--sp-3); }
@@ -348,6 +356,19 @@
 /* Note personnelle (privée) sur une candidature */
 .appli-note__label { margin: 0 0 4px; font-size: var(--text-sm); color: var(--c-ink-soft); }
 
+/* Réalisations (projets) */
+.realisation-item { position: relative; padding: var(--sp-3) 0; border-top: 1px solid var(--c-line); }
+.realisation-item:first-child { border-top: 0; }
+.realisation-item__link { font-size: var(--text-sm); font-weight: 600; margin-left: var(--sp-2); }
+.realisation-item__desc { margin: 4px 0 0; color: var(--c-ink); font-size: var(--text-sm); }
+.realisation-item__del, .reco-item__del { margin-top: var(--sp-2); }
+
+/* Recommandations (avec auteur) */
+.reco-item { margin: 0 0 var(--sp-3); padding: var(--sp-4); border: 1px solid var(--c-line); border-radius: var(--radius-m); background: var(--c-bg-alt); }
+.reco-item:last-child { margin-bottom: 0; }
+.reco-item blockquote { margin: 0; font-style: italic; color: var(--c-ink); }
+.reco-item figcaption { margin-top: var(--sp-2); font-size: var(--text-sm); font-weight: 600; color: var(--c-primary-dark); }
+
 /* Suggestions de compétences */
 .skill-suggest { margin-top: var(--sp-3); display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
 .skill-suggest__label { font-size: var(--text-sm); color: var(--c-ink-soft); }
@@ -638,3 +659,7 @@
 .fav-card__pub { font-size: var(--text-xs); }
 .fav-card__actions { display: flex; gap: var(--sp-2); align-items: center; flex-shrink: 0; }
 .fav-card__menu { position: relative; }
+.sf-card__menu { position: relative; }
+.sf-card__menu > summary { list-style: none; cursor: pointer; }
+.sf-card__menu > summary::-webkit-details-marker { display: none; }
+.sf-card__menu .fav-card__menu-pop { left: auto; right: 0; }

@@ -293,19 +293,57 @@
           <!-- 9. Paramètres -->
           <section class="dash-block" id="parametres">
             <h2>Paramètres</h2>
-            <div class="card" style="padding: var(--sp-5);">
-              <div class="field">
-                <label for="set-email">Adresse e-mail</label>
-                <input type="email" id="set-email" value="">
+            <p class="dash-subtitle">Prototype : ces réglages sont enregistrés dans votre navigateur et ne déclenchent aucun envoi réel.</p>
+
+            <div class="settings-groups">
+              <div class="card settings-group">
+                <h3 class="settings-group__title">Compte</h3>
+                <div class="field">
+                  <label for="set-email">Adresse e-mail</label>
+                  <input type="email" id="set-email" value="">
+                </div>
+                <div class="field">
+                  <label for="set-tel">Téléphone <span class="text-muted">(optionnel)</span></label>
+                  <input type="tel" id="set-tel" placeholder="06 12 34 56 78">
+                </div>
+                <div class="field">
+                  <label>Mot de passe</label>
+                  <div class="settings-row">
+                    <span class="settings-row__value">••••••••</span>
+                    <button type="button" class="btn btn-outline btn-sm" data-toast="Modification du mot de passe (démonstration).">Modifier</button>
+                  </div>
+                </div>
               </div>
-              <fieldset class="field" style="border: 0; padding: 0;">
-                <label style="margin-bottom: var(--sp-2);">Notifications</label>
-                <div class="field--checkbox"><input type="checkbox" id="set-notif-offers" checked><label for="set-notif-offers">Recevoir les nouvelles offres correspondant à mes alertes</label></div>
-                <div class="field--checkbox"><input type="checkbox" id="set-notif-status" checked><label for="set-notif-status">M'avertir quand une candidature change de statut</label></div>
-                <div class="field--checkbox"><input type="checkbox" id="set-notif-news"><label for="set-notif-news">Recevoir les conseils et actualités Postelio</label></div>
-              </fieldset>
-              <p class="dash-subtitle">Vos critères de recherche se modifient depuis le bloc « Ma recherche » du tableau de bord. Prototype : ces réglages ne déclenchent aucun envoi réel.</p>
-              <div class="form-actions" style="margin-top: var(--sp-4);">
+
+              <div class="card settings-group">
+                <h3 class="settings-group__title">Notifications</h3>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-offers" checked><label for="set-notif-offers">Nouvelles offres correspondant à mes alertes</label></div>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-status" checked><label for="set-notif-status">Changement de statut d'une candidature</label></div>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-message" checked><label for="set-notif-message">Nouveau message d'une entreprise</label></div>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-entretien" checked><label for="set-notif-entretien">Proposition d'entretien</label></div>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-rappel" checked><label for="set-notif-rappel">Rappel d'entretien</label></div>
+                <div class="field--checkbox"><input type="checkbox" id="set-notif-news"><label for="set-notif-news">Conseils Postelio</label></div>
+              </div>
+
+              <div class="card settings-group">
+                <h3 class="settings-group__title">Préférences</h3>
+                <div class="field">
+                  <label for="set-langue">Langue</label>
+                  <select id="set-langue"><option value="fr">Français</option><option value="en">English</option></select>
+                </div>
+                <div class="field">
+                  <label for="set-comm">Fréquence des communications</label>
+                  <select id="set-comm">
+                    <option value="immediate">Immédiate</option>
+                    <option value="quotidienne" selected>Chaque jour</option>
+                    <option value="hebdomadaire">Chaque semaine</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="card settings-group">
+                <h3 class="settings-group__title">Session</h3>
+                <p class="dash-subtitle" style="margin-top:0;">Vos critères de recherche se modifient depuis « Ma recherche » sur le tableau de bord.</p>
                 <button type="button" class="btn btn-ghost" id="logout-btn">Se déconnecter</button>
               </div>
             </div>
