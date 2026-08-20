@@ -43,6 +43,20 @@
         setValue("pub-email", offer.email);
         setValue("pub-expiry", offer.dateExpiration);
       }).catch(function () { /* mode création par défaut */ });
+    } else if (window.SS && SS.auth && SS.auth.isEmployer && SS.auth.isEmployer()) {
+      /* Nouvelle offre : préremplir les infos de l'entreprise du recruteur
+         connecté (modifiables). Il ne ressaisit que le poste. (§2-3) */
+      var s = SS.auth.get() || {};
+      setValue("pub-company", s.company || "");
+      if (s.city) { setValue("pub-city", s.city); }
+      if (s.email) { setValue("pub-email", s.email); }
+      SS.getCompanies().then(function (cs) {
+        var c = cs.find(function (x) { return x.id === s.companyId; });
+        if (!c) { return; }
+        setValue("pub-city", c.ville);
+        setValue("pub-email", c.email || s.email || "");
+        setValue("pub-category", "finance-comptabilite");
+      }).catch(function () { /* infos entreprise indisponibles */ });
     }
 
     /* Date d'expiration proposée par défaut : dans 60 jours. */

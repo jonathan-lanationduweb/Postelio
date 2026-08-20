@@ -744,7 +744,7 @@ a.dash-nav__group:focus-visible { outline: none; box-shadow: var(--shadow-focus)
 .dash-sidebar__cta { margin-bottom: var(--sp-3); }
 
 /* En-tête de bloc : titre + action / indication à droite */
-.dash-block__head { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.dash-block__head { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-5); }
 .dash-block__head h2 { margin: 0; }
 .dash-block__hint { color: var(--c-ink-soft); font-size: var(--text-sm); margin-top: var(--sp-2); }
 .dash-block__head .dash-block__hint { flex-basis: 100%; margin-top: var(--sp-1); }
