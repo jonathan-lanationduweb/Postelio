@@ -328,8 +328,9 @@
   background: var(--c-bg-alt);
   margin-bottom: var(--sp-3);
 }
+.cand-cv__file { justify-content: flex-start; flex-wrap: wrap; }
 .cand-cv__icon { display: inline-flex; color: var(--c-primary); line-height: 1; }
-.cand-cv__meta { display: flex; flex-direction: column; min-width: 0; }
+.cand-cv__meta { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .cand-cv__meta strong { color: var(--c-primary-dark); word-break: break-word; }
 .cand-cv__meta .text-muted { font-size: var(--text-sm); }
 .cand-cv__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
@@ -465,6 +466,28 @@
 .pub-card { padding: var(--sp-2) 0; }
 .pub-card strong { color: var(--c-primary-dark); }
 .pub-card__dates { display: block; font-size: var(--text-xs); color: var(--c-ink-soft); }
+.pub-profile__flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.pub-summary { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: 4px; }
+.pub-summary li { font-size: var(--text-sm); }
+.pub-summary strong { display: inline-block; min-width: 130px; color: var(--c-ink-soft); font-weight: 600; }
+.pub-cv { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--c-primary-dark); }
+.pub-cv svg { color: var(--c-primary); }
+
+/* Statut : autorisation de visibilité */
+.profile-statut__vis { margin-top: var(--sp-2); font-size: var(--text-sm); }
+
+/* Alternance (conditionnel) */
+.profile-alt { margin-top: var(--sp-3); }
+.profile-alt-fields { border: 1px solid var(--c-line); border-radius: var(--radius-m); padding: var(--sp-3) var(--sp-4); margin: 0 0 var(--sp-3); }
+.profile-alt-fields legend { font-weight: 600; font-size: var(--text-sm); padding: 0 var(--sp-2); }
+
+/* CV : multi-CV, principal, viewer pager */
+.cand-cv__actions .btn-xs { min-height: 0; }
+.cv-principal { font-size: 0.62rem; margin-left: 6px; vertical-align: middle; }
+.cv-add { margin-top: var(--sp-2); }
+.cv-viewer__pager { display: flex; align-items: center; gap: var(--sp-2); }
+.exp-current { align-self: end; }
+.profile-sf__meta { display: inline-flex; align-items: center; gap: var(--sp-2); }
 
 @media (max-width: 768px) {
   .profile-def { grid-template-columns: 1fr; }
