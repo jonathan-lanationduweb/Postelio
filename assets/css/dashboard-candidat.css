@@ -401,8 +401,7 @@
 .reco-item__author strong { color: var(--c-primary-dark); }
 .reco-item__author span { font-weight: 400; font-size: var(--text-sm); color: var(--c-ink-soft); }
 .reco-item__date { margin-left: auto; font-style: italic; }
-.reco-item__del { position: absolute; top: var(--sp-3); right: var(--sp-3); }
-.reco-item { position: relative; }
+.reco-item__del { display: inline-block; }
 
 /* ============================================================
    Profil professionnel : identité, statut, sections, cartes
