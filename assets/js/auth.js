@@ -73,7 +73,8 @@
           firstName: val("cand-firstname"), lastName: val("cand-lastname"),
           email: val("cand-email"), city: val("cand-city"), metier: val("cand-metier")
         });
-        window.location.href = "espace-candidat.html";
+        /* Première connexion : onboarding court côté espace candidat (§40). */
+        window.location.href = "espace-candidat.html?onboarding=1";
       });
 
       var empForm = wrapEmp.querySelector("form");

@@ -58,7 +58,108 @@
 
     /* 6. Indicateurs cohérents avec les données. */
     updateMetrics();
+
+    /* 7. Onboarding court après inscription (§40). */
+    if (SS.param && SS.param("onboarding") === "1") { openOnboarding(); }
   });
+
+  /* ============================================================
+     Onboarding première connexion (§40) — 3 étapes, non bloquant
+     ============================================================ */
+  function openOnboarding() {
+    var e = SS.escapeHtml;
+    var data = { type: "Emploi", metier: (getProfile().metier || ""), ville: (getProfile().ville || "") };
+    var step = 1;
+    var overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Bienvenue sur Postelio");
+    overlay.innerHTML =
+      '<div class="modal onboarding" role="document">' +
+        '<div class="modal__head"><h2 class="modal__title">Bienvenue sur Postelio 👋</h2>' +
+          '<button type="button" class="modal-close" data-close aria-label="Passer">✕</button></div>' +
+        '<div class="modal__body onboarding__body"></div>' +
+        '<div class="modal__actions onboarding__foot">' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-ob-skip>Plus tard</button>' +
+          '<button type="button" class="btn btn-primary" data-ob-next>Continuer</button>' +
+        "</div>" +
+      "</div>";
+    document.body.appendChild(overlay);
+    document.body.classList.add("modal-open");
+
+    var body = overlay.querySelector(".onboarding__body");
+    var nextBtn = overlay.querySelector("[data-ob-next]");
+
+    function draw() {
+      nextBtn.textContent = step === 3 ? "Accéder à mon espace" : "Continuer";
+      if (step === 1) {
+        body.innerHTML = '<p class="onboarding__step">Étape 1 sur 3</p><h3>Que recherchez-vous ?</h3>' +
+          '<div class="onboarding__choices" role="group">' +
+            ["Emploi", "Alternance", "Stage"].map(function (t) {
+              return '<button type="button" class="chip" aria-pressed="' + (data.type === t) + '" data-ob-type="' + t + '">' + t + "</button>";
+            }).join("") + "</div>";
+        body.querySelectorAll("[data-ob-type]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            data.type = b.getAttribute("data-ob-type");
+            body.querySelectorAll("[data-ob-type]").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+            b.setAttribute("aria-pressed", "true");
+          });
+        });
+      } else if (step === 2) {
+        body.innerHTML = '<p class="onboarding__step">Étape 2 sur 3</p><h3>Votre recherche</h3>' +
+          '<div class="field"><label for="ob-metier">Métier</label><input id="ob-metier" value="' + e(data.metier) + '" placeholder="Ex. : Développeur web"></div>' +
+          '<div class="field"><label for="ob-ville">Ville</label><input id="ob-ville" value="' + e(data.ville) + '" placeholder="Ex. : Lyon"></div>';
+      } else {
+        body.innerHTML = '<p class="onboarding__step">Étape 3 sur 3</p><h3>Avez-vous un CV ?</h3>' +
+          '<p class="form-hint">Vous pourrez toujours l\'ajouter plus tard depuis votre profil.</p>' +
+          '<div class="onboarding__choices">' +
+            '<button type="button" class="btn btn-outline btn-sm" data-ob-cv>Importer mon CV</button>' +
+            '<span class="text-muted" data-ob-cv-name></span>' +
+          "</div>" +
+          '<input type="file" accept=".pdf,.doc,.docx" class="sr-only" id="ob-cv-input" tabindex="-1" aria-hidden="true">';
+        var cvBtn = body.querySelector("[data-ob-cv]");
+        var cvInput = body.querySelector("#ob-cv-input");
+        var cvName = body.querySelector("[data-ob-cv-name]");
+        if (cvBtn && cvInput) {
+          cvBtn.addEventListener("click", function () { cvInput.click(); });
+          cvInput.addEventListener("change", function () {
+            var f = cvInput.files && cvInput.files[0];
+            if (f) { data.cv = f.name; if (cvName) { cvName.textContent = f.name; } }
+          });
+        }
+      }
+    }
+
+    function persistStep() {
+      if (step === 2) {
+        var m = document.getElementById("ob-metier"), v = document.getElementById("ob-ville");
+        if (m) { data.metier = m.value.trim(); }
+        if (v) { data.ville = v.value.trim(); }
+      }
+    }
+    function finish() {
+      var p = getProfile();
+      if (data.metier) { p.metier = data.metier; }
+      if (data.ville) { p.ville = data.ville; }
+      if (data.type === "Alternance") { p.contrat = "Alternance"; }
+      else if (data.type === "Stage") { p.contrat = "Stage"; }
+      setProfile(p);
+      if (data.cv) {
+        var list = getCvs();
+        if (!list.length) { setCvs([{ id: "cv-1", name: data.cv, date: today(), principal: true }]); }
+      }
+      close();
+      SS.toast("Bienvenue ! Votre espace est prêt.");
+      renderSearchCriteria(); renderRecommendations(); renderProfile(); updateMetrics();
+    }
+    function close() { overlay.remove(); document.body.classList.remove("modal-open"); }
+
+    nextBtn.addEventListener("click", function () { persistStep(); if (step === 3) { finish(); return; } step++; draw(); });
+    overlay.querySelector("[data-ob-skip]").addEventListener("click", close);
+    overlay.querySelector("[data-close]").addEventListener("click", close);
+    draw();
+  }
 
   /* ============================================================
      Identité
@@ -1650,9 +1751,20 @@
           ? '<button type="button" class="btn btn-outline btn-sm cv-add" data-cv-import>Importer un autre CV</button>'
           : '<p class="form-hint">Vous pouvez conserver jusqu\'à ' + MAX_CV + " CV.</p>");
     }
-    return secCard("cv", "Mon CV", "", body +
+    /* Autres documents (§13) : lettre de motivation optionnelle (simulée). */
+    var lm = getProfile().lettreMotivation;
+    var docsBlock = '<div class="cv-docs"><h4 class="profile-subh">Autres documents</h4>' +
+      (lm
+        ? '<div class="cand-cv__file"><span class="cand-cv__icon" aria-hidden="true">' + ICON_DOC + '</span>' +
+          '<span class="cand-cv__meta"><strong>' + e(lm) + '</strong><span class="text-muted">Lettre de motivation</span></span>' +
+          '<div class="cand-cv__actions"><button type="button" class="btn btn-ghost btn-xs" data-lm-del>Retirer</button></div></div>'
+        : '<p class="form-hint">Vous pouvez joindre une lettre de motivation (optionnel).</p>' +
+          '<button type="button" class="btn btn-outline btn-sm" data-lm-import>Joindre une lettre de motivation</button>') +
+      '<input type="file" id="lm-file-input" accept=".pdf,.doc,.docx" class="sr-only" tabindex="-1" aria-hidden="true"></div>';
+    return secCard("cv", "CV & documents", "", body +
       '<div class="cv-import-hint" hidden><p class="notice notice--demo">Bientôt : Postelio pourra détecter automatiquement les informations de votre CV et vous proposer de compléter votre profil.</p></div>' +
-      '<input type="file" id="cv-file-input" accept=".pdf,.doc,.docx" class="sr-only" tabindex="-1" aria-hidden="true">');
+      '<input type="file" id="cv-file-input" accept=".pdf,.doc,.docx" class="sr-only" tabindex="-1" aria-hidden="true">' +
+      docsBlock);
   }
   function wireCv(box) {
     var sec = box.querySelector('.profile-sec[data-section="cv"]');
@@ -1676,6 +1788,20 @@
         renderProfile(); renderProfileSummary(); SS.toast("CV supprimé.");
       });
     });
+    /* Lettre de motivation (§13, simulée). */
+    var lmInput = sec.querySelector("#lm-file-input");
+    var lmBtn = sec.querySelector("[data-lm-import]");
+    if (lmBtn && lmInput) { lmBtn.addEventListener("click", function () { lmInput.click(); }); }
+    if (lmInput) {
+      lmInput.addEventListener("change", function () {
+        var f = lmInput.files && lmInput.files[0];
+        if (!f) { return; }
+        var p = getProfile(); p.lettreMotivation = f.name; setProfile(p);
+        renderProfile(); SS.toast("Lettre de motivation jointe : " + f.name);
+      });
+    }
+    var lmDel = sec.querySelector("[data-lm-del]");
+    if (lmDel) { lmDel.addEventListener("click", function () { var p = getProfile(); p.lettreMotivation = ""; setProfile(p); renderProfile(); SS.toast("Lettre de motivation retirée."); }); }
     if (fileInput) {
       fileInput.addEventListener("change", function () {
         var file = fileInput.files && fileInput.files[0];

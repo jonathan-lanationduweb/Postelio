@@ -427,6 +427,17 @@
 .profile-statut__opt { cursor: pointer; }
 .profile-statut__opt:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 
+/* Onboarding première connexion */
+.onboarding { max-width: 480px; }
+.onboarding__step { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-ink-soft); margin: 0 0 4px; }
+.onboarding__body h3 { margin: 0 0 var(--sp-3); font-family: var(--font-serif); }
+.onboarding__choices { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.onboarding__choices .chip { cursor: pointer; }
+.onboarding__foot { justify-content: space-between; }
+
+/* Autres documents (CV & documents) */
+.cv-docs { margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--c-line); }
+
 .skill-transfer { margin-top: var(--sp-3); }
 .skill-transfer__role { text-decoration: none; cursor: pointer; }
 .skill-transfer__role:hover { background: var(--c-primary-soft); color: var(--c-primary-dark); }
