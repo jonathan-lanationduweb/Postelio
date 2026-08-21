@@ -169,6 +169,22 @@ publique ⇒ `verified`**. Appliquée par `postelio-jobs` au Lot 04 (`POST /jobs
   `WP_Meta_Query` en dur ; `postelio-search` pourra le remplacer (table/index dédié,
   Meilisearch/Typesense) sans casser l'API. Défaut V1 : `MetaQuerySearchProvider`.
 
+`postelio-applications` expose **`Postelio\Applications\Api\ApplicationDirectory`**
+(`context`, `belongs_to_company`, `move_to_interview`) pour `postelio-interviews` /
+`postelio-messaging` ; `postelio-users` expose **`Api\UserDirectory`**.
+
+`postelio-files` (Lot 06) — service transversal de fichiers privés :
+- **`StorageProvider`** (interface) + `LocalPrivateStorageProvider` (V1, filtre
+  `postelio/files/storage_provider`) : stockage **hors chemins publics** (+ `.htaccess`
+  deny), clés assainies, noms aléatoires ; `S3StorageProvider` futur sans changer les
+  contrats. **`FileScanner`** (défaut `NullScanner`, filtre `postelio/files/scanner`) :
+  point d'extension antivirus, non branché.
+- **`Postelio\Files\Api\FileCvContract`** : `postelio-applications` valide/verrouille un
+  CV (appartenance + `ready`) sans toucher au stockage. **Découplage sans cycle** :
+  applications consomme le contrat files ; files interroge applications uniquement par
+  filtres (`postelio/files/authorize_download`, `postelio/files/file_is_referenced`).
+  Le CV étant immuable, référencer son UUID depuis une candidature garantit le snapshot.
+
 ## 7. Ce qui est HORS de ce lot
 
 - CPT métier, tables, endpoints complets, migrations exécutées.

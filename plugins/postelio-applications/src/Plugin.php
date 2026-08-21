@@ -70,6 +70,9 @@ final class Plugin {
 
 		$core->migrator()->register( self::MODULE, self::SCHEMA_OPTION, self::migrations() );
 
+		// Pont files ↔ applications (par filtres, sans dépendance de classe).
+		( new \Postelio\Applications\Integration\FilesAccess() )->register();
+
 		add_action( 'init', array( $this, 'maybe_upgrade' ), 2 );
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'init', static function () {

@@ -91,7 +91,9 @@ update_user_meta( $cand3, AccountService::META_EMAIL_VERIFIED, current_time( 'my
 
 echo "== Candidature (brouillon d'offre non candidateable / présélection) ==\n";
 $t( 'présélection obligatoire manquante => 422', 422 === $req( 'POST', '/postelio/v1/jobs/' . $juuidA . '/applications', array( 'screening_answers' => array() ), $cand )['status'] );
-$r = $req( 'POST', '/postelio/v1/jobs/' . $juuidA . '/applications', array( 'message' => 'Bonjour', 'cv_reference' => 'cv-123', 'screening_answers' => array( 'permis' => 'oui', 'exp' => 4 ), 'status' => 'selected' ), $cand );
+// NB : le CV est facultatif ici ; l'intégration réelle CV↔candidature est couverte
+// par le smoke de postelio-files (contrat FileCvContract).
+$r = $req( 'POST', '/postelio/v1/jobs/' . $juuidA . '/applications', array( 'message' => 'Bonjour', 'screening_answers' => array( 'permis' => 'oui', 'exp' => 4 ), 'status' => 'selected' ), $cand );
 $t( 'apply => 201', 201 === $r['status'] );
 $appU = (string) ( $r['data']['data']['uuid'] ?? '' );
 $t( 'statut forcé ignoré (new)', 'new' === ( $r['data']['data']['status'] ?? '' ) );
