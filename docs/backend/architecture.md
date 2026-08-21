@@ -128,8 +128,21 @@ dans les docs référencées. Les durées de conservation **RGPD restent `À VAL
 | D13 | **Jetons applicatifs Bearer opaques maison** (`uid.tid.secret`, hash-only, révocables) pour l'app ; JWT/Application Passwords écartés en V1. | [security.md](security.md#9-jetons-applicatifs-bearer) |
 
 > Réutilisation D2 (UUID public) : appliquée au profil candidat au Lot 02
-> (`/candidates/{uuid}`). Même principe à généraliser ensuite à companies, jobs,
-> applications, interviews, conversations.
+> (`/candidates/{uuid}`) et à l'entreprise au Lot 03 (`/companies/{uuid}`). Même
+> principe à généraliser ensuite à jobs, applications, interviews, conversations.
+
+## 8. Questions ouvertes — Lot 03 (à valider, non tranchées silencieusement)
+
+Décisions prises par défaut pendant l'implémentation, à confirmer :
+
+| # | Question | Proposition retenue (V1) | Impact | Statut |
+|---|---|---|---|---|
+| Q1 | Stockage de la vérification entreprise : table dédiée `wp_postelio_company_verifications` (historique) ou meta + audit log ? | **Meta `pst_verification` (état courant) + audit log (historique)** ; pas de table dédiée (non prévue dans data-model). | Historique lisible via audit log ; requêtes d'historique moins directes qu'une table. | **À VALIDER** |
+| Q2 | Un recruteur peut-il appartenir à **plusieurs** entreprises en V1 ? | **Non en V1** (création refusée si déjà rattaché) ; le schéma `company_members` (n-n, rôles owner/recruiter) le **permet** pour plus tard. | Invitation/multi-appartenance repoussées sans refonte de schéma. | **À VALIDER** |
+| Q3 | Endpoints d'invitation / retrait / changement de rôle de collaborateur. | **Non exposés** (hors api-contract) ; seul le rattachement du créateur (owner) est implémenté. | À ajouter comme incrément (routes + capabilities) sans changer les tables. | **À VALIDER** |
+| Q4 | Unicité de l'UUID entreprise : le CPT stocke l'UUID en **meta** (pas d'index unique SQL natif). | Génération serveur + contrôle applicatif d'unicité (collision UUID v4 négligeable). | Si besoin de garantie SQL stricte : table d'index dédiée ou colonne custom. | **À VALIDER** |
+| Q5 | Endpoint de **décision de vérification admin** (`POST /companies/{uuid}/verification/decision`) non listé dans api-contract. | Ajouté (nécessaire au workflow verified/rejected/suspended). | À intégrer à api-contract.md. | **À VALIDER** |
+| Q6 | Champ **code NAF/APE** absent de data-model.md Company. | Ajouté à l'identité légale (`naf_ape`). | Aligner data-model.md. | **À VALIDER** |
 
 ## 7. Ce qui est HORS de ce lot
 

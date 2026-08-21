@@ -88,6 +88,23 @@ final class RecruiterProfileRepository {
 		return $this->get_by_user( $user_id );
 	}
 
+	/**
+	 * Rattache le profil recruteur à une entreprise (dénormalisation `company_id`).
+	 * Appelé par l'écouteur d'événement `company.member_added` — jamais par l'API
+	 * (le recruteur ne fixe pas lui-même son `company_id`).
+	 */
+	public function set_company( int $user_id, ?int $company_id ): void {
+		global $wpdb;
+		$this->create_for( $user_id );
+		$wpdb->update(
+			self::table(),
+			array( 'company_id' => $company_id, 'updated_at' => current_time( 'mysql', true ) ),
+			array( 'user_id' => $user_id ),
+			array( '%d', '%s' ),
+			array( '%d' )
+		);
+	}
+
 	public function delete_for( int $user_id ): void {
 		global $wpdb;
 		$wpdb->delete( self::table(), array( 'user_id' => $user_id ), array( '%d' ) );

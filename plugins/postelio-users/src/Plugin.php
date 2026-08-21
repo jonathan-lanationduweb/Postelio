@@ -100,6 +100,9 @@ final class Plugin {
 		// 3b. Capability virtuelle `pst_email_verified` (contrat pour les lots futurs).
 		( new EmailVerification() )->register();
 
+		// 3c. Rattachement entreprise : écoute `company.member_added` (postelio-companies).
+		( new \Postelio\Users\Integration\CompanyLink( $this->recruiters, $core->events() ) )->register();
+
 		// 4. Enrichissement transversal de /me (le core ignore le domaine users).
 		add_filter( 'postelio/me', array( $this->presenter, 'enrich_me' ), 10, 2 );
 
