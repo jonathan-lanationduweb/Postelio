@@ -57,6 +57,8 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 | Téléphone | idem e-mail (visibilité) | candidat | idem |
 | Messages | participants + admin (audit) | **immuables en V1** (pas d'édition — D6) | suppression **logique**/modération (D6) |
 | Entretien (créneau/lien visio/adresse/téléphone) | candidat concerné + recruteurs de la company + admin ; hors périmètre → 404 | recruteur (modif substantielle ⇒ reconfirmation) ; candidat (confirme/refuse/propose créneau) | logique via statut (`cancelled`) ; historique append-only conservé |
+| Notification in-app | destinataire (propriétaire) uniquement ; admin/support = **statut** de livraison sans le corps | destinataire (lu/lu-tout) | purge via `expires_at` (`À VALIDER`) |
+| E-mail (livraison) | worker interne ; jamais de motif/note/token/ID SQL/corps complet dans l'audit | — (immuable) | conservé pour observabilité (statut, provider_message_id) |
 | Notes recruteur | recruteurs de la company + admin | recruteur | recruteur |
 | Adresse personnelle | candidat + recruteur autorisé | candidat | anonymisée |
 | Historique candidature | candidat (le sien), recruteur concerné, admin | système (append-only) | anonymisé selon conservation |

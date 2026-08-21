@@ -100,6 +100,12 @@ capability. Le front n'accorde aucun droit.
   + e-mail vérifié, ownership strict) ; **plusieurs entretiens successifs** par candidature
   (doublon actif identique refusé) ; une nouvelle proposition est refusée si l'offre est
   `filled`/`archived`/`suspended` ; `completed` reste **manuel** (aucun cron).
+- **Notifications (Lot 09)** : tout utilisateur Postelio authentifié lit/gère **ses
+  propres** notifications (`GET/POST /me/notifications*`, capability `read`) et ses
+  préférences (`GET|PUT /me/notification-preferences`). Ownership strict (A ne voit jamais
+  B). Certaines catégories sont **obligatoires** (entretien annulé, preuve de confirmation,
+  entreprise suspendue) : l'e-mail part malgré une préférence OFF. Le compteur cloche
+  (notifications) est distinct du compteur messagerie (messages non lus).
 - **Accès aux CV** : le candidat (propriétaire) et **uniquement** les recruteurs d'une
   entreprise ayant reçu une candidature avec ce CV (via snapshot). Admin pour audit.
 - **Coordonnées candidat** : soumises à `CandidateProfile.visibility` (email/tel) —

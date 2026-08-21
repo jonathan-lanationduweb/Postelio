@@ -45,7 +45,9 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 | `interview.declined` | interviews | notifications (recruteur), core(audit) — *Lot 08 ; remplace `interview.rejected`* |
 | `interview.cancelled` | interviews | notifications (candidat), core(audit) — *Lot 08* |
 | `interview.completed` | interviews | notifications, core(audit) — *Lot 08 ; marquage manuel (cron futur)* |
-| `notification.created` | notifications | (canal e-mail si applicable) |
+| `notification.created` | notifications | (interne — **jamais réécouté** par notifications) — *Lot 09* |
+| `notification.read` | notifications | (métrique interne) — *Lot 09* |
+| `email.queued` / `email.sent` / `email.failed` | notifications | (observabilité interne ; **jamais réécouté** → anti-boucle) — *Lot 09* |
 | `payment.succeeded` | billing | jobs (appliquer renouvellement), notifications, core(audit) |
 | `payment.failed` | billing | notifications (recruteur), core(audit) |
 | `renewal.applied` | billing | jobs, core(audit) |
@@ -62,10 +64,19 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 Canaux : **in-app** (cloche), **email** (transactionnel), *push Tauri* (plus tard).
 `—` = pas de notification.
 
+> **Implémentée au Lot 09** — la matrice V1 effective (avec obligatoires, différés,
+> priorités, actions) est documentée dans `plugins/postelio-notifications/README.md`.
+> Écarts figés vs le tableau ci-dessous (décisions D2/D4/D12) : `application.status_changed`
+> / `reviewed` / `shortlisted` / `interview` ⇒ **aucune** notification (états internes) ;
+> `application.created` côté candidat ⇒ **e-mail d'accusé seul** (pas d'in-app) ;
+> `message.created` e-mail ⇒ **différé 5 min, conditionnel à la non-lecture, 1/conv/30 min** ;
+> `interview.confirmed` ⇒ e-mail de **preuve** au candidat (obligatoire) + notif recruteur ;
+> `company.verification_requested`, `interview.completed`, alertes offres/reco ⇒ **futur**.
+
 | Événement | Candidat | Recruteur | Admin | Email ? | In-app ? |
 |---|---|---|---|---|---|
 | application.created | — | ✅ | — | ✅ recruteur | ✅ recruteur |
-| application.status_changed | ✅ | — | — | ✅ (selon type) | ✅ candidat |
+| application.status_changed | — | — | — | — | — *(interne, D2)* |
 | application.rejected | ✅ (msg courtois) | — | — | ✅ | ✅ |
 | application.selected | ✅ | — | — | ✅ | ✅ |
 | application.withdrawn | — | ✅ | — | option | ✅ recruteur |

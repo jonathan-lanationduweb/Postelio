@@ -45,6 +45,11 @@ $jrepo = new JobRepository();
 $audit = $wpdb->prefix . 'postelio_audit_log';
 $users = array(); $companies = array(); $jobs = array();
 
+// D1 (Lot 09) : capture des payloads d'événements pour vérifier l'enrichissement UUID.
+$captured = array();
+\Postelio\Core\Plugin::instance()->events()->on( 'application.created', static function ( $payload ) use ( &$captured ) { $captured['created'] = $payload; } );
+\Postelio\Core\Plugin::instance()->events()->on( 'application.rejected', static function ( $payload ) use ( &$captured ) { $captured['rejected'] = $payload; } );
+
 $mkCompanyVerified = static function ( int $rec ) use ( $req, $siren, &$companies ): array {
 	$c = $req( 'POST', '/postelio/v1/companies', array( 'nom' => 'Co ' . wp_generate_password( 4, false ), 'legal' => array( 'siren' => $siren() ) ), $rec );
 	$cuuid = $c['data']['data']['uuid']; $cid = CompanyDirectory::id_from_uuid( $cuuid );
@@ -186,6 +191,10 @@ foreach ( array( 'application.created', 'application.status_changed', 'applicati
 	$n = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$audit} WHERE action = %s", $ev ) );
 	$t( "audit contient {$ev}", $n >= 1 );
 }
+// D1 : les événements exposent les UUID publics (application_uuid + job_uuid).
+$t( 'application.created porte application_uuid (36c)', isset( $captured['created']['application_uuid'] ) && (bool) preg_match( '/^[0-9a-f-]{36}$/i', (string) $captured['created']['application_uuid'] ) );
+$t( 'application.created porte job_uuid (36c)', isset( $captured['created']['job_uuid'] ) && (bool) preg_match( '/^[0-9a-f-]{36}$/i', (string) $captured['created']['job_uuid'] ) );
+$t( 'application.rejected porte application_uuid', isset( $captured['rejected']['application_uuid'] ) && (bool) preg_match( '/^[0-9a-f-]{36}$/i', (string) $captured['rejected']['application_uuid'] ) );
 
 echo "== Nettoyage ==\n";
 $ap = $wpdb->prefix . 'postelio_applications';
