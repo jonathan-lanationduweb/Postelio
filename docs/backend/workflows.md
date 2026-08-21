@@ -130,12 +130,26 @@ c'est un motif (`duplicate_siren`) de `manual_review`.
 > publiquement**. La publication publique exige l'état **`verified`** (au-delà du seul
 > « dossier complet »). Contrôle serveur, non contournable par le front.
 
-## Message
+## Conversation & Message (implémenté Lot 07)
+
+**Contexte obligatoire.** Une conversation naît **d'une candidature** : le recruteur
+l'ouvre via `POST /companies/me/applications/{application_uuid}/conversation` (candidature
+d'une offre de **son** entreprise). Aucun contact arbitraire ; **1 conversation par
+candidature** (unique en base, idempotent en concurrence). Le candidat n'ouvre pas de
+conversation lui-même — il répond dès qu'elle existe.
+
+**Statut conversation :** `active → closed` (recruteur/modo ; envoi refusé → 409),
+`closed → active` (réouverture), `active/closed → archived`. La lecture reste toujours
+possible (même après fermeture, offre pourvue, candidature sélectionnée/rejetée/retirée :
+**contexte gelé**). Émet `conversation.created|read|closed`.
+
+**Envoi :** exige `pst_send_message` **+** `pst_email_verified` ; la **lecture** ne
+requiert que `pst_send_message` (e-mail non vérifié autorisé). Rate-limité.
 
 **Décision V1 (D6) :** un message envoyé est **immuable** — **pas d'édition** du
 contenu. La disparition d'un message se fait par **suppression logique** (soft-delete :
 `deleted_at` renseigné, contenu masqué mais ligne conservée pour l'audit) ou par
-**modération**, pas par suppression physique.
+**modération** (hook futur), pas par suppression physique.
 
 États : `sent → read`, `sent/read → reported → moderated (allowed|blocked)`,
 `sent/read → deleted` (**soft-delete** logique).

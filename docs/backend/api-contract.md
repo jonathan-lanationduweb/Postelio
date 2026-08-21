@@ -132,9 +132,27 @@ Erreur :
   via `postelio/files/authorize_download`). Hors périmètre → **404**.
 - Contrat pour applications : `\Postelio\Files\Api\FileCvContract::usable_for_application()`.
 
-### Messagerie — `postelio-messaging`
-- `GET /conversations` · `GET /conversations/{id}` · `GET/POST /conversations/{id}/messages`.
-- `POST /messages/{id}/read` · `POST /messages/{id}/report`. R: participant.
+### Messagerie — `postelio-messaging` (identification par **UUID**, D2 ; implémenté Lot 07)
+> Messagerie **contextualisée par une candidature** : le recruteur ne peut écrire qu'à un
+> candidat via une candidature d'une offre de **son** entreprise (jamais de contact
+> arbitraire). **1 conversation par candidature** (unique en base). Messages **immuables**
+> (D6, texte seul, XSS neutralisé). Lecture autorisée même e-mail non vérifié ; **envoi**
+> exige `pst_email_verified`. Hors périmètre → **404** (non-divulgation).
+- `POST /companies/me/applications/{application_uuid}/conversation` — ouvrir/récupérer la
+  conversation d'une candidature (idempotent). R: `pst_send_message`, recruteur membre. 404 sinon.
+- `GET /me/conversations` — liste (candidat ↦ ses conversations ; recruteur ↦ celles de sa
+  company), triée `last_message_at` DESC, `unread_count` par conversation. R: `pst_send_message`.
+- `GET /me/conversations/{uuid}` — détail (interlocuteur, statut, `unread_count`). R: participant.
+- `GET /me/conversations/{uuid}/messages?before={message_uuid}&limit=` — historique, ordre
+  chronologique ASC déterministe `(created_at,id)`, **pagination curseur** (`before`=UUID
+  message, `meta.has_more`). R: participant.
+- `POST /me/conversations/{uuid}/messages` — envoyer (`{body}`). R: `pst_send_message` **+
+  `pst_email_verified`**. err: `validation_error` (vide/trop long), `invalid_transition`
+  (conversation fermée → 409), `rate_limited`.
+- `POST /me/conversations/{uuid}/read` — marquer lu (curseur monotone `last_read_message_id`).
+- `POST /me/conversations/{uuid}/close` — fermer (recruteur/modérateur). R: participant recruteur.
+- Contrat sortant : `\Postelio\Messaging\Api\MessagingDirectory` (`unread_count`,
+  `get_conversation_context`, `can_message`, `close_conversation`).
 
 ### Entretiens — `postelio-interviews`
 - `POST /interviews` (recruteur propose) · `GET /interviews/me`.

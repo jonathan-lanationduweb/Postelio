@@ -37,6 +37,7 @@ final class ApplicationDirectory {
 		if ( null === $a ) {
 			return null;
 		}
+		$snap = is_array( $a['job_snapshot'] ?? null ) ? $a['job_snapshot'] : array();
 		return array(
 			'app_uuid'          => (string) $a['public_uuid'],
 			'candidate_user_id' => (int) $a['candidate_user_id'],
@@ -44,6 +45,8 @@ final class ApplicationDirectory {
 			'company_uuid'      => (string) $a['company_uuid'],
 			'job_id'            => (int) $a['job_id'],
 			'job_uuid'          => (string) $a['job_uuid'],
+			'job_title'         => isset( $snap['titre'] ) ? (string) $snap['titre'] : null,
+			'company_name'      => isset( $snap['company_name'] ) ? (string) $snap['company_name'] : null,
 			'status'            => (string) $a['status'],
 		);
 	}
