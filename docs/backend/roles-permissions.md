@@ -72,8 +72,19 @@ capability. Le front n'accorde aucun droit.
 | Vérifier une entreprise | ❌ | ❌ | ✅ |
 | Modérer un contenu | ❌ | ❌ | ✅ / modo |
 | Télécharger un CV | ✅ (le sien) | ✅ (candidature reçue) | ✅ |
+| Lire une conversation | ✅ (participant) | ✅ (candidature de sa company) | ✅ (audit) |
+| Envoyer un message | ✅ (participant, e-mail vérifié) | ✅ (e-mail vérifié) | ✅ |
+| Ouvrir une conversation | ❌ | ✅ (via candidature de sa company) | ✅ |
 
 ## Règles transverses
+- **Messagerie (Lot 07)** : capability `pst_send_message` requise pour **lire** ; l'**envoi**
+  exige en plus `pst_email_verified`. Une conversation est toujours rattachée à une
+  candidature (pas de contact arbitraire) ; accès hors périmètre → **404**. Une entreprise
+  peut avoir plusieurs recruteurs participants (lecture + réponse) ; l'état lu/non-lu est
+  **par utilisateur**. La **fermeture manuelle** d'une conversation est réservée au
+  **propriétaire (`owner`) de l'entreprise** ou à un modérateur (`pst_moderate_content`)
+  — pas à un recruteur membre lambda. Fermeture **automatique** si la candidature devient
+  `rejected`/`withdrawn` (lecture seule) ; `selected` ne ferme pas.
 - **Accès aux CV** : le candidat (propriétaire) et **uniquement** les recruteurs d'une
   entreprise ayant reçu une candidature avec ce CV (via snapshot). Admin pour audit.
 - **Coordonnées candidat** : soumises à `CandidateProfile.visibility` (email/tel) —

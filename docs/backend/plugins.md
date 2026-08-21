@@ -130,18 +130,28 @@ snapshot ; voir [security.md](security.md#fichiers) et [data-model.md](data-mode
 
 ## postelio-messaging
 
-**Responsabilité.** Conversations candidat↔recruteur, messages, statut de lecture,
-messages **système** (événements dans le fil), état de modération/signalement.
+**Responsabilité.** Conversations candidat↔recruteur **contextualisées par une
+candidature**, messages (texte, immuables), statut de lecture par participant, fermeture.
+*(Messages système, signalement/modération : hooks prévus, hors périmètre V1.)*
 
-**Dépendances :** core, users, applications (contexte candidature, optionnel).
-**Données possédées :** `Conversation`, `Message` (tables dédiées).
-**Endpoints :** `/conversations`, `/conversations/{id}`, `/conversations/{id}/messages`,
-`/messages/{id}/read`, `/messages/{id}/report`.
-**Émet :** `message.created`, `message.read`, `message.reported`.
-**Écoute :** `application.created` (créer la conversation liée), `interview.proposed`/
-`interview.confirmed` (insérer un message système), `moderation.decided`.
-**Interactions :** une conversation **peut** être liée à une candidature (`application_id`
-nullable) ou exister seule. Signalement → `moderation`.
+**Dépendances :** core, users, companies, applications (**contexte candidature
+obligatoire** — pas de contact arbitraire). Découplage via `ApplicationDirectory` +
+`CompanyDirectory` + `UserDirectory` (aucune dépendance circulaire).
+**Données possédées :** `Conversation`, `Participant`, `Message` (3 tables dédiées).
+**Décisions V1 :** **1 conversation par candidature** (`UNIQUE(application_id)`, sûr en
+concurrence) ; participants multiples possibles côté entreprise (plusieurs recruteurs) ;
+messages **immuables** (D6) + suppression **logique** ; XSS neutralisé (texte seul) ;
+non-lu via curseur monotone `last_read_message_id` (robuste à la même seconde, §33) ;
+pagination **curseur** ; **contexte gelé** (offre pourvue/expirée, renommage entreprise,
+candidature sélectionnée/rejetée n'altèrent pas l'historique) ; statut
+`active|closed|archived` (envoi possible uniquement si `active`) ; rate-limiting ;
+lecture même e-mail non vérifié, **envoi** exige `pst_email_verified`.
+**Endpoints :** voir [api-contract.md](api-contract.md#messagerie--postelio-messaging).
+**Émet :** `conversation.created`, `conversation.read`, `conversation.closed`,
+`message.created` (audit **sans body**).
+**Contrat sortant :** `\Postelio\Messaging\Api\MessagingDirectory`.
+**Interactions :** ouverture liée à une candidature via `ApplicationDirectory::context`
++ appartenance entreprise via `CompanyDirectory::is_member`.
 
 ---
 

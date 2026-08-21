@@ -40,6 +40,7 @@ wp_postelio_applications           wp_postelio_application_history
 wp_postelio_preselection_answers   wp_postelio_recruiter_notes
 wp_postelio_cvs                    wp_postelio_documents
 wp_postelio_cv_snapshots           wp_postelio_conversations
+wp_postelio_conversation_participants
 wp_postelio_messages               wp_postelio_interviews
 wp_postelio_notifications          wp_postelio_payments
 wp_postelio_invoices               wp_postelio_renewals
@@ -241,21 +242,40 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
 - **Statut :** proposed|pending_candidate|confirmed|reschedule_requested|rejected|
   cancelled|completed. **Index :** application_id, candidate_id, company_id, date.
 
-## Conversation
+## Conversation — `wp_postelio_conversations` (implémenté Lot 07)
 - **Propriétaire :** messaging. **Table dédiée.**
-- **Champs :** id, application_id (nullable), candidate_id, recruiter_id, company_id,
-  poste, statut_context, created_at, last_message_at.
-- **Index :** candidate_id, recruiter_id, application_id, last_message_at.
+- **Champs :** id, `public_uuid`, type (`application`), `application_id` (UNIQUE — **1
+  conversation par candidature**), application_uuid, job_uuid, company_id, company_uuid,
+  company_name (**gelé** au moment de l'ouverture), subject (titre de l'offre, gelé),
+  candidate_user_id, status (`active|closed|archived`), created_at, updated_at,
+  last_message_at.
+- **Contexte gelé :** `company_name`/`subject`/`job_uuid` sont copiés à l'ouverture ; un
+  renommage d'entreprise, une offre pourvue/expirée ou une candidature sélectionnée/
+  rejetée/retirée n'altèrent **pas** l'historique de la conversation.
+- **Index :** `UNIQUE public_uuid`, `UNIQUE application_id`, company_id,
+  candidate_user_id, last_message_at.
 
-## Message
+## Participant — `wp_postelio_conversation_participants` (implémenté Lot 07)
+- **Propriétaire :** messaging. **Table dédiée.** Porte l'**état de lecture par
+  utilisateur** — une entreprise peut compter plusieurs recruteurs participants.
+- **Champs :** id, conversation_id, user_id, role (`candidate|recruiter`), joined_at,
+  last_read_at (informatif), `last_read_message_id` (curseur de lecture **monotone**),
+  archived_at.
+- **Non-lu :** compté par `id > last_read_message_id` (curseur par id interne monotone,
+  déterministe même à la même seconde — évite l'ambiguïté DATETIME de §33).
+- **Index :** `UNIQUE (conversation_id, user_id)`, user_id.
+
+## Message — `wp_postelio_messages` (implémenté Lot 07)
 - **Propriétaire :** messaging. **Table dédiée.**
-- **Champs :** id, `public_uuid`, conversation_id, sender_id, sender_role, type
-  (user|system), body, read_at, moderation_state (allowed|review|blocked), reported
-  (bool), `deleted_at` (soft-delete), created_at.
+- **Champs :** id, `public_uuid`, conversation_id, sender_user_id, sender_role, body,
+  status (`sent|deleted`), created_at, `deleted_at` (soft-delete).
 - **Immuabilité (D6) :** le `body` est **immuable** une fois créé (aucune édition en V1).
-  La disparition d'un message = **soft-delete** (`deleted_at`) ou modération ; la ligne
-  est **conservée** (audit). Voir [workflows.md](workflows.md#message).
-- **Sensible :** contenu. **Index :** conversation_id, created_at, read_at.
+  La disparition d'un message = **soft-delete** (`deleted_at`, `status=deleted`) ; la ligne
+  est **conservée** (audit). Contenu **texte seul**, XSS neutralisé à l'entrée
+  (`sanitize_textarea_field`). Voir [workflows.md](workflows.md#message).
+- **Ordre déterministe :** `(created_at, id)` ; pagination **curseur** (`before` = UUID
+  d'un message). **Sensible :** contenu (jamais dans l'audit).
+- **Index :** `UNIQUE public_uuid`, `conversation_order (conversation_id, id)`.
 
 ## Notification
 - **Propriétaire :** notifications. **Table dédiée.**

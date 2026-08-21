@@ -33,9 +33,11 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 | `application.withdrawn` | applications | notifications (recruteur), interviews (annuler), core(audit) |
 | `cv.uploaded` / `cv.replaced` / `cv.deleted` | files | core(audit) |
 | `cv.snapshot_created` | files | applications, core(audit) |
-| `message.created` | messaging | notifications (destinataire), core(audit) |
-| `message.read` | messaging | (métrique) |
-| `message.reported` | messaging | moderation, core(audit) |
+| `conversation.created` | messaging | notifications (interlocuteur), core(audit) — *Lot 07* |
+| `message.created` | messaging | notifications (destinataire), core(audit — **jamais le body**) — *Lot 07* |
+| `conversation.read` | messaging | (métrique) — *Lot 07 ; remplace `message.read`* |
+| `conversation.closed` | messaging | notifications, core(audit) — *Lot 07* |
+| `message.reported` | messaging | moderation, core(audit) — *hook futur* |
 | `interview.proposed` | interviews | messaging (message système), notifications (candidat), core(audit) |
 | `interview.confirmed` | interviews | messaging, notifications (recruteur), applications, core(audit) |
 | `interview.rescheduled` | interviews | notifications (recruteur), core(audit) |
