@@ -119,11 +119,18 @@ Erreur :
 - `GET/POST /companies/me/applications/{uuid}/notes` — notes privées. R: `pst_manage_recruiter_notes`.
 - Contrat sortant : `Postelio\Applications\Api\ApplicationDirectory` (`context`, `belongs_to_company`, `move_to_interview`) pour `postelio-interviews`/`messaging`.
 
-### Fichiers / CV — `postelio-files`
-- `GET/POST /me/cvs` · `PUT/DELETE /me/cvs/{id}` (principal, remplacer, supprimer). R: candidate.
-- `POST /me/documents` (lettre de motivation). 
-- `GET /files/{id}/download` — **téléchargement contrôlé/signé** (pas d'URL publique).
-  R: propriétaire ou recruteur autorisé (candidature reçue). err: `forbidden`.
+### Fichiers / CV — `postelio-files` (identification par **UUID**, D2 ; implémenté Lot 06)
+> Stockage **privé** (hors chemins publics) derrière `StorageProvider` ; CV V1 = PDF
+> 10 Mo (D3), MIME+signature vérifiés ; versions immuables (snapshot par référence).
+- `POST /me/files/cv` — upload (multipart `file`). R: `pst_manage_own_cv` **+ `pst_email_verified`**. err: `unsupported_media_type`, `payload_too_large`, `validation_error`.
+- `GET /me/files/cv` · `GET /me/files/cv/{uuid}` — R: `pst_manage_own_cv` (propriétaire).
+- `POST /me/files/cv/{uuid}/primary` — définir principal. R: `pst_manage_own_cv`.
+- `DELETE /me/files/cv/{uuid}` — retrait logique (archivé si référencé). R: `pst_manage_own_cv`.
+- `GET /files/{uuid}/view` (inline) · `GET /files/{uuid}/download` — **streaming sécurisé**
+  (pas d'URL disque ; `application/pdf` + `nosniff` + CSP sandbox ; HTTP Range). Accès :
+  **propriétaire** OU recruteur autorisé (candidature de son entreprise référençant ce CV,
+  via `postelio/files/authorize_download`). Hors périmètre → **404**.
+- Contrat pour applications : `\Postelio\Files\Api\FileCvContract::usable_for_application()`.
 
 ### Messagerie — `postelio-messaging`
 - `GET /conversations` · `GET /conversations/{id}` · `GET/POST /conversations/{id}/messages`.

@@ -74,6 +74,15 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 - **CV V1** (décision — D3) : **PDF uniquement** (`application/pdf`), **10 Mo maximum**.
   Validation MIME **réelle** (pas seulement l'extension). Les autres formats de document
   (`.doc`, `.docx`) restent `À VALIDER` pour une version ultérieure.
+- **Implémenté Lot 06 (`postelio-files`)** : stockage **privé** hors chemins publics
+  (`WP_CONTENT_DIR/postelio-private/files`, filtre `postelio/files/storage_dir`, +
+  `.htaccess` deny — **inaccessibilité HTTP vérifiée** sur postelio.local) ; noms
+  physiques aléatoires ; MIME `finfo` + signature `%PDF-` + taille + anti-traversée ;
+  téléchargement/aperçu par **streaming** (`GET /files/{uuid}/download|view`,
+  `application/pdf` + `nosniff` + CSP sandbox + HTTP Range). Accès : propriétaire OU
+  recruteur autorisé via `postelio/files/authorize_download` ; sinon **404**. Versions
+  immuables (snapshot par référence). `FileScanner` (défaut no-op) prévu pour un
+  antivirus futur.
 - **Snapshot CV** : copie immuable à la candidature (voir [workflows.md](workflows.md#snapshot-cv)).
 - Suppression : purge du CV vivant à la suppression de compte ; snapshots gérés selon la
   conservation des candidatures.

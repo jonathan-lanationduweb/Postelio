@@ -199,20 +199,27 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
 - **Champs :** id, application_id, author_id, body, updated_at.
 - **Sensible : NE JAMAIS exposer au candidat.** Lecture : recruteurs de la company.
 
-## CV & CVSnapshot
-- **Propriétaire :** files. **Table dédiée** + fichier protégé.
-- **CV :** id, candidate_id, name, file_path (hors webroot), mime, size, principal (bool),
-  created_at, updated_at. **Contrainte :** un seul `principal` par candidat.
-- **CVSnapshot :** id, cv_id, application_id, name, file_path (copie immuable), created_at.
-  → **Snapshot** : une candidature référence la version du CV **au moment de l'envoi**
-  (voir [workflows.md](workflows.md#snapshot-cv)). **Index :** candidate_id ; application_id.
-- **Sensible : fort.** Accès contrôlé, jamais d'URL publique ([security.md](security.md#fichiers)).
-- **Conservation :** CV vivant tant que compte actif ; snapshot lié à la conservation
-  de la candidature.
-
-## Document
-- **Propriétaire :** files. **Table dédiée.** id, candidate_id, type
-  (lettre_motivation|portfolio), name, file_path, mime, size, created_at.
+## Fichiers (CV & documents) — `wp_postelio_files` (implémenté Lot 06)
+- **Propriétaire :** files. **Table unifiée** `wp_postelio_files` + stockage privé.
+  **Décision de consolidation** : au lieu de tables séparées cvs/documents/cv_snapshots,
+  une seule table avec `type` (cv|document) et **versions immuables**. Le « snapshot CV »
+  d'une candidature = **référence immuable** à une ligne (l'UUID du fichier), jamais une
+  copie physique : un nouvel upload crée une NOUVELLE ressource, l'ancienne n'est jamais
+  remplacée. `postelio-applications` stocke `cv_reference = files.public_uuid`.
+- **Champs :** id (interne), **public_uuid** (D2, seul exposé), owner_user_id, type,
+  storage_provider, storage_key (interne), original_name (affichage), stored_name
+  (aléatoire), mime_type, size_bytes, sha256, status
+  (uploaded|ready|quarantined|archived|deleted), is_primary (un seul par owner/type),
+  created_at, updated_at, deleted_at. **Index :** public_uuid (unique), (owner,type),
+  status, sha256.
+- **CV V1 :** PDF, 10 Mo (D3), MIME réel + signature `%PDF-` vérifiés.
+- **Sensible : fort.** Stockage privé hors chemins publics (+ `.htaccess` deny), jamais
+  d'URL disque ; accès uniquement via `GET /files/{uuid}/view|download` (proprio ou
+  recruteur autorisé). Voir [security.md](security.md#5-fichiers-cv--documents).
+- **Suppression :** logique — `deleted` si non référencé, **`archived`** (conservé) si
+  encore référencé par une candidature.
+- **Conservation :** CV actif tant que compte actif ; pièces référencées conservées.
+  Durées `À VALIDER`.
 
 ## Favorite
 - **Propriétaire :** jobs. **Table dédiée.** id, user_id, job_id, created_at.

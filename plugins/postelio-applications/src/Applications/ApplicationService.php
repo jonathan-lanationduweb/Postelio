@@ -108,7 +108,7 @@ final class ApplicationService {
 				'company_id'        => $snap['company_id'],
 				'company_uuid'      => $snap['company_uuid'],
 				'status'            => ApplicationStateMachine::NEW,
-				'cv_reference'      => isset( $input['cv_reference'] ) ? sanitize_text_field( (string) $input['cv_reference'] ) : null,
+				'cv_reference'      => $this->resolve_cv_reference( $candidate_id, $input ),
 				'job_revision'      => $snap['revision'],
 				'job_snapshot'      => $job_snapshot,
 				'screening_answers' => $screening['answers'],
@@ -124,6 +124,30 @@ final class ApplicationService {
 		$this->emit( 'application.created', $id, $candidate_id, (int) $snap['company_id'], (int) $job_id, array( 'job_uuid' => $snap['job_uuid'] ) );
 
 		return $this->apps->get( $id );
+	}
+
+	/**
+	 * Résout et VERROUILLE la référence de CV via le contrat postelio-files.
+	 *
+	 * Le fichier étant immuable, référencer son UUID suffit à garantir le « snapshot »
+	 * (le CV vu par le recruteur reste celui du moment de la candidature). Si files
+	 * n'est pas actif, on retombe sur une référence opaque (compatibilité).
+	 *
+	 * @param array<string, mixed> $input
+	 * @throws ApiError validation_error
+	 */
+	private function resolve_cv_reference( int $candidate_id, array $input ): ?string {
+		$uuid = (string) ( $input['cv_uuid'] ?? $input['cv_reference'] ?? '' );
+		if ( '' === $uuid ) {
+			return null; // CV facultatif en V1 (À VALIDER)
+		}
+		if ( class_exists( '\\Postelio\\Files\\Api\\FileCvContract' ) ) {
+			if ( ! \Postelio\Files\Api\FileCvContract::usable_for_application( $uuid, $candidate_id ) ) {
+				throw ApiError::validation( array( 'cv' => 'CV invalide : inexistant, non actif ou n\'appartenant pas à votre compte.' ) );
+			}
+			return $uuid;
+		}
+		return sanitize_text_field( $uuid ); // files inactif : référence opaque
 	}
 
 	/**
