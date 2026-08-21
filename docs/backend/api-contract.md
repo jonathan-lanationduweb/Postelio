@@ -104,14 +104,20 @@ Erreur :
   **postelio-billing** après paiement (hors Lot 04 ; aucun endpoint payant en V1).
 - Favoris / alertes candidat (`/me/favorites`, `/me/alerts`) : **hors Lot 04.**
 
-### Candidatures — `postelio-applications`
-- `POST /applications` — postuler (job_id, cv_id, message, réponses présélection). R: candidate.
-  → crée l'Application + **snapshot CV** + conversation. err: `conflict` (déjà postulé).
-- `GET /applications/me` — R: candidate. `GET /applications/{id}` — self ou recruteur concerné.
-- `GET /companies/me/applications` — pipeline recruteur (filtres statut/offre). R: recruiter.
-- `POST /applications/{id}/status` — transition (voir [workflows.md](workflows.md#candidature)). R: recruiter. err: `invalid_transition`.
-- `POST /applications/{id}/withdraw` — R: candidate.
-- `GET/PUT /applications/{id}/notes` — notes privées. R: recruiter.
+### Candidatures — `postelio-applications` (identification par **UUID**, D2)
+> Implémenté Lot 05. Snapshot d'offre figé (`job_revision`) ; réponses de présélection
+> validées **contre le snapshot serveur** ; règle V1 **1 candidat = 1 candidature/offre**
+> (contrainte unique en base). Non-divulgation : hors périmètre → **404**.
+- `POST /jobs/{job_uuid}/applications` — postuler (message?, cv_reference?, screening_answers{id:val}).
+  R: candidate **+ `pst_email_verified`**. err: `conflict` (déjà postulé), `validation_error`
+  (présélection), `invalid_transition` (offre non candidateable). *(Le snapshot CV immuable
+  réel viendra de `postelio-files` ; `cv_reference` opaque en attendant.)*
+- `GET /me/applications` (filtre statut) · `GET /me/applications/{uuid}` (détail + timeline). R: candidate (propriétaire).
+- `POST /me/applications/{uuid}/withdraw` — R: candidate. err: `invalid_transition`.
+- `GET /companies/me/applications` (filtres `job`={uuid}, `status`) · `GET /companies/me/applications/{uuid}`. R: recruiter (membre).
+- `POST /companies/me/applications/{uuid}/status` — transition (voir [workflows.md](workflows.md#candidature-application)). R: recruiter **+ `pst_email_verified`**. err: `invalid_transition`. Motif de refus **interne** (jamais exposé au candidat).
+- `GET/POST /companies/me/applications/{uuid}/notes` — notes privées. R: `pst_manage_recruiter_notes`.
+- Contrat sortant : `Postelio\Applications\Api\ApplicationDirectory` (`context`, `belongs_to_company`, `move_to_interview`) pour `postelio-interviews`/`messaging`.
 
 ### Fichiers / CV — `postelio-files`
 - `GET/POST /me/cvs` · `PUT/DELETE /me/cvs/{id}` (principal, remplacer, supprimer). R: candidate.
