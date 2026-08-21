@@ -172,6 +172,29 @@
 }
 .site-header--cine.is-solid .nav-toggle span { background: var(--c-primary-dark); }
 
+/* ---- Cloche de notifications + chevron compte (header connecté) ----
+   Lisibilité sur la vidéo d'intro : la cloche (SVG stroke=currentColor) et le
+   chevron (texte) héritent de `color`. Ils suivent le MÊME état que le reste du
+   header cinématique : blancs en overlay (sur la vidéo), bleu nuit une fois le
+   header solide. Le badge rouge de notifications n'est pas modifié. */
+.site-header--cine .notif-btn,
+.site-header--cine .avatar-caret {
+  color: #fff;
+  transition: color 200ms ease, background 200ms ease;
+}
+.site-header--cine .notif-btn:hover {
+  background: rgba(255, 255, 255, 0.16); /* reste visible sur la vidéo (pas de bleu sombre) */
+  color: #fff;
+}
+.site-header--cine.is-solid .notif-btn,
+.site-header--cine.is-solid .avatar-caret {
+  color: var(--c-primary); /* #17324D une fois l'intro terminée */
+}
+.site-header--cine.is-solid .notif-btn:hover {
+  background: rgba(23, 50, 77, 0.08);
+  color: var(--c-primary);
+}
+
 /* ---- Navbar de l'intro : discrète, transparente puis à peine translucide ---- */
 .cine__nav {
   position: absolute;
