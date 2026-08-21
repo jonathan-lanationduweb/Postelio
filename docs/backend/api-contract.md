@@ -69,10 +69,17 @@ Erreur :
 - `GET/PUT /candidates/me/profile` — profil complet (self). R: candidate.
 
 ### Entreprises — `postelio-companies`
-- `GET /companies` (public, filtres) · `GET /companies/{id}` (public).
-- `GET/PUT /companies/me` — R: recruiter.
-- `POST /companies/{id}/verification` — demande de vérification. R: recruiter.
-- `POST/DELETE /companies/{id}/follow` — R: candidate.
+> Identification publique par **UUID** (D2) — jamais l'ID interne. Champs : identité
+> découpée en `editorial` / `legal_declared` / `legal_verified` (figé).
+- `GET /companies` (public, liste ; suspendues masquées) · `GET /companies/{uuid}` (public).
+- `POST /companies` — crée SON entreprise (owner). R: recruiter **+ `pst_email_verified`**. err: `conflict` (déjà rattaché / SIREN en doublon), `validation_error`.
+- `GET /companies/me` — entreprise du recruteur (vue propriétaire + complétion + statut). R: recruiter.
+- `PUT /companies/me` — mise à jour. R: recruiter **+ `pst_email_verified`**. Le **légal est verrouillé** si `verified` (err: `forbidden`).
+- `POST /companies/me/verification` — demande de vérification. R: recruiter (`pst_request_company_verification`) **+ `pst_email_verified`**. err: `invalid_transition`, `validation_error` (SIREN/SIRET).
+- `GET /companies/me/verification` — statut de vérification. R: recruiter.
+- `POST /companies/{uuid}/verification/decision` — décision `verified|rejected|manual_review|suspended` (+ `motif`). R: **admin** (`pst_verify_company`). err: `invalid_transition`, `not_found`. Le recruteur **ne peut jamais** se déclarer `verified`.
+- `POST/DELETE /companies/{uuid}/follow` — R: candidate. *(prévu ; hors Lot 03.)*
+- Contrat inter-plugins : `CompanyVerification::can_publish_jobs($company_id)` (+ filtres `postelio/company/*`) — utilisé par `postelio-jobs` sans lire l'implémentation interne.
 
 ### Offres, favoris, alertes — `postelio-jobs`
 - `GET /jobs` (public, filtres : q, ville, rayon, secteur, contrat, salaire,

@@ -64,16 +64,44 @@ sur place (adresse+contact+accès), téléphone (numéro/indication).
 
 ## Entreprise (Company) — vérification
 
-États : `incomplete → pending_verification → verified`, `pending_verification →
-manual_review → verified | rejected`, `verified → suspended`.
+**Machine à états canonique (6 états)** — implémentée dans
+`postelio-companies` (`VerificationStateMachine`). `conflict` **n'est pas un état** :
+c'est un motif (`duplicate_siren`) de `manual_review`.
 
-| Transition | Autorisé par |
-|---|---|
-| incomplete → pending_verification | recruteur (dossier complet : identité légale + adresse + contact) |
-| pending_verification → verified | admin (ou provider Sirene/RNE plus tard) |
-| pending_verification → manual_review | système/admin (doute) |
-| manual_review → verified/rejected | admin |
-| verified → suspended | admin |
+États : `unverified`, `pending`, `manual_review`, `verified`, `rejected`, `suspended`.
+
+| Transition | Autorisé par | Note |
+|---|---|---|
+| unverified → pending | recruteur (demande) | SIREN/SIRET valides requis |
+| unverified → manual_review | système | doublon SIREN (motif `duplicate_siren`) |
+| pending → verified | provider auto **ou** admin | fige `legal_verified` |
+| pending → rejected | provider auto **ou** admin | motif |
+| pending → manual_review | provider/système/admin | doute |
+| manual_review → verified / rejected | admin | |
+| manual_review → pending | recruteur | nouvelle demande |
+| rejected → pending | recruteur | re-soumission |
+| verified → suspended | admin | modération |
+| verified → manual_review | admin | **réouverture / re-vérification** (déverrouille le légal) |
+| suspended → verified / rejected | admin | réactivation / clôture |
+
+- **Acteurs :** le recruteur ne provoque que `… → pending` (demande) et **ne peut
+  jamais se déclarer `verified`** ; le provider (pendant une demande) applique
+  `pending → verified|rejected|manual_review` ; l'admin applique les décisions
+  (`pst_verify_company`). Toute transition non listée est refusée (`invalid_transition`).
+- **Réversibilité :** aucun état n'est réellement terminal — `rejected` est
+  re-soumissible, `verified` peut être suspendu ou rouvert, `suspended` réactivé.
+- **`suspended` :** l'entreprise est **masquée des endpoints publics** (`GET /companies`,
+  `GET /companies/{uuid}` → 404) et **ne peut pas publier d'offre** (`can_publish_jobs`
+  = false).
+- **Publication d'offre (D1) :** `postelio-jobs` demandera la permission via le contrat
+  public `CompanyVerification::can_publish_jobs()` (V1 : vrai ssi `verified`), **sans**
+  lire l'implémentation interne de `postelio-companies`.
+
+> Correction d'une identité légale déjà vérifiée : les données `legal_verified` ne sont
+> jamais modifiables par le recruteur. Le mécanisme prévu est **nouvelle déclaration →
+> re-vérification** : l'admin rouvre le dossier (`verified → manual_review`), ce qui
+> **déverrouille** `legal_declared`, puis une nouvelle vérification refige
+> `legal_verified`. (Workflow détaillé de re-déclaration : hors Lot 03.)
 
 > **Blocage publication (décision V1 — D1) :** une entreprise **non vérifiée** peut
 > **préparer et enregistrer des brouillons** d'offres, mais **ne peut pas publier
