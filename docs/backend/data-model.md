@@ -131,17 +131,48 @@ wp_postelio_audit_log
 - **Contrainte :** unique (user_id, company_id). **Index :** user_id, company_id.
 
 ## Job
-- **Propriétaire :** jobs. **Stockage :** CPT `postelio_job` + taxonomies.
-- **Champs :** id, titre, company_id, ville, departement, contrat (taxo),
-  duree, temps_travail, salaire, salaire_annuel, teletravail (taxo),
-  categorie/secteur (taxo), niveau_etude (taxo), experience (taxo),
-  description, resume, missions (JSON), profil (JSON), competences (JSON),
-  avantages (JSON), email_reception, questions_preselection (JSON[]),
-  processus_recrutement (JSON[]), date_publication, date_expiration, statut.
-- **Statut :** draft|pending|published|expiring|expired|renewed|filled|archived|suspended.
-- **Index :** company_id, statut, date_expiration, secteur, ville, contrat. Filtres :
-  débutant accepté / alternance / stage (via taxo/champs).
+- **Propriétaire :** jobs. **Stockage :** CPT `postelio_job` + meta (implémenté Lot 04 ;
+  taxonomies déferrées — filtres en meta V1, voir limite ci-dessous).
+- **Identifiants :** `id` interne (post ID, jamais exposé) + **`public_uuid`** (UUID v4
+  serveur, immuable — D2).
+- **Entreprise (dénormalisée) :** `company_id` (relation interne durable),
+  `company_uuid` (référence publique), `company_name` (**cache/repli uniquement** — le
+  presenter lit toujours le nom courant via `CompanyDirectory` ; le cache est
+  rafraîchi sur `company.updated`). `company_id`/`company_uuid` ne changent jamais.
+- **Champs :** titre (post_title), description (post_content), ville, departement,
+  contrat, duree, temps_travail, salaire, salaire_annuel, teletravail, categorie(+label),
+  niveau_etude(+label), experience(+label), missions (JSON), profil (JSON),
+  competences (JSON), avantages (JSON), processus (JSON), email_reception (privé),
+  **questions_preselection (JSON[], structure ci-dessous)**, date_publication,
+  date_expiration (dates **UTC `Y-m-d`**), statut, **revision** (version métier,
+  incrémentée à chaque édition), **renewal_count**, **renewed_at**.
+- **Statut (V1, 7) :** `draft|published|expiring|expired|filled|archived|suspended`.
+  `pending` (modération) et `renewed` (état) **retirés** — voir
+  [workflows.md](workflows.md#offre-job). Visibles publiquement : `published`, `expiring`.
+- **Index :** `pst_company_id`, `pst_status`, `pst_date_publication`, `pst_uuid`,
+  + champs filtrables (`pst_ville/contrat/categorie/teletravail/niveau_etude/experience/
+  salaire_annuel/alternance/stage/debutant`).
+- **Limite de scalabilité (assumée V1) :** filtres/recherche en **postmeta**
+  (`WP_Meta_Query`). Les endpoints publics passent par l'abstraction
+  `JobSearchProvider` (filtre `postelio/jobs/search_provider`) pour permettre un
+  remplacement futur par **postelio-search** (table/index dédié, Meilisearch/Typesense)
+  **sans casser l'API**.
 - **Conservation :** offres expirées conservées `À VALIDER` (ex. 24 mois).
+
+### `questions_preselection` — structure stable (contrat pour postelio-applications)
+Chaque question est un objet **normalisé à l'enregistrement** :
+`{ id (slug stable), label, type (oui_non|texte|nombre|choix), required (bool),
+critere (indispensable|souhaite|null) }`. `postelio-applications` enregistrera les
+réponses candidat **contre ces `id`** — jamais contre une structure improvisée.
+
+### Snapshot de candidature (préparé, à implémenter au Lot applications)
+Lorsqu'un candidat postule, la candidature doit **figer** de quoi savoir à quelle
+version de l'offre il a répondu, **indépendamment** des modifications ultérieures :
+`job_uuid`, **`job_revision`** (version métier au moment de la candidature), `titre`,
+entreprise (`company_uuid` + `company_name` au moment T), et les
+`questions_preselection` utilisées. Les **révisions WordPress ne suffisent pas** (elles
+ne capturent pas fiablement les meta) → on retient une **version métier**
+(`pst_revision`) + un snapshot applicatif côté `postelio-applications`.
 
 ## Application
 - **Propriétaire :** applications. **Table dédiée.**

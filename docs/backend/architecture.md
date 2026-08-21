@@ -147,11 +147,27 @@ Décisions prises par défaut pendant l'implémentation, à confirmer :
 ### Contrat de vérification pour les autres plugins
 
 `postelio-jobs` (et futurs) **ne lisent jamais** `pst_verification_status`, les meta,
-`legal_verified` ou le provider. Ils passent par la façade publique
-**`Postelio\Companies\Api\CompanyVerification`** — `is_verified()`,
-`can_publish_jobs()`, `get_verification_status()` — ou les filtres équivalents
-`postelio/company/{is_verified,can_publish_jobs,verification_status}`. Règle V1 (D1) :
-brouillon autorisé pour une entreprise non vérifiée, **publication publique ⇒ `verified`**.
+`legal_verified` ou le provider. Ils passent par les façades publiques de
+`postelio-companies` :
+- **`Postelio\Companies\Api\CompanyVerification`** — `is_verified()`,
+  `can_publish_jobs()`, `get_verification_status()` (+ filtres
+  `postelio/company/{is_verified,can_publish_jobs,verification_status}`) ;
+- **`Postelio\Companies\Api\CompanyDirectory`** — appartenance recruteur ↔ entreprise
+  (`company_of_user`, `is_member`, `role_of`), résolution d'identité (`id_from_uuid`,
+  `uuid_of`, `name_of`) et `public_summary()` pour l'affichage.
+
+Règle V1 (D1) : brouillon autorisé pour une entreprise non vérifiée, **publication
+publique ⇒ `verified`**. Appliquée par `postelio-jobs` au Lot 04 (`POST /jobs/{uuid}/publish`).
+
+`postelio-jobs` expose à son tour deux contrats publics :
+- **`Postelio\Jobs\Api\JobLifecycle`** — `can_renew()`, `renew_after_payment()` : point
+  d'entrée du **renouvellement** pour `postelio-billing`. Billing n'écrit jamais
+  `pst_status`/`pst_date_expiration` : il appelle ce contrat après paiement, qui
+  applique la transition `expiring|expired → published` et émet `job.renewed`.
+- **`Postelio\Jobs\Search\JobSearchProvider`** (filtre `postelio/jobs/search_provider`)
+  — abstraction du moteur de recherche : les endpoints publics n'en dépendent pas de
+  `WP_Meta_Query` en dur ; `postelio-search` pourra le remplacer (table/index dédié,
+  Meilisearch/Typesense) sans casser l'API. Défaut V1 : `MetaQuerySearchProvider`.
 
 ## 7. Ce qui est HORS de ce lot
 

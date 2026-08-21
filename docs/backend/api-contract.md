@@ -81,12 +81,28 @@ Erreur :
 - `POST/DELETE /companies/{uuid}/follow` — R: candidate. *(prévu ; hors Lot 03.)*
 - Contrat inter-plugins : `CompanyVerification::can_publish_jobs($company_id)` (+ filtres `postelio/company/*`) — utilisé par `postelio-jobs` sans lire l'implémentation interne.
 
-### Offres, favoris, alertes — `postelio-jobs`
-- `GET /jobs` (public, filtres : q, ville, rayon, secteur, contrat, salaire,
-  niveau, expérience, télétravail, date, débutant/alternance/stage) · `GET /jobs/{id}`.
-- `POST /jobs`, `PUT /jobs/{id}` — R: recruiter (sa company). err: `payment_required` (si quota).
-- `POST /jobs/{id}/duplicate` · `POST /jobs/{id}/renew` (→ billing).
-- `GET/POST/DELETE /me/favorites` · `GET/POST/PUT/DELETE /me/alerts`. R: candidate.
+### Offres — `postelio-jobs` (identification par **UUID**, D2)
+- `GET /jobs` (public, filtres : q, ville, contrat, catégorie, télétravail, niveau,
+  expérience, salaire_min, débutant/alternance/stage) · `GET /jobs/{uuid}` (public :
+  `published`/`expiring` seulement).
+- `GET /jobs/me` — offres de l'entreprise du recruteur (tous statuts). R: recruiter.
+- `POST /jobs` — crée un **brouillon** (autorisé sans entreprise vérifiée — D1).
+  R: recruiter (`pst_edit_own_company_jobs`) **+ `pst_email_verified`** + membre.
+- `PUT /jobs/{uuid}` — édite. R: idem + membre.
+- `POST /jobs/{uuid}/publish` — publication publique. R: `pst_publish_job` **+
+  `pst_email_verified`** ; **exige l'entreprise `verified`** (via
+  `CompanyVerification::can_publish_jobs()`). err: `forbidden`, `invalid_transition`.
+- `POST /jobs/{uuid}/fill|archive` — R: `pst_edit_own_company_jobs`.
+- `POST /jobs/{uuid}/duplicate` — nouveau brouillon. R: `pst_duplicate_job` + `pst_email_verified`.
+- `POST /jobs/{uuid}/status` — admin (`pst_manage_all_jobs`) : `suspend|published`.
+- États V1 : `draft|published|expiring|expired|filled|archived|suspended` (pas de
+  `pending` ni d'état `renewed` — voir [workflows.md](workflows.md#offre-job)). Seuls
+  `published`/`expiring` sont visibles publiquement.
+- Expiration automatique (cron, dates **UTC**) : `published → expiring` (J‑7) → `expired`.
+- **Renouvellement** (`expiring|expired → published`, événement `job.renewed`) : via le
+  contrat **`Postelio\Jobs\Api\JobLifecycle::renew_after_payment()`** appelé par
+  **postelio-billing** après paiement (hors Lot 04 ; aucun endpoint payant en V1).
+- Favoris / alertes candidat (`/me/favorites`, `/me/alerts`) : **hors Lot 04.**
 
 ### Candidatures — `postelio-applications`
 - `POST /applications` — postuler (job_id, cv_id, message, réponses présélection). R: candidate.

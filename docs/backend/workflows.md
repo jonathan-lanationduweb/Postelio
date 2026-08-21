@@ -6,21 +6,43 @@ choisit jamais un statut arbitrairement.
 
 ## Offre (Job)
 
-États : `draft → pending(*) → published → expiring → expired → renewed → filled → archived → suspended`
-(*) `pending` (revue) uniquement si la modération d'offre est activée.
+**Machine à états canonique V1 (7 états, aucun état fantôme)** — implémentée dans
+`postelio-jobs` (`JobStateMachine`) :
+`draft, published, expiring, expired, filled, archived, suspended`.
+
+- **`pending`** (modération d'offre) : **retiré de la V1**. Sera réintroduit par
+  `postelio-moderation` ; aucun code actuel ne peut y entrer.
+- **`renewed`** : **n'est pas un état persistant**. Le renouvellement est la transition
+  `expired → published` (+ nouvelle échéance) accompagnée de l'événement `job.renewed`,
+  déclenchée **uniquement** par `postelio-billing` après paiement (contrat
+  `Postelio\Jobs\Api\JobLifecycle` ; aucun paiement en V1).
 
 | Transition | Autorisé par |
 |---|---|
-| (création/édition) draft | recruteur (owner de la company) — **autorisé même si l'entreprise n'est pas vérifiée** (D1) |
-| draft → pending / published | recruteur (owner) — **publication publique refusée si l'entreprise n'est pas `verified`** (D1) |
-| pending → published / rejected | admin/modo |
-| published → expiring | système (cron, J-7) |
-| expiring → expired | système (cron, échéance) |
-| expired → renewed | recruteur via **paiement** (`payment.succeeded`) |
-| renewed → published | système (application du renouvellement) |
+| (création/édition) draft | recruteur membre — **autorisé même si l'entreprise n'est pas vérifiée** (D1) |
+| draft → published | recruteur (`POST /jobs/{uuid}/publish`) — **refusé si l'entreprise n'est pas `verified`** (D1). Seul un **brouillon** est publiable en libre-service. |
+| published → expiring | système (cron, J‑7) |
+| published/expiring → expired | système (cron, échéance) |
+| expiring/expired → published | **renouvellement** via `JobLifecycle::renew_after_payment()` (billing) — émet `job.renewed` |
 | published/expiring → filled | recruteur (poste pourvu) |
-| any → archived | recruteur |
-| any → suspended | admin |
+| draft/published/expiring/expired/filled → archived | recruteur |
+| published/expiring → suspended | admin (`POST /jobs/{uuid}/status`) |
+| suspended → published | admin (réactivation ; entreprise toujours `verified` requise) |
+
+- **États visibles publiquement : `published` et `expiring` uniquement.** `draft`,
+  `expired`, `filled`, `archived`, `suspended` → invisibles (fiche publique → 404,
+  absents de la liste).
+- **`archived`** est terminal (on recrée via **duplication**, qui produit un nouveau
+  brouillon).
+- **Édition d'une offre publiée (V1) :** une offre `published`/`expiring` peut modifier
+  ses champs **éditoriaux** ; l'entreprise propriétaire, l'`uuid`, le `statut` et les
+  **dates système** ne sont **jamais** modifiables via l'édition (protégés par le
+  lifecycle). Chaque édition incrémente une **révision métier** (`pst_revision`). Une
+  future modération pourra imposer une revue sur certains changements.
+- **Dates :** stockées en **date UTC (`Y-m-d`)**. Sémantique : une offre est `expired`
+  lorsque `today_UTC >= date_expiration` ; `expiring` lorsque
+  `date_expiration <= today_UTC + 7 j` (bornes incluses : exactement J‑7 → `expiring`,
+  exactement l'échéance → `expired`).
 
 ## Candidature (Application)
 
