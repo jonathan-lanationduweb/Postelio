@@ -67,6 +67,20 @@ final class Plugin {
 
 		$core->migrator()->register( self::MODULE, self::SCHEMA_OPTION, self::migrations() );
 
+		// Candidature devenue terminale → fermeture automatique (lecture seule) de la
+		// conversation liée. L'historique reste consultable ; aucun envoi possible ensuite.
+		$auto_close = function ( $payload, $reason ) {
+			if ( is_array( $payload ) && isset( $payload['application_id'] ) ) {
+				$this->svc->auto_close_for_application( (int) $payload['application_id'], $reason );
+			}
+		};
+		$core->events()->on( 'application.withdrawn', static function ( $payload ) use ( $auto_close ) {
+			$auto_close( $payload, 'application_withdrawn' );
+		} );
+		$core->events()->on( 'application.rejected', static function ( $payload ) use ( $auto_close ) {
+			$auto_close( $payload, 'application_rejected' );
+		} );
+
 		add_action( 'init', array( $this, 'maybe_upgrade' ), 2 );
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'init', static function () {

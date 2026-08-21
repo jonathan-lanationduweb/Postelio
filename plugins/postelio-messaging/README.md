@@ -69,10 +69,23 @@ Messages immuables (pas d'édition). Suppression = **logique** (`status=deleted`
 via événements/contrats — non implémenté ici.
 
 ## Contexte figé / workflow
-La conversation reste consultable si l'offre expire/est pourvue/archivée, si l'entreprise
-change de nom (nom courant relu via `CompanyDirectory`), ou si la candidature passe
-selected/rejected. **Retrait de candidature (V1)** : historique conservé, conversation
-non auto-fermée (fermeture = action explicite) — blocage d'envoi sur retrait `À VALIDER`.
+La conversation reste **toujours consultable** si l'offre expire/est pourvue/archivée, si
+l'entreprise change de nom (nom courant relu via `CompanyDirectory`), ou si la candidature
+change d'état — l'historique n'est jamais altéré.
+
+**Fermeture automatique sur candidature terminale (décision V1 Lot 07).**
+- Candidature `rejected` **ou** `withdrawn` → la conversation liée passe automatiquement en
+  `closed` (**lecture seule**) : plus aucun envoi possible (409), historique conservé.
+  Implémenté en écoutant les événements `application.rejected` / `application.withdrawn`
+  (`MessagingService::auto_close_for_application`, idempotent, `reason` auditée).
+- Candidature `selected` → **ne ferme PAS** la conversation (reste `active`, envoi possible).
+
+## Participants & fermeture manuelle
+Tout recruteur **membre** de l'entreprise peut lire et répondre (participant créé
+paresseusement, curseur de lecture individuel). En revanche la **fermeture manuelle**
+(`POST …/close`) est réservée au **propriétaire (`owner`) de l'entreprise** (via
+`CompanyDirectory::role_of`) ou à un modérateur (`pst_moderate_content`) — jamais à un
+simple recruteur membre ni au candidat (→ 403).
 
 ## Anti-spam
 Rate limiting **configurable** (`postelio/messaging/rate_limit_per_min`, 20/min) via

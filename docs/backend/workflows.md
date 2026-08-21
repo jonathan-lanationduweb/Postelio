@@ -138,10 +138,18 @@ d'une offre de **son** entreprise). Aucun contact arbitraire ; **1 conversation 
 candidature** (unique en base, idempotent en concurrence). Le candidat n'ouvre pas de
 conversation lui-même — il répond dès qu'elle existe.
 
-**Statut conversation :** `active → closed` (recruteur/modo ; envoi refusé → 409),
-`closed → active` (réouverture), `active/closed → archived`. La lecture reste toujours
-possible (même après fermeture, offre pourvue, candidature sélectionnée/rejetée/retirée :
-**contexte gelé**). Émet `conversation.created|read|closed`.
+**Statut conversation :** `active → closed`, `closed → active` (réouverture),
+`active/closed → archived`. La lecture reste **toujours** possible (contexte gelé). Émet
+`conversation.created|read|closed`.
+
+**Fermeture manuelle (décision V1) :** réservée au **propriétaire (`owner`) de
+l'entreprise** ou à un modérateur (`pst_moderate_content`) — pas à un recruteur membre
+lambda ni au candidat (→ 403).
+
+**Fermeture automatique (décision V1) :** une candidature qui devient **`rejected` ou
+`withdrawn`** ferme automatiquement la conversation liée (lecture seule, envoi → 409,
+historique conservé) — via écoute de `application.rejected`/`application.withdrawn`. Une
+candidature **`selected` ne ferme PAS** la conversation.
 
 **Envoi :** exige `pst_send_message` **+** `pst_email_verified` ; la **lecture** ne
 requiert que `pst_send_message` (e-mail non vérifié autorisé). Rate-limité.

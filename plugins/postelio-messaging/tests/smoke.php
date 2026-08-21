@@ -142,6 +142,16 @@ foreach ( array( 'conversation.created', 'message.created', 'conversation.read' 
 	$t( "audit contient {$ev}", (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$audit} WHERE action = %s", $ev ) ) >= 1 );
 }
 
+echo "== Multi-recruteurs (membres) + fermeture réservée à l'owner ==\n";
+$recA2 = $mk( 'recruiter' ); $users[] = $recA2;
+( new MembershipRepository() )->add( $cidA, $recA2, MembershipRepository::ROLE_RECRUITER );
+$t( '2e recruteur membre lit la conversation', 200 === $req( 'GET', '/postelio/v1/me/conversations/' . $conv, null, $recA2 )['status'] );
+$rep2 = $req( 'POST', '/postelio/v1/me/conversations/' . $conv . '/messages', array( 'body' => 'Suivi par un second recruteur' ), $recA2 );
+$t( '2e recruteur membre peut répondre => 201', 201 === $rep2['status'] && 'recruiter' === ( $rep2['data']['data']['sender_role'] ?? '' ) );
+$t( 'candidat ne peut pas fermer => 403', 403 === $req( 'POST', '/postelio/v1/me/conversations/' . $conv . '/close', null, $candA )['status'] );
+$t( 'recruteur non-owner ne peut pas fermer => 403', 403 === $req( 'POST', '/postelio/v1/me/conversations/' . $conv . '/close', null, $recA2 )['status'] );
+$t( 'conversation toujours active après tentatives interdites', 201 === $req( 'POST', '/postelio/v1/me/conversations/' . $conv . '/messages', array( 'body' => 'toujours ouverte' ), $recA )['status'] );
+
 echo "== Fermeture + envoi refusé ==\n";
 $cl = $req( 'POST', '/postelio/v1/me/conversations/' . $conv . '/close', null, $recA );
 $t( 'close => 200 status closed', 200 === $cl['status'] && 'closed' === ( $cl['data']['data']['status'] ?? '' ) );
@@ -149,9 +159,40 @@ $t( 'envoi après fermeture => 409', 409 === $req( 'POST', '/postelio/v1/me/conv
 $t( 'historique toujours lisible après fermeture', 200 === $req( 'GET', '/postelio/v1/me/conversations/' . $conv . '/messages', null, $candA )['status'] );
 $t( 'audit contient conversation.closed', (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$audit} WHERE action = 'conversation.closed'" ) >= 1 );
 
+$appSvc = new AppSvc( new ApplicationRepository(), new AppHistory(), new AppNotes() );
+
+echo "== selected ne ferme PAS automatiquement la conversation ==\n";
+$candS = $mk( 'candidate' ); $users[] = $candS;
+$appS = $req( 'POST', '/postelio/v1/jobs/' . $ju . '/applications', array( 'screening_answers' => array() ), $candS )['data']['data']['uuid'];
+$convS = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appS . '/conversation', null, $recA )['data']['data']['uuid'];
+$appSvc->change_status( $recA, $appS, array( 'to' => 'selected' ) );
+$statusS = $convRepo->get_by_application( (int) ( new ApplicationRepository() )->get_by_uuid( $appS )['id'] )['status'];
+$t( 'candidature selected => conversation NON fermée (reste active)', 'active' === $statusS );
+$t( 'envoi encore possible après selected => 201', 201 === $req( 'POST', '/postelio/v1/me/conversations/' . $convS . '/messages', array( 'body' => 'félicitations' ), $recA )['status'] );
+
+echo "== Candidature rejected/withdrawn => conversation fermée auto (lecture seule) ==\n";
+// rejected (action recruteur)
+$candR = $mk( 'candidate' ); $users[] = $candR;
+$appRej = $req( 'POST', '/postelio/v1/jobs/' . $ju . '/applications', array( 'screening_answers' => array() ), $candR )['data']['data']['uuid'];
+$convR = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appRej . '/conversation', null, $recA )['data']['data']['uuid'];
+$appSvc->change_status( $recA, $appRej, array( 'to' => 'rejected' ) );
+$statusR = $convRepo->get_by_application( (int) ( new ApplicationRepository() )->get_by_uuid( $appRej )['id'] )['status'];
+$t( 'rejected => conversation fermée automatiquement', 'closed' === $statusR );
+$t( 'rejected => envoi refusé (409)', 409 === $req( 'POST', '/postelio/v1/me/conversations/' . $convR . '/messages', array( 'body' => 'après rejet' ), $recA )['status'] );
+$t( 'rejected => historique toujours consultable (candidat)', 200 === $req( 'GET', '/postelio/v1/me/conversations/' . $convR . '/messages', null, $candR )['status'] );
+$t( 'audit conversation.closed (reason application_rejected)', (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$audit} WHERE action = 'conversation.closed' AND metadata LIKE '%application_rejected%'" ) >= 1 );
+// withdrawn (action candidat)
+$candW = $mk( 'candidate' ); $users[] = $candW;
+$appWit = $req( 'POST', '/postelio/v1/jobs/' . $ju . '/applications', array( 'screening_answers' => array() ), $candW )['data']['data']['uuid'];
+$convW = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appWit . '/conversation', null, $recA )['data']['data']['uuid'];
+$appSvc->withdraw( $candW, $appWit );
+$statusW = $convRepo->get_by_application( (int) ( new ApplicationRepository() )->get_by_uuid( $appWit )['id'] )['status'];
+$t( 'withdrawn => conversation fermée automatiquement', 'closed' === $statusW );
+$t( 'withdrawn => envoi refusé (409)', 409 === $req( 'POST', '/postelio/v1/me/conversations/' . $convW . '/messages', array( 'body' => 'après retrait' ), $recA )['status'] );
+$t( 'withdrawn => historique toujours consultable (candidat)', 200 === $req( 'GET', '/postelio/v1/me/conversations/' . $convW . '/messages', null, $candW )['status'] );
+
 echo "== Historique préservé après workflow (offre pourvue + candidature sélectionnée) ==\n";
 ( new JobRepository() )->set_status( $jid, 'filled' );
-$appSvc = new AppSvc( new ApplicationRepository(), new AppHistory(), new AppNotes() );
 $appSvc->change_status( $recA, $appU, array( 'to' => 'review' ) );
 $appSvc->change_status( $recA, $appU, array( 'to' => 'selected' ) );
 $t( 'conversation consultable malgré offre pourvue + sélection (candidat)', 200 === $req( 'GET', '/postelio/v1/me/conversations/' . $conv, null, $candA )['status'] );

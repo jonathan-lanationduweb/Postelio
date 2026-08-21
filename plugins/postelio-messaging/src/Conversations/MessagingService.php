@@ -14,6 +14,7 @@ namespace Postelio\Messaging\Conversations;
 
 use Postelio\Applications\Api\ApplicationDirectory;
 use Postelio\Companies\Api\CompanyDirectory;
+use Postelio\Companies\Members\MembershipRepository;
 use Postelio\Core\ApiError;
 use Postelio\Core\Plugin as Core;
 use Postelio\Users\Api\UserDirectory;
@@ -196,17 +197,46 @@ final class MessagingService {
 	}
 
 	/**
-	 * Ferme la conversation (recruteur/admin). @return array<string,mixed>
+	 * Ferme la conversation manuellement. Réservé au **propriétaire (owner)** de
+	 * l'entreprise ou à un modérateur/admin — jamais à un simple recruteur membre
+	 * ni au candidat (décision V1 Lot 07). @return array<string,mixed>
 	 */
 	public function close( int $user_id, string $uuid ): array {
 		$acc = $this->accessible_or_fail( $user_id, $uuid );
-		if ( self::ROLE_RECRUITER !== $acc['role'] && ! ( function_exists( 'current_user_can' ) && current_user_can( 'pst_moderate_content' ) ) ) {
-			throw ApiError::forbidden( 'Fermeture réservée à l\'entreprise.' );
+		$c   = $acc['conversation'];
+
+		$is_admin = function_exists( 'current_user_can' ) && current_user_can( 'pst_moderate_content' );
+		$is_owner = self::ROLE_RECRUITER === $acc['role']
+			&& MembershipRepository::ROLE_OWNER === CompanyDirectory::role_of( (int) $c['company_id'], $user_id );
+		if ( ! $is_admin && ! $is_owner ) {
+			throw ApiError::forbidden( 'Fermeture réservée au propriétaire de l\'entreprise.' );
 		}
-		$c = $acc['conversation'];
+
 		$this->conversations->set_status( (int) $c['id'], ConversationStateMachine::CLOSED );
-		$this->emit( 'conversation.closed', (int) $c['id'], array() );
+		$this->emit( 'conversation.closed', (int) $c['id'], array( 'conversation_uuid' => $c['public_uuid'], 'reason' => 'manual' ) );
 		return $this->conversations->get( (int) $c['id'] );
+	}
+
+	/**
+	 * Fermeture **automatique système** de la conversation liée à une candidature
+	 * devenue terminale (`withdrawn`/`rejected`). Aucune vérification de capability :
+	 * déclenchée par un événement applicatif, pas par un utilisateur. La conversation
+	 * reste consultable (lecture seule) ; l'historique est conservé.
+	 */
+	public function auto_close_for_application( int $application_id, string $reason ): void {
+		if ( $application_id <= 0 ) {
+			return;
+		}
+		$c = $this->conversations->get_by_application( $application_id );
+		if ( null === $c ) {
+			return;
+		}
+		$status = (string) $c['status'];
+		if ( ConversationStateMachine::CLOSED === $status || ConversationStateMachine::ARCHIVED === $status ) {
+			return; // déjà fermée/archivée : idempotent
+		}
+		$this->conversations->set_status( (int) $c['id'], ConversationStateMachine::CLOSED );
+		$this->emit( 'conversation.closed', (int) $c['id'], array( 'conversation_uuid' => $c['public_uuid'], 'reason' => $reason ) );
 	}
 
 	/**
@@ -285,7 +315,7 @@ final class MessagingService {
 	 * @return array<string, mixed>
 	 */
 	private function audit_safe( array $payload ): array {
-		$keep = array( 'conversation_uuid', 'application_uuid', 'company_id', 'sender_role', 'recipient_role' );
+		$keep = array( 'conversation_uuid', 'application_uuid', 'company_id', 'sender_role', 'recipient_role', 'reason' );
 		$out  = array();
 		foreach ( $keep as $k ) {
 			if ( isset( $payload[ $k ] ) ) {

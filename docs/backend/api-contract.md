@@ -150,7 +150,10 @@ Erreur :
   `pst_email_verified`**. err: `validation_error` (vide/trop long), `invalid_transition`
   (conversation fermée → 409), `rate_limited`.
 - `POST /me/conversations/{uuid}/read` — marquer lu (curseur monotone `last_read_message_id`).
-- `POST /me/conversations/{uuid}/close` — fermer (recruteur/modérateur). R: participant recruteur.
+- `POST /me/conversations/{uuid}/close` — fermeture **manuelle**, réservée au
+  **propriétaire (`owner`) de l'entreprise** ou modérateur (`pst_moderate_content`) ; un
+  recruteur membre lambda ou le candidat → **403**. *(Fermeture **automatique** en plus si
+  la candidature devient `rejected`/`withdrawn` ; `selected` ne ferme pas.)*
 - Contrat sortant : `\Postelio\Messaging\Api\MessagingDirectory` (`unread_count`,
   `get_conversation_context`, `can_message`, `close_conversation`).
 
