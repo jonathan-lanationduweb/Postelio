@@ -42,6 +42,7 @@ wp_postelio_cvs                    wp_postelio_documents
 wp_postelio_cv_snapshots           wp_postelio_conversations
 wp_postelio_conversation_participants
 wp_postelio_messages               wp_postelio_interviews
+wp_postelio_interview_history
 wp_postelio_notifications          wp_postelio_payments
 wp_postelio_invoices               wp_postelio_renewals
 wp_postelio_webhook_events         wp_postelio_moderation_reports
@@ -234,13 +235,28 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
   frequence (immediate|quotidienne|hebdomadaire), active (bool), created_at, last_run_at.
   **Requis minimum :** metier + ville. **Index :** user_id, active.
 
-## Interview
+## Interview — `wp_postelio_interviews` (implémenté Lot 08)
 - **Propriétaire :** interviews. **Table dédiée.**
-- **Champs :** id, application_id, job_id, candidate_id, company_id, date, heure, duree,
-  format (visio|sur_place|telephone), lien, adresse, contact, instructions, telephone,
-  statut, creneau_propose (JSON), created_at.
-- **Statut :** proposed|pending_candidate|confirmed|reschedule_requested|rejected|
-  cancelled|completed. **Index :** application_id, candidate_id, company_id, date.
+- **Champs :** id, `public_uuid`, application_id, application_uuid, job_uuid,
+  candidate_user_id, company_id, company_uuid, created_by, `type` (`video|onsite|phone`),
+  `status`, `scheduled_at` (**DATETIME UTC**), duration_minutes (15–240), `timezone`
+  (fuseau métier IANA), `location_data`/`video_data`/`phone_data` (**JSON**, seule celle du
+  type est remplie), instructions, `proposed_scheduled_at`/`proposed_by`/`proposed_message`
+  (re-créneau en attente), candidate_response_at, created_at, updated_at, cancelled_at.
+- **Dates :** entrée ISO 8601, stockage **UTC** + fuseau conservé (DST géré). Aucun ID
+  interne exposé (API = UUID).
+- **Statut :** `proposed|confirmed|reschedule_requested|declined|cancelled|completed`
+  (pas de `pending_candidate` : `proposed` = en attente candidat).
+- **Index :** `UNIQUE public_uuid`, application_id, candidate_user_id, company_id, status,
+  scheduled_at. **Un seul entretien actif par candidature** (contrainte applicative).
+
+## InterviewHistory — `wp_postelio_interview_history` (implémenté Lot 08)
+- **Propriétaire :** interviews. **Table dédiée, append-only.**
+- **Champs :** id, interview_id, interview_uuid, actor_user_id, actor_role
+  (`candidate|recruiter|system`), action (`created|confirmed|declined|reschedule_requested|
+  rescheduled|modified|cancelled|completed`), from_status, to_status, `metadata` (JSON
+  **minimal** — jamais d'instructions ni de coordonnées), created_at.
+- **Index :** interview_id, interview_uuid.
 
 ## Conversation — `wp_postelio_conversations` (implémenté Lot 07)
 - **Propriétaire :** messaging. **Table dédiée.**

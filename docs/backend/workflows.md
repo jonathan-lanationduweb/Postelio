@@ -66,23 +66,35 @@ Règles :
 - Chaque transition écrit une ligne `ApplicationHistory` + émet
   `application.status_changed` (+ `application.rejected`/`selected`).
 
-## Entretien (Interview)
+## Entretien (Interview) — implémenté Lot 08
 
-États : `proposed → pending_candidate → confirmed`, `proposed → reschedule_requested`,
-`proposed → rejected`, `confirmed → completed`, `* → cancelled`.
+Machine canonique **V1** (pas de `pending_candidate` redondant : `proposed` = en attente
+candidat). Toutes les transitions sont contrôlées serveur (`InterviewStateMachine`).
 
-| Transition | Autorisé par |
-|---|---|
-| (création) proposed | recruteur |
-| proposed → confirmed | candidat |
-| proposed → reschedule_requested | candidat (propose un créneau) |
-| reschedule_requested → proposed | recruteur (nouvelle proposition) |
-| proposed → rejected | candidat |
-| proposed/confirmed → cancelled | recruteur (ou candidat côté sien) |
-| confirmed → completed | système (après la date) / recruteur |
+États : `proposed`, `confirmed`, `reschedule_requested`, `declined`, `cancelled`,
+`completed` (les 3 derniers terminaux).
 
-Infos par format ([data-model.md](data-model.md#interview)) : visio (lien+instructions),
-sur place (adresse+contact+accès), téléphone (numéro/indication).
+| Transition | Autorisé par | Note |
+|---|---|---|
+| (création) → proposed | recruteur | candidature de son entreprise, état planifiable, e-mail vérifié |
+| proposed → confirmed | candidat | |
+| proposed → declined | candidat | (remplace `rejected`) |
+| proposed/confirmed → reschedule_requested | candidat | propose un autre créneau (le créneau initial est conservé) |
+| reschedule_requested → confirmed | recruteur | **accepte** le créneau proposé (`accept-reschedule`) |
+| reschedule_requested → proposed | recruteur | **contre-propose** (via `PUT` modifier) |
+| confirmed → proposed | recruteur | **modification substantielle** (date/type/lieu/lien) ⇒ **reconfirmation** candidat |
+| proposed/confirmed/reschedule_requested → cancelled | recruteur | (candidat : voir À VALIDER) |
+| confirmed → completed | recruteur/admin | marquage manuel (cron futur) |
+
+- **Contexte candidature obligatoire** (via `ApplicationDirectory`) ; pipeline candidature
+  → `interview` **à la proposition** ; candidature terminale (selected/rejected/withdrawn)
+  ⇒ proposition refusée `409`. **Un seul entretien actif par candidature** à la fois.
+- **Types** ([data-model.md](data-model.md#interview)) : visio (URL validée), sur place
+  (adresse structurée, ville préremplie), téléphone (numéro + qui appelle). Dates ISO 8601
+  stockées **UTC** + fuseau métier. Hors périmètre ⇒ 404.
+- **Offre expirée** : n'empêche pas un entretien tant que la candidature est active (§33).
+- **À VALIDER :** annulation par le candidat après confirmation ; plusieurs entretiens
+  actifs simultanés ; cas offre `filled`/`archived`/`suspended`.
 
 ## Entreprise (Company) — vérification
 

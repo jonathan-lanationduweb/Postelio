@@ -38,12 +38,13 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 | `conversation.read` | messaging | (métrique) — *Lot 07 ; remplace `message.read`* |
 | `conversation.closed` | messaging | notifications, core(audit) — *Lot 07* |
 | `message.reported` | messaging | moderation, core(audit) — *hook futur* |
-| `interview.proposed` | interviews | messaging (message système), notifications (candidat), core(audit) |
-| `interview.confirmed` | interviews | messaging, notifications (recruteur), applications, core(audit) |
-| `interview.rescheduled` | interviews | notifications (recruteur), core(audit) |
-| `interview.rejected` | interviews | notifications (recruteur), core(audit) |
-| `interview.cancelled` | interviews | notifications (candidat), core(audit) |
-| `interview.completed` | interviews (cron) | notifications, core(audit) |
+| `interview.proposed` | interviews | notifications (candidat), core(audit) — *Lot 08* |
+| `interview.confirmed` | interviews | notifications (recruteur), core(audit) — *Lot 08* |
+| `interview.reschedule_requested` | interviews | notifications (recruteur), core(audit) — *Lot 08 ; candidat propose un autre créneau* |
+| `interview.rescheduled` | interviews | notifications (deux côtés), core(audit) — *Lot 08 ; créneau changé/accepté* |
+| `interview.declined` | interviews | notifications (recruteur), core(audit) — *Lot 08 ; remplace `interview.rejected`* |
+| `interview.cancelled` | interviews | notifications (candidat), core(audit) — *Lot 08* |
+| `interview.completed` | interviews | notifications, core(audit) — *Lot 08 ; marquage manuel (cron futur)* |
 | `notification.created` | notifications | (canal e-mail si applicable) |
 | `payment.succeeded` | billing | jobs (appliquer renouvellement), notifications, core(audit) |
 | `payment.failed` | billing | notifications (recruteur), core(audit) |

@@ -67,8 +67,11 @@ capability. Le front n'accorde aucun droit.
 | Changer le statut d'une candidature | ❌ | ✅ | ✅ |
 | Retirer sa candidature | ✅ | ❌ | ✅ |
 | Notes recruteur | ❌ | ✅ | ✅ (audit) |
-| Confirmer un entretien | ✅ | ❌ | ✅ |
-| Proposer un entretien | ❌ | ✅ | ✅ |
+| Voir ses entretiens | ✅ (les siens) | ✅ (ceux de sa company) | ✅ |
+| Proposer un entretien | ❌ | ✅ (candidature de sa company) | ✅ |
+| Confirmer / refuser un entretien | ✅ (le sien) | ❌ | ✅ |
+| Proposer un autre créneau | ✅ (le sien) | ❌ | ✅ |
+| Modifier / annuler / marquer réalisé | ❌ | ✅ (ceux de sa company) | ✅ |
 | Vérifier une entreprise | ❌ | ❌ | ✅ |
 | Modérer un contenu | ❌ | ❌ | ✅ / modo |
 | Télécharger un CV | ✅ (le sien) | ✅ (candidature reçue) | ✅ |
@@ -85,6 +88,13 @@ capability. Le front n'accorde aucun droit.
   **propriétaire (`owner`) de l'entreprise** ou à un modérateur (`pst_moderate_content`)
   — pas à un recruteur membre lambda. Fermeture **automatique** si la candidature devient
   `rejected`/`withdrawn` (lecture seule) ; `selected` ne ferme pas.
+- **Entretiens (Lot 08)** : nouvelles capabilities `pst_view_own_interviews` (candidat,
+  lecture) et `pst_manage_company_interviews` (recruteur, lecture + gestion), en plus des
+  capabilities d'action existantes (`pst_propose_interview`, `pst_confirm_interview`,
+  `pst_reschedule_interview`, `pst_reject_interview` = decline, `pst_cancel_interview`).
+  La **lecture** n'exige pas l'e-mail vérifié ; **proposer/confirmer/reprogrammer/modifier/
+  annuler/réaliser** exigent `pst_email_verified`. Un entretien est toujours rattaché à une
+  candidature (jamais arbitraire) ; accès hors périmètre → **404**.
 - **Accès aux CV** : le candidat (propriétaire) et **uniquement** les recruteurs d'une
   entreprise ayant reçu une candidature avec ce CV (via snapshot). Admin pour audit.
 - **Coordonnées candidat** : soumises à `CandidateProfile.visibility` (email/tel) —

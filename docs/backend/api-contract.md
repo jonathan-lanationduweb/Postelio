@@ -157,9 +157,24 @@ Erreur :
 - Contrat sortant : `\Postelio\Messaging\Api\MessagingDirectory` (`unread_count`,
   `get_conversation_context`, `can_message`, `close_conversation`).
 
-### Entretiens — `postelio-interviews`
-- `POST /interviews` (recruteur propose) · `GET /interviews/me`.
-- `POST /interviews/{id}/confirm|reschedule|reject|cancel` (voir workflow). 
+### Entretiens — `postelio-interviews` (identification par **UUID**, D2 ; implémenté Lot 08)
+> Entretien lié à une **candidature** (jamais arbitraire) ; types `video|onsite|phone` ;
+> dates ISO 8601 stockées **UTC** + fuseau métier ; instructions texte seul (XSS inerte) ;
+> hors périmètre → **404**. Lecture sans e-mail vérifié ; actions sensibles → `pst_email_verified`.
+- Candidat : `GET /me/interviews` (filtres `status`,`from`,`to`,`application_uuid`,
+  pagination) · `GET /me/interviews/{uuid}` (avec historique) ·
+  `POST /me/interviews/{uuid}/confirm` · `.../decline` · `.../reschedule` (propose un autre
+  créneau `{scheduled_at, message?}`). R candidat : `pst_view_own_interviews` (lecture),
+  `pst_confirm_interview`/`pst_reschedule_interview` **+ `pst_email_verified`**,
+  `pst_reject_interview` (decline).
+- Recruteur : `GET /companies/me/interviews[/{uuid}]` (R `pst_manage_company_interviews`) ;
+  `POST /companies/me/applications/{application_uuid}/interviews` (proposer ;
+  `pst_propose_interview` + vérifié ; `409` si candidature terminale ou entretien actif
+  déjà présent) ; `PUT /companies/me/interviews/{uuid}` (modifier) ;
+  `POST .../{uuid}/accept-reschedule` (accepter le créneau proposé par le candidat) ;
+  `POST .../{uuid}/cancel` ; `POST .../{uuid}/complete`.
+- Contrat sortant : `\Postelio\Interviews\Api\InterviewDirectory` (`get_context`,
+  `upcoming_count`, `has_active_for_application`, `history`).
 
 ### Notifications — `postelio-notifications`
 - `GET /me/notifications` · `POST /me/notifications/read` · `POST /me/notifications/read-all`.

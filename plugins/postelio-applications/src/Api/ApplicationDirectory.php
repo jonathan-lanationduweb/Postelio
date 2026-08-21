@@ -57,6 +57,17 @@ final class ApplicationDirectory {
 	}
 
 	/**
+	 * La candidature est-elle dans un état permettant de planifier un entretien ?
+	 * Vrai pour les états « actifs » du pipeline (new/review/shortlisted/interview) ;
+	 * faux pour les états terminaux (selected/rejected/withdrawn). L'autorité de l'état
+	 * reste dans postelio-applications (utilisé par postelio-interviews).
+	 */
+	public static function is_schedulable( string $app_uuid ): bool {
+		$c = self::context( $app_uuid );
+		return null !== $c && in_array( $c['status'], \Postelio\Applications\Applications\ApplicationStateMachine::ACTIVE, true );
+	}
+
+	/**
 	 * Fait évoluer le pipeline vers `interview` (utilisé par postelio-interviews).
 	 * Respecte permissions/transitions via le service ; n'écrit jamais en direct.
 	 *
