@@ -5,11 +5,21 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 ## 1. Authentification
 - **Web (thème WP)** : session/cookies WordPress + **nonce REST** (`X-WP-Nonce`) sur
   toute mutation.
-- **App Tauri / clients API** : **token applicatif** Bearer (JWT signé ou Application
-  Passwords WP). Émission par `/auth`, expiration + refresh. Jamais de mot de passe stocké
-  côté client.
-- **Vérification e-mail** obligatoire avant certaines actions (postuler, publier) — `À VALIDER`.
-- **Reset password** via le flux WordPress natif.
+- **App Tauri / clients API** : **jeton applicatif Bearer** émis par `/auth`, expiration
+  + refresh, révocable. Implémentation V1 : jetons opaques maison (voir §9). Jamais de
+  mot de passe ni de secret de jeton stocké côté client en clair.
+- **Vérification e-mail** (décision V1 — **D12**) : **obligatoire pour les actions
+  sensibles**. Un compte non vérifié peut s'inscrire, se connecter, compléter son profil
+  et consulter le public ; il **ne peut pas** postuler / écrire à une entreprise
+  (candidat) ni publier une offre / contacter un candidat / mener les actions de
+  recrutement (recruteur). Contrôle **centralisé** via la capability virtuelle
+  **`pst_email_verified`** (accordée dynamiquement si e-mail vérifié + compte actif) :
+  les plugins métier composent `Guard::require_all('<cap_métier>', 'pst_email_verified')`.
+  L'envoi réel des e-mails relèvera de `postelio-notifications`. Les durées/rappels
+  restent `À VALIDER`.
+- **Reset password** via le flux WordPress natif (`get/check_password_reset_key`,
+  `reset_password`). Jamais de jeton de réinitialisation ni de session dans une URL
+  autre que le lien à usage unique envoyé par e-mail.
 - **2FA** (décision V1 — D8) : **prévue pour les comptes administrateurs** (`postelio_admin`) ;
   **non obligatoire** pour candidat/recruteur en V1. Méthode (TOTP) `À VALIDER`.
 
@@ -108,3 +118,35 @@ lecture admin uniquement.
 Aucune clé secrète commitée (voir [implementation-plan.md](implementation-plan.md#environnements)).
 Clés provider (Stripe, e-mail, Sirene) via variables d'environnement / `wp-config`
 hors dépôt.
+
+## 9. Jetons applicatifs (Bearer)
+
+Implémentés par `postelio-users` pour les clients non-cookie (future app Tauri). Le
+web continue d'utiliser cookies WordPress + nonce.
+
+**Format** : `"{uid}.{tid}.{secret}"` — `uid` = ID utilisateur (non secret), `tid` =
+identifiant de jeton (64 bits), `secret` = 256 bits.
+
+**Pourquoi ce choix (V1)** : zéro dépendance externe (pas de lib JWT), révocation
+serveur immédiate et par-session (impossible avec un JWT stateless sans liste de
+révocation), rotation simple, stockage minimal. Alternative écartée pour la V1 :
+JWT signé (révocation plus complexe) et Application Passwords WP (pensées pour
+l'utilisateur humain, pas pour un flux d'app).
+
+**Garanties** :
+- `tid`/`secret` générés via **CSPRNG** (`random_bytes`) — entropie 64/256 bits ;
+- le **secret brut n'est jamais stocké** : seul son **hash SHA-256** l'est (usermeta),
+  avec une **expiration** (14 j par défaut, filtre `postelio/auth_token_ttl`) ;
+- le secret **n'apparaît jamais** dans les logs ni l'audit log, ni dans une URL
+  (en-tête `Authorization` uniquement) ;
+- validation en **temps constant** (`hash_equals`) ; **expiration vérifiée serveur** ;
+- **révocation réelle** (suppression de l'entrée) ; `refresh` **invalide** l'ancien ;
+- **`revoke_all`** = déconnexion globale (endpoint `/auth/logout-all`, suppression de
+  compte) ;
+- **intégrité** : un `uid`/`tid` falsifié ne donne accès à rien — le hash stocké est lié
+  au triplet exact et le secret reste inconnu de l'attaquant ; jeton **malformé** rejeté.
+
+**Limites (assumées V1)** : jetons stockés en `usermeta` (suffisant à l'échelle visée ;
+une table dédiée pourra suivre si le volume l'exige) ; pas de rotation automatique de
+secret ; révocation d'un jeton précis nécessite son `tid` (l'utilisateur peut toujours
+tout révoquer via `/auth/logout-all`).

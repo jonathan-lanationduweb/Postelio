@@ -56,12 +56,16 @@ final class ProfileController extends Controller {
 			),
 		) );
 
-		register_rest_route( $ns, '/candidates/(?P<id>\d+)', array(
+		// Ressource sensible exposée via API : identifiée par UUID public (D2),
+		// jamais par l'ID numérique interne.
+		register_rest_route( $ns, '/candidates/(?P<uuid>[0-9a-fA-F-]{36})', array(
 			'methods'             => 'GET',
 			'permission_callback' => Guard::require_cap( 'pst_view_company_applications' ),
 			'callback'            => $this->guarded( array( $this, 'get_candidate_recruiter_view' ) ),
 			'args'                => array(
-				'id' => array( 'validate_callback' => static fn( $v ) => ctype_digit( (string) $v ) ),
+				'uuid' => array(
+					'validate_callback' => static fn( $v ) => (bool) preg_match( '/^[0-9a-fA-F-]{36}$/', (string) $v ),
+				),
 			),
 		) );
 	}
@@ -109,8 +113,8 @@ final class ProfileController extends Controller {
 	}
 
 	public function get_candidate_recruiter_view( \WP_REST_Request $request ): \WP_REST_Response {
-		$id      = (int) $request->get_param( 'id' );
-		$profile = $this->candidates->get_by_user( $id );
+		$uuid    = (string) $request->get_param( 'uuid' );
+		$profile = $this->candidates->get_by_uuid( $uuid );
 		if ( null === $profile ) {
 			throw ApiError::not_found();
 		}

@@ -13,6 +13,7 @@ use Postelio\Core\Plugin as Core;
 use Postelio\Users\Auth\AuthController;
 use Postelio\Users\Auth\TokenAuthenticator;
 use Postelio\Users\Auth\TokenService;
+use Postelio\Users\Migrations\AddCandidateUuid;
 use Postelio\Users\Migrations\CreateCandidateProfilesTable;
 use Postelio\Users\Migrations\CreateRecruiterProfilesTable;
 use Postelio\Users\Profiles\CandidateProfileRepository;
@@ -22,6 +23,7 @@ use Postelio\Users\Settings\SettingsController;
 use Postelio\Users\Settings\SettingsService;
 use Postelio\Users\Users\AccountService;
 use Postelio\Users\Users\UserPresenter;
+use Postelio\Users\Verification\EmailVerification;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -60,7 +62,11 @@ final class Plugin {
 
 	/** @return CreateCandidateProfilesTable[]|CreateRecruiterProfilesTable[] */
 	private static function migrations(): array {
-		return array( new CreateCandidateProfilesTable(), new CreateRecruiterProfilesTable() );
+		return array(
+			new CreateCandidateProfilesTable(),
+			new CreateRecruiterProfilesTable(),
+			new AddCandidateUuid(),
+		);
 	}
 
 	public function boot(): void {
@@ -90,6 +96,9 @@ final class Plugin {
 
 		// 3. Authentification applicative (Bearer) — complète les cookies WP.
 		( new TokenAuthenticator( $this->tokens ) )->register();
+
+		// 3b. Capability virtuelle `pst_email_verified` (contrat pour les lots futurs).
+		( new EmailVerification() )->register();
 
 		// 4. Enrichissement transversal de /me (le core ignore le domaine users).
 		add_filter( 'postelio/me', array( $this->presenter, 'enrich_me' ), 10, 2 );

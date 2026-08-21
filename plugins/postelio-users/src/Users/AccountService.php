@@ -229,7 +229,15 @@ final class AccountService {
 		);
 		update_user_meta( $user_id, self::META_STATUS, self::STATUS_DELETED );
 		delete_user_meta( $user_id, self::META_EMAIL_VERIFY );
+		delete_user_meta( $user_id, self::META_EMAIL_VERIFIED );
 
+		// Rend la connexion impossible : mot de passe aléatoire non communiqué +
+		// destruction de toutes les sessions cookie de l'utilisateur.
+		wp_set_password( wp_generate_password( 64, true, true ), $user_id );
+		$sessions = \WP_Session_Tokens::get_instance( $user_id );
+		$sessions->destroy_all();
+
+		// Révoque tous les jetons applicatifs (Bearer).
 		( new TokenService() )->revoke_all( $user_id );
 
 		Core::instance()->events()->emit(

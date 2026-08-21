@@ -74,7 +74,7 @@ final class CandidateProfileRepository {
 	}
 
 	/**
-	 * Crée la ligne de profil vide pour un nouvel utilisateur.
+	 * Crée la ligne de profil vide pour un nouvel utilisateur (avec UUID public).
 	 */
 	public function create_for( int $user_id ): void {
 		global $wpdb;
@@ -86,13 +86,31 @@ final class CandidateProfileRepository {
 			self::table(),
 			array(
 				'user_id'            => $user_id,
+				'public_uuid'        => wp_generate_uuid4(),
 				'profile_visibility' => 'recruteurs',
 				'statut_visible'     => 1,
 				'created_at'         => $now,
 				'date_maj'           => $now,
 			),
-			array( '%d', '%s', '%d', '%s', '%s' )
+			array( '%d', '%s', '%s', '%d', '%s', '%s' )
 		);
+	}
+
+	/**
+	 * Recherche par UUID public (identifiant exposé via l'API).
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public function get_by_uuid( string $uuid ): ?array {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE public_uuid = %s', $uuid ),
+			ARRAY_A
+		);
+		if ( ! $row ) {
+			return null;
+		}
+		return $this->decode( $row );
 	}
 
 	/**
@@ -163,6 +181,9 @@ final class CandidateProfileRepository {
 
 		$view = $profile;
 		unset( $view['blocked_companies'] );
+
+		// N'expose PAS les identifiants internes : l'UUID public est la seule référence.
+		unset( $view['id'], $view['user_id'] );
 
 		if ( ! $tel_ok ) {
 			$view['telephone'] = null;

@@ -58,6 +58,11 @@ final class AuthController extends Controller {
 			'permission_callback' => $public,
 			'callback'            => $this->guarded( array( $this, 'do_logout' ) ),
 		) );
+		register_rest_route( $ns, '/auth/logout-all', array(
+			'methods'             => 'POST',
+			'permission_callback' => $auth,
+			'callback'            => $this->guarded( array( $this, 'do_logout_all' ) ),
+		) );
 		register_rest_route( $ns, '/auth/lost-password', array(
 			'methods'             => 'POST',
 			'permission_callback' => $public,
@@ -140,6 +145,13 @@ final class AuthController extends Controller {
 			wp_logout();
 		}
 		return $this->ok( array( 'logged_out' => true ) );
+	}
+
+	public function do_logout_all( \WP_REST_Request $request ): \WP_REST_Response {
+		$uid = get_current_user_id();
+		$this->tokens->revoke_all( $uid );          // tous les jetons Bearer
+		wp_destroy_all_sessions();                  // toutes les sessions cookie de l'utilisateur courant
+		return $this->ok( array( 'revoked_all' => true ) );
 	}
 
 	public function do_lost_password( \WP_REST_Request $request ): \WP_REST_Response {

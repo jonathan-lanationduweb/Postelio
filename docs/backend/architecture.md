@@ -124,6 +124,12 @@ dans les docs référencées. Les durées de conservation **RGPD restent `À VAL
 | D9 | **Paiement :** **Stripe** comme provider cible. | [integrations.md](integrations.md) |
 | D10 | **Vérification entreprise :** **Sirene / RNE** comme providers cibles. | [integrations.md](integrations.md) |
 | D11 | **Conservation RGPD :** durées **`À VALIDER`**, non inventées. | [security.md](security.md#6-rgpd) |
+| D12 | **Vérification e-mail obligatoire pour les actions sensibles** (postuler, écrire à une entreprise, publier une offre, contacter un candidat…). Contrôle centralisé via la capability virtuelle **`pst_email_verified`**. Inscription/connexion/profil/public restent ouverts sans vérification. | [security.md](security.md#1-authentification) |
+| D13 | **Jetons applicatifs Bearer opaques maison** (`uid.tid.secret`, hash-only, révocables) pour l'app ; JWT/Application Passwords écartés en V1. | [security.md](security.md#9-jetons-applicatifs-bearer) |
+
+> Réutilisation D2 (UUID public) : appliquée au profil candidat au Lot 02
+> (`/candidates/{uuid}`). Même principe à généraliser ensuite à companies, jobs,
+> applications, interviews, conversations.
 
 ## 7. Ce qui est HORS de ce lot
 

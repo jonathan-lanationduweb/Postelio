@@ -34,6 +34,7 @@ final class CreateCandidateProfilesTable implements Migration {
 		$sql = "CREATE TABLE {$table} (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			user_id BIGINT UNSIGNED NOT NULL,
+			public_uuid VARCHAR(36) NULL,
 			metier VARCHAR(150) NULL,
 			metiers_alt LONGTEXT NULL,
 			ville VARCHAR(150) NULL,
@@ -67,6 +68,7 @@ final class CreateCandidateProfilesTable implements Migration {
 			date_maj DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
 			PRIMARY KEY  (id),
 			UNIQUE KEY user_id (user_id),
+			UNIQUE KEY public_uuid (public_uuid),
 			KEY ville (ville),
 			KEY metier (metier),
 			KEY statut_recherche (statut_recherche)

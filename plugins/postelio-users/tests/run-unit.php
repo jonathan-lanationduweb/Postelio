@@ -91,21 +91,49 @@ check( 'seul le hash est stocké (pas le secret)', ! str_contains( wp_json_encod
 
 echo "== TokenService rejets ==\n";
 $parsed  = TokenService::parse( $iss['token'] );
+// mauvais secret
 $forged  = sprintf( '7.%s.%s', $parsed['tid'], 'mauvaissecret' );
 check( 'mauvais secret => 0', 0 === $svc->validate( $forged ) );
+// uid modifié (même tid+secret, autre uid) : pas d'entrée pour cet uid
+$uid_mod = sprintf( '8.%s.%s', $parsed['tid'], $parsed['secret'] );
+check( 'uid modifié => 0', 0 === $svc->validate( $uid_mod ) );
+// tid modifié
+$tid_mod = sprintf( '7.%s.%s', 'autretid', $parsed['secret'] );
+check( 'tid modifié => 0', 0 === $svc->validate( $tid_mod ) );
+// jeton inexistant / aléatoire / incomplet / malformé
 check( 'jeton inexistant => 0', 0 === $svc->validate( '7.absent.xxxx' ) );
+check( 'jeton aléatoire => 0', 0 === $svc->validate( bin2hex( random_bytes( 20 ) ) ) );
+check( 'jeton incomplet (2 parties) => 0', 0 === $svc->validate( '7.onlytwo' ) );
+check( 'jeton vide => 0', 0 === $svc->validate( '' ) );
+check( 'parse jeton incomplet => null', null === TokenService::parse( '7.onlytwo' ) );
 
 // Expiration : on force la date d'expiration dans le passé.
 $GLOBALS['__um'][7][ TokenService::META_KEY ][ $parsed['tid'] ]['expires'] = time() - 10;
 check( 'jeton expiré => 0', 0 === $svc->validate( $iss['token'] ) );
 
-echo "== TokenService refresh/revoke ==\n";
-$svc2  = new TokenService();
-$a     = $svc2->issue( 9 );
-$b     = $svc2->refresh( $a['token'] );
+echo "== TokenService révocation ==\n";
+$svcR = new TokenService();
+$rev  = $svcR->issue( 15 );
+check( 'jeton valide avant révocation', 15 === $svcR->validate( $rev['token'] ) );
+$svcR->revoke( $rev['token'] );
+check( 'jeton révoqué => 0', 0 === $svcR->validate( $rev['token'] ) );
+
+echo "== TokenService compte supprimé (revoke_all) ==\n";
+$svcD = new TokenService();
+$d1   = $svcD->issue( 16 );
+$d2   = $svcD->issue( 16 );
+$svcD->revoke_all( 16 ); // simule la suppression de compte
+check( 'jeton 1 d\'un compte supprimé => 0', 0 === $svcD->validate( $d1['token'] ) );
+check( 'jeton 2 d\'un compte supprimé => 0', 0 === $svcD->validate( $d2['token'] ) );
+
+echo "== TokenService refresh ==\n";
+$svc2 = new TokenService();
+$a    = $svc2->issue( 9 );
+$b    = $svc2->refresh( $a['token'] );
 check( 'refresh renvoie un nouveau jeton', $b && $b['token'] !== $a['token'] );
-check( 'ancien jeton invalidé', 0 === $svc2->validate( $a['token'] ) );
+check( 'ancien jeton invalidé par refresh', 0 === $svc2->validate( $a['token'] ) );
 check( 'nouveau jeton valide', 9 === $svc2->validate( $b['token'] ) );
+check( 'refresh d\'un jeton révoqué => null', null === $svc2->refresh( $a['token'] ) );
 $svc2->revoke_all( 9 );
 check( 'revoke_all invalide tout', 0 === $svc2->validate( $b['token'] ) );
 

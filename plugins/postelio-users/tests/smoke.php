@@ -60,7 +60,8 @@ foreach ( array( 'postelio_candidate_profiles', 'postelio_recruiter_profiles' ) 
 	$table = $wpdb->prefix . $s;
 	$t( "table {$table} existe", $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table );
 }
-$t( 'schema users = 2', (string) get_option( 'postelio_users_schema' ) === '2' );
+$t( 'schema users = 3', (string) get_option( 'postelio_users_schema' ) === '3' );
+$t( 'colonne public_uuid présente', (bool) $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$wpdb->prefix}postelio_candidate_profiles LIKE %s", 'public_uuid' ) ) );
 $t( 'module users dans le registry', Core::instance()->registry()->has( 'users' ) );
 
 echo "== Inscription ==\n";
@@ -104,6 +105,8 @@ $t( '/me déconnecté => 401', 401 === $r['status'] );
 echo "== Profil candidat (self) ==\n";
 $r = $req( 'GET', '/postelio/v1/candidates/me/profile', null, $cand_id );
 $t( 'GET profil candidat => 200', 200 === $r['status'] );
+$cand_uuid = (string) ( $r['data']['data']['public_uuid'] ?? '' );
+$t( 'profil expose un public_uuid (v4)', (bool) preg_match( '/^[0-9a-f-]{36}$/i', $cand_uuid ) );
 $before = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}postelio_audit_log WHERE action='candidate.profile_updated'" );
 $r = $req( 'PUT', '/postelio/v1/candidates/me/profile', array( 'metier' => 'Développeur', 'ville' => 'Lyon', 'a_propos' => 'Bonjour' ), $cand_id );
 $t( 'PUT profil candidat => 200', 200 === $r['status'] );
@@ -114,15 +117,20 @@ $t( 'événement candidate.profile_updated audité', $after === $before + 1 );
 echo "== Permissions ==\n";
 $r = $req( 'GET', '/postelio/v1/recruiters/me/profile', null, $cand_id );
 $t( 'candidat sur /recruiters/me/profile => 403', 403 === $r['status'] );
-$r = $req( 'GET', '/postelio/v1/candidates/' . $cand_id, null, $cand_id );
+$r = $req( 'GET', '/postelio/v1/candidates/' . $cand_uuid, null, $cand_id );
 $t( 'candidat sur vue recruteur => 403', 403 === $r['status'] );
 $r = $req( 'GET', '/postelio/v1/recruiters/me/profile', null, $rec_id );
 $t( 'recruteur sur son profil => 200', 200 === $r['status'] );
 
-echo "== Vue recruteur d'un candidat (visibilité) ==\n";
-$r = $req( 'GET', '/postelio/v1/candidates/' . $cand_id, null, $rec_id );
-$t( 'recruteur voit le candidat => 200', 200 === $r['status'] );
+echo "== Vue recruteur d'un candidat par UUID (D2) ==\n";
+$r = $req( 'GET', '/postelio/v1/candidates/' . $cand_uuid, null, $rec_id );
+$t( 'recruteur voit le candidat (UUID) => 200', 200 === $r['status'] );
+$t( 'réponse expose public_uuid', ( $r['data']['data']['public_uuid'] ?? '' ) === $cand_uuid );
+$t( 'réponse n\'expose PAS user_id interne', ! isset( $r['data']['data']['user_id'] ) );
+$t( 'réponse n\'expose PAS id interne', ! isset( $r['data']['data']['id'] ) );
 $t( 'téléphone masqué par défaut (visibility.tel absent)', empty( $r['data']['data']['telephone'] ) );
+$r = $req( 'GET', '/postelio/v1/candidates/' . wp_generate_uuid4(), null, $rec_id );
+$t( 'UUID inconnu => 404', 404 === $r['status'] );
 
 echo "== Préférences ==\n";
 $r = $req( 'PUT', '/postelio/v1/me/settings', array( 'langue' => 'en', 'notifications' => array( 'conseils' => true ) ), $cand_id );
@@ -150,6 +158,20 @@ $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer 7.faux.faux';
 $t( 'Bearer invalide => valeur entrante (false)', false === $auth->authenticate( false ) );
 unset( $_SERVER['HTTP_AUTHORIZATION'] );
 
+echo "== Capability virtuelle pst_email_verified (contrat D12) ==\n";
+$t( 'candidat vérifié => a pst_email_verified', user_can( $cand_id, 'pst_email_verified' ) );
+delete_user_meta( $rec_id, AccountService::META_EMAIL_VERIFIED );
+clean_user_cache( $rec_id );
+$t( 'recruteur non vérifié => n\'a PAS pst_email_verified', ! user_can( $rec_id, 'pst_email_verified' ) );
+
+echo "== Révocation de toutes les sessions (/auth/logout-all) ==\n";
+$svc_tok  = new TokenService();
+$sess_tok = $svc_tok->issue( $cand_id );
+$t( 'jeton frais valide', $cand_id === $svc_tok->validate( $sess_tok['token'] ) );
+$r = $req( 'POST', '/postelio/v1/auth/logout-all', null, $cand_id );
+$t( 'logout-all => 200 revoked_all', 200 === $r['status'] && true === ( $r['data']['data']['revoked_all'] ?? false ) );
+$t( 'tous les jetons révoqués après logout-all', 0 === $svc_tok->validate( $sess_tok['token'] ) );
+
 echo "== lost-password (anti-énumération) ==\n";
 $r = $req( 'POST', '/postelio/v1/auth/lost-password', array( 'email' => $em_cand ) );
 $t( 'lost-password email connu => 200 sent', 200 === $r['status'] && true === ( $r['data']['data']['sent'] ?? false ) );
@@ -159,13 +181,19 @@ $t( 'lost-password email inconnu => 200 (pas d\'énumération)', 200 === $r['sta
 echo "== Suppression/anonymisation (préparée) ==\n";
 $em_tmp = 'smoke.del.' . wp_generate_password( 6, false ) . '@postelio.test';
 $r      = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => $em_tmp, 'password' => 'motdepasse123', 'role' => 'candidate' ) );
-$tmp_id = (int) ( $r['data']['data']['user']['id'] ?? 0 );
+$tmp_id    = (int) ( $r['data']['data']['user']['id'] ?? 0 );
+$tmp_token = (string) ( $r['data']['data']['token'] ?? '' );
 $created[] = $tmp_id;
+
 $r = $req( 'DELETE', '/postelio/v1/me', null, $tmp_id );
 $t( 'DELETE /me => 200 deleted', 200 === $r['status'] && true === ( $r['data']['data']['deleted'] ?? false ) );
 $t( 'statut = deleted', AccountService::status( $tmp_id ) === AccountService::STATUS_DELETED );
 $t( 'e-mail anonymisé', false !== strpos( (string) get_userdata( $tmp_id )->user_email, '@postelio.invalid' ) );
 $t( 'profil candidat purgé', null === ( new \Postelio\Users\Profiles\CandidateProfileRepository() )->get_by_user( $tmp_id ) );
+$t( 'jetons révoqués après suppression', 0 === ( new TokenService() )->validate( $tmp_token ) );
+// Connexion impossible après suppression (statut deleted + mot de passe réinitialisé).
+$r = $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_tmp, 'password' => 'motdepasse123' ) );
+$t( 'connexion impossible après suppression (401/403)', in_array( $r['status'], array( 401, 403 ), true ) );
 
 echo "== Nettoyage ==\n";
 foreach ( array_unique( array_filter( $created ) ) as $uid ) {

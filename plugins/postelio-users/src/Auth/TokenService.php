@@ -2,9 +2,22 @@
 /**
  * Jetons d'accès applicatifs (Bearer) pour clients non-cookie (future app Tauri).
  *
- * Sans dépendance externe : le jeton est `"{uid}.{tid}.{secret}"`. Seul un hash
- * SHA-256 du secret est stocké (usermeta), avec une expiration. Le web utilise les
- * cookies WordPress + nonce ; ce service ne sert qu'aux clients applicatifs.
+ * Format : `"{uid}.{tid}.{secret}"`. Garanties de sécurité (voir aussi
+ * docs/backend/security.md#jetons-applicatifs-bearer) :
+ *  - `tid` (64 bits) et `secret` (256 bits) générés via CSPRNG (`random_bytes`) ;
+ *  - le secret brut n'est JAMAIS stocké : seul son hash SHA-256 l'est (usermeta) ;
+ *  - le secret n'est jamais journalisé (ni logs applicatifs ni audit log) ;
+ *  - comparaison en temps constant (`hash_equals`) ;
+ *  - expiration vérifiée côté serveur à chaque validation ;
+ *  - révocation réelle (suppression de l'entrée) ; `refresh` invalide l'ancien ;
+ *  - `revoke_all` invalide toutes les sessions (déconnexion globale, suppression
+ *    de compte) ;
+ *  - jeton malformé rejeté ; `uid`/`tid` falsifiés ne donnent accès à rien (le
+ *    hash stocké est lié au triplet exact `uid+tid`, et le secret reste inconnu).
+ *
+ * Le web utilise les cookies WordPress + nonce ; ce service ne sert qu'aux clients
+ * applicatifs. Le jeton ne doit JAMAIS figurer dans une URL (en-tête Authorization
+ * uniquement).
  *
  * @package Postelio\Users\Auth
  */
@@ -61,8 +74,9 @@ final class TokenService {
 	 * @return array{token:string, expires_at:int}
 	 */
 	public function issue( int $user_id, string $label = 'api' ): array {
-		$tid    = wp_generate_password( 12, false );
-		$secret = wp_generate_password( 48, false );
+		// CSPRNG explicite : identifiant 64 bits, secret 256 bits.
+		$tid    = bin2hex( random_bytes( 8 ) );
+		$secret = bin2hex( random_bytes( 32 ) );
 		$now    = time();
 		$exp    = $now + $this->ttl();
 
