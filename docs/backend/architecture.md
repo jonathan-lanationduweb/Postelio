@@ -105,7 +105,27 @@ Détails complets dans [api-contract.md](api-contract.md) et
 - **REST :** base `postelio/v1`, ressources au pluriel, kebab/snake cohérent.
 - **Réponses :** enveloppe `{ data, meta }` / `{ error: { code, message, details } }`.
 
-## 6. Ce qui est HORS de ce lot
+## 6. Décisions V1 arrêtées
+
+Décisions validées pour la V1. Elles orientent l'implémentation ; les détails vivent
+dans les docs référencées. Les durées de conservation **RGPD restent `À VALIDER`**
+(aucune valeur n'est inventée — voir [security.md](security.md#6-rgpd)).
+
+| # | Décision V1 | Doc de référence |
+|---|---|---|
+| D1 | **Brouillons avant vérification :** une entreprise non vérifiée peut préparer/enregistrer des **brouillons** d'offres, mais **ne peut pas publier publiquement** ; la publication publique exige `verified`. | [workflows.md](workflows.md#offre-job), [security.md](security.md#2-autorisation) |
+| D2 | **Identifiants :** **IDs numériques internes** (clés primaires en base) + **UUID publics** pour les ressources sensibles/exposées via l'API lorsque pertinent (candidatures, fichiers, messages…). | [data-model.md](data-model.md#identifiants) |
+| D3 | **CV V1 :** format **PDF uniquement**, **10 Mo maximum**. | [security.md](security.md#5-fichiers-cv--documents) |
+| D4 | **Stockage fichiers :** **local privé** (hors webroot) en développement, derrière une abstraction **`StorageProvider`** permettant un provider **S3-compatible** plus tard. | [security.md](security.md#5-fichiers-cv--documents), [integrations.md](integrations.md) |
+| D5 | **Rate limiting :** mécanisme **configurable**, **seuils non figés** à ce stade. | [security.md](security.md#3-menaces-web) |
+| D6 | **Messages :** **immuables en V1** une fois envoyés ; **suppression logique/modération** possible si nécessaire (pas d'édition libre). | [security.md](security.md#4-données-sensibles), [data-model.md](data-model.md) |
+| D7 | **Adresse IP :** stockée **uniquement** pour les événements de **sécurité/audit** où c'est justifié. | [security.md](security.md#7-audit-log) |
+| D8 | **2FA :** **prévue pour les comptes administrateurs** ; **non obligatoire** candidat/recruteur en V1. | [security.md](security.md#1-authentification) |
+| D9 | **Paiement :** **Stripe** comme provider cible. | [integrations.md](integrations.md) |
+| D10 | **Vérification entreprise :** **Sirene / RNE** comme providers cibles. | [integrations.md](integrations.md) |
+| D11 | **Conservation RGPD :** durées **`À VALIDER`**, non inventées. | [security.md](security.md#6-rgpd) |
+
+## 7. Ce qui est HORS de ce lot
 
 - CPT métier, tables, endpoints complets, migrations exécutées.
 - Intégrations réelles : Stripe, e-mail transactionnel, Sirene/RNE, modération, anti-bot.

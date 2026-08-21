@@ -88,18 +88,20 @@ Déjà créées (issues de `develop`) :
 
 ## Index & performance (prioritaires dès la création)
 
+Noms de tables complets conformes à [data-model.md](data-model.md#tables-dédiées-convention-wp_postelio_).
+
 | Table | Index |
 |---|---|
-| applications | `job_id`, `candidate_id`, `company_id`, `status`, `created_at`, unique(`job_id`,`candidate_id`) |
-| application_history | `application_id`, `created_at` |
-| messages | `conversation_id`, `created_at`, `read_at` |
-| conversations | `candidate_id`, `recruiter_id`, `application_id`, `last_message_at` |
-| notifications | `user_id`, `read_at`, `created_at` |
-| interviews | `application_id`, `candidate_id`, `company_id`, `date` |
-| favorites | unique(`user_id`,`job_id`), `user_id` |
-| job_alerts | `user_id`, `active` |
-| audit_log | `actor_id`, `resource_type`, `resource_id`, `created_at` |
-| cvs / cv_snapshots | `candidate_id` ; `application_id` |
+| `wp_postelio_applications` | `job_id`, `candidate_id`, `company_id`, `status`, `created_at`, unique(`job_id`,`candidate_id`) |
+| `wp_postelio_application_history` | `application_id`, `created_at` |
+| `wp_postelio_messages` | `conversation_id`, `created_at`, `read_at` |
+| `wp_postelio_conversations` | `candidate_id`, `recruiter_id`, `application_id`, `last_message_at` |
+| `wp_postelio_notifications` | `user_id`, `read_at`, `created_at` |
+| `wp_postelio_interviews` | `application_id`, `candidate_id`, `company_id`, `date` |
+| `wp_postelio_favorites` | unique(`user_id`,`job_id`), `user_id` |
+| `wp_postelio_job_alerts` | `user_id`, `active` |
+| `wp_postelio_audit_log` | `actor_id`, `resource_type`, `resource_id`, `created_at` |
+| `wp_postelio_cvs` / `wp_postelio_cv_snapshots` | `candidate_id` ; `application_id` |
 
 ## Migrations
 

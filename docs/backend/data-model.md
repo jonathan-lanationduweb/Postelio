@@ -47,6 +47,21 @@ wp_postelio_webhook_events         wp_postelio_moderation_reports
 wp_postelio_audit_log
 ```
 
+## Identifiants
+
+**Décision V1 (D2) :** double identifiant.
+
+- **ID interne numérique** — clé primaire `BIGINT UNSIGNED AUTO_INCREMENT` de chaque
+  table dédiée (et `ID` natif WordPress pour users/CPT). Sert aux jointures et index ;
+  **jamais** de logique de sécurité fondée sur la seule connaissance de l'ID.
+- **UUID public** — colonne `public_uuid` (UUID v4, unique, indexée) sur les
+  **ressources sensibles ou exposées via l'API** lorsque pertinent : candidatures,
+  fichiers/CV & snapshots, messages, entretiens, paiements/factures. C'est **l'UUID**
+  qui apparaît dans les URLs/API publiques (`/applications/{uuid}`), pas l'ID interne
+  (évite l'énumération et la fuite de volumétrie).
+- Ressources **éditoriales publiques** (offres, entreprises, savoir-faire en CPT) :
+  l'ID/slug WordPress natif suffit (déjà public par nature) ; UUID non requis.
+
 ---
 
 ## User
@@ -181,8 +196,12 @@ wp_postelio_audit_log
 
 ## Message
 - **Propriétaire :** messaging. **Table dédiée.**
-- **Champs :** id, conversation_id, sender_id, sender_role, type (user|system), body,
-  read_at, moderation_state (allowed|review|blocked), reported (bool), created_at.
+- **Champs :** id, `public_uuid`, conversation_id, sender_id, sender_role, type
+  (user|system), body, read_at, moderation_state (allowed|review|blocked), reported
+  (bool), `deleted_at` (soft-delete), created_at.
+- **Immuabilité (D6) :** le `body` est **immuable** une fois créé (aucune édition en V1).
+  La disparition d'un message = **soft-delete** (`deleted_at`) ou modération ; la ligne
+  est **conservée** (audit). Voir [workflows.md](workflows.md#message).
 - **Sensible :** contenu. **Index :** conversation_id, created_at, read_at.
 
 ## Notification

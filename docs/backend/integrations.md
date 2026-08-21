@@ -5,12 +5,13 @@ Aucune intégration n'est branchée dans ce lot. Pour chaque service : **objecti
 
 ## Intégrations PRIMAIRES (nécessaires au fonctionnement cible)
 
-### 1. Vérification d'entreprise — Sirene / RNE (INSEE)
+### 1. Vérification d'entreprise — Sirene / RNE (INSEE) — **providers cibles V1 (D10)**
 - **Objectif :** vérifier SIREN/SIRET, raison sociale, état administratif.
-- **Criticité :** haute (badge « Entreprise vérifiée »).
+- **Criticité :** haute (badge « Entreprise vérifiée » ; conditionne la publication d'offre — D1).
 - **Envoyé :** SIREN/SIRET saisis. **Reçu :** raison sociale, adresse, état, forme juridique.
 - **Fallback :** revue manuelle admin (workflow `manual_review`), badge « en cours ».
 - **Plugin :** companies. **Statut :** champs/statuts prévus, **pas d'API** dans ce lot.
+- **Décision (D10) :** **Sirene / RNE** retenus comme providers cibles, derrière l'interface `VerificationProvider`.
 
 ### 2. E-mail transactionnel (ex. Brevo / Mailjet / Postmark)
 - **Objectif :** e-mails de notification (candidature, entretien, refus, facture…).
@@ -18,17 +19,21 @@ Aucune intégration n'est branchée dans ce lot. Pour chaque service : **objecti
 - **Fallback :** `wp_mail` natif (SMTP) ; file d'attente + retries.
 - **Plugin :** notifications.
 
-### 3. Stockage de fichiers (local protégé, puis S3-like optionnel)
+### 3. Stockage de fichiers — abstraction `StorageProvider` (D4)
 - **Objectif :** CV/documents sécurisés. **Criticité :** haute.
-- **Envoyé :** fichier chiffré/hors webroot. **Reçu :** URL signée temporaire.
-- **Fallback :** stockage local protégé (défaut V1). **Plugin :** files.
+- **Décision (D4) :** interface **`StorageProvider`** ; **provider local privé** (hors
+  webroot) par **défaut en développement/V1**, provider **S3-compatible** branchable plus
+  tard sans changer les appelants.
+- **CV V1 (D3) :** PDF, 10 Mo max (voir [security.md](security.md#5-fichiers-cv--documents)).
+- **Envoyé :** fichier hors webroot. **Reçu :** URL signée temporaire (selon provider).
+- **Plugin :** files.
 
 ### 4. Anti-bot (ex. hCaptcha / Turnstile)
 - **Objectif :** protéger inscription, candidature, contact. **Criticité :** moyenne-haute.
 - **Envoyé :** token challenge. **Reçu :** validation. **Fallback :** rate limiting + honeypot.
 - **Plugin :** users/core.
 
-### 5. Paiement (Stripe prévu)
+### 5. Paiement — **Stripe, provider cible V1 (D9)**
 - **Objectif :** renouvellement d'offre 10 €/30 j. **Criticité :** haute (monétisation).
 - **Envoyé :** montant, référence, client. **Reçu :** statut paiement + **webhooks** (idempotents).
 - **Fallback :** mode « demo » (déjà côté front) tant que non branché. **Plugin :** billing.
@@ -52,6 +57,6 @@ Aucune intégration n'est branchée dans ce lot. Pour chaque service : **objecti
 
 ## Principes
 - Chaque intégration est encapsulée derrière une **interface** (`VerificationProvider`,
-  `MailProvider`, `FileStorage`, `PaymentProvider`, `ModerationProvider`,
+  `MailProvider`, `StorageProvider`, `PaymentProvider`, `ModerationProvider`,
   `SearchProvider`) pour être remplaçable et testable (mock en dev).
 - Aucune clé API commitée (voir [security.md](security.md#secrets--environnements)).

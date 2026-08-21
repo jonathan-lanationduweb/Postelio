@@ -11,7 +11,8 @@ choisit jamais un statut arbitrairement.
 
 | Transition | Autorisé par |
 |---|---|
-| draft → pending / published | recruteur (owner de la company) |
+| (création/édition) draft | recruteur (owner de la company) — **autorisé même si l'entreprise n'est pas vérifiée** (D1) |
+| draft → pending / published | recruteur (owner) — **publication publique refusée si l'entreprise n'est pas `verified`** (D1) |
 | pending → published / rejected | admin/modo |
 | published → expiring | système (cron, J-7) |
 | expiring → expired | système (cron, échéance) |
@@ -74,14 +75,20 @@ manual_review → verified | rejected`, `verified → suspended`.
 | manual_review → verified/rejected | admin |
 | verified → suspended | admin |
 
-> Blocage publication (déjà simulé front) : une offre ne peut être publiée que si le
-> profil entreprise a le minimum (raison sociale, adresse, contact). `À VALIDER` :
-> exiger `verified` pour publier, ou seulement « dossier complet ».
+> **Blocage publication (décision V1 — D1) :** une entreprise **non vérifiée** peut
+> **préparer et enregistrer des brouillons** d'offres, mais **ne peut pas publier
+> publiquement**. La publication publique exige l'état **`verified`** (au-delà du seul
+> « dossier complet »). Contrôle serveur, non contournable par le front.
 
 ## Message
 
+**Décision V1 (D6) :** un message envoyé est **immuable** — **pas d'édition** du
+contenu. La disparition d'un message se fait par **suppression logique** (soft-delete :
+`deleted_at` renseigné, contenu masqué mais ligne conservée pour l'audit) ou par
+**modération**, pas par suppression physique.
+
 États : `sent → read`, `sent/read → reported → moderated (allowed|blocked)`,
-`* → deleted` (si applicable, `À VALIDER`).
+`sent/read → deleted` (**soft-delete** logique).
 
 | Transition | Autorisé par |
 |---|---|
@@ -89,6 +96,7 @@ manual_review → verified | rejected`, `verified → suspended`.
 | sent → read | destinataire (ouverture) |
 | any → reported | participant |
 | reported → moderated | admin/modo |
+| sent/read → deleted (logique) | auteur (le sien) / admin-modo — **pas d'édition** (D6) |
 
 ## §7 Relations métier (vue synthèse)
 

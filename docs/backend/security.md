@@ -10,7 +10,8 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
   côté client.
 - **Vérification e-mail** obligatoire avant certaines actions (postuler, publier) — `À VALIDER`.
 - **Reset password** via le flux WordPress natif.
-- **2FA admin** : recommandée pour `postelio_admin` (`À VALIDER` : TOTP).
+- **2FA** (décision V1 — D8) : **prévue pour les comptes administrateurs** (`postelio_admin`) ;
+  **non obligatoire** pour candidat/recruteur en V1. Méthode (TOTP) `À VALIDER`.
 
 ## 2. Autorisation
 - Toute route vérifie **capability** (voir [roles-permissions.md](roles-permissions.md))
@@ -18,6 +19,10 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
   propriétaire). Double contrôle (capability + ownership).
 - Les transitions de statut passent par le moteur de workflow ([workflows.md](workflows.md)),
   jamais un `update` libre depuis le front.
+- **Publication d'offre** (décision V1 — D1) : une entreprise **non vérifiée** peut créer
+  et enregistrer des **brouillons** d'offres, mais la transition vers **publiée
+  (publique)** est **refusée** tant que l'entreprise n'est pas `verified`. Contrôle côté
+  serveur, jamais contournable par le front.
 
 ## 3. Menaces web
 - **CSRF** : nonce sur mutations (web) ; Bearer + `Origin`/`Referer` check (app).
@@ -27,8 +32,9 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
   concaténation de variables.
 - **Validation/sanitization** : schéma par endpoint (types, longueurs, valeurs
   autorisées) ; rejet `validation_error` sinon.
-- **Rate limiting** : par IP + par utilisateur sur `/auth`, `/applications`,
-  `/messages`, `/files/*/download` (`À VALIDER` : seuils). Réponse `rate_limited` (429).
+- **Rate limiting** (décision V1 — D5) : mécanisme **configurable** par IP + par
+  utilisateur sur `/auth`, `/applications`, `/messages`, `/files/*/download`. Les
+  **seuils ne sont pas figés** à ce stade (configuration). Réponse `rate_limited` (429).
 - **Brute force** : throttle + verrouillage temporaire sur `/auth` ; journalisation.
 - **Uploads** : voir §5.
 
@@ -39,7 +45,7 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 | CV / snapshot | candidat (proprio) + recruteur d'une candidature reçue + admin | candidat | candidat (CV vivant) ; snapshot lié à la candidature |
 | E-mail perso | candidat ; recruteur **seulement si** visibilité=recruteurs ou via CV | candidat | anonymisé à la suppression compte |
 | Téléphone | idem e-mail (visibilité) | candidat | idem |
-| Messages | participants + admin (audit) | auteur (édition `À VALIDER`) | modération/admin |
+| Messages | participants + admin (audit) | **immuables en V1** (pas d'édition — D6) | suppression **logique**/modération (D6) |
 | Notes recruteur | recruteurs de la company + admin | recruteur | recruteur |
 | Adresse personnelle | candidat + recruteur autorisé | candidat | anonymisée |
 | Historique candidature | candidat (le sien), recruteur concerné, admin | système (append-only) | anonymisé selon conservation |
@@ -49,11 +55,15 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 ## 5. Fichiers (CV & documents)
 - **Jamais d'URL publique directe.** Stockage **hors webroot** (ou dossier protégé
   `.htaccess`/nginx `deny`, nom de fichier non devinable).
+- **Abstraction `StorageProvider`** (décision V1 — D4) : **stockage local privé** en
+  développement (défaut V1), remplaçable par un provider **S3-compatible** plus tard
+  sans changer les appelants. Toute écriture/lecture passe par cette interface.
 - Téléchargement via endpoint **`GET /files/{id}/download`** : vérifie l'autorisation,
-  puis stream le fichier ou renvoie une **URL signée à durée limitée** (`À VALIDER` :
-  stockage local vs S3-like).
-- **MIME autorisés** : `application/pdf`, `.doc`, `.docx` (`À VALIDER`). **Taille max** :
-  `À VALIDER` (ex. 5 Mo). Validation MIME **réelle** (pas seulement l'extension).
+  puis stream le fichier ou renvoie une **URL signée à durée limitée** (selon le
+  provider `StorageProvider` actif).
+- **CV V1** (décision — D3) : **PDF uniquement** (`application/pdf`), **10 Mo maximum**.
+  Validation MIME **réelle** (pas seulement l'extension). Les autres formats de document
+  (`.doc`, `.docx`) restent `À VALIDER` pour une version ultérieure.
 - **Snapshot CV** : copie immuable à la candidature (voir [workflows.md](workflows.md#snapshot-cv)).
 - Suppression : purge du CV vivant à la suppression de compte ; snapshots gérés selon la
   conservation des candidatures.
@@ -86,8 +96,13 @@ Journaliser (table `wp_postelio_audit_log`, append-only) au minimum :
 - suppression/anonymisation de compte.
 
 Champs : `actor_id`, `actor_role`, `action`, `resource_type`, `resource_id`,
-`metadata` (JSON minimal, **sans** donnée sensible superflue), `created_at`
-(`ip` : `À VALIDER` RGPD). Immuable, lecture admin uniquement.
+`metadata` (JSON minimal, **sans** donnée sensible superflue), `created_at`. Immuable,
+lecture admin uniquement.
+
+- **Adresse IP** (décision V1 — D7) : stockée **uniquement** pour les événements de
+  **sécurité/audit où c'est justifié** (ex. `/auth`, verrouillage brute force,
+  suspension de compte) — **pas** de journalisation d'IP générale. Durée de conservation
+  `À VALIDER` (RGPD, §6).
 
 ## 8. Secrets & environnements
 Aucune clé secrète commitée (voir [implementation-plan.md](implementation-plan.md#environnements)).

@@ -46,7 +46,12 @@ Erreur :
 ## 4. Conventions communes
 - Pagination : `?page`, `?per_page` (défaut 20, max 100). Tri : `?sort=-created_at`.
 - Filtres : `?status=`, `?q=`, `?ville=`, etc. (validés serveur).
-- Dates : ISO 8601 UTC. IDs : entiers ou UUID (`À VALIDER` — cohérent par plugin).
+- Dates : ISO 8601 UTC.
+- **Identifiants (D2) :** en base, IDs **numériques internes**. Dans les URLs/API, le
+  `{id}` des **ressources sensibles/exposées** (candidatures, fichiers, messages,
+  entretiens, paiements) est l'**UUID public** (`public_uuid`), pas l'ID interne. Les
+  ressources éditoriales publiques (offres, entreprises, savoir-faire) utilisent
+  l'ID/slug WordPress natif. Voir [data-model.md](data-model.md#identifiants).
 
 ## 5. Endpoints principaux
 
