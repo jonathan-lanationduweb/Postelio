@@ -59,6 +59,38 @@ final class Guard {
 	}
 
 	/**
+	 * Fabrique un `permission_callback` REST exigeant PLUSIEURS capabilities.
+	 *
+	 * Primitive générique de composition (le core ignore la sémantique métier des
+	 * capabilities). Ex. côté plugin métier :
+	 *   Guard::require_all( 'pst_apply_job', 'pst_email_verified' )
+	 * pour n'autoriser l'action qu'à un candidat dont l'e-mail est vérifié.
+	 *
+	 * @return callable
+	 */
+	public static function require_all( string ...$capabilities ): callable {
+		return static function () use ( $capabilities ) {
+			if ( ! is_user_logged_in() ) {
+				return new \WP_Error(
+					'unauthenticated',
+					__( 'Authentification requise.', 'postelio-core' ),
+					array( 'status' => Errors::http_status( 'unauthenticated' ) )
+				);
+			}
+			foreach ( $capabilities as $capability ) {
+				if ( ! current_user_can( $capability ) ) {
+					return new \WP_Error(
+						'forbidden',
+						__( 'Action non autorisée.', 'postelio-core' ),
+						array( 'status' => Errors::http_status( 'forbidden' ) )
+					);
+				}
+			}
+			return true;
+		};
+	}
+
+	/**
 	 * `permission_callback` public (accès non authentifié autorisé).
 	 *
 	 * @return callable
