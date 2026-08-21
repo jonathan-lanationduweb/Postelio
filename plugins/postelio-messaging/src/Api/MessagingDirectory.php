@@ -55,6 +55,19 @@ final class MessagingDirectory {
 		);
 	}
 
+	/**
+	 * Le destinataire a-t-il encore des messages non lus dans cette conversation ?
+	 * Utilisé par postelio-notifications (D4) pour décider d'un e-mail différé. Se fonde
+	 * sur l'état de lecture RÉEL (curseur `last_read_message_id`), pas sur une présence.
+	 */
+	public static function has_unread_in_conversation( int $user_id, string $conversation_uuid ): bool {
+		$c = ( new ConversationRepository() )->get_by_uuid( $conversation_uuid );
+		if ( null === $c || null === self::service()->access_role( $user_id, $c ) ) {
+			return false;
+		}
+		return self::service()->unread_for( $user_id, $c ) > 0;
+	}
+
 	public static function can_message( int $user_id, string $conversation_uuid ): bool {
 		$c = ( new ConversationRepository() )->get_by_uuid( $conversation_uuid );
 		if ( null === $c || 'active' !== $c['status'] ) {

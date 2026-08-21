@@ -33,9 +33,33 @@ final class JobDirectory {
 		return self::repo()->exists( $job_id );
 	}
 
+	/** UUID public depuis l'ID interne (pour construire une action de notification). */
+	public static function uuid_of( int $job_id ): ?string {
+		$j = self::repo()->get( $job_id );
+		return $j ? (string) $j['uuid'] : null;
+	}
+
+	/** Titre de l'offre (pour le libellé d'une notification), ou null. */
+	public static function title_of( int $job_id ): ?string {
+		$j = self::repo()->get( $job_id );
+		return $j ? (string) $j['titre'] : null;
+	}
+
 	public static function status( int $job_id ): ?string {
 		$j = self::repo()->get( $job_id );
 		return $j ? (string) $j['status'] : null;
+	}
+
+	/**
+	 * Auteur (créateur) de l'offre — recruteur qui l'a publiée. Sert au ciblage des
+	 * notifications (D3 Lot 09). Retourne null si l'offre n'existe pas / auteur absent.
+	 */
+	public static function created_by( int $job_id ): ?int {
+		if ( ! self::repo()->exists( $job_id ) ) {
+			return null;
+		}
+		$author = (int) get_post_field( 'post_author', $job_id );
+		return $author > 0 ? $author : null;
 	}
 
 	/**

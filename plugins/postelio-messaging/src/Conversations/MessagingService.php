@@ -192,7 +192,7 @@ final class MessagingService {
 		$acc = $this->accessible_or_fail( $user_id, $uuid );
 		$c   = $acc['conversation'];
 		$this->participants->mark_read( (int) $c['id'], $user_id, $acc['role'], current_time( 'mysql', true ), $this->messages->max_id( (int) $c['id'] ) );
-		$this->emit( 'conversation.read', (int) $c['id'], array( 'user_id' => $user_id ) );
+		$this->emit( 'conversation.read', (int) $c['id'], array( 'user_id' => $user_id, 'conversation_uuid' => $c['public_uuid'] ) );
 		return $this->unread_for( $user_id, $c );
 	}
 

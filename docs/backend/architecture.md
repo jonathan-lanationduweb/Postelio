@@ -177,6 +177,16 @@ publique ⇒ `verified`**. Appliquée par `postelio-jobs` au Lot 04 (`POST /jobs
 **`Api\InterviewDirectory`** (contexte d'entretien pour Notifications/e-mail de preuve,
 compteur à venir, historique). Ces façades évitent toute dépendance circulaire.
 
+`postelio-notifications` (Lot 09) est **réactif** : il écoute les événements des autres
+domaines et décide des canaux (in-app / e-mail) via une matrice + préférences. Il n'appelle
+jamais `wp_mail()` directement (Router → EmailDispatcher → file → **`EmailProvider`**) et
+réutilise le **`Core\Jobs\Scheduler`** (worker de file + rappels d'entretien). Il expose
+**`Api\NotificationDirectory`** (compteur cloche, aperçu récent) — lecture seule ; les
+autres plugins n'écrivent **jamais** de notification directement. Les contrats consommés
+ont été étendus de façon additive (application_uuid/job_uuid sur `application.*`,
+actor_user_id sur `interview.*`, `JobDirectory::created_by/uuid_of/title_of`,
+`CompanyDirectory::owner_of`, `MessagingDirectory::has_unread_in_conversation`).
+
 `postelio-files` (Lot 06) — service transversal de fichiers privés :
 - **`StorageProvider`** (interface) + `LocalPrivateStorageProvider` (V1, filtre
   `postelio/files/storage_provider`) : stockage **hors chemins publics** (+ `.htaccess`

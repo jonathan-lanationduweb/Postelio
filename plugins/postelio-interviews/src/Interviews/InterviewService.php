@@ -135,7 +135,7 @@ final class InterviewService {
 			// Transition non applicable (déjà en interview, etc.) : ignoré volontairement.
 		}
 
-		$this->emit( 'interview.proposed', $iv );
+		$this->emit( 'interview.proposed', $iv, $recruiter_id );
 		return $iv;
 	}
 
@@ -152,7 +152,7 @@ final class InterviewService {
 		) );
 		$fresh = $this->repo->get( (int) $iv['id'] );
 		$this->log( $fresh, $candidate_id, self::ROLE_CANDIDATE, 'confirmed', (string) $iv['status'], InterviewStateMachine::CONFIRMED );
-		$this->emit( 'interview.confirmed', $fresh );
+		$this->emit( 'interview.confirmed', $fresh, $candidate_id );
 		return $fresh;
 	}
 
@@ -168,7 +168,7 @@ final class InterviewService {
 		$fresh = $this->repo->get( (int) $iv['id'] );
 		$meta  = '' !== trim( $message ) ? array( 'has_message' => true ) : array();
 		$this->log( $fresh, $candidate_id, self::ROLE_CANDIDATE, 'declined', (string) $iv['status'], InterviewStateMachine::DECLINED, $meta );
-		$this->emit( 'interview.declined', $fresh );
+		$this->emit( 'interview.declined', $fresh, $candidate_id );
 		return $fresh;
 	}
 
@@ -199,7 +199,7 @@ final class InterviewService {
 		) );
 		$fresh = $this->repo->get( (int) $iv['id'] );
 		$this->log( $fresh, $candidate_id, self::ROLE_CANDIDATE, 'reschedule_requested', (string) $iv['status'], InterviewStateMachine::RESCHEDULE_REQUESTED, array( 'has_message' => '' !== $message ) );
-		$this->emit( 'interview.reschedule_requested', $fresh );
+		$this->emit( 'interview.reschedule_requested', $fresh, $candidate_id );
 		return $fresh;
 	}
 
@@ -220,7 +220,7 @@ final class InterviewService {
 		) );
 		$fresh = $this->repo->get( (int) $iv['id'] );
 		$this->log( $fresh, $candidate_id, self::ROLE_CANDIDATE, 'cancelled', (string) $iv['status'], InterviewStateMachine::CANCELLED, '' !== trim( $reason ) ? array( 'has_reason' => true, 'by' => 'candidate' ) : array( 'by' => 'candidate' ) );
-		$this->emit( 'interview.cancelled', $fresh );
+		$this->emit( 'interview.cancelled', $fresh, $candidate_id );
 		return $fresh;
 	}
 
@@ -245,7 +245,7 @@ final class InterviewService {
 		) );
 		$fresh = $this->repo->get( (int) $iv['id'] );
 		$this->log( $fresh, $recruiter_id, self::ROLE_RECRUITER, 'rescheduled', InterviewStateMachine::RESCHEDULE_REQUESTED, InterviewStateMachine::CONFIRMED, array( 'accepted_candidate_slot' => true ) );
-		$this->emit( 'interview.rescheduled', $fresh );
+		$this->emit( 'interview.rescheduled', $fresh, $recruiter_id );
 		return $fresh;
 	}
 
@@ -286,7 +286,7 @@ final class InterviewService {
 		$action = $substantial ? 'rescheduled' : 'modified';
 		$this->log( $fresh, $recruiter_id, self::ROLE_RECRUITER, $action, $prev, $to, array( 'substantial' => $substantial ) );
 		if ( $substantial ) {
-			$this->emit( 'interview.rescheduled', $fresh );
+			$this->emit( 'interview.rescheduled', $fresh, $recruiter_id );
 		}
 		return $fresh;
 	}
@@ -306,7 +306,7 @@ final class InterviewService {
 		) );
 		$fresh = $this->repo->get( (int) $iv['id'] );
 		$this->log( $fresh, $recruiter_id, self::ROLE_RECRUITER, 'cancelled', (string) $iv['status'], InterviewStateMachine::CANCELLED, '' !== trim( $reason ) ? array( 'has_reason' => true ) : array() );
-		$this->emit( 'interview.cancelled', $fresh );
+		$this->emit( 'interview.cancelled', $fresh, $recruiter_id );
 		return $fresh;
 	}
 
@@ -323,7 +323,7 @@ final class InterviewService {
 		$this->repo->set_status( (int) $iv['id'], InterviewStateMachine::COMPLETED );
 		$fresh = $this->repo->get( (int) $iv['id'] );
 		$this->log( $fresh, $recruiter_id, self::ROLE_RECRUITER, 'completed', (string) $iv['status'], InterviewStateMachine::COMPLETED );
-		$this->emit( 'interview.completed', $fresh );
+		$this->emit( 'interview.completed', $fresh, $recruiter_id );
 		return $fresh;
 	}
 
@@ -504,7 +504,7 @@ final class InterviewService {
 	 *
 	 * @param array<string, mixed> $iv
 	 */
-	private function emit( string $event, array $iv ): void {
+	private function emit( string $event, array $iv, int $actor_user_id = 0 ): void {
 		Core::instance()->events()->emit(
 			$event,
 			array(
@@ -515,6 +515,7 @@ final class InterviewService {
 				'job_uuid'          => $iv['job_uuid'],
 				'scheduled_at'      => (string) $iv['scheduled_at'],
 				'type'              => (string) $iv['type'],
+				'actor_user_id'     => $actor_user_id, // Lot 09 : permet d'exclure l'acteur du destinataire
 				'resource_type'     => 'interview',
 				'resource_id'       => (string) $iv['id'],
 				'audit'             => array(

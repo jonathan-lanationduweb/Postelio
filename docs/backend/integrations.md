@@ -18,6 +18,12 @@ Aucune intégration n'est branchée dans ce lot. Pour chaque service : **objecti
 - **Criticité :** haute. **Envoyé :** destinataire, contenu templaté. **Reçu :** statut d'envoi/webhooks.
 - **Fallback :** `wp_mail` natif (SMTP) ; file d'attente + retries.
 - **Plugin :** notifications.
+- **État Lot 09 (implémenté) :** interface **`EmailProvider`** (filtre
+  `postelio/notifications/email_provider`). **V1 dev = `WpMailProvider`** (`wp_mail`).
+  La logique métier n'appelle jamais `wp_mail()` : Router → EmailDispatcher → **file**
+  (`wp_postelio_notification_deliveries`) → provider, avec retry/backoff/idempotence via
+  le `Core\Jobs\Scheduler`. **Provider transactionnel de production : non choisi**
+  (`À VALIDER`). Bounces/complaints : colonnes/hooks prévus, hors V1.
 
 ### 3. Stockage de fichiers — abstraction `StorageProvider` (D4)
 - **Objectif :** CV/documents sécurisés. **Criticité :** haute.

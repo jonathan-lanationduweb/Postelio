@@ -32,6 +32,16 @@ final class CompanyDirectory {
 		return ( new MembershipRepository() )->role( $company_id, $user_id );
 	}
 
+	/** Propriétaire (owner) de l'entreprise, ou null. Sert au ciblage des notifications. */
+	public static function owner_of( int $company_id ): ?int {
+		foreach ( ( new MembershipRepository() )->members_of( $company_id ) as $m ) {
+			if ( MembershipRepository::ROLE_OWNER === ( $m['role_in_company'] ?? '' ) ) {
+				return (int) $m['user_id'];
+			}
+		}
+		return null;
+	}
+
 	public static function exists( int $company_id ): bool {
 		return ( new CompanyRepository() )->exists( $company_id );
 	}

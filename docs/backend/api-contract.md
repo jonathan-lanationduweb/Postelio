@@ -178,8 +178,19 @@ Erreur :
 - Contrat sortant : `\Postelio\Interviews\Api\InterviewDirectory` (`get_context`,
   `upcoming_count`, `has_active_for_application`, `history`).
 
-### Notifications — `postelio-notifications`
-- `GET /me/notifications` · `POST /me/notifications/read` · `POST /me/notifications/read-all`.
+### Notifications — `postelio-notifications` (implémenté Lot 09)
+> In-app + e-mails transactionnels pilotés par les événements. UUID uniquement ; ownership
+> strict (un utilisateur ne voit que ses notifications). Action **structurée**
+> (`action_type`+`resource_uuid`), jamais d'URL absolue. Cloche = notifications ≠ compteur
+> messagerie.
+- `GET /me/notifications` — paginé ; filtres `?unread=1&type=…`. R: authentifié.
+- `GET /me/notifications/unread-count` → `{ count }` (compteur cloche, endpoint dédié).
+- `POST /me/notifications/{uuid}/read` · `POST /me/notifications/read-all`.
+- `GET /me/notification-preferences` · `PUT /me/notification-preferences` — catégories du
+  rôle (transactionnel vs marketing) ; le serveur ignore les catégories hors rôle et les
+  types obligatoires.
+- Contrat sortant : `\Postelio\Notifications\Api\NotificationDirectory` (`unread_count`,
+  `recent`). E-mails : jamais d'action sensible par GET, jamais de token en URL.
 
 ### Facturation — `postelio-billing`
 - `POST /billing/renewals` (initier un renouvellement d'offre). R: recruiter.

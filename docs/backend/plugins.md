@@ -185,20 +185,36 @@ messagerie passe par `MessagingDirectory` (pas de seconde messagerie).
 
 ---
 
-## postelio-notifications
+## postelio-notifications (implémenté Lot 09)
 
-**Responsabilité.** Notifications in-app (cloche) et e-mails transactionnels. Applique
-la **matrice** événement→destinataire→canal ([events.md](events.md#matrice-de-notifications)).
+**Responsabilité.** Notifications **in-app** (cloche/centre) + **e-mails transactionnels**,
+pilotés par les événements. Plugin **réactif** : écoute, décide des canaux, n'appelle
+**jamais** `wp_mail()` directement (Router → EmailDispatcher → file → EmailProvider).
 
-**Dépendances :** core (+ écoute tous les domaines).
-**Données possédées :** `Notification` (table dédiée), préférences de notification
-(dans `users`/settings, en lecture).
-**Endpoints :** `/me/notifications`, `/me/notifications/read`, `/me/notifications/read-all`.
-**Émet :** `notification.created`.
-**Écoute :** `application.*`, `interview.*`, `message.created`, `job.published`
-(suiveurs), `company.verified`, `payment.*`.
-**Interactions :** délègue l'envoi e-mail au provider transactionnel (intégration
-primaire, non branchée dans ce lot).
+**Dépendances :** core, users, companies, jobs, applications, messaging, interviews
+(contrats publics uniquement). **load_order 70.**
+**Données possédées :** `Notification` + `NotificationDelivery` (2 tables) ; préférences
+en `user_meta` JSON (`pst_notification_prefs`).
+**Décisions V1 :** matrice événement→destinataire→canal (voir README) ; idempotence par
+`dedup_key` UNIQUE ; acteur≠destinataire ; multi-recruteurs = créateur d'offre + owner
+(dédup) ; anti-spam messages (in-app immédiat, e-mail différé 5 min conditionnel, 1/conv/
+30 min) ; rappels entretien 24 h/1 h via Scheduler ; obligatoires = entretien annulé,
+preuve de confirmation, entreprise suspendue ; `completed` sans notif ; compteurs cloche
+et messagerie **distincts** ; actions **structurées** (pas d'URL absolue) web+Tauri ;
+temps réel = polling.
+**Endpoints :** `GET /me/notifications`, `GET /me/notifications/unread-count`,
+`POST /me/notifications/{uuid}/read`, `POST /me/notifications/read-all`,
+`GET|PUT /me/notification-preferences`.
+**Émet (interne) :** `notification.created`, `notification.read`, `email.queued`,
+`email.sent`, `email.failed` — **jamais réécoutés** (anti-boucle).
+**Écoute :** `application.created|selected|rejected|withdrawn`, `message.created`,
+`conversation.read`, `interview.*` (sauf `completed`), `company.verified|rejected|
+suspended`, `job.expiring|expired|suspended`. *(Ignore `application.status_changed|
+reviewed|shortlisted|interview` — D2.)*
+**Contrat sortant :** `\Postelio\Notifications\Api\NotificationDirectory`
+(`unread_count`, `recent`).
+**E-mail :** `EmailProvider` (interface) ; V1 dev = `WpMailProvider` ; provider prod
+non choisi (filtre `postelio/notifications/email_provider`).
 
 ---
 

@@ -255,16 +255,24 @@ final class ApplicationService {
 	}
 
 	private function emit( string $event, int $app_id, int $candidate_id, int $company_id, int $job_id, array $audit ): void {
+		// Enrichissement ADDITIF (D1 Lot 09) : on expose les UUID publics nécessaires aux
+		// consommateurs (postelio-notifications) sans qu'ils lisent la table applications.
+		$app             = $this->apps->get( $app_id );
+		$application_uuid = is_array( $app ) ? ( $app['public_uuid'] ?? null ) : null;
+		$job_uuid         = is_array( $app ) ? ( $app['job_uuid'] ?? null ) : ( $audit['job_uuid'] ?? null );
+
 		Core::instance()->events()->emit(
 			$event,
 			array(
-				'application_id' => $app_id,
-				'candidate_id'   => $candidate_id,
-				'company_id'     => $company_id,
-				'job_id'         => $job_id,
-				'resource_type'  => 'application',
-				'resource_id'    => (string) $app_id,
-				'audit'          => $audit,
+				'application_id'   => $app_id,
+				'application_uuid' => $application_uuid,
+				'candidate_id'     => $candidate_id,
+				'company_id'       => $company_id,
+				'job_id'           => $job_id,
+				'job_uuid'         => $job_uuid,
+				'resource_type'    => 'application',
+				'resource_id'      => (string) $app_id,
+				'audit'            => $audit,
 			)
 		);
 	}

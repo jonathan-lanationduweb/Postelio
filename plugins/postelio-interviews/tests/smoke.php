@@ -58,6 +58,7 @@ $mkCompany = static function ( int $rec ) use ( $req, &$companies ): array {
 	$companies[] = $cid; return array( $c['data']['data']['uuid'], $cid );
 };
 $future = static function ( int $days ) : string { return gmdate( 'Y-m-d\TH:i:s\Z', time() + $days * 86400 ); };
+$slot3  = $future( 3 ); // créneau figé, réutilisé pour le test de doublon exact (robuste au passage de seconde)
 
 echo "== Activation / tables / registry ==\n";
 $t( 'plugin interviews actif', is_plugin_active( 'postelio-interviews/postelio-interviews.php' ) );
@@ -81,7 +82,7 @@ $appId = (int) ( new ApplicationRepository() )->get_by_uuid( $appU )['id'];
 
 echo "== Proposition d'entretien (recruteur, visio) ==\n";
 $prop = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array(
-	'type' => 'video', 'scheduled_at' => $future( 3 ), 'duration_minutes' => 45, 'timezone' => 'Europe/Paris',
+	'type' => 'video', 'scheduled_at' => $slot3, 'duration_minutes' => 45, 'timezone' => 'Europe/Paris',
 	'video_data' => array( 'meeting_url' => 'https://meet.example.com/entretien-1', 'provider' => 'Jitsi' ),
 	'instructions' => 'Merci de tester votre micro <script>alert(1)</script> avant.',
 ), $recA );
@@ -99,7 +100,7 @@ $multi = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/int
 $t( 'entretien successif (autre créneau/type) autorisé => 201', 201 === $multi['status'] );
 $ivMulti = (string) ( $multi['data']['data']['uuid'] ?? '' );
 $dup = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array(
-	'type' => 'video', 'scheduled_at' => $future( 3 ), 'duration_minutes' => 45, 'video_data' => array( 'meeting_url' => 'https://meet.example.com/entretien-1' ),
+	'type' => 'video', 'scheduled_at' => $slot3, 'duration_minutes' => 45, 'video_data' => array( 'meeting_url' => 'https://meet.example.com/entretien-1' ),
 ), $recA );
 $t( 'doublon actif strictement identique (même créneau+type) refusé => 409', 409 === $dup['status'] );
 $req( 'POST', '/postelio/v1/companies/me/interviews/' . $ivMulti . '/cancel', null, $recA ); // on écarte le 2e pour la suite

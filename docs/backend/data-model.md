@@ -295,11 +295,31 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
   d'un message). **Sensible :** contenu (jamais dans l'audit).
 - **Index :** `UNIQUE public_uuid`, `conversation_order (conversation_id, id)`.
 
-## Notification
+## Notification — `wp_postelio_notifications` (implémenté Lot 09)
 - **Propriétaire :** notifications. **Table dédiée.**
-- **Champs :** id, user_id, type (event key), title, body, href, read_at, channel
-  (in_app|email), created_at. **Index :** user_id, read_at, created_at.
-- **Conservation :** purge in-app `À VALIDER` (ex. 90 jours).
+- **Champs :** id, `public_uuid`, user_id, type, event_name, priority
+  (`normal|important|critical`), title, body, resource_type, resource_uuid, `action_type`,
+  `action_payload` (JSON — action **structurée**, pas d'URL absolue), `group_key`,
+  `dedup_key`, read_at, `resolved_at` (obsolescence), expires_at, created_at.
+- **Idempotence :** `UNIQUE dedup_key`. **Index :** `UNIQUE public_uuid`,
+  `(user_id, read_at)`, `(user_id, created_at)`, group_key. Aucun ID interne exposé.
+- **Distinct** de l'audit (sécurité/système) et des messages (contenu conversationnel).
+- **Conservation :** purge in-app `À VALIDER` (ex. 90 jours) via `expires_at`.
+
+## NotificationDelivery — `wp_postelio_notification_deliveries` (implémenté Lot 09)
+- **Propriétaire :** notifications. **File d'envoi multi-canal** (email V1, push futur).
+- **Champs :** id, public_uuid, user_id, channel, template, recipient_email (résolu à
+  l'envoi), payload (JSON, données **sûres** uniquement), `dedup_key`, status
+  (`pending|processing|sent|failed|skipped`), priority, attempts, max_attempts,
+  scheduled_at, processing_at, sent_at, failed_at, last_error, provider_message_id.
+- **Idempotence :** `UNIQUE (dedup_key, channel)`. **Index :** `(status, scheduled_at)`,
+  user_id. Retry borné + backoff.
+
+## NotificationPreferences (implémenté Lot 09)
+- **Stockage :** `user_meta` `pst_notification_prefs` (JSON versionné) — **pas de table**.
+- **Contenu :** `{ version, categories: { cat: { in_app, email } } }`. Serveur autoritaire
+  sur le catalogue, les défauts, les catégories obligatoires et la séparation
+  transactionnel/marketing.
 
 ## SkillContent / CompanyContent
 - **Propriétaire :** skills. **Stockage :** CPT.
