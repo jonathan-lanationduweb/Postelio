@@ -95,9 +95,13 @@ Erreur :
 - `POST /jobs/{uuid}/fill|archive` — R: `pst_edit_own_company_jobs`.
 - `POST /jobs/{uuid}/duplicate` — nouveau brouillon. R: `pst_duplicate_job` + `pst_email_verified`.
 - `POST /jobs/{uuid}/status` — admin (`pst_manage_all_jobs`) : `suspend|published`.
-- Expiration automatique (cron) : `published → expiring` (J‑7) → `expired`.
-- **Renouvellement payant** (`expired → renewed → published`) : `POST /jobs/{uuid}/renew`
-  → **postelio-billing** (hors Lot 04).
+- États V1 : `draft|published|expiring|expired|filled|archived|suspended` (pas de
+  `pending` ni d'état `renewed` — voir [workflows.md](workflows.md#offre-job)). Seuls
+  `published`/`expiring` sont visibles publiquement.
+- Expiration automatique (cron, dates **UTC**) : `published → expiring` (J‑7) → `expired`.
+- **Renouvellement** (`expiring|expired → published`, événement `job.renewed`) : via le
+  contrat **`Postelio\Jobs\Api\JobLifecycle::renew_after_payment()`** appelé par
+  **postelio-billing** après paiement (hors Lot 04 ; aucun endpoint payant en V1).
 - Favoris / alertes candidat (`/me/favorites`, `/me/alerts`) : **hors Lot 04.**
 
 ### Candidatures — `postelio-applications`

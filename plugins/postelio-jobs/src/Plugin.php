@@ -18,6 +18,8 @@ use Postelio\Jobs\Jobs\JobController;
 use Postelio\Jobs\Jobs\JobRepository;
 use Postelio\Jobs\Jobs\JobService;
 use Postelio\Jobs\Lifecycle\Expiration;
+use Postelio\Jobs\Search\JobSearchProvider;
+use Postelio\Jobs\Search\MetaQuerySearchProvider;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -68,6 +70,9 @@ final class Plugin {
 
 		( new JobPostType() )->register();
 
+		// Synchronise le nom d'entreprise dénormalisé (cache) sur company.updated.
+		( new \Postelio\Jobs\Integration\CompanyRenameSync( $core->events() ) )->register();
+
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 
 		// Cron d'expiration quotidien (abstraction du core).
@@ -83,7 +88,15 @@ final class Plugin {
 	}
 
 	public function register_routes(): void {
-		( new JobController( $this->jobs, $this->service ) )->register_routes();
+		/**
+		 * Moteur de recherche d'offres — remplaçable par postelio-search (table/index
+		 * dédié, Meilisearch…) sans changer l'API. Défaut : WP_Meta_Query.
+		 */
+		$provider = apply_filters( 'postelio/jobs/search_provider', new MetaQuerySearchProvider( $this->jobs ) );
+		if ( ! $provider instanceof JobSearchProvider ) {
+			$provider = new MetaQuerySearchProvider( $this->jobs );
+		}
+		( new JobController( $this->jobs, $this->service, $provider ) )->register_routes();
 	}
 
 	public function run_expiration(): void {

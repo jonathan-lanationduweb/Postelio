@@ -31,7 +31,13 @@ $t = static function ( string $l, bool $c ) use ( &$fail, &$pass ): void {
 };
 $req = static function ( string $m, string $route, ?array $body = null, int $user = 0 ): array {
 	wp_set_current_user( $user );
+	$query = array();
+	if ( false !== strpos( $route, '?' ) ) {
+		list( $route, $qs ) = explode( '?', $route, 2 );
+		parse_str( $qs, $query );
+	}
 	$r = new WP_REST_Request( $m, $route );
+	if ( ! empty( $query ) ) { $r->set_query_params( $query ); }
 	if ( null !== $body ) { $r->set_header( 'Content-Type', 'application/json' ); $r->set_body( wp_json_encode( $body ) ); }
 	$resp = rest_do_request( $r );
 	return array( 'status' => $resp->get_status(), 'data' => $resp->get_data() );
@@ -141,8 +147,70 @@ echo "== Admin suspend ==\n";
 $t( 'admin suspend (expiring->suspended) => 200', 'suspended' === ( $req( 'POST', '/postelio/v1/jobs/' . $u3 . '/status', array( 'decision' => 'suspended' ), $admin )['data']['data']['status'] ?? '' ) );
 $t( 'candidat ne peut pas admin-status => 403', 403 === $req( 'POST', '/postelio/v1/jobs/' . $u3 . '/status', array( 'decision' => 'published' ), $cand )['status'] );
 
+echo "== Visibilité publique par état ==\n";
+$vu = (string) ( $req( 'POST', '/postelio/v1/jobs', array( 'titre' => 'Visib', 'ville' => 'Lyon', 'contrat' => 'CDI' ), $recA )['data']['data']['uuid'] ?? '' );
+$vid = (int) $repo->get_by_uuid( $vu )['id']; $jobs_created[] = $vid;
+$req( 'POST', '/postelio/v1/jobs/' . $vu . '/publish', null, $recA );
+$pub_code = fn() => $req( 'GET', '/postelio/v1/jobs/' . $vu, null, 0 )['status'];
+$t( 'published => public 200', 200 === $pub_code() );
+$repo->set_status( $vid, 'expiring' );  $t( 'expiring => public 200', 200 === $pub_code() );
+$repo->set_status( $vid, 'expired' );   $t( 'expired => public 404', 404 === $pub_code() );
+$repo->set_status( $vid, 'filled' );    $t( 'filled => public 404', 404 === $pub_code() );
+$repo->set_status( $vid, 'archived' );  $t( 'archived => public 404', 404 === $pub_code() );
+$repo->set_status( $vid, 'suspended' ); $t( 'suspended => public 404', 404 === $pub_code() );
+
+echo "== Champs protégés à l'édition ==\n";
+$pu = (string) ( $req( 'POST', '/postelio/v1/jobs', array( 'titre' => 'Protégé', 'ville' => 'Lyon', 'contrat' => 'CDI' ), $recA )['data']['data']['uuid'] ?? '' );
+$pid = (int) $repo->get_by_uuid( $pu )['id']; $jobs_created[] = $pid;
+$req( 'POST', '/postelio/v1/jobs/' . $pu . '/publish', null, $recA );
+$before = $repo->get( $pid );
+$r = $req( 'PUT', '/postelio/v1/jobs/' . $pu, array( 'titre' => 'Titre MAJ', 'status' => 'draft', 'company_id' => 999999, 'uuid' => 'hack', 'date_expiration' => '2000-01-01', 'company' => array( 'nom' => 'Pirate' ) ), $recA );
+$after = $repo->get( $pid );
+$t( 'édition éditoriale => 200', 200 === $r['status'] );
+$t( 'titre modifié', 'Titre MAJ' === $after['titre'] );
+$t( 'statut NON modifiable (reste published)', 'published' === $after['status'] );
+$t( 'uuid NON modifiable', $pu === $after['uuid'] );
+$t( 'company_id NON modifiable', $before['company']['id'] === $after['company']['id'] );
+$t( 'date_expiration NON modifiable', $before['date_expiration'] === $after['date_expiration'] );
+$t( 'revision incrémentée', $after['revision'] === $before['revision'] + 1 );
+
+echo "== Stratégie nom d'entreprise (rename) ==\n";
+$req( 'PUT', '/postelio/v1/companies/me', array( 'nom' => 'Jobs Test RENOMMÉE' ), $recA );
+$pubJob = $req( 'GET', '/postelio/v1/jobs/' . $pu, null, 0 )['data']['data'] ?? array();
+$t( 'offre publique reflète le nouveau nom (via CompanyDirectory)', 'Jobs Test RENOMMÉE' === ( $pubJob['company']['nom'] ?? '' ) );
+
+echo "== Filtres publics : validation / combinaison / pagination ==\n";
+$t( 'filtre ville=Lyon => >=1 résultat', count( (array) $req( 'GET', '/postelio/v1/jobs?ville=Lyon', null, 0 )['data']['data'] ) >= 1 );
+$t( 'combinaison ville=Lyon&contrat=CDI => >=1', count( (array) $req( 'GET', '/postelio/v1/jobs?ville=Lyon&contrat=CDI', null, 0 )['data']['data'] ) >= 1 );
+$t( 'valeur invalide contrat=ZZZ => 0 résultat (pas d\'erreur)', 200 === ( $rz = $req( 'GET', '/postelio/v1/jobs?contrat=ZZZ_INVALIDE', null, 0 ) )['status'] && count( (array) $rz['data']['data'] ) === 0 );
+$rp = $req( 'GET', '/postelio/v1/jobs?per_page=9999', null, 0 );
+$t( 'per_page excessif borné à 100', ( $rp['data']['meta']['pagination']['per_page'] ?? 0 ) === 100 );
+$t( 'page très grande => 0 résultat, 200', 200 === ( $rg = $req( 'GET', '/postelio/v1/jobs?page=9999', null, 0 ) )['status'] && count( (array) $rg['data']['data'] ) === 0 );
+$t( 'paramètre inconnu ignoré => 200', 200 === $req( 'GET', '/postelio/v1/jobs?foo=bar&xyz=1', null, 0 )['status'] );
+
+echo "== Expiration : bornes exactes (J-7 et échéance) ==\n";
+$mk2 = function () use ( $req, $recA, $repo, &$jobs_created ) {
+	$u = (string) ( $req( 'POST', '/postelio/v1/jobs', array( 'titre' => 'Borne ' . wp_generate_password( 4, false ) ), $recA )['data']['data']['uuid'] ?? '' );
+	$req( 'POST', '/postelio/v1/jobs/' . $u . '/publish', null, $recA );
+	$id = (int) $repo->get_by_uuid( $u )['id']; $jobs_created[] = $id; return array( $u, $id );
+};
+[ $bu1, $bid1 ] = $mk2(); // exactement J-7
+[ $bu2, $bid2 ] = $mk2(); // exactement l'échéance
+update_post_meta( $bid1, JobRepository::META_DATE_EXP, gmdate( 'Y-m-d', strtotime( '+7 days' ) ) );
+update_post_meta( $bid2, JobRepository::META_DATE_EXP, gmdate( 'Y-m-d' ) ); // aujourd'hui (UTC)
+( new Expiration( $repo ) )->run();
+$t( 'exactement J-7 => expiring', 'expiring' === $repo->get( $bid1 )['status'] );
+$t( 'exactement l\'échéance => expired', 'expired' === $repo->get( $bid2 )['status'] );
+
+echo "== Renouvellement (contrat billing JobLifecycle) ==\n";
+$t( 'can_renew(expired) = true', \Postelio\Jobs\Api\JobLifecycle::can_renew( $bid2 ) );
+$renewed = \Postelio\Jobs\Api\JobLifecycle::renew_after_payment( $bid2, 30, array( 'provider_ref' => 'demo_tx_1' ) );
+$t( 'renew => statut published', 'published' === $renewed['status'] );
+$t( 'renew => renewal_count 1', 1 === (int) $renewed['renewal_count'] );
+$t( 'renew => nouvelle échéance future', $renewed['date_expiration'] > gmdate( 'Y-m-d' ) );
+
 echo "== Événements / audit ==\n";
-foreach ( array( 'job.created', 'job.published', 'job.filled', 'job.archived', 'job.expired', 'job.expiring', 'job.suspended' ) as $ev ) {
+foreach ( array( 'job.created', 'job.updated', 'job.published', 'job.filled', 'job.archived', 'job.expired', 'job.expiring', 'job.suspended', 'job.renewed' ) as $ev ) {
 	$n = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$audit} WHERE action = %s", $ev ) );
 	$t( "audit contient {$ev}", $n >= 1 );
 }

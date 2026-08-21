@@ -22,6 +22,7 @@ use Postelio\Core\ApiError;
 use Postelio\Core\Permissions\Guard;
 use Postelio\Core\Rest\Controller;
 use Postelio\Core\Support\Response;
+use Postelio\Jobs\Search\JobSearchProvider;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -31,10 +32,12 @@ final class JobController extends Controller {
 
 	private JobRepository $jobs;
 	private JobService $service;
+	private JobSearchProvider $search;
 
-	public function __construct( JobRepository $jobs, JobService $service ) {
+	public function __construct( JobRepository $jobs, JobService $service, JobSearchProvider $search ) {
 		$this->jobs    = $jobs;
 		$this->service = $service;
+		$this->search  = $search;
 	}
 
 	private const UUID = '(?P<uuid>[0-9a-fA-F-]{36})';
@@ -66,21 +69,44 @@ final class JobController extends Controller {
 
 	public function list_public( \WP_REST_Request $r ): \WP_REST_Response {
 		$page     = max( 1, (int) $r->get_param( 'page' ) );
-		$per_page = Response::clamp_per_page( (int) $r->get_param( 'per_page' ) );
-		$filters  = array();
-		foreach ( array( 'q', 'ville', 'contrat', 'categorie', 'teletravail', 'niveau_etude', 'experience', 'salaire_min', 'alternance', 'stage', 'debutant' ) as $k ) {
-			$v = $r->get_param( $k );
-			if ( null !== $v && '' !== $v ) {
-				$filters[ $k ] = $v;
-			}
-		}
-		$res   = $this->jobs->list_public( $filters, $page, $per_page );
+		$per_page = Response::clamp_per_page( (int) $r->get_param( 'per_page' ) ); // borné à MAX_PER_PAGE
+		$filters  = $this->sanitize_filters( $r );
+
+		$res   = $this->search->search( $filters, $page, $per_page );
 		$items = array_map( array( JobPresenter::class, 'public_view' ), $res['items'] );
 		return $this->raw( Response::paginated( $items, $page, $per_page, (int) $res['total'] ) );
 	}
 
+	/**
+	 * Valide/normalise les filtres publics (whitelist stricte + typage). Toute clé
+	 * inconnue est ignorée ; une valeur invalide est simplement écartée (0 résultat,
+	 * jamais d'erreur serveur).
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function sanitize_filters( \WP_REST_Request $r ): array {
+		$out = array();
+		foreach ( array( 'q', 'ville', 'contrat', 'categorie', 'teletravail', 'niveau_etude', 'experience' ) as $k ) {
+			$v = $r->get_param( $k );
+			if ( null !== $v && '' !== $v ) {
+				$out[ $k ] = sanitize_text_field( (string) $v );
+			}
+		}
+		$sal = $r->get_param( 'salaire_min' );
+		if ( null !== $sal && '' !== $sal && is_numeric( $sal ) ) {
+			$out['salaire_min'] = max( 0, (int) $sal );
+		}
+		foreach ( array( 'alternance', 'stage', 'debutant' ) as $flag ) {
+			$v = $r->get_param( $flag );
+			if ( in_array( $v, array( '1', 1, true, 'true' ), true ) ) {
+				$out[ $flag ] = true;
+			}
+		}
+		return $out;
+	}
+
 	public function get_public( \WP_REST_Request $r ): \WP_REST_Response {
-		$j = $this->jobs->get_by_uuid( (string) $r->get_param( 'uuid' ) );
+		$j = $this->jobs->get_by_uuid( self::uuid_param( $r ) );
 		if ( null === $j || ! JobStateMachine::is_public( $j['status'] ) ) {
 			throw ApiError::not_found();
 		}
@@ -129,10 +155,19 @@ final class JobController extends Controller {
 	}
 
 	private function resolve( \WP_REST_Request $r ): int {
-		$j = $this->jobs->get_by_uuid( (string) $r->get_param( 'uuid' ) );
+		$j = $this->jobs->get_by_uuid( self::uuid_param( $r ) );
 		if ( null === $j ) {
 			throw ApiError::not_found();
 		}
 		return (int) $j['id'];
+	}
+
+	/**
+	 * UUID depuis les paramètres d'URL (route) UNIQUEMENT — jamais depuis le corps,
+	 * pour qu'une clé `uuid` dans le body ne puisse pas détourner la ressource ciblée.
+	 */
+	private static function uuid_param( \WP_REST_Request $r ): string {
+		$url = $r->get_url_params();
+		return (string) ( $url['uuid'] ?? '' );
 	}
 }

@@ -24,6 +24,9 @@ final class JobRepository {
 	public const META_STATUS     = 'pst_status';
 	public const META_DATE_PUB   = 'pst_date_publication';
 	public const META_DATE_EXP   = 'pst_date_expiration';
+	public const META_REVISION      = 'pst_revision';
+	public const META_RENEWED_AT    = 'pst_renewed_at';
+	public const META_RENEWAL_COUNT = 'pst_renewal_count';
 
 	/** Champs scalaires filtrables (meta discrète). */
 	private const FILTER_FIELDS = array(
@@ -63,6 +66,7 @@ final class JobRepository {
 		update_post_meta( $post_id, 'pst_company_uuid', (string) $company['uuid'] );
 		update_post_meta( $post_id, 'pst_company_name', (string) $company['nom'] );
 		update_post_meta( $post_id, self::META_STATUS, JobStateMachine::DRAFT );
+		update_post_meta( $post_id, self::META_REVISION, 1 ); // version métier (pour snapshot candidature)
 		$this->write_fields( $post_id, $data );
 
 		return $post_id;
@@ -242,6 +246,34 @@ final class JobRepository {
 		}
 	}
 
+	/**
+	 * Applique un renouvellement (appelé via Api\JobLifecycle, jamais par billing
+	 * directement) : offre remise en ligne, nouvelle échéance, compteur incrémenté.
+	 *
+	 * @return array{new_expiration:string, count:int}
+	 */
+	public function apply_renewal( int $id, int $days ): array {
+		$today   = gmdate( 'Y-m-d' );
+		$current = (string) get_post_meta( $id, self::META_DATE_EXP, true );
+		$base    = ( $current && $current > $today ) ? $current : $today; // prolonge sans perdre de temps restant
+		$new_exp = gmdate( 'Y-m-d', strtotime( $base . ' +' . $days . ' days' ) );
+		$count   = (int) get_post_meta( $id, self::META_RENEWAL_COUNT, true ) + 1;
+
+		update_post_meta( $id, self::META_STATUS, JobStateMachine::PUBLISHED );
+		update_post_meta( $id, self::META_DATE_EXP, $new_exp );
+		update_post_meta( $id, self::META_RENEWED_AT, current_time( 'mysql', true ) );
+		update_post_meta( $id, self::META_RENEWAL_COUNT, $count );
+
+		return array( 'new_expiration' => $new_exp, 'count' => $count );
+	}
+
+	/** Incrémente la version métier (utilisée pour le snapshot de candidature). */
+	public function bump_revision( int $id ): int {
+		$rev = (int) get_post_meta( $id, self::META_REVISION, true ) + 1;
+		update_post_meta( $id, self::META_REVISION, $rev );
+		return $rev;
+	}
+
 	public function delete( int $id ): void {
 		wp_delete_post( $id, true );
 	}
@@ -273,6 +305,9 @@ final class JobRepository {
 					'nom'  => (string) get_post_meta( $id, 'pst_company_name', true ),
 				),
 				'status'           => (string) ( get_post_meta( $id, self::META_STATUS, true ) ?: JobStateMachine::DRAFT ),
+				'revision'         => (int) ( get_post_meta( $id, self::META_REVISION, true ) ?: 1 ),
+				'renewal_count'    => (int) get_post_meta( $id, self::META_RENEWAL_COUNT, true ),
+				'renewed_at'       => (string) get_post_meta( $id, self::META_RENEWED_AT, true ),
 				'titre'            => $p->post_title,
 				'description'      => $p->post_content,
 				'date_publication' => (string) get_post_meta( $id, self::META_DATE_PUB, true ),

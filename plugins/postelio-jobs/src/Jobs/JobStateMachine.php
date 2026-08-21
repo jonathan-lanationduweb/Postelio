@@ -1,11 +1,16 @@
 <?php
 /**
- * Machine à états CANONIQUE d'une offre (docs/backend/workflows.md#offre-job).
+ * Machine à états CANONIQUE d'une offre (V1) — docs/backend/workflows.md#offre-job.
  *
- * États : draft, pending, published, expiring, expired, renewed, filled, archived,
- * suspended. `pending` n'est atteint que si une modération d'offre est activée
- * (hors Lot 04). Le renouvellement (`expired → renewed → published`) passe par un
- * paiement (postelio-billing) — hors Lot 04.
+ * États V1 (7, aucun état fantôme) :
+ *   draft, published, expiring, expired, filled, archived, suspended.
+ *
+ * - `pending` (modération d'offre) : **retiré de la V1**. Il sera réintroduit par le
+ *   futur plugin `postelio-moderation` (aucun code actuel ne peut y entrer).
+ * - `renewed` : **n'est PAS un état persistant**. Le renouvellement est la transition
+ *   `expired → published` (nouvelle date d'expiration) accompagnée de l'événement
+ *   métier `job.renewed`, déclenchée uniquement par le futur `postelio-billing`
+ *   après paiement (voir Api\JobLifecycle). Aucun paiement n'est implémenté ici.
  *
  * Classe pure → testable en isolation.
  *
@@ -23,29 +28,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class JobStateMachine {
 
 	public const DRAFT     = 'draft';
-	public const PENDING   = 'pending';
 	public const PUBLISHED = 'published';
 	public const EXPIRING  = 'expiring';
 	public const EXPIRED   = 'expired';
-	public const RENEWED   = 'renewed';
 	public const FILLED    = 'filled';
 	public const ARCHIVED  = 'archived';
 	public const SUSPENDED = 'suspended';
 
 	/** @var array<string, string[]> */
 	private const TRANSITIONS = array(
-		self::DRAFT     => array( self::PENDING, self::PUBLISHED, self::ARCHIVED ),
-		self::PENDING   => array( self::PUBLISHED, self::DRAFT, self::ARCHIVED ),
+		self::DRAFT     => array( self::PUBLISHED, self::ARCHIVED ),
 		self::PUBLISHED => array( self::EXPIRING, self::EXPIRED, self::FILLED, self::ARCHIVED, self::SUSPENDED ),
 		self::EXPIRING  => array( self::EXPIRED, self::FILLED, self::ARCHIVED, self::SUSPENDED ),
-		self::EXPIRED   => array( self::RENEWED, self::ARCHIVED ),
-		self::RENEWED   => array( self::PUBLISHED ),
+		self::EXPIRED   => array( self::PUBLISHED, self::ARCHIVED ), // published = renouvellement (billing)
 		self::FILLED    => array( self::ARCHIVED ),
-		self::ARCHIVED  => array(), // terminal (recréer via duplication)
+		self::ARCHIVED  => array(),                                 // terminal (recréer via duplication)
 		self::SUSPENDED => array( self::PUBLISHED, self::ARCHIVED ),
 	);
 
-	/** États visibles PUBLIQUEMENT (listing / fiche publique). */
+	/** États visibles PUBLIQUEMENT. */
 	private const PUBLIC_STATES = array( self::PUBLISHED, self::EXPIRING );
 
 	/** @return string[] */

@@ -20,13 +20,48 @@ Offre = **CPT `postelio_job`** (data-model.md). `post_title` = intitulé,
 `pst_date_expiration`, et `pst_detail` (JSON : missions, profil, compétences,
 avantages, présélection, processus, libellés…). Pas de table dédiée.
 
-## Cycle de vie (machine à états canonique)
-`draft → published → expiring → expired → renewed → filled → archived`, `→ suspended`
-(admin), `pending` (si modération, hors lot). **D1 :** un **brouillon** est créable
-sans entreprise vérifiée ; la **publication publique exige `verified`** (vérifié via
-`CompanyVerification::can_publish_jobs()`). Expiration automatique (cron quotidien) :
-`published → expiring` (J‑7), `published/expiring → expired` (échéance). Renouvellement
-payant (`expired → renewed → published`) = **postelio-billing** (hors lot).
+## Cycle de vie (machine à états canonique V1 — 7 états)
+`draft, published, expiring, expired, filled, archived, suspended`. **Aucun état
+fantôme** : `pending` (modération) retiré → futur `postelio-moderation` ; `renewed`
+**n'est pas un état** mais la transition `expiring|expired → published` + l'événement
+`job.renewed`. **D1 :** brouillon créable sans entreprise vérifiée ; **publication
+publique (`draft → published`) exige `verified`** via
+`CompanyVerification::can_publish_jobs()`. Seul un **brouillon** est publiable en
+libre-service (réactivation d'une suspendue = admin ; remise en ligne d'une expirée =
+renouvellement billing). Expiration cron quotidien (dates **UTC**) :
+`published → expiring` (J‑7, borne incluse), `published/expiring → expired`
+(échéance incluse). **Visibles publiquement : `published`/`expiring` seulement.**
+
+## Édition d'une offre publiée (V1)
+Une offre `published`/`expiring` peut modifier ses champs **éditoriaux**. Protégés
+(jamais modifiables via l'édition) : entreprise propriétaire, `uuid`, `statut`, dates
+système. Chaque édition incrémente `revision` (version métier, base du snapshot de
+candidature). `draft` éditable ; `archived`/`suspended` non éditables.
+
+## Renouvellement (contrat billing)
+`Postelio\Jobs\Api\JobLifecycle::can_renew()` / `renew_after_payment($id,$days,$meta)` :
+seul point d'entrée du renouvellement. **Billing n'écrit jamais** `pst_status` /
+`pst_date_expiration` — il appelle ce contrat après paiement, qui remet l'offre
+`published`, prolonge l'échéance, incrémente `renewal_count` et émet `job.renewed`.
+Aucun paiement/endpoint payant en V1.
+
+## Entreprise dénormalisée
+`pst_company_id` (relation), `pst_company_uuid` (référence publique) — **immuables** ;
+`pst_company_name` = **cache/repli**. Le presenter lit toujours le nom **courant** via
+`CompanyDirectory`, et le cache est rafraîchi sur `company.updated` (aucun affichage de
+deux noms différents).
+
+## Recherche / filtres
+Filtres V1 en **postmeta** (`WP_Meta_Query`) — limite de scalabilité assumée. Les
+endpoints passent par `JobSearchProvider` (filtre `postelio/jobs/search_provider`),
+remplaçable par **postelio-search** sans casser l'API. Filtres validés/typés ;
+`per_page` borné (max 100) ; valeur invalide → 0 résultat (jamais d'erreur).
+
+## Présélection & snapshot candidature (contrats préparés)
+`questions_preselection` normalisées : `{id, label, type(oui_non|texte|nombre|choix),
+required, critere(indispensable|souhaite|null)}`. `postelio-applications` devra
+snapshotter à la candidature : `job_uuid`, `job_revision`, `titre`, entreprise
+(uuid+nom à T), questions utilisées (voir data-model.md).
 
 ## Endpoints (`postelio/v1`, UUID uniquement)
 | Méthode | Route | Accès |

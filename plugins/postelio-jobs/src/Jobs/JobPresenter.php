@@ -63,11 +63,14 @@ final class JobPresenter {
 		$view                          = self::public_view( $j );
 		$d                             = is_array( $j['detail'] ) ? $j['detail'] : array();
 		$view['status']                = $j['status'];
+		$view['revision']              = $j['revision'] ?? 1;
+		$view['renewal_count']         = $j['renewal_count'] ?? 0;
 		$view['email_reception']       = $d['email_reception'] ?? null;
 		$view['questions_preselection'] = $d['questions_preselection'] ?? array();
+		// Nom d'entreprise TOUJOURS à jour via l'annuaire (le cache meta n'est qu'un repli).
 		$view['company']               = array(
 			'uuid' => $j['company']['uuid'],
-			'nom'  => $j['company']['nom'],
+			'nom'  => CompanyDirectory::name_of( (int) $j['company']['id'] ) ?? $j['company']['nom'],
 		);
 		return $view;
 	}

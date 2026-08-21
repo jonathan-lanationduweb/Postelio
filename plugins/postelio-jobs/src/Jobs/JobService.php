@@ -18,7 +18,9 @@ use Postelio\Core\ApiError;
 use Postelio\Core\Plugin as Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+	if ( ! defined( 'POSTELIO_CORE_TESTING' ) ) {
+		exit;
+	}
 }
 
 final class JobService {
@@ -82,7 +84,8 @@ final class JobService {
 			);
 		}
 		$this->jobs->write_fields( $job_id, $this->clean( $input ) );
-		$this->emit( 'job.updated', $job_id, (int) $job['company']['id'] );
+		$rev = $this->jobs->bump_revision( $job_id ); // nouvelle version métier
+		$this->emit( 'job.updated', $job_id, (int) $job['company']['id'], array( 'revision' => $rev ) );
 		return $this->jobs->get( $job_id );
 	}
 
@@ -95,13 +98,18 @@ final class JobService {
 		$job     = $this->owned_or_fail( $actor_id, $job_id );
 		$company = (int) $job['company']['id'];
 
-		$this->guard_transition( $job['status'], JobStateMachine::PUBLISHED );
+		// Publication libre-service : uniquement depuis un BROUILLON. La
+		// réactivation d'une offre suspendue relève de l'admin (/status) ; la
+		// remise en ligne d'une offre expirée relève du renouvellement (billing).
+		if ( JobStateMachine::DRAFT !== $job['status'] ) {
+			throw new ApiError( 'invalid_transition', 'Seul un brouillon peut être publié (statut actuel : ' . $job['status'] . ').' );
+		}
 
 		if ( ! CompanyVerification::can_publish_jobs( $company ) ) {
 			throw ApiError::forbidden( 'Publication impossible : l\'entreprise doit être vérifiée.' );
 		}
 
-		$today = current_time( 'Y-m-d' );
+		$today = gmdate( 'Y-m-d' ); // dates en UTC (Y-m-d), cohérentes avec l'expiration
 		$exp   = gmdate( 'Y-m-d', strtotime( $today . ' +' . self::PUBLISH_DAYS . ' days' ) );
 		$this->jobs->set_status( $job_id, JobStateMachine::PUBLISHED, array( 'date_publication' => $today, 'date_expiration' => $exp ) );
 		$this->emit( 'job.published', $job_id, $company, array( 'date_expiration' => $exp ) );
@@ -217,10 +225,47 @@ final class JobService {
 				$out[ $flag ] = (bool) $in[ $flag ];
 			}
 		}
-		foreach ( array( 'missions', 'profil', 'competences', 'avantages', 'questions_preselection', 'processus' ) as $list ) {
+		foreach ( array( 'missions', 'profil', 'competences', 'avantages', 'processus' ) as $list ) {
 			if ( array_key_exists( $list, $in ) && is_array( $in[ $list ] ) ) {
 				$out[ $list ] = array_values( array_map( 'sanitize_text_field', array_map( 'strval', $in[ $list ] ) ) );
 			}
+		}
+		if ( array_key_exists( 'questions_preselection', $in ) && is_array( $in['questions_preselection'] ) ) {
+			$out['questions_preselection'] = self::normalize_questions( $in['questions_preselection'] );
+		}
+		return $out;
+	}
+
+	/**
+	 * Normalise les questions de présélection vers une structure STABLE (contrat
+	 * pour postelio-applications) : { id, label, type, required, critere }.
+	 *
+	 * @param array<int, mixed> $questions
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function normalize_questions( array $questions ): array {
+		$types    = array( 'oui_non', 'texte', 'nombre', 'choix' );
+		$criteres = array( 'indispensable', 'souhaite' );
+		$out      = array();
+		$i        = 0;
+		foreach ( $questions as $q ) {
+			$q     = is_array( $q ) ? $q : array( 'label' => (string) $q );
+			$label = sanitize_text_field( (string) ( $q['label'] ?? '' ) );
+			if ( '' === $label ) {
+				continue;
+			}
+			++$i;
+			$id      = (string) ( $q['id'] ?? '' );
+			$id      = '' !== $id ? sanitize_key( $id ) : 'q' . $i;
+			$type    = in_array( ( $q['type'] ?? '' ), $types, true ) ? $q['type'] : 'texte';
+			$critere = in_array( ( $q['critere'] ?? '' ), $criteres, true ) ? $q['critere'] : null;
+			$out[]   = array(
+				'id'       => $id,
+				'label'    => $label,
+				'type'     => $type,
+				'required' => ! empty( $q['required'] ),
+				'critere'  => $critere,
+			);
 		}
 		return $out;
 	}
