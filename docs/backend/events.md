@@ -1,0 +1,85 @@
+# Postelio — Événements internes
+
+Bus d'événements du core (`Postelio\Core\Events`). Convention : `postelio/<domaine>.<action>`.
+Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins métier.
+`postelio-core` écoute **tout** pour l'audit log.
+
+## Catalogue d'événements
+
+| Événement | Émetteur | Consommateurs |
+|---|---|---|
+| `user.created` | users | companies (rattacher recruteur), notifications, core(audit) |
+| `user.updated` | users | core(audit) |
+| `user.deleted` | users | files (purge CV), applications (anonymiser), messaging, core(audit) |
+| `candidate.profile_updated` | users | jobs (recalcul reco/alertes), core(audit) |
+| `company.created` | companies | notifications, core(audit) |
+| `company.updated` | companies | core(audit) |
+| `company.verification_requested` | companies | moderation/admin, notifications, core(audit) |
+| `company.verified` | companies | notifications (recruteur), jobs (badge), core(audit) |
+| `company.suspended` | companies | jobs (dépublier), notifications, core(audit) |
+| `company.followed` | companies | core(audit) |
+| `job.created` | jobs | moderation (si review), core(audit) |
+| `job.published` | jobs | notifications (suiveurs + alertes), core(audit) |
+| `job.expiring` | jobs (cron) | notifications (recruteur), billing (proposer renouvellement) |
+| `job.expired` | jobs (cron) | notifications, core(audit) |
+| `job.renewed` | jobs | notifications, core(audit) |
+| `job.filled` | jobs | applications (info), notifications, core(audit) |
+| `alert.created` | jobs | core(audit) |
+| `favorite.added` | jobs | core(audit) |
+| `application.created` | applications | files (snapshot CV), messaging (créer conversation), notifications (recruteur), core(audit) |
+| `application.status_changed` | applications | notifications (candidat), interviews (cohérence), core(audit) |
+| `application.rejected` | applications | notifications (candidat, message courtois), core(audit) |
+| `application.selected` | applications | notifications, jobs (proposer filled), core(audit) |
+| `application.withdrawn` | applications | notifications (recruteur), interviews (annuler), core(audit) |
+| `cv.uploaded` / `cv.replaced` / `cv.deleted` | files | core(audit) |
+| `cv.snapshot_created` | files | applications, core(audit) |
+| `message.created` | messaging | notifications (destinataire), core(audit) |
+| `message.read` | messaging | (métrique) |
+| `message.reported` | messaging | moderation, core(audit) |
+| `interview.proposed` | interviews | messaging (message système), notifications (candidat), core(audit) |
+| `interview.confirmed` | interviews | messaging, notifications (recruteur), applications, core(audit) |
+| `interview.rescheduled` | interviews | notifications (recruteur), core(audit) |
+| `interview.rejected` | interviews | notifications (recruteur), core(audit) |
+| `interview.cancelled` | interviews | notifications (candidat), core(audit) |
+| `interview.completed` | interviews (cron) | notifications, core(audit) |
+| `notification.created` | notifications | (canal e-mail si applicable) |
+| `payment.succeeded` | billing | jobs (appliquer renouvellement), notifications, core(audit) |
+| `payment.failed` | billing | notifications (recruteur), core(audit) |
+| `renewal.applied` | billing | jobs, core(audit) |
+| `invoice.created` | billing | notifications, core(audit) |
+| `skill.submitted` | skills | moderation (si review), core(audit) |
+| `skill.published` | skills | notifications (option), core(audit) |
+| `skill.reported` | skills | moderation, core(audit) |
+| `company_content.submitted` | skills | moderation, core(audit) |
+| `content.reported` | moderation | admin, core(audit) |
+| `moderation.decided` | moderation | messaging/skills/jobs (appliquer allowed/blocked), notifications, core(audit) |
+
+## Matrice de notifications
+
+Canaux : **in-app** (cloche), **email** (transactionnel), *push Tauri* (plus tard).
+`—` = pas de notification.
+
+| Événement | Candidat | Recruteur | Admin | Email ? | In-app ? |
+|---|---|---|---|---|---|
+| application.created | — | ✅ | — | ✅ recruteur | ✅ recruteur |
+| application.status_changed | ✅ | — | — | ✅ (selon type) | ✅ candidat |
+| application.rejected | ✅ (msg courtois) | — | — | ✅ | ✅ |
+| application.selected | ✅ | — | — | ✅ | ✅ |
+| application.withdrawn | — | ✅ | — | option | ✅ recruteur |
+| message.created | ✅ (dest.) | ✅ (dest.) | — | option | ✅ |
+| interview.proposed | ✅ | — | — | ✅ | ✅ |
+| interview.confirmed | — | ✅ | — | ✅ | ✅ |
+| interview.rescheduled | — | ✅ | — | ✅ | ✅ |
+| interview.cancelled | ✅ | ✅ | — | ✅ | ✅ |
+| interview (rappel J-1) | ✅ | ✅ | — | ✅ | ✅ |
+| job.published (suiveurs/alertes) | ✅ | — | — | selon fréquence alerte | ✅ |
+| job.expiring | — | ✅ | — | ✅ | ✅ |
+| company.verified | — | ✅ | — | ✅ | ✅ |
+| company.verification_requested | — | — | ✅ | option | ✅ file admin |
+| payment.succeeded / invoice.created | — | ✅ | — | ✅ (reçu) | ✅ |
+| payment.failed | — | ✅ | — | ✅ | ✅ |
+| content.reported / moderation | — | — | ✅ | option | ✅ file admin |
+
+> Les préférences de notification (candidat : nouvelles offres, changement de statut,
+> nouveau message, proposition d'entretien, rappel, conseils) existent déjà côté front
+> et pilotent l'activation par canal.
