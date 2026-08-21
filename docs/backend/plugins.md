@@ -157,19 +157,31 @@ lecture même e-mail non vérifié, **envoi** exige `pst_email_verified`.
 
 ## postelio-interviews
 
-**Responsabilité.** Entretiens : proposition, confirmation, contre-proposition de
-créneau, refus, annulation, formats (visio/sur place/téléphone) et infos associées.
+**Responsabilité.** Entretiens liés à une **candidature** : proposition (recruteur),
+confirmation / refus / autre créneau (candidat), modification / acceptation / annulation /
+réalisé (recruteur), historique. Formats **visio / sur place / téléphone** avec données
+structurées. *(Pas d'e-mail réel, ni calendrier externe, ni SMS/push : hooks via events.)*
 
-**Dépendances :** core, applications, users.
-**Données possédées :** `Interview` (table dédiée).
-**Endpoints :** `/interviews` (recruteur propose), `/interviews/me` (candidat),
-`/interviews/{id}/confirm`, `/interviews/{id}/reschedule`, `/interviews/{id}/reject`,
-`/interviews/{id}/cancel`.
-**Émet :** `interview.proposed`, `interview.confirmed`, `interview.rescheduled`,
-`interview.rejected`, `interview.cancelled`, `interview.completed`.
-**Écoute :** `application.status_changed` (cohérence), `application.withdrawn` (annuler).
-**Interactions :** insère des messages système via `messaging` ; alimente
-`notifications` ; export `.ics` (déjà simulé côté front).
+**Dépendances :** core, users, companies, applications. Découplage via
+`ApplicationDirectory` (contexte + `move_to_interview` + `is_schedulable`) et
+`CompanyDirectory` (appartenance, préremplissage adresse). Aucune écriture directe de la
+table applications.
+**Données possédées :** `Interview` + `InterviewHistory` (2 tables dédiées).
+**Décisions V1 :** contexte candidature obligatoire ; pipeline → `interview` **à la
+proposition** ; états `proposed/confirmed/reschedule_requested/declined/cancelled/completed`
+(pas de `pending_candidate` redondant) ; **un seul entretien actif par candidature** ;
+dates **UTC** + fuseau métier (ISO 8601) ; durée 15–240 min ; URL visio validée (jamais
+rendue en HTML) ; adresse structurée (ville préremplie) ; téléphone non divulgué ;
+modification substantielle d'un confirmé ⇒ retour `proposed` (reconfirmation) ; candidature
+terminale ⇒ `409` ; hors périmètre ⇒ `404` ; `completed` = marquage manuel (cron futur).
+**Endpoints :** voir [api-contract.md](api-contract.md#entretiens--postelio-interviews).
+**Émet :** `interview.proposed`, `interview.confirmed`, `interview.declined`,
+`interview.reschedule_requested`, `interview.rescheduled`, `interview.cancelled`,
+`interview.completed` (audit **sans coordonnées ni instructions**).
+**Contrat sortant :** `\Postelio\Interviews\Api\InterviewDirectory` (contexte pour
+Notifications/e-mail de preuve, compteur à venir, historique).
+**Interactions :** émet des événements que `notifications`/e-mail consommeront ; le lien
+messagerie passe par `MessagingDirectory` (pas de seconde messagerie).
 
 ---
 

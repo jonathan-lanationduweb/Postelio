@@ -56,6 +56,7 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 | E-mail perso | candidat ; recruteur **seulement si** visibilité=recruteurs ou via CV | candidat | anonymisé à la suppression compte |
 | Téléphone | idem e-mail (visibilité) | candidat | idem |
 | Messages | participants + admin (audit) | **immuables en V1** (pas d'édition — D6) | suppression **logique**/modération (D6) |
+| Entretien (créneau/lien visio/adresse/téléphone) | candidat concerné + recruteurs de la company + admin ; hors périmètre → 404 | recruteur (modif substantielle ⇒ reconfirmation) ; candidat (confirme/refuse/propose créneau) | logique via statut (`cancelled`) ; historique append-only conservé |
 | Notes recruteur | recruteurs de la company + admin | recruteur | recruteur |
 | Adresse personnelle | candidat + recruteur autorisé | candidat | anonymisée |
 | Historique candidature | candidat (le sien), recruteur concerné, admin | système (append-only) | anonymisé selon conservation |

@@ -170,8 +170,12 @@ publique ⇒ `verified`**. Appliquée par `postelio-jobs` au Lot 04 (`POST /jobs
   Meilisearch/Typesense) sans casser l'API. Défaut V1 : `MetaQuerySearchProvider`.
 
 `postelio-applications` expose **`Postelio\Applications\Api\ApplicationDirectory`**
-(`context`, `belongs_to_company`, `move_to_interview`) pour `postelio-interviews` /
-`postelio-messaging` ; `postelio-users` expose **`Api\UserDirectory`**.
+(`context`, `belongs_to_company`, `is_schedulable`, `move_to_interview`) pour
+`postelio-interviews` / `postelio-messaging` ; `postelio-users` expose
+**`Api\UserDirectory`**. `postelio-messaging` (Lot 07) expose
+**`Api\MessagingDirectory`** ; `postelio-interviews` (Lot 08) expose
+**`Api\InterviewDirectory`** (contexte d'entretien pour Notifications/e-mail de preuve,
+compteur à venir, historique). Ces façades évitent toute dépendance circulaire.
 
 `postelio-files` (Lot 06) — service transversal de fichiers privés :
 - **`StorageProvider`** (interface) + `LocalPrivateStorageProvider` (V1, filtre
