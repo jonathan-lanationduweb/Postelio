@@ -143,6 +143,19 @@ final class DeliveryRepository {
 		);
 	}
 
+	/** Passe une livraison (déjà réclamée/processing) en `skipped`, par id. */
+	public function mark_skipped( int $id, string $reason ): void {
+		global $wpdb;
+		$now = current_time( 'mysql', true );
+		$wpdb->update(
+			self::table(),
+			array( 'status' => self::SKIPPED, 'last_error' => substr( $reason, 0, 250 ), 'updated_at' => $now ),
+			array( 'id' => $id ),
+			array( '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+	}
+
 	/** Passe en `skipped` une livraison encore en attente (préférence, lecture, compte…). */
 	public function skip_pending( string $dedup_key, string $channel, string $reason ): int {
 		global $wpdb;

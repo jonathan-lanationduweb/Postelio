@@ -13,6 +13,7 @@
 
 namespace Postelio\Notifications\Notifications;
 
+use Postelio\Core\Jobs\Scheduler;
 use Postelio\Messaging\Api\MessagingDirectory;
 use Postelio\Notifications\Email\EmailProvider;
 use Postelio\Notifications\Email\TemplateRegistry;
@@ -26,9 +27,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class EmailDispatcher {
 
 	private DeliveryRepository $repo;
+	private ?Scheduler $scheduler = null;
 
 	public function __construct( DeliveryRepository $repo ) {
 		$this->repo = $repo;
+	}
+
+	public function set_scheduler( Scheduler $scheduler ): void {
+		$this->scheduler = $scheduler;
 	}
 
 	public function repository(): DeliveryRepository {
@@ -48,7 +54,17 @@ final class EmailDispatcher {
 	 */
 	public function enqueue( array $data ): int {
 		$data['channel'] = 'email';
-		return $this->repo->enqueue( $data );
+		$id              = $this->repo->enqueue( $data );
+		// Précision de l'envoi : un one-shot Scheduler à l'échéance exacte (en plus du
+		// worker récurrent de secours). WP-Cron se déclenche au trafic ; avec un vrai cron
+		// système (recommandé prod), la précision descend à ~1 min. Le worker récurrent
+		// `postelio_15min` reste le filet de sécurité (ticks manqués, retries/backoff).
+		if ( $id > 0 && null !== $this->scheduler ) {
+			$ts = strtotime( (string) ( $data['scheduled_at'] ?? '' ) . ' UTC' );
+			$ts = $ts ? $ts : time();
+			$this->scheduler->schedule( 'notifications_flush', max( time(), $ts ), array( (int) $id ) );
+		}
+		return $id;
 	}
 
 	/**
@@ -65,7 +81,7 @@ final class EmailDispatcher {
 
 			// §59 : destinataire inactif/supprimé → skip.
 			if ( ! UserDirectory::exists( $user_id ) || ! UserDirectory::is_active( $user_id ) ) {
-				$this->repo->skip_pending( (string) $row['dedup_key'], (string) $row['channel'], 'recipient_inactive' );
+				$this->repo->mark_skipped( (int) $row['id'], 'recipient_inactive' );
 				++$skipped;
 				continue;
 			}
@@ -73,7 +89,7 @@ final class EmailDispatcher {
 			// Garde message : n'envoyer que si la conversation est TOUJOURS non lue (D4).
 			if ( ! empty( $payload['skip_if_conversation_read'] ) && ! empty( $payload['conversation_uuid'] ) ) {
 				if ( ! MessagingDirectory::has_unread_in_conversation( $user_id, (string) $payload['conversation_uuid'] ) ) {
-					$this->repo->skip_pending( (string) $row['dedup_key'], (string) $row['channel'], 'conversation_read' );
+					$this->repo->mark_skipped( (int) $row['id'], 'conversation_read' );
 					++$skipped;
 					continue;
 				}
@@ -81,7 +97,7 @@ final class EmailDispatcher {
 
 			$email = $this->resolve_email( $user_id );
 			if ( '' === $email ) {
-				$this->repo->skip_pending( (string) $row['dedup_key'], (string) $row['channel'], 'no_email' );
+				$this->repo->mark_skipped( (int) $row['id'], 'no_email' );
 				++$skipped;
 				continue;
 			}

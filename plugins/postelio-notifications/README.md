@@ -38,6 +38,16 @@ autre plugin.
   → `pending` avec **backoff** (2,4,8… min, plafonné 1 h) tant que `attempts < max`, puis
   `failed`. Un `processing` abandonné > 5 min est récupérable.
 
+## Précision d'envoi (file e-mail)
+Chaque `enqueue` planifie un **one-shot** `Core\Jobs\Scheduler` à l'**échéance exacte** de
+la livraison (`scheduled_at`), en plus du worker récurrent `postelio_15min` (filet de
+sécurité pour les ticks manqués et les retries/backoff). Une livraison prévue à T+5 min ne
+dépend donc **pas** du seul cycle 15 min. **Précision réelle** : bornée par le déclenchement
+WP-Cron — quasi immédiate avec un vrai cron système (recommandé en prod, ~1 min), sinon
+liée au trafic. **Si WP-Cron est retardé** : la livraison reste `pending` et part au tick
+suivant (jamais perdue) ; le worker récurrent la rattrape. La valeur 5 min reste filtrable
+(`postelio/notifications/message_email_delay`).
+
 ## Anti-spam messages (D4)
 `message.created` → in-app **immédiat** ; e-mail **différé 5 min** (filtre
 `postelio/notifications/message_email_delay`), envoyé **uniquement si la conversation est
@@ -64,6 +74,13 @@ désinscription à venir).
 sécurité). Le reste est ON par défaut mais configurable.
 
 ## Compteurs (D9)
+**Sémantique du badge** : `unread-count` = notifications **non lues ET non résolues ET non
+expirées**. Une notification « action requise » devenue caduque (ex. « Confirmez votre
+entretien » après confirmation, ou les messages d'un fil une fois la conversation lue) est
+marquée `resolved_at` → elle **ne gonfle plus le badge**, mais reste **consultable dans la
+liste** (historique). `read_at` ≠ `resolved_at` : lu (par l'utilisateur) vs devenu caduc
+(par le système). Le filtre `?unread=1` suit la même sémantique.
+
 Cloche = `GET /me/notifications/unread-count` (notifications in-app non lues). Messagerie =
 `MessagingDirectory::unread_count` (messages non lus). **Compteurs distincts** en base ;
 un message crée une notification, mais les compteurs restent indépendants.

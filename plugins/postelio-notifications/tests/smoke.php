@@ -40,11 +40,12 @@ require_once ABSPATH . 'wp-admin/includes/user.php';
 /* Provider e-mail factice (déterministe) — compte les envois par template. */
 final class PstFakeProvider implements EmailProvider {
 	public static int $sent = 0;
+	public static string $last_to = '';
 	/** @var array<int,string> */
 	public static array $log = array();
 	public function name(): string { return 'fake'; }
 	public function send( EmailMessage $m ): DeliveryResult {
-		++self::$sent; self::$log[] = ( $m->meta['template'] ?? '' );
+		++self::$sent; self::$log[] = ( $m->meta['template'] ?? '' ); self::$last_to = $m->to;
 		return DeliveryResult::success( 'fake:' . self::$sent );
 	}
 }
@@ -247,7 +248,66 @@ $t( 'PUT préférences applique messages.email=false', 200 === $pp['status'] && 
 echo "== Sécurité : aucune donnée sensible dans les livraisons ==\n";
 $t( 'aucun motif/note/token dans payload deliveries', 0 === (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$DL} WHERE payload LIKE '%motif%' OR payload LIKE '%\"note\"%' OR payload LIKE '%Bearer%'" ) );
 
+echo "== [Conso] Timing e-mail : one-shot planifié + pas d'envoi avant échéance ==\n";
+$dr2 = new DeliveryRepository();
+$flush_before = wp_next_scheduled( 'postelio_job_notifications_flush', array() ); // (arg id varie)
+$idFuture = Notif::instance()->emails()->enqueue( array( 'user_id' => $recA, 'template' => 'application_received', 'dedup_key' => 'cons:timing:1', 'scheduled_at' => gmdate( 'Y-m-d H:i:s', time() + 3600 ) ) );
+$t( 'delivery différée créée (pending)', DeliveryRepository::PENDING === (string) $wpdb->get_var( $wpdb->prepare( "SELECT status FROM {$DL} WHERE id=%d", $idFuture ) ) );
+$t( 'one-shot Scheduler planifié à l\'échéance', false !== wp_next_scheduled( 'postelio_job_notifications_flush', array( $idFuture ) ) );
+$sb = PstFakeProvider::$sent; $process();
+$t( 'pas d\'envoi avant échéance', DeliveryRepository::PENDING === (string) $wpdb->get_var( $wpdb->prepare( "SELECT status FROM {$DL} WHERE id=%d", $idFuture ) ) && PstFakeProvider::$sent === $sb );
+$wpdb->update( $DL, array( 'scheduled_at' => current_time( 'mysql', true ) ), array( 'id' => $idFuture ) ); // simule l'échéance atteinte
+$process();
+$t( 'envoyé une fois l\'échéance atteinte', DeliveryRepository::SENT === (string) $wpdb->get_var( $wpdb->prepare( "SELECT status FROM {$DL} WHERE id=%d", $idFuture ) ) );
+
+echo "== [Conso] Adresse e-mail COURANTE au moment de l'envoi ==\n";
+wp_update_user( array( 'ID' => $recA, 'user_email' => 'nouvelle.' . $recA . '@postelio.test' ) );
+Notif::instance()->emails()->enqueue( array( 'user_id' => $recA, 'template' => 'application_received', 'dedup_key' => 'cons:email:changed', 'scheduled_at' => current_time( 'mysql', true ) ) );
+$process();
+$t( 'provider reçoit l\'adresse COURANTE (après changement)', PstFakeProvider::$last_to === 'nouvelle.' . $recA . '@postelio.test' );
+
+echo "== [Conso] Compte supprimé avant envoi => skipped ==\n";
+$candDel = $mk( 'candidate' );
+Notif::instance()->emails()->enqueue( array( 'user_id' => $candDel, 'template' => 'application_received', 'dedup_key' => 'cons:deleted:1', 'scheduled_at' => current_time( 'mysql', true ) ) );
+wp_delete_user( $candDel );
+$process();
+$t( 'delivery pour compte supprimé => skipped', DeliveryRepository::SKIPPED === (string) $wpdb->get_var( "SELECT status FROM {$DL} WHERE dedup_key='cons:deleted:1'" ) );
+
+echo "== [Conso] unread_count : non lu ET non résolu ET non expiré ==\n";
+$candD = $mk( 'candidate' ); $users[] = $candD;
+$svcN = Notif::instance()->notifications();
+$svcN->create( array( 'user_id' => $candD, 'type' => 'app_test', 'event_name' => 'x', 'title' => 'Actif', 'group_key' => 'g:active', 'dedup_key' => 'cd:active' ) );
+$t( 'notif active non lue => compteur 1', 1 === $svcN->unread_count( $candD ) );
+$svcN->create( array( 'user_id' => $candD, 'type' => 'app_test', 'event_name' => 'x', 'title' => 'Résolue', 'group_key' => 'g:res', 'dedup_key' => 'cd:res' ) );
+$svcN->resolve_group( $candD, 'g:res' );
+$t( 'notif résolue (non lue) => n\'incrémente pas le compteur', 1 === $svcN->unread_count( $candD ) );
+$svcN->create( array( 'user_id' => $candD, 'type' => 'app_test', 'event_name' => 'x', 'title' => 'Expirée', 'dedup_key' => 'cd:exp', 'expires_at' => gmdate( 'Y-m-d H:i:s', time() - 3600 ) ) );
+$t( 'notif expirée => n\'incrémente pas le compteur', 1 === $svcN->unread_count( $candD ) );
+$actUuid = (string) $wpdb->get_var( "SELECT public_uuid FROM {$NT} WHERE dedup_key='cd:active'" );
+$svcN->mark_read( $actUuid, $candD );
+$t( 'notif lue => compteur 0', 0 === $svcN->unread_count( $candD ) );
+
+echo "== [Conso] Actions structurées obligatoires (types à destination) ==\n";
+$actionOf = static function ( int $uid, string $type ) use ( $wpdb, $NT ): array {
+	$r = $wpdb->get_row( $wpdb->prepare( "SELECT action_type, resource_uuid FROM {$NT} WHERE user_id=%d AND type=%s ORDER BY id DESC LIMIT 1", $uid, $type ), ARRAY_A );
+	return $r ?: array( 'action_type' => null, 'resource_uuid' => null );
+};
+$expect = array(
+	array( $candB, 'application_selected', 'open_application' ),
+	array( $candB, 'new_message', 'open_conversation' ),
+	array( $candC, 'interview_proposed', 'open_interview' ),
+	array( $candC, 'interview_cancelled', 'open_interview' ),
+	array( $recA, 'company_suspended', 'company_profile' ),
+	array( $recA, 'job_expiring', 'manage_job' ),
+	array( $recA2, 'new_application', 'open_application' ),
+);
+foreach ( $expect as $e ) {
+	$a = $actionOf( $e[0], $e[1] );
+	$t( "action {$e[1]} = {$e[2]} + resource_uuid + pas d'URL", $e[2] === ( $a['action_type'] ?? '' ) && ! empty( $a['resource_uuid'] ) && false === strpos( (string) ( $a['action_type'] ?? '' ), 'http' ) );
+}
+
 echo "== Nettoyage ==\n";
+$wpdb->query( "DELETE FROM {$DL} WHERE dedup_key IN ('cons:timing:1','cons:email:changed','cons:deleted:1','unit:dedup:x')" );
 $uids = implode( ',', array_map( 'intval', $users ) );
 $wpdb->query( "DELETE FROM {$NT} WHERE user_id IN ({$uids})" );
 $wpdb->query( "DELETE FROM {$DL} WHERE user_id IN ({$uids})" );

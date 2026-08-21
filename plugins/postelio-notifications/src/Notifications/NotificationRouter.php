@@ -89,10 +89,12 @@ final class NotificationRouter {
 		$events->on( 'job.suspended', array( $this, 'on_job_suspended' ) );
 
 		// Worker file e-mail + rappels d'entretien (Scheduler unique du core).
+		$this->emails->set_scheduler( $scheduler ); // pour les one-shots à l'échéance exacte
 		$scheduler->on( 'notifications_worker', array( $this, 'run_worker' ) );
+		$scheduler->on( 'notifications_flush', array( $this, 'run_worker' ), 10, 1 ); // one-shot ponctuel (ignore l'arg id)
 		$scheduler->on( 'iv_reminder_24h', array( $this, 'fire_reminder_24h' ), 10, 1 );
 		$scheduler->on( 'iv_reminder_1h', array( $this, 'fire_reminder_1h' ), 10, 1 );
-		$scheduler->recurring( 'notifications_worker', 'postelio_15min' );
+		$scheduler->recurring( 'notifications_worker', 'postelio_15min' ); // filet de sécurité
 	}
 
 	public function run_worker(): void {

@@ -70,7 +70,10 @@ final class NotificationRepository {
 		$where = 'user_id = %d';
 		$args  = array( $user_id );
 		if ( ! empty( $filters['unread'] ) ) {
-			$where .= ' AND read_at IS NULL';
+			// « Non lu » côté badge = non lu ET non résolu ET non expiré (même sémantique
+			// que unread_count). L'historique complet reste visible sans ce filtre.
+			$where .= ' AND read_at IS NULL AND resolved_at IS NULL AND ( expires_at IS NULL OR expires_at > %s )';
+			$args[] = current_time( 'mysql', true );
 		}
 		if ( ! empty( $filters['type'] ) ) {
 			$where .= ' AND type = %s';
@@ -85,9 +88,20 @@ final class NotificationRepository {
 		return array( 'items' => array_map( array( $this, 'decode' ), $rows ?: array() ), 'total' => $total );
 	}
 
+	/**
+	 * Compteur de la cloche : notifications **non lues ET non résolues ET non expirées**.
+	 * Une notification résolue (action devenue caduque) ou expirée ne gonfle pas le badge,
+	 * mais reste consultable dans la liste.
+	 */
 	public function unread_count( int $user_id ): int {
 		global $wpdb;
-		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . self::table() . ' WHERE user_id = %d AND read_at IS NULL', $user_id ) );
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM ' . self::table() . ' WHERE user_id = %d AND read_at IS NULL AND resolved_at IS NULL AND ( expires_at IS NULL OR expires_at > %s )',
+				$user_id,
+				current_time( 'mysql', true )
+			)
+		);
 	}
 
 	/** Marque lue une notification de l'utilisateur. Retourne true si une ligne a changé. */
