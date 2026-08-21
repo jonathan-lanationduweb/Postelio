@@ -2,11 +2,11 @@
   <rect width="400" height="220" rx="12" fill="#F3EDE4"/>
   <circle cx="130" cy="84" r="24" fill="#2F6B5E"/>
   <rect x="106" y="110" width="48" height="34" rx="12" fill="#2F6B5E"/>
-  <circle cx="270" cy="84" r="24" fill="#E8A33D"/>
-  <rect x="246" y="110" width="48" height="34" rx="12" fill="#E8A33D"/>
+  <circle cx="270" cy="84" r="24" fill="#FF6B6B"/>
+  <rect x="246" y="110" width="48" height="34" rx="12" fill="#FF6B6B"/>
   <path d="M154 132c14 10 32 14 46 14s32-4 46-14" fill="none" stroke="#8A6B3B" stroke-width="10" stroke-linecap="round"/>
   <circle cx="200" cy="146" r="10" fill="#FFF8EC" stroke="#8A6B3B" stroke-width="3"/>
   <rect x="80" y="176" width="240" height="10" rx="5" fill="#DFD3BE"/>
-  <circle cx="62" cy="52" r="10" fill="#E8A33D" opacity="0.5"/>
+  <circle cx="62" cy="52" r="10" fill="#FF6B6B" opacity="0.5"/>
   <circle cx="344" cy="48" r="14" fill="#2F6B5E" opacity="0.25"/>
 </svg>

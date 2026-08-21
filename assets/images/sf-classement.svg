@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" role="img">
-  <rect width="400" height="220" rx="12" fill="#E9F0EC"/>
+  <rect width="400" height="220" rx="12" fill="#E7ECF1"/>
   <g>
-    <path d="M70 60h44l10 12h66a8 8 0 0 1 8 8v18H62V68a8 8 0 0 1 8-8z" fill="#E8A33D"/>
+    <path d="M70 60h44l10 12h66a8 8 0 0 1 8 8v18H62V68a8 8 0 0 1 8-8z" fill="#FF6B6B"/>
     <rect x="62" y="86" width="136" height="60" rx="8" fill="#F3D9AE"/>
     <text x="130" y="122" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#7A5410" text-anchor="middle">01-Clients</text>
   </g>
   <g>
     <path d="M232 82h36l8 10h54a7 7 0 0 1 7 7v14H225V89a7 7 0 0 1 7-7z" fill="#2F6B5E"/>
     <rect x="225" y="102" width="112" height="48" rx="7" fill="#BFDACE"/>
-    <text x="281" y="131" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#14372F" text-anchor="middle">02-RH</text>
+    <text x="281" y="131" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#0F2337" text-anchor="middle">02-RH</text>
   </g>
   <rect x="88" y="164" width="224" height="26" rx="6" fill="#FFFFFF" stroke="#CBDAD1"/>
   <text x="200" y="181" font-family="Arial, sans-serif" font-size="12" fill="#5C6B64" text-anchor="middle">2026-03-15_Devis_Toiture.pdf</text>
-  <circle cx="350" cy="56" r="12" fill="#E8A33D" opacity="0.4"/>
+  <circle cx="350" cy="56" r="12" fill="#FF6B6B" opacity="0.4"/>
   <circle cx="48" cy="184" r="8" fill="#2F6B5E" opacity="0.25"/>
 </svg>

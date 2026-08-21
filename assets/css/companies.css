@@ -542,7 +542,7 @@
 }
 
 .company-cta__copy .eyebrow {
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
 }
 
 .company-cta__copy h2 {
@@ -552,7 +552,7 @@
 }
 
 .company-cta__copy p {
-  color: #b9c9bf;
+  color: #c2ccd8;
   max-width: 52ch;
   line-height: 1.6;
 }

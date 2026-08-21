@@ -29,7 +29,7 @@
     var initials = e((offer.entrepriseNom || "??").split(/\s+/).slice(0, 2)
       .map(function (w) { return w.charAt(0); }).join("").toUpperCase());
     return '<article class="offer-row">' +
-      '<span class="logo-bubble" style="background:' + e(offer.couleur || "#1E4F46") + '" aria-hidden="true">' + initials + "</span>" +
+      '<span class="logo-bubble" style="background:' + e(offer.couleur || "#17324D") + '" aria-hidden="true">' + initials + "</span>" +
       "<div>" +
         '<h3 class="offer-row__title"><a href="offre-detail.html?id=' + encodeURIComponent(offer.id) + '">' + e(offer.titre) + "</a></h3>" +
         '<p class="offer-row__company"><strong>' + e(offer.entrepriseNom) + "</strong> · " + e(offer.ville) + "</p>" +
@@ -566,7 +566,7 @@
     var remote = SS.teletravailLabel(offer.teletravail);
     return '<article class="similar-card">' +
       '<div class="similar-card__head">' +
-        '<span class="logo-bubble" style="background:' + e(offer.couleur || "#1E4F46") + '" aria-hidden="true">' + initials + "</span>" +
+        '<span class="logo-bubble" style="background:' + e(offer.couleur || "#17324D") + '" aria-hidden="true">' + initials + "</span>" +
         '<span class="similar-card__contract">' + e(offer.contrat) + (remote ? " · " + e(remote) : "") + "</span>" +
       "</div>" +
       '<h3 class="similar-card__title"><a href="' + url + '">' + e(offer.titre) + "</a></h3>" +

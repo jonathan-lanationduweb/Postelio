@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" role="img">
   <rect width="400" height="220" rx="12" fill="#EEF3EF"/>
   <rect x="130" y="30" width="140" height="170" rx="8" fill="#FFFFFF" stroke="#D8E0DA"/>
-  <circle cx="160" cy="62" r="14" fill="#E8A33D"/>
-  <rect x="184" y="52" width="66" height="8" rx="4" fill="#1E4F46"/>
+  <circle cx="160" cy="62" r="14" fill="#FF6B6B"/>
+  <rect x="184" y="52" width="66" height="8" rx="4" fill="#17324D"/>
   <rect x="184" y="66" width="46" height="6" rx="3" fill="#9DB4AA"/>
   <rect x="146" y="94" width="108" height="6" rx="3" fill="#C9D6CD"/>
   <rect x="146" y="108" width="94" height="6" rx="3" fill="#C9D6CD"/>
@@ -11,7 +11,7 @@
   <rect x="146" y="160" width="108" height="6" rx="3" fill="#C9D6CD"/>
   <rect x="146" y="174" width="82" height="6" rx="3" fill="#C9D6CD"/>
   <circle cx="318" cy="70" r="26" fill="#F3D9AE"/>
-  <path d="M306 70l8 8 16-18" fill="none" stroke="#1E4F46" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M306 70l8 8 16-18" fill="none" stroke="#17324D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="76" cy="160" r="20" fill="#DCE8E0"/>
-  <circle cx="94" cy="52" r="9" fill="#E8A33D" opacity="0.5"/>
+  <circle cx="94" cy="52" r="9" fill="#FF6B6B" opacity="0.5"/>
 </svg>

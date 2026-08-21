@@ -148,7 +148,7 @@
 /* --- État normal (fond clair arrivé) : crème + vert Postelio --- */
 .site-header--cine.is-solid {
   background: rgba(250, 247, 241, 0.96);
-  box-shadow: 0 1px 0 rgba(20, 45, 38, 0.04), 0 8px 24px -12px rgba(20, 45, 38, 0.16);
+  box-shadow: 0 1px 0 rgba(23, 50, 77, 0.04), 0 8px 24px -12px rgba(23, 50, 77, 0.16);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -277,7 +277,7 @@
   font-weight: 650;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   margin-bottom: var(--sp-3);
 }
 

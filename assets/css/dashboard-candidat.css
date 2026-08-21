@@ -260,7 +260,7 @@
   transition: background var(--transition), border-color var(--transition);
 }
 .fav-btn:hover { background: var(--c-accent-soft); }
-.fav-btn[aria-pressed="true"] { color: var(--c-accent); }
+.fav-btn[aria-pressed="true"] { color: var(--c-accent); } /* cœur favori : corail de marque (icône) */
 .fav-btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 
 /* Divulgation « Pourquoi cette offre ? » */
