@@ -13,6 +13,6 @@
   <circle cx="150" cy="160" r="5" fill="#8C8478"/>
   <circle cx="205" cy="166" r="6" fill="#9C948a"/>
   <circle cx="252" cy="160" r="4.6" fill="#8C8478"/>
-  <circle cx="330" cy="52" r="20" fill="#E8A33D"/>
-  <path d="M330 24v-8M330 88v-8M358 52h8M294 52h8M350 32l6-6M304 78l6-6M350 72l6 6M304 26l6 6" stroke="#E8A33D" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="330" cy="52" r="20" fill="#FF6B6B"/>
+  <path d="M330 24v-8M330 88v-8M358 52h8M294 52h8M350 32l6-6M304 78l6-6M350 72l6 6M304 26l6 6" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round"/>
 </svg>

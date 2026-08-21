@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" role="img">
-  <rect width="400" height="220" rx="12" fill="#E9F0EC"/>
+  <rect width="400" height="220" rx="12" fill="#E7ECF1"/>
   <g>
     <rect x="46" y="70" width="72" height="90" rx="8" fill="#FFFFFF" stroke="#CBDAD1"/>
-    <rect x="58" y="84" width="48" height="8" rx="4" fill="#1E4F46"/>
+    <rect x="58" y="84" width="48" height="8" rx="4" fill="#17324D"/>
     <rect x="58" y="100" width="48" height="6" rx="3" fill="#C9D6CD"/>
     <rect x="58" y="112" width="36" height="6" rx="3" fill="#C9D6CD"/>
   </g>
   <g>
     <rect x="128" y="70" width="72" height="90" rx="8" fill="#FFFFFF" stroke="#CBDAD1"/>
-    <rect x="140" y="84" width="48" height="8" rx="4" fill="#E8A33D"/>
+    <rect x="140" y="84" width="48" height="8" rx="4" fill="#FF6B6B"/>
     <rect x="140" y="100" width="48" height="6" rx="3" fill="#C9D6CD"/>
   </g>
   <g>
@@ -23,6 +23,6 @@
     <rect x="304" y="84" width="48" height="8" rx="4" fill="#6B4E71"/>
     <rect x="304" y="100" width="44" height="6" rx="3" fill="#C9D6CD"/>
   </g>
-  <path d="M200 30v28M200 58l-8-9M200 58l8-9" stroke="#1E4F46" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M200 30v28M200 58l-8-9M200 58l8-9" stroke="#17324D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   <rect x="150" y="176" width="100" height="14" rx="7" fill="#DCE8E0"/>
 </svg>

@@ -507,7 +507,7 @@
   font-weight: 650;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   margin-bottom: var(--sp-2);
 }
 
@@ -972,7 +972,7 @@
   font-family: var(--font-serif);
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
 }
 
 .blog-side-ranked a {
@@ -1057,7 +1057,7 @@
   font-weight: 650;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   margin-bottom: var(--sp-3);
 }
 
@@ -1085,7 +1085,7 @@
 
 .blog-newsletter__benefits li::before {
   content: "✓";
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   font-weight: 700;
 }
 

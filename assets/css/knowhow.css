@@ -18,7 +18,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   white-space: nowrap;
 }
 
@@ -125,7 +125,7 @@
 }
 
 .rating-note__star {
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
 }
 
 .rating-note__count {
@@ -688,7 +688,7 @@
 .star-input label:hover,
 .star-input label:hover ~ label,
 .star-input input:checked ~ label {
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
 }
 
 .star-input label:hover {
@@ -980,7 +980,7 @@
   backdrop-filter: blur(6px);
 }
 
-.kh-hero__facts .kh-fact__star { color: var(--c-accent); }
+.kh-hero__facts .kh-fact__star { color: var(--c-accent-dark); }
 
 .kh-hero__foot {
   display: flex;

@@ -2,9 +2,9 @@
   <rect width="400" height="220" rx="12" fill="#F5EEE1"/>
   <rect x="50" y="40" width="300" height="130" rx="8" fill="#EFE6D6"/>
   <rect x="50" y="40" width="170" height="130" rx="8" fill="#2F6B5E"/>
-  <path d="M220 40v130" stroke="#E8A33D" stroke-width="5" stroke-dasharray="1 0"/>
+  <path d="M220 40v130" stroke="#FF6B6B" stroke-width="5" stroke-dasharray="1 0"/>
   <g transform="rotate(14 268 96)">
-    <rect x="238" y="82" width="76" height="30" rx="14" fill="#E8A33D"/>
+    <rect x="238" y="82" width="76" height="30" rx="14" fill="#FF6B6B"/>
     <rect x="312" y="92" width="34" height="9" rx="4" fill="#8A5A2B"/>
     <rect x="344" y="88" width="10" height="30" rx="4" fill="#A86F16"/>
   </g>
