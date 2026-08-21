@@ -1,0 +1,39 @@
+# ============================================================
+# Postelio — .gitignore
+# Le FRONT (racine : *.html, assets/, data/, docs/, partials/, tools/) reste versionné.
+# On ignore le cœur WordPress local, les configs/secrets et les fichiers générés.
+# ============================================================
+
+# --- WordPress local (cœur non versionné) ---------------------------------
+# Le cœur WP est installé localement dans /wordpress (voir docs/backend/local-setup.md).
+# Nos plugins Postelio NE sont PAS ici : ils sont versionnés dans /plugins et
+# reliés à wp-content/plugins par des liens (jonctions). Voir local-setup.md.
+/wordpress/
+
+# --- Configuration & secrets (JAMAIS commités) ----------------------------
+wp-config.php
+**/wp-config.php
+*.local.php
+.env
+.env.*
+!.env.example
+secrets*.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# --- Uploads / cache / logs / temporaires ---------------------------------
+**/wp-content/uploads/
+**/wp-content/cache/
+**/wp-content/upgrade/
+logs/
+*.log
+tmp/
+*.tmp
+.DS_Store
+Thumbs.db
+
+# --- Dépendances (si ajoutées plus tard) ----------------------------------
+node_modules/
+vendor/
