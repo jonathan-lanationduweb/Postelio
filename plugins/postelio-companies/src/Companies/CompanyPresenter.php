@@ -92,8 +92,8 @@ final class CompanyPresenter {
 	 * @return array<string, mixed>
 	 */
 	private static function public_editorial( array $ed ): array {
-		// Coordonnées de recrutement publiques ; pas de champ interne.
-		unset( $ed['has_photo'] );
-		return $ed;
+		// Coordonnées de recrutement publiques ; aucun identifiant/flag interne.
+		unset( $ed['has_photo'], $ed['logo_id'] );
+		return $ed; // logo_url conservé (public)
 	}
 }

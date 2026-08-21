@@ -16,12 +16,14 @@ define( 'POSTELIO_CORE_TESTING', true );
 
 $src = dirname( __DIR__ ) . '/src/';
 require_once $src . 'Verification/Siren.php';
+require_once $src . 'Verification/VerificationStateMachine.php';
 require_once $src . 'Companies/CompanyService.php';
 require_once $src . 'Companies/CompanyPresenter.php';
 
 use Postelio\Companies\Companies\CompanyPresenter;
 use Postelio\Companies\Companies\CompanyService;
 use Postelio\Companies\Verification\Siren;
+use Postelio\Companies\Verification\VerificationStateMachine as SM;
 
 $tests  = 0;
 $failed = array();
@@ -45,6 +47,32 @@ check( 'SIRET 12345678900000 invalide', ! Siren::is_valid_siret( '12345678900000
 check( 'siret_matches_siren OK', Siren::siret_matches_siren( '55210055400013', '552100554' ) );
 check( 'siret_matches_siren KO', ! Siren::siret_matches_siren( '55210055400013', '999888777' ) );
 check( 'normalize retire non-chiffres', '552100554' === Siren::normalize( 'FR 552-100-554' ) );
+
+echo "== VerificationStateMachine ==\n";
+check( '6 états canoniques', count( SM::statuses() ) === 6 );
+check( 'conflict n\'est PAS un état', ! SM::is_status( 'conflict' ) );
+// Transitions autorisées
+check( 'unverified → pending', SM::can_transition( 'unverified', 'pending' ) );
+check( 'unverified → manual_review', SM::can_transition( 'unverified', 'manual_review' ) );
+check( 'pending → verified', SM::can_transition( 'pending', 'verified' ) );
+check( 'pending → rejected', SM::can_transition( 'pending', 'rejected' ) );
+check( 'manual_review → verified', SM::can_transition( 'manual_review', 'verified' ) );
+check( 'rejected → pending (re-soumission)', SM::can_transition( 'rejected', 'pending' ) );
+check( 'verified → suspended', SM::can_transition( 'verified', 'suspended' ) );
+check( 'verified → manual_review (réouverture)', SM::can_transition( 'verified', 'manual_review' ) );
+check( 'suspended → verified (réactivation)', SM::can_transition( 'suspended', 'verified' ) );
+// Transitions INTERDITES
+check( 'unverified → verified INTERDIT', ! SM::can_transition( 'unverified', 'verified' ) );
+check( 'unverified → suspended INTERDIT', ! SM::can_transition( 'unverified', 'suspended' ) );
+check( 'verified → rejected INTERDIT', ! SM::can_transition( 'verified', 'rejected' ) );
+check( 'pending → suspended INTERDIT', ! SM::can_transition( 'pending', 'suspended' ) );
+check( 'suspended → pending INTERDIT', ! SM::can_transition( 'suspended', 'pending' ) );
+check( 'transition vers état inconnu INTERDIT', ! SM::can_transition( 'verified', 'conflict' ) );
+// Publication d'offre (D1)
+check( 'can publish si verified', SM::allows_publishing( 'verified' ) );
+check( 'ne peut publier si pending', ! SM::allows_publishing( 'pending' ) );
+check( 'ne peut publier si suspended', ! SM::allows_publishing( 'suspended' ) );
+check( 'décisions admin = 4', count( SM::admin_decisions() ) === 4 );
 
 echo "== CompanyService::completion ==\n";
 $empty = CompanyService::completion( array( 'description' => '', 'editorial' => array(), 'legal_declared' => array() ) );

@@ -71,9 +71,10 @@ final class VerificationService {
 		if ( null === $company ) {
 			throw ApiError::not_found();
 		}
-		$status = (string) ( $company['verification']['status'] ?? 'unverified' );
-		if ( in_array( $status, array( 'verified', 'suspended' ), true ) ) {
-			throw new ApiError( 'invalid_transition', 'Vérification déjà finalisée pour cette entreprise.' );
+		$current = (string) ( $company['verification']['status'] ?? 'unverified' );
+		// La demande fait passer à `pending` : transition doit être autorisée.
+		if ( ! VerificationStateMachine::can_transition( $current, VerificationStateMachine::PENDING ) ) {
+			throw new ApiError( 'invalid_transition', 'Vérification non demandable depuis l\'état « ' . $current . ' ».' );
 		}
 
 		$legal = $company['legal_declared'] ?? array();
@@ -88,43 +89,43 @@ final class VerificationService {
 			throw ApiError::validation( $errors );
 		}
 
-		$now          = current_time( 'mysql', true );
+		// 1. Passage à `pending`.
 		$verification = array(
-			'status'           => 'pending',
-			'provider'         => $this->provider->name(),
-			'requested_at'     => $now,
-			'requested_by'     => $actor_id,
-			'verified_at'      => null,
+			'status'            => VerificationStateMachine::PENDING,
+			'provider'          => $this->provider->name(),
+			'requested_at'      => current_time( 'mysql', true ),
+			'requested_by'      => $actor_id,
+			'verified_at'       => null,
 			'verified_legal_id' => null,
-			'reviewer_id'      => null,
-			'motif'            => null,
+			'reviewer_id'       => null,
+			'motif'             => null,
 		);
+		$this->companies->set_verification( $company_id, $verification );
+		$this->emit( 'company.verification_requested', $company_id, array( 'provider' => $this->provider->name() ) );
 
-		// Anti-doublon : un autre dossier porte déjà ce SIREN → revue manuelle.
+		// 2. Anti-doublon : `conflict` = motif de manual_review (pas un état).
 		$dupe = $this->companies->find_id_by_siren( (string) $legal['siren'], $company_id );
 		if ( $dupe > 0 ) {
-			$verification['status'] = 'manual_review';
+			$verification['status'] = VerificationStateMachine::MANUAL_REVIEW;
 			$verification['motif']  = 'duplicate_siren';
 			$this->companies->set_verification( $company_id, $verification );
-			$this->emit( 'company.verification_requested', $company_id, array( 'provider' => $this->provider->name(), 'flag' => 'duplicate_siren' ) );
 			return $verification;
 		}
 
+		// 3. Résultat du provider (transition depuis `pending`).
 		$result = $this->provider->check( $legal );
-		$this->emit( 'company.verification_requested', $company_id, array( 'provider' => $this->provider->name() ) );
-
 		switch ( $result['outcome'] ?? 'manual_review' ) {
 			case 'verified':
 				return $this->apply_verified( $company_id, $legal, $result['legal'] ?? $legal, $actor_id, $verification, false );
 			case 'rejected':
-				$verification['status'] = 'rejected';
+				$verification['status'] = VerificationStateMachine::REJECTED;
 				$verification['motif']  = (string) ( $result['motif'] ?? 'provider_rejected' );
 				$this->companies->set_verification( $company_id, $verification );
 				$this->emit( 'company.rejected', $company_id, array( 'motif' => $verification['motif'] ) );
 				return $verification;
 			case 'manual_review':
 			default:
-				$verification['status'] = 'manual_review';
+				$verification['status'] = VerificationStateMachine::MANUAL_REVIEW;
 				$this->companies->set_verification( $company_id, $verification );
 				return $verification;
 		}
@@ -141,6 +142,14 @@ final class VerificationService {
 		if ( null === $company ) {
 			throw ApiError::not_found();
 		}
+		if ( ! in_array( $decision, VerificationStateMachine::admin_decisions(), true ) ) {
+			throw ApiError::validation( array( 'decision' => 'Décision inconnue.' ) );
+		}
+		$current = (string) ( $company['verification']['status'] ?? 'unverified' );
+		if ( ! VerificationStateMachine::can_transition( $current, $decision ) ) {
+			throw new ApiError( 'invalid_transition', 'Transition « ' . $current . ' → ' . $decision . ' » non autorisée.' );
+		}
+
 		$verification = $company['verification'] ?? array( 'status' => 'unverified' );
 		$verification['reviewer_id'] = $admin_id;
 		$verification['provider']    = $verification['provider'] ?? $this->provider->name();

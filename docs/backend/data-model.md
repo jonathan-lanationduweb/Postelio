@@ -94,21 +94,36 @@ wp_postelio_audit_log
 - **Sensible :** email_pro, telephone_pro.
 
 ## Company
-- **Propriétaire :** companies. **Stockage :** CPT `postelio_company`.
-- **Champs :** id, nom, slug, secteur (taxo), activite, ville, adresse, departement,
-  site_web, email, telephone, taille, effectif_bucket, initiales, couleur, description,
-  valeurs (JSON), avantages (JSON), organisation (JSON), reseaux (JSON),
-  **identité légale** (raison_sociale, nom_commercial, forme_juridique, siren, siret,
-  tva, adresse_siege, cp_siege, ville_siege, pays, date_creation),
-  contact (JSON), verification_status, verified_label, logo (media), photos (media[]).
-- **Statut :** verification_status (incomplete|pending|verified|manual_review|rejected|suspended).
-- **Sensible :** siren/siret/tva (identité légale). **Index :** slug, secteur, ville,
-  verification_status. **Conservation :** tant qu'active.
+- **Propriétaire :** companies. **Stockage :** CPT `postelio_company` (implémenté Lot 03).
+- **Identifiants :** `id` interne (post ID, jamais exposé) + **`public_uuid`** (UUID v4
+  serveur, immuable, exposé via l'API — D2 ; unicité **applicative**, voir
+  [#identifiants](#identifiants)).
+- **Trois zones de champs** (implémentation Lot 03) :
+  - **éditoriale** (`pst_editorial`, modifiable) : secteur, activite, ville, effectif,
+    adresse, telephone, email, site, avantages (JSON), valeurs (JSON), org (JSON :
+    teletravail/horaires/tags/precisions), reseaux (JSON), logo (image à la une), has_photo ;
+    nom = `post_title`, présentation = `post_content`.
+  - **légale déclarée** (`pst_legal_declared`, saisie recruteur avant vérification) :
+    raison_sociale, nom_commercial, forme_juridique, siren, siret, tva, **naf_ape**
+    (code NAF/APE), adresse_siege, cp_siege, ville_siege, pays, date_creation.
+  - **légale vérifiée** (`pst_legal_verified`, **figée** par la vérification, non
+    modifiable par le recruteur).
+- **Statut :** `verification_status` ∈ `unverified|pending|manual_review|verified|rejected|suspended`
+  (machine à états canonique, voir [workflows.md](workflows.md#entreprise-company--vérification)).
+  Traçabilité dans `pst_verification` (provider, requested_at/verified_at, verified_legal_id,
+  reviewer_id, motif interne). `conflict` **n'est pas** un statut (motif `duplicate_siren`
+  de `manual_review`).
+- **Sensible :** siren/siret/tva ; `reviewer_id`/`motif` = **admin uniquement** (jamais public).
+- **Index :** `pst_uuid`, `pst_siren` (anti-doublon), `pst_verification_status`.
 
 ## CompanyMember
-- **Propriétaire :** companies. **Table dédiée.**
+- **Propriétaire :** companies. **Table dédiée** `wp_postelio_company_members` (implémenté Lot 03).
 - **Champs :** id, company_id, user_id, role_in_company (owner|recruiter), created_at.
 - **Contrainte :** unique (company_id, user_id). **Index :** company_id, user_id.
+- **Décision V1 :** un recruteur appartient à **une seule** entreprise active (création
+  refusée s'il est déjà rattaché) ; une entreprise peut avoir **plusieurs** recruteurs.
+  Le schéma n-n reste compatible avec une multi-appartenance future. Invitations /
+  changements de rôle / retraits : **hors Lot 03**.
 
 ## Follow
 - **Propriétaire :** companies. **Table dédiée** (`company_follows`).

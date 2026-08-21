@@ -138,11 +138,20 @@ Décisions prises par défaut pendant l'implémentation, à confirmer :
 | # | Question | Proposition retenue (V1) | Impact | Statut |
 |---|---|---|---|---|
 | Q1 | Stockage de la vérification entreprise : table dédiée `wp_postelio_company_verifications` (historique) ou meta + audit log ? | **Meta `pst_verification` (état courant) + audit log (historique)** ; pas de table dédiée (non prévue dans data-model). | Historique lisible via audit log ; requêtes d'historique moins directes qu'une table. | **À VALIDER** |
-| Q2 | Un recruteur peut-il appartenir à **plusieurs** entreprises en V1 ? | **Non en V1** (création refusée si déjà rattaché) ; le schéma `company_members` (n-n, rôles owner/recruiter) le **permet** pour plus tard. | Invitation/multi-appartenance repoussées sans refonte de schéma. | **À VALIDER** |
-| Q3 | Endpoints d'invitation / retrait / changement de rôle de collaborateur. | **Non exposés** (hors api-contract) ; seul le rattachement du créateur (owner) est implémenté. | À ajouter comme incrément (routes + capabilities) sans changer les tables. | **À VALIDER** |
-| Q4 | Unicité de l'UUID entreprise : le CPT stocke l'UUID en **meta** (pas d'index unique SQL natif). | Génération serveur + contrôle applicatif d'unicité (collision UUID v4 négligeable). | Si besoin de garantie SQL stricte : table d'index dédiée ou colonne custom. | **À VALIDER** |
-| Q5 | Endpoint de **décision de vérification admin** (`POST /companies/{uuid}/verification/decision`) non listé dans api-contract. | Ajouté (nécessaire au workflow verified/rejected/suspended). | À intégrer à api-contract.md. | **À VALIDER** |
-| Q6 | Champ **code NAF/APE** absent de data-model.md Company. | Ajouté à l'identité légale (`naf_ape`). | Aligner data-model.md. | **À VALIDER** |
+| Q2 | Un recruteur peut-il appartenir à **plusieurs** entreprises en V1 ? | **Non en V1** (création refusée si déjà rattaché) ; le schéma `company_members` (n-n, rôles owner/recruiter) le **permet** pour plus tard. Documenté dans [data-model.md](data-model.md#companymember). | Invitation/multi-appartenance repoussées sans refonte de schéma. | **Décidé V1** |
+| Q3 | Endpoints d'invitation / retrait / changement de rôle de collaborateur. | **Non exposés** (hors api-contract) ; seul le rattachement du créateur (owner) est implémenté. | À ajouter comme incrément (routes + capabilities) sans changer les tables. | **Hors scope Lot 03** |
+| Q4 | Unicité de l'UUID entreprise : le CPT stocke l'UUID en **meta** (pas d'index unique SQL natif). | **Unicité applicative** assumée : UUID v4 serveur (122 bits), contrôle de collision à la création (régénération), lecture **déterministe** (ID interne le plus petit) + journalisation si corruption. Pas de refonte du CPT. | Documenté [data-model.md#identifiants](data-model.md#identifiants) comme applicatif (non DB). Si garantie SQL stricte requise un jour : colonne/table d'index dédiée. | **Décidé V1** |
+| Q5 | Endpoint de **décision de vérification admin** (`POST /companies/{uuid}/verification/decision`). | Ajouté à [api-contract.md](api-contract.md#5-endpoints-principaux). | — | **Résolu** |
+| Q6 | Champ **code NAF/APE** (`naf_ape`). | Ajouté à l'identité légale ; [data-model.md](data-model.md#company) aligné. | — | **Résolu** |
+
+### Contrat de vérification pour les autres plugins
+
+`postelio-jobs` (et futurs) **ne lisent jamais** `pst_verification_status`, les meta,
+`legal_verified` ou le provider. Ils passent par la façade publique
+**`Postelio\Companies\Api\CompanyVerification`** — `is_verified()`,
+`can_publish_jobs()`, `get_verification_status()` — ou les filtres équivalents
+`postelio/company/{is_verified,can_publish_jobs,verification_status}`. Règle V1 (D1) :
+brouillon autorisé pour une entreprise non vérifiée, **publication publique ⇒ `verified`**.
 
 ## 7. Ce qui est HORS de ce lot
 

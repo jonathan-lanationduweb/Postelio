@@ -94,6 +94,9 @@ final class Plugin {
 
 		( new CompanyPostType() )->register();
 
+		// Contrat public de vérification (façade + filtres) pour postelio-jobs & co.
+		\Postelio\Companies\Api\CompanyVerification::register_filters();
+
 		add_action( 'init', array( $this, 'maybe_upgrade' ), 2 );
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 

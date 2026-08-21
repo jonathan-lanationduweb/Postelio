@@ -101,6 +101,11 @@ $created_posts[] = $idA;
 $t( 'recruteur A est owner', $members->is_owner( $idA, $recA ) );
 $t( 'RecruiterProfile.company_id renseigné via événement', (int) ( ( new RecruiterProfileRepository() )->get_by_user( $recA )['company_id'] ?? 0 ) === $idA );
 
+echo "== Contrat jobs : can_publish_jobs (non vérifié) ==\n";
+$t( 'facade is_verified=false (unverified)', false === \Postelio\Companies\Api\CompanyVerification::is_verified( $idA ) );
+$t( 'facade can_publish_jobs=false (unverified)', false === \Postelio\Companies\Api\CompanyVerification::can_publish_jobs( $idA ) );
+$t( 'filtre postelio/company/can_publish_jobs=false', false === apply_filters( 'postelio/company/can_publish_jobs', false, $idA ) );
+
 echo "== Unicité / doublons ==\n";
 $r = $req( 'POST', '/postelio/v1/companies', array( 'nom' => 'Autre' ), $recA );
 $t( 'A déjà rattaché => 409', 409 === $r['status'] );
@@ -155,6 +160,33 @@ $t( 'admin verified => 200 + statut verified', 200 === $r['status'] && 'verified
 $compA = $companies->get( $idA );
 $t( 'legal_verified figé (raison sociale)', 'Fiduciaire Bellecour' === ( $compA['legal_verified']['raison_sociale'] ?? '' ) );
 $t( 'verified_at renseigné', ! empty( $compA['verification']['verified_at'] ) );
+$t( 'facade can_publish_jobs=true (verified)', true === \Postelio\Companies\Api\CompanyVerification::can_publish_jobs( $idA ) );
+$t( 'filtre can_publish_jobs=true (verified)', true === apply_filters( 'postelio/company/can_publish_jobs', false, $idA ) );
+
+echo "== Transitions interdites (state machine) ==\n";
+// Nouvelle entreprise de recB, laissée `unverified`.
+$siren2 = '100000000';
+while ( ! \Postelio\Companies\Verification\Siren::is_valid_siren( $siren2 ) ) {
+	$siren2 = str_pad( (string) ( ( (int) $siren2 ) + 1 ), 9, '0', STR_PAD_LEFT );
+}
+$r = $req( 'POST', '/postelio/v1/companies', array( 'nom' => 'Entreprise B', 'legal' => array( 'siren' => $siren2, 'raison_sociale' => 'B SAS' ) ), $recB );
+$idB = (int) ( $companies->get_by_uuid( (string) ( $r['data']['data']['uuid'] ?? '' ) )['id'] ?? 0 );
+$created_posts[] = $idB;
+$uuidB = (string) $companies->get( $idB )['uuid'];
+$r = $req( 'POST', '/postelio/v1/companies/' . $uuidB . '/verification/decision', array( 'decision' => 'verified' ), $admin );
+$t( 'admin verified depuis unverified => 409 invalid_transition', 409 === $r['status'] && 'invalid_transition' === ( $r['data']['error']['code'] ?? '' ) );
+$r = $req( 'POST', '/postelio/v1/companies/' . $uuidB . '/verification/decision', array( 'decision' => 'suspended' ), $admin );
+$t( 'admin suspend depuis unverified => 409 invalid_transition', 409 === $r['status'] );
+$r = $req( 'POST', '/postelio/v1/companies/' . $uuidB . '/verification/decision', array( 'decision' => 'n_importe_quoi' ), $admin );
+$t( 'décision inconnue => 422', 422 === $r['status'] );
+
+echo "== Correction légale : réouverture (verified → manual_review) ==\n";
+$r = $req( 'POST', '/postelio/v1/companies/' . $uuidA . '/verification/decision', array( 'decision' => 'manual_review', 'motif' => 're-vérification' ), $admin );
+$t( 'admin réouvre (verified → manual_review) => 200', 200 === $r['status'] );
+$r = $req( 'PUT', '/postelio/v1/companies/me', array( 'legal' => array( 'nom_commercial' => 'FB (maj)' ) ), $recA );
+$t( 'légal de nouveau modifiable après réouverture => 200', 200 === $r['status'] );
+$r = $req( 'POST', '/postelio/v1/companies/' . $uuidA . '/verification/decision', array( 'decision' => 'verified' ), $admin );
+$t( 're-vérification (manual_review → verified) => 200', 200 === $r['status'] );
 
 echo "== Verrou des données légales après vérification ==\n";
 $r = $req( 'PUT', '/postelio/v1/companies/me', array( 'legal' => array( 'raison_sociale' => 'Pirate SARL' ) ), $recA );
@@ -162,14 +194,27 @@ $t( 'modif légale après verified => 403', 403 === $r['status'] );
 $r = $req( 'PUT', '/postelio/v1/companies/me', array( 'editorial' => array( 'ville' => 'Lyon' ) ), $recA );
 $t( 'éditorial reste modifiable après verified => 200', 200 === $r['status'] );
 
-echo "== Vue publique par UUID (D2) ==\n";
-$r = $req( 'GET', '/postelio/v1/companies/' . $uuidA, null, 0 );
+echo "== Vue publique par UUID (D2) + non-exposition ==\n";
+$r   = $req( 'GET', '/postelio/v1/companies/' . $uuidA, null, 0 );
+$pub = $r['data']['data'] ?? array();
 $t( 'public GET par uuid => 200', 200 === $r['status'] );
-$t( 'public: verified=true', true === ( $r['data']['data']['verified'] ?? false ) );
-$t( 'public: legal vérifié exposé', 'Fiduciaire Bellecour' === ( $r['data']['data']['legal']['raison_sociale'] ?? '' ) );
-$t( 'public: PAS d\'id interne', ! isset( $r['data']['data']['id'] ) );
+$t( 'public: verified=true', true === ( $pub['verified'] ?? false ) );
+$t( 'public: legal vérifié exposé', 'Fiduciaire Bellecour' === ( $pub['legal']['raison_sociale'] ?? '' ) );
+// Non-exposition de données internes/sensibles :
+$flat = wp_json_encode( $pub );
+$t( 'public: PAS d\'id interne', ! isset( $pub['id'] ) && ! isset( $pub['author_id'] ) );
+$t( 'public: PAS de legal_declared', ! isset( $pub['legal_declared'] ) );
+$t( 'public: PAS de reviewer_id', false === strpos( $flat, 'reviewer_id' ) );
+$t( 'public: PAS de motif interne', false === strpos( $flat, 'motif' ) );
+$t( 'public: PAS de TVA', ! isset( $pub['legal']['tva'] ) );
+$t( 'public: PAS de logo_id interne', ! isset( $pub['editorial']['logo_id'] ) );
+$t( 'public: verification = statut seul', array( 'status' ) === array_keys( (array) ( $pub['verification'] ?? array() ) ) );
 $r = $req( 'GET', '/postelio/v1/companies/' . wp_generate_uuid4(), null, 0 );
 $t( 'uuid inconnu => 404', 404 === $r['status'] );
+
+echo "== UUID immuable ==\n";
+$req( 'PUT', '/postelio/v1/companies/me', array( 'nom' => 'FB v2', 'editorial' => array( 'ville' => 'Lyon' ), 'uuid' => 'hack', 'id' => 999 ), $recA );
+$t( 'UUID inchangé après mises à jour', $uuidA === (string) $companies->get( $idA )['uuid'] );
 
 echo "== Suspension (masquée du public) ==\n";
 $r = $req( 'POST', '/postelio/v1/companies/' . $uuidA . '/verification/decision', array( 'decision' => 'suspended', 'motif' => 'test' ), $admin );

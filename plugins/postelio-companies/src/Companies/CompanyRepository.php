@@ -83,6 +83,14 @@ final class CompanyRepository {
 	}
 
 	/**
+	 * Recherche par UUID public.
+	 *
+	 * Unicité **applicative** (l'UUID est en postmeta, non contraint par un index
+	 * unique SQL) : générée côté serveur et contrôlée à la création. Comportement
+	 * **déterministe** en cas de corruption historique exceptionnelle (deux lignes
+	 * partageant le même UUID) : on retourne toujours l'ID interne le PLUS PETIT et
+	 * on journalise l'anomalie. Voir docs/backend/data-model.md#identifiants.
+	 *
 	 * @return array<string, mixed>|null
 	 */
 	public function get_by_uuid( string $uuid ): ?array {
@@ -93,11 +101,22 @@ final class CompanyRepository {
 				'meta_key'       => self::META_UUID,
 				'meta_value'     => $uuid,
 				'fields'         => 'ids',
-				'posts_per_page' => 1,
+				'posts_per_page' => 2,
+				'orderby'        => 'ID',
+				'order'          => 'ASC',
 				'no_found_rows'  => true,
 			)
 		);
-		return $ids ? $this->get( (int) $ids[0] ) : null;
+		if ( ! $ids ) {
+			return null;
+		}
+		if ( count( $ids ) > 1 ) {
+			\Postelio\Core\Log\Logger::error(
+				'Collision d\'UUID entreprise détectée (unicité applicative violée).',
+				array( 'uuid' => $uuid, 'ids' => array_map( 'intval', $ids ) )
+			);
+		}
+		return $this->get( (int) $ids[0] );
 	}
 
 	/**
