@@ -71,7 +71,8 @@ capability. Le front n'accorde aucun droit.
 | Proposer un entretien | ❌ | ✅ (candidature de sa company) | ✅ |
 | Confirmer / refuser un entretien | ✅ (le sien) | ❌ | ✅ |
 | Proposer un autre créneau | ✅ (le sien) | ❌ | ✅ |
-| Modifier / annuler / marquer réalisé | ❌ | ✅ (ceux de sa company) | ✅ |
+| Annuler un entretien confirmé | ✅ (le sien) | ✅ (ceux de sa company) | ✅ |
+| Modifier / accepter re-créneau / marquer réalisé | ❌ | ✅ (ceux de sa company) | ✅ |
 | Vérifier une entreprise | ❌ | ❌ | ✅ |
 | Modérer un contenu | ❌ | ❌ | ✅ / modo |
 | Télécharger un CV | ✅ (le sien) | ✅ (candidature reçue) | ✅ |
@@ -94,7 +95,11 @@ capability. Le front n'accorde aucun droit.
   `pst_reschedule_interview`, `pst_reject_interview` = decline, `pst_cancel_interview`).
   La **lecture** n'exige pas l'e-mail vérifié ; **proposer/confirmer/reprogrammer/modifier/
   annuler/réaliser** exigent `pst_email_verified`. Un entretien est toujours rattaché à une
-  candidature (jamais arbitraire) ; accès hors périmètre → **404**.
+  candidature (jamais arbitraire) ; accès hors périmètre → **404**. Décisions V1 :
+  l'**annulation candidat** d'un entretien confirmé est autorisée (via `pst_reject_interview`
+  + e-mail vérifié, ownership strict) ; **plusieurs entretiens successifs** par candidature
+  (doublon actif identique refusé) ; une nouvelle proposition est refusée si l'offre est
+  `filled`/`archived`/`suspended` ; `completed` reste **manuel** (aucun cron).
 - **Accès aux CV** : le candidat (propriétaire) et **uniquement** les recruteurs d'une
   entreprise ayant reçu une candidature avec ce CV (via snapshot). Admin pour audit.
 - **Coordonnées candidat** : soumises à `CandidateProfile.visibility` (email/tel) —

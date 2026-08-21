@@ -50,6 +50,7 @@ final class InterviewController extends Controller {
 		$cand_confirm = Guard::require_all( 'pst_confirm_interview', 'pst_email_verified' );
 		$cand_decline = Guard::require_cap( 'pst_reject_interview' );
 		$cand_resched = Guard::require_all( 'pst_reschedule_interview', 'pst_email_verified' );
+		$cand_cancel  = Guard::require_all( 'pst_reject_interview', 'pst_email_verified' );
 
 		register_rest_route( $ns, '/me/interviews', array(
 			'methods' => 'GET', 'permission_callback' => $cand_read, 'callback' => $this->guarded( array( $this, 'list_mine' ) ),
@@ -65,6 +66,9 @@ final class InterviewController extends Controller {
 		) );
 		register_rest_route( $ns, '/me/interviews/' . self::UUID . '/reschedule', array(
 			'methods' => 'POST', 'permission_callback' => $cand_resched, 'callback' => $this->guarded( array( $this, 'reschedule' ) ),
+		) );
+		register_rest_route( $ns, '/me/interviews/' . self::UUID . '/cancel', array(
+			'methods' => 'POST', 'permission_callback' => $cand_cancel, 'callback' => $this->guarded( array( $this, 'cancel_mine' ) ),
 		) );
 
 		// --- Recruteur ---
@@ -116,6 +120,12 @@ final class InterviewController extends Controller {
 
 	public function reschedule( \WP_REST_Request $r ): \WP_REST_Response {
 		$iv = $this->svc->request_reschedule( get_current_user_id(), self::uuid( $r ), (array) $r->get_json_params() );
+		return $this->ok( InterviewPresenter::view( $iv, InterviewService::ROLE_CANDIDATE ) );
+	}
+
+	public function cancel_mine( \WP_REST_Request $r ): \WP_REST_Response {
+		$reason = (string) ( ( (array) $r->get_json_params() )['reason'] ?? '' );
+		$iv     = $this->svc->cancel_by_candidate( get_current_user_id(), self::uuid( $r ), $reason );
 		return $this->ok( InterviewPresenter::view( $iv, InterviewService::ROLE_CANDIDATE ) );
 	}
 

@@ -112,6 +112,9 @@ final class InterviewPresenter {
 			if ( InterviewStateMachine::candidate_can_reschedule( $status ) ) {
 				$a[] = 'reschedule';
 			}
+			if ( InterviewStateMachine::candidate_can_cancel( $status ) ) {
+				$a[] = 'cancel';
+			}
 		} elseif ( InterviewService::ROLE_RECRUITER === $role ) {
 			if ( ! InterviewStateMachine::is_terminal( $status ) ) {
 				$a[] = 'modify';

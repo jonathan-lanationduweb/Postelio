@@ -83,18 +83,23 @@ candidat). Toutes les transitions sont contrôlées serveur (`InterviewStateMach
 | reschedule_requested → confirmed | recruteur | **accepte** le créneau proposé (`accept-reschedule`) |
 | reschedule_requested → proposed | recruteur | **contre-propose** (via `PUT` modifier) |
 | confirmed → proposed | recruteur | **modification substantielle** (date/type/lieu/lien) ⇒ **reconfirmation** candidat |
-| proposed/confirmed/reschedule_requested → cancelled | recruteur | (candidat : voir À VALIDER) |
-| confirmed → completed | recruteur/admin | marquage manuel (cron futur) |
+| proposed/confirmed/reschedule_requested → cancelled | recruteur | annulation entreprise |
+| confirmed/reschedule_requested → cancelled | **candidat** | **décision V1** : le candidat concerné peut annuler un entretien confirmé (ownership strict, `pst_reject_interview` + e-mail vérifié, motif facultatif, pas de hard-delete) |
+| confirmed → completed | recruteur/admin | **marquage manuel** — aucun cron d'auto-complétion (date passée ≠ entretien réalisé) |
 
 - **Contexte candidature obligatoire** (via `ApplicationDirectory`) ; pipeline candidature
   → `interview` **à la proposition** ; candidature terminale (selected/rejected/withdrawn)
-  ⇒ proposition refusée `409`. **Un seul entretien actif par candidature** à la fois.
+  ⇒ proposition refusée `409`.
+- **Entretiens multiples (décision V1)** : plusieurs entretiens **successifs** autorisés
+  pour une candidature (RH, manager, final…). Refus uniquement du **doublon actif
+  strictement identique** (même candidature + même créneau UTC + même type).
 - **Types** ([data-model.md](data-model.md#interview)) : visio (URL validée), sur place
   (adresse structurée, ville préremplie), téléphone (numéro + qui appelle). Dates ISO 8601
   stockées **UTC** + fuseau métier. Hors périmètre ⇒ 404.
-- **Offre expirée** : n'empêche pas un entretien tant que la candidature est active (§33).
-- **À VALIDER :** annulation par le candidat après confirmation ; plusieurs entretiens
-  actifs simultanés ; cas offre `filled`/`archived`/`suspended`.
+- **Statut d'offre (décision V1, §33)** : lu via `JobDirectory::status()`. Une **nouvelle**
+  proposition est refusée `409` si l'offre est `filled`/`archived`/`suspended` ; autorisée
+  pour `published`/`expiring`/`expired` avec candidature active. Les entretiens **existants**
+  restent consultables/confirmables/annulables/complétables (historique jamais détruit).
 
 ## Entreprise (Company) — vérification
 

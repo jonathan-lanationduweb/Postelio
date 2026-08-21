@@ -76,4 +76,12 @@ final class InterviewStateMachine {
 	public static function candidate_can_reschedule( string $s ): bool {
 		return self::PROPOSED === $s || self::CONFIRMED === $s;
 	}
+
+	/**
+	 * Le candidat peut-il annuler ? Décision V1 : oui pour un entretien déjà confirmé ou
+	 * en attente de re-créneau (à l'état `proposed`, il utilise plutôt `decline`).
+	 */
+	public static function candidate_can_cancel( string $s ): bool {
+		return self::CONFIRMED === $s || self::RESCHEDULE_REQUESTED === $s;
+	}
 }

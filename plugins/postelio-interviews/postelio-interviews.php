@@ -40,12 +40,12 @@ postelio_interviews_register_autoloader();
 add_action(
 	'plugins_loaded',
 	static function () {
-		foreach ( array( 'Core', 'Users', 'Companies', 'Applications' ) as $dep ) {
+		foreach ( array( 'Core', 'Users', 'Companies', 'Jobs', 'Applications' ) as $dep ) {
 			if ( ! class_exists( '\\Postelio\\' . $dep . '\\Plugin' ) ) {
 				add_action(
 					'admin_notices',
 					static function () {
-						echo '<div class="notice notice-error"><p><strong>Postelio Interviews</strong> requiert Core, Users, Companies et Applications (activez-les d\'abord).</p></div>';
+						echo '<div class="notice notice-error"><p><strong>Postelio Interviews</strong> requiert Core, Users, Companies, Jobs et Applications (activez-les d\'abord).</p></div>';
 					}
 				);
 				return;

@@ -19,6 +19,7 @@ use Postelio\Applications\Api\ApplicationDirectory;
 use Postelio\Companies\Api\CompanyDirectory;
 use Postelio\Core\ApiError;
 use Postelio\Core\Plugin as Core;
+use Postelio\Jobs\Api\JobDirectory;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -29,6 +30,9 @@ final class InterviewService {
 	public const ROLE_CANDIDATE = 'candidate';
 	public const ROLE_RECRUITER = 'recruiter';
 	public const ROLE_SYSTEM    = 'system';
+
+	/** États d'offre interdisant une NOUVELLE proposition d'entretien (décision V1 §C). */
+	private const JOB_STATES_BLOCKING_NEW = array( 'filled', 'archived', 'suspended' );
 
 	private InterviewRepository $repo;
 	private InterviewHistoryRepository $history;
@@ -90,12 +94,22 @@ final class InterviewService {
 			throw new ApiError( 'conflict', 'La candidature n\'est pas dans un état permettant de planifier un entretien.' );
 		}
 
-		$app_id = $this->application_internal_id( $application_uuid );
-		if ( $app_id > 0 && $this->repo->has_active_for_application( $app_id ) ) {
-			throw new ApiError( 'conflict', 'Un entretien est déjà en cours pour cette candidature.' );
+		// §C — l'offre doit être « ouverte ». filled/archived/suspended bloquent une
+		// NOUVELLE proposition ; published/expiring/expired restent autorisés tant que la
+		// candidature est active. Statut lu via le contrat public de postelio-jobs.
+		$job_status = JobDirectory::status( (int) $ctx['job_id'] );
+		if ( null !== $job_status && in_array( $job_status, self::JOB_STATES_BLOCKING_NEW, true ) ) {
+			throw new ApiError( 'conflict', 'L\'offre n\'est plus ouverte : impossible de proposer un nouvel entretien.' );
 		}
 
+		$app_id  = $this->application_internal_id( $application_uuid );
 		$payload = $this->build_payload( $input, (int) $ctx['company_id'], null );
+
+		// §B — plusieurs entretiens successifs autorisés ; on refuse seulement le doublon
+		// actif strictement identique (même candidature + créneau + type).
+		if ( $app_id > 0 && $this->repo->has_active_duplicate( $app_id, (string) $payload['scheduled_at'], (string) $payload['type'] ) ) {
+			throw new ApiError( 'conflict', 'Un entretien identique (même créneau et même type) est déjà en cours pour cette candidature.' );
+		}
 
 		$id = $this->repo->insert( array_merge(
 			$payload,
@@ -186,6 +200,27 @@ final class InterviewService {
 		$fresh = $this->repo->get( (int) $iv['id'] );
 		$this->log( $fresh, $candidate_id, self::ROLE_CANDIDATE, 'reschedule_requested', (string) $iv['status'], InterviewStateMachine::RESCHEDULE_REQUESTED, array( 'has_message' => '' !== $message ) );
 		$this->emit( 'interview.reschedule_requested', $fresh );
+		return $fresh;
+	}
+
+	/**
+	 * Annulation par le **candidat** d'un entretien déjà confirmé (ou en attente de
+	 * re-créneau). Décision V1 : autorisée, ownership strict, e-mail vérifié requis (route).
+	 * Aucun hard-delete : passage à `cancelled`, historique conservé, acteur = candidat.
+	 */
+	public function cancel_by_candidate( int $candidate_id, string $uuid, string $reason = '' ): array {
+		$iv = $this->candidate_interview_or_fail( $candidate_id, $uuid );
+		if ( ! InterviewStateMachine::candidate_can_cancel( (string) $iv['status'] ) ) {
+			throw new ApiError( 'invalid_transition', 'Cet entretien ne peut pas être annulé dans son état actuel.' );
+		}
+		$this->repo->update( (int) $iv['id'], array(
+			'status'                => InterviewStateMachine::CANCELLED,
+			'cancelled_at'          => current_time( 'mysql', true ),
+			'candidate_response_at' => current_time( 'mysql', true ),
+		) );
+		$fresh = $this->repo->get( (int) $iv['id'] );
+		$this->log( $fresh, $candidate_id, self::ROLE_CANDIDATE, 'cancelled', (string) $iv['status'], InterviewStateMachine::CANCELLED, '' !== trim( $reason ) ? array( 'has_reason' => true, 'by' => 'candidate' ) : array( 'by' => 'candidate' ) );
+		$this->emit( 'interview.cancelled', $fresh );
 		return $fresh;
 	}
 

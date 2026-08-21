@@ -164,15 +164,17 @@ Erreur :
 - Candidat : `GET /me/interviews` (filtres `status`,`from`,`to`,`application_uuid`,
   pagination) · `GET /me/interviews/{uuid}` (avec historique) ·
   `POST /me/interviews/{uuid}/confirm` · `.../decline` · `.../reschedule` (propose un autre
-  créneau `{scheduled_at, message?}`). R candidat : `pst_view_own_interviews` (lecture),
+  créneau `{scheduled_at, message?}`) · `.../cancel` (**annuler un entretien confirmé**,
+  `{reason?}`). R candidat : `pst_view_own_interviews` (lecture),
   `pst_confirm_interview`/`pst_reschedule_interview` **+ `pst_email_verified`**,
-  `pst_reject_interview` (decline).
+  `pst_reject_interview` (decline **et** cancel ; cancel exige aussi `pst_email_verified`).
 - Recruteur : `GET /companies/me/interviews[/{uuid}]` (R `pst_manage_company_interviews`) ;
   `POST /companies/me/applications/{application_uuid}/interviews` (proposer ;
-  `pst_propose_interview` + vérifié ; `409` si candidature terminale ou entretien actif
-  déjà présent) ; `PUT /companies/me/interviews/{uuid}` (modifier) ;
-  `POST .../{uuid}/accept-reschedule` (accepter le créneau proposé par le candidat) ;
-  `POST .../{uuid}/cancel` ; `POST .../{uuid}/complete`.
+  `pst_propose_interview` + vérifié ; `409` si candidature terminale, si offre
+  `filled`/`archived`/`suspended`, ou si **doublon actif identique** — mais **plusieurs
+  entretiens successifs autorisés**) ; `PUT /companies/me/interviews/{uuid}` (modifier) ;
+  `POST .../{uuid}/accept-reschedule` ; `POST .../{uuid}/cancel` ;
+  `POST .../{uuid}/complete` (**manuel** ; aucun passage automatique).
 - Contrat sortant : `\Postelio\Interviews\Api\InterviewDirectory` (`get_context`,
   `upcoming_count`, `has_active_for_application`, `history`).
 

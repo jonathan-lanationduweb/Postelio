@@ -248,7 +248,9 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
 - **Statut :** `proposed|confirmed|reschedule_requested|declined|cancelled|completed`
   (pas de `pending_candidate` : `proposed` = en attente candidat).
 - **Index :** `UNIQUE public_uuid`, application_id, candidate_user_id, company_id, status,
-  scheduled_at. **Un seul entretien actif par candidature** (contrainte applicative).
+  scheduled_at. **Pas** de `UNIQUE(application_id)` : plusieurs entretiens **successifs**
+  autorisés par candidature (décision V1) ; seul le **doublon actif strictement identique**
+  (même candidature + même `scheduled_at` + même `type`, état non terminal) est refusé.
 
 ## InterviewHistory — `wp_postelio_interview_history` (implémenté Lot 08)
 - **Propriétaire :** interviews. **Table dédiée, append-only.**

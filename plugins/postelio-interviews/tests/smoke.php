@@ -94,13 +94,20 @@ $t( 'XSS neutralisé dans instructions', false === strpos( (string) ( $prop['dat
 $t( 'url visio conservée', 'https://meet.example.com/entretien-1' === ( $prop['data']['data']['video']['meeting_url'] ?? '' ) );
 $t( 'candidature passée au pipeline interview', 'interview' === ( new ApplicationRepository() )->get_by_uuid( $appU )['status'] );
 
-echo "== Doublon : un seul entretien actif par candidature ==\n";
-$dup = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array( 'type' => 'phone', 'scheduled_at' => $future( 4 ), 'duration_minutes' => 30, 'phone_data' => array( 'phone_number' => '0600000000' ) ), $recA );
-$t( 'second entretien actif refusé => 409', 409 === $dup['status'] );
+echo "== §B Plusieurs entretiens par candidature + doublon actif refusé ==\n";
+$multi = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array( 'type' => 'phone', 'scheduled_at' => $future( 4 ), 'duration_minutes' => 30, 'phone_data' => array( 'phone_number' => '0600000000' ) ), $recA );
+$t( 'entretien successif (autre créneau/type) autorisé => 201', 201 === $multi['status'] );
+$ivMulti = (string) ( $multi['data']['data']['uuid'] ?? '' );
+$dup = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array(
+	'type' => 'video', 'scheduled_at' => $future( 3 ), 'duration_minutes' => 45, 'video_data' => array( 'meeting_url' => 'https://meet.example.com/entretien-1' ),
+), $recA );
+$t( 'doublon actif strictement identique (même créneau+type) refusé => 409', 409 === $dup['status'] );
+$req( 'POST', '/postelio/v1/companies/me/interviews/' . $ivMulti . '/cancel', null, $recA ); // on écarte le 2e pour la suite
 
 echo "== Vue candidat + confirmation ==\n";
 $listCand = $req( 'GET', '/postelio/v1/me/interviews', null, $candA );
-$t( 'candidat liste ses entretiens (1)', 200 === $listCand['status'] && count( (array) $listCand['data']['data'] ) === 1 );
+$candUuids = array_column( (array) $listCand['data']['data'], 'uuid' );
+$t( 'candidat retrouve ses entretiens (dont le 1er)', 200 === $listCand['status'] && in_array( $iv, $candUuids, true ) );
 $detCand = $req( 'GET', '/postelio/v1/me/interviews/' . $iv, null, $candA );
 $t( 'candidat voit actions confirm/decline/reschedule', in_array( 'confirm', (array) ( $detCand['data']['data']['actions'] ?? array() ), true ) );
 $t( 'candidat ne voit pas la vue recruteur (pas de bloc candidate)', ! isset( $detCand['data']['data']['candidate'] ) );
@@ -143,6 +150,17 @@ $t( 'entretien téléphone créé', 201 === $phone['status'] && 'recruiter_calls
 $decl = $req( 'POST', '/postelio/v1/me/interviews/' . $iv3 . '/decline', array( 'message' => 'Non disponible' ), $candA );
 $t( 'refus => 200 declined', 200 === $decl['status'] && 'declined' === ( $decl['data']['data']['status'] ?? '' ) );
 
+echo "== §A Annulation par le candidat (après confirmation) ==\n";
+$ivc = (string) $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array( 'type' => 'video', 'scheduled_at' => $future( 14 ), 'duration_minutes' => 30, 'video_data' => array( 'meeting_url' => 'https://meet.example.com/cc' ) ), $recA )['data']['data']['uuid'];
+$req( 'POST', '/postelio/v1/me/interviews/' . $ivc . '/confirm', null, $candA );
+$t( 'candidat voit l\'action cancel sur un confirmé', in_array( 'cancel', (array) ( $req( 'GET', '/postelio/v1/me/interviews/' . $ivc, null, $candA )['data']['data']['actions'] ?? array() ), true ) );
+$t( 'candidat B ne peut pas annuler l\'entretien de A => 404', 404 === $req( 'POST', '/postelio/v1/me/interviews/' . $ivc . '/cancel', array( 'reason' => 'x' ), $candB )['status'] );
+$cc = $req( 'POST', '/postelio/v1/me/interviews/' . $ivc . '/cancel', array( 'reason' => 'Empêchement' ), $candA );
+$t( 'candidat annule son entretien confirmé => 200 cancelled', 200 === $cc['status'] && 'cancelled' === ( $cc['data']['data']['status'] ?? '' ) );
+$t( 'recruteur voit ensuite cancelled', 'cancelled' === ( $req( 'GET', '/postelio/v1/companies/me/interviews/' . $ivc, null, $recA )['data']['data']['status'] ?? '' ) );
+$histCc = array_column( (array) ( $req( 'GET', '/postelio/v1/companies/me/interviews/' . $ivc, null, $recA )['data']['data']['history'] ?? array() ), 'actor_role' );
+$t( 'historique : annulation par le candidat (actor_role candidate)', in_array( 'candidate', $histCc, true ) );
+
 echo "== Validation payload ==\n";
 $badUrl = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array( 'type' => 'video', 'scheduled_at' => $future( 3 ), 'duration_minutes' => 30, 'video_data' => array( 'meeting_url' => 'javascript:alert(1)' ) ), $recA );
 $t( 'url visio malveillante refusée => 422', 422 === $badUrl['status'] );
@@ -176,6 +194,25 @@ $ctx = InterviewDirectory::get_context( $iv );
 $t( 'get_context renvoie company_name + scheduled_at + type', is_array( $ctx ) && ! empty( $ctx['company_name'] ) && ! empty( $ctx['scheduled_at'] ) && 'video' === $ctx['type'] );
 $t( 'get_context ne fuit pas d\'id interne', is_array( $ctx ) && ! isset( $ctx['id'] ) );
 $t( 'upcoming_count candidat >= 0', InterviewDirectory::upcoming_count( $candA ) >= 0 );
+
+echo "== §D completed reste manuel (aucun passage automatique) ==\n";
+$ivk = (string) $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array( 'type' => 'video', 'scheduled_at' => $future( 2 ), 'duration_minutes' => 30, 'video_data' => array( 'meeting_url' => 'https://meet.example.com/keep' ) ), $recA )['data']['data']['uuid'];
+$req( 'POST', '/postelio/v1/me/interviews/' . $ivk . '/confirm', null, $candA );
+$cron = _get_cron_array(); $hasIvCron = false;
+if ( is_array( $cron ) ) { foreach ( $cron as $hooks ) { foreach ( array_keys( (array) $hooks ) as $hook ) { if ( false !== strpos( (string) $hook, 'interview' ) ) { $hasIvCron = true; } } } }
+$t( 'aucun cron d\'auto-complétion d\'entretien planifié', false === $hasIvCron );
+$t( 'entretien confirmé reste confirmed (pas d\'auto-completed)', 'confirmed' === ( $req( 'GET', '/postelio/v1/companies/me/interviews/' . $ivk, null, $recA )['data']['data']['status'] ?? '' ) );
+
+echo "== §C Offre filled/archived/suspended bloque une NOUVELLE proposition ==\n";
+$jRepo = new JobRepository();
+foreach ( array( 'filled', 'archived', 'suspended' ) as $st ) {
+	$jRepo->set_status( $jid, $st );
+	$res = $req( 'POST', '/postelio/v1/companies/me/applications/' . $appU . '/interviews', array( 'type' => 'phone', 'scheduled_at' => $future( 5 ), 'duration_minutes' => 30, 'phone_data' => array( 'phone_number' => '0600000000' ) ), $recA );
+	$t( "offre {$st} => nouvelle proposition refusée 409", 409 === $res['status'] );
+	$t( "entretien existant toujours consultable (offre {$st})", 200 === $req( 'GET', '/postelio/v1/companies/me/interviews/' . $ivk, null, $recA )['status'] );
+}
+$t( 'entretien existant encore confirmable/annulable après changement d\'offre', in_array( 'cancel', (array) ( $req( 'GET', '/postelio/v1/me/interviews/' . $ivk, null, $candA )['data']['data']['actions'] ?? array() ), true ) );
+$jRepo->set_status( $jid, 'published' ); // on rétablit pour le test candidature terminale
 
 echo "== Candidature terminale bloque la proposition (§32) ==\n";
 $appSvc->change_status( $recA, $appU, array( 'to' => 'rejected' ) );

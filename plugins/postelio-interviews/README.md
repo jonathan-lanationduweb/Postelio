@@ -60,6 +60,7 @@ redondant. Toutes les transitions sont contrôlées côté serveur.
 | Confirmer | `POST /me/interviews/{uuid}/confirm` | `pst_confirm_interview` + `pst_email_verified` |
 | Refuser | `POST /me/interviews/{uuid}/decline` | `pst_reject_interview` |
 | Autre créneau | `POST /me/interviews/{uuid}/reschedule` | `pst_reschedule_interview` + `pst_email_verified` |
+| **Annuler (candidat)** | `POST /me/interviews/{uuid}/cancel` | `pst_reject_interview` + `pst_email_verified` |
 | Lister/voir (recruteur) | `GET /companies/me/interviews[/{uuid}]` | `pst_manage_company_interviews` |
 | Proposer | `POST /companies/me/applications/{application_uuid}/interviews` | `pst_propose_interview` + `pst_email_verified` |
 | Modifier | `PUT /companies/me/interviews/{uuid}` | `pst_manage_company_interviews` + `pst_email_verified` |
@@ -71,7 +72,7 @@ La lecture n'exige pas l'e-mail vérifié ; les actions **sensibles** oui. UUID 
 **params d'URL** uniquement (jamais le body). Filtres de liste : `status`, `from`, `to`,
 `application_uuid` ; pagination `page`/`per_page`.
 
-## Reschedule / modification / reconfirmation
+## Reschedule / modification / reconfirmation / annulation candidat
 - **Candidat** propose un autre créneau (`reschedule`) : le créneau initial est **conservé**,
   la proposition est stockée dans `proposed_*` et le statut passe `reschedule_requested`.
 - **Recruteur** peut **accepter** (`accept-reschedule` → le créneau proposé devient le
@@ -80,18 +81,27 @@ La lecture n'exige pas l'e-mail vérifié ; les actions **sensibles** oui. UUID 
 - Une modification recruteur **substantielle** (date/heure, type, lieu, lien visio) d'un
   entretien **déjà confirmé** le renvoie en `proposed` ⇒ **nouvelle confirmation candidat
   requise**. Une modification mineure (instructions) reste dans le même statut.
+- **Annulation par le candidat (décision V1)** : le candidat concerné peut annuler un
+  entretien `confirmed` (ou `reschedule_requested`) — action authentifiée, **ownership
+  strict**, `pst_reject_interview` **+ `pst_email_verified`**, motif facultatif. Passage à
+  `cancelled` (jamais de hard-delete), historique conservé (acteur = candidat), événement
+  `interview.cancelled`. À l'état `proposed`, le candidat utilise plutôt `decline`.
 
-## Concurrence / doublons
-**Un seul entretien actif** (`proposed`/`confirmed`/`reschedule_requested`) par
-candidature à la fois (protection anti-doublon). Un nouvel entretien n'est possible
-qu'une fois le précédent terminal (completed/cancelled/declined) — modèle « entretiens
-successifs ». *(À VALIDER : autoriser plusieurs entretiens actifs simultanés.)*
+## Concurrence / doublons (décision V1)
+**Plusieurs entretiens successifs** sont autorisés pour une même candidature (premier
+échange, RH, manager, final…) — **pas** de `UNIQUE(application_id)`. On refuse seulement
+le **doublon actif strictement identique** : même candidature **+** même `scheduled_at`
+(UTC) **+** même `type` dans un état non terminal (`has_active_duplicate`) — protège des
+double-clics / requêtes concurrentes.
 
-## Offre expirée / pourvue (§33)
-L'entretien dépend de l'**état de la candidature**, pas de la visibilité publique de
-l'offre : une offre expirée/pourvue n'empêche pas de planifier tant que la candidature est
-active. Seule une candidature **terminale** bloque. *(À VALIDER : cas
-filled/archived/suspended de l'offre si politique RH différente.)*
+## Offre expirée / pourvue / archivée / suspendue (décision V1, §33)
+Statut d'offre lu via le **contrat public** `JobDirectory::status()` (jamais les meta
+internes). Une **nouvelle** proposition est :
+- **autorisée** si l'offre est `published`/`expiring`/`expired` avec candidature active ;
+- **refusée `409`** si l'offre est `filled`, `archived` ou `suspended`.
+Les entretiens **existants** restent toujours consultables, confirmables, annulables et
+« réalisables » — l'historique n'est **jamais** détruit à cause du statut ultérieur de
+l'offre.
 
 ## Événements (via core, audit minimal sans données privées)
 `interview.proposed`, `interview.confirmed`, `interview.declined`,
@@ -124,12 +134,16 @@ et coordonnées selon le type, plus la référence `interview_uuid`.
   *Refuser* → `…/decline` ; *Voir l'offre* → `job_uuid` ; *Message* → `MessagingDirectory`.
 - **Mobile/Tauri** : API identique (Bearer), aucune logique spécifique.
 
-## Points À VALIDER
-- Annulation par le **candidat** après confirmation (V1 : le candidat *refuse* avant
-  confirmation ou *repropose* un créneau ; il ne peut pas hard-cancel). À arbitrer.
-- Un seul entretien actif par candidature (vs plusieurs simultanés).
-- Comportement sur offre `filled`/`archived`/`suspended`.
-- Automatisation de `completed` (cron à l'heure passée) — V1 = marquage manuel recruteur.
+## `completed` = marquage manuel (décision V1)
+`completed` reste **manuel** (recruteur/admin). **Aucun cron** ne transforme automatiquement
+un entretien passé en `completed` : une date dépassée signifie seulement que le créneau est
+passé, **pas** que l'entretien a réellement eu lieu.
+
+## Points À VALIDER (restants)
+- Aucun spécifique aux entretiens : les décisions V1 (annulation candidat, entretiens
+  multiples + doublon, offre filled/archived/suspended, `completed` manuel) sont **figées**.
+- *(Piste future, hors V1)* : cron optionnel de rappel/clôture, intégrations calendrier,
+  message système automatique dans la conversation à la proposition.
 
 ## Tests
 - `tests/run-unit.php` : machine à états + validation (types, fuseaux, DST, durée, URL).

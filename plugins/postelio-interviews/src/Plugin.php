@@ -56,7 +56,7 @@ final class Plugin {
 				self::MODULE,
 				array(
 					'version'     => POSTELIO_INTERVIEWS_VERSION,
-					'requires'    => array( 'core', 'users', 'companies', 'applications' ),
+					'requires'    => array( 'core', 'users', 'companies', 'jobs', 'applications' ),
 					'load_order'  => 60,
 					'text_domain' => 'postelio-interviews',
 				)

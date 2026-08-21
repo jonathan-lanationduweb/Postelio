@@ -100,6 +100,21 @@ final class InterviewRepository {
 	}
 
 	/**
+	 * Décision V1 : plusieurs entretiens successifs sont autorisés pour une même
+	 * candidature. On empêche seulement le **doublon actif strictement identique**
+	 * (même candidature + même créneau UTC + même type dans un état non terminal),
+	 * ce qui protège des double-clics / requêtes concurrentes.
+	 */
+	public function has_active_duplicate( int $application_id, string $scheduled_at, string $type ): bool {
+		global $wpdb;
+		$states = InterviewStateMachine::ACTIVE;
+		$in     = implode( ',', array_fill( 0, count( $states ), '%s' ) );
+		$sql    = 'SELECT COUNT(*) FROM ' . self::table() . " WHERE application_id = %d AND scheduled_at = %s AND type = %s AND status IN ($in)";
+		$args   = array_merge( array( $application_id, $scheduled_at, $type ), $states );
+		return (int) $wpdb->get_var( $wpdb->prepare( $sql, $args ) ) > 0;
+	}
+
+	/**
 	 * Liste paginée + filtres (status, from/to date UTC). `$scope` = 'candidate'|'company'.
 	 *
 	 * @param array<string, mixed> $filters
