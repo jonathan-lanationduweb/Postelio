@@ -152,9 +152,34 @@ final class MessagingService {
 		}
 		$this->rate_limit_or_fail( $user_id );
 
+		// Compte suspendu : aucune écriture sensible (défense en profondeur ; les jetons
+		// sont déjà révoqués à la suspension).
+		if ( ! UserDirectory::is_active( $user_id ) ) {
+			throw ApiError::forbidden( 'Action indisponible pour ce compte.' );
+		}
+
 		$norm = MessageNormalizer::normalize( $raw_body );
 		if ( ! $norm['ok'] ) {
 			throw ApiError::validation( array( 'body' => $norm['error'] ) );
+		}
+
+		// Modération préventive (contrat entrant, découplé). Sans le module : null → on
+		// laisse passer. Bloqué (local critique / provider) → fail-closed : aucune ligne,
+		// aucun `message.created`, message générique. `review_required` (medium, ex. contact
+		// hors plateforme) → on envoie et un case est ouvert côté modération (send + flag).
+		$decision = apply_filters(
+			'postelio/moderation/evaluate',
+			null,
+			array(
+				'resource_type' => 'message',
+				'text'          => $norm['value'],
+				'actor_id'      => $user_id,
+				'resource_uuid' => null,
+				'context'       => array( 'conversation_uuid' => (string) $c['public_uuid'] ),
+			)
+		);
+		if ( is_array( $decision ) && ! empty( $decision['blocked'] ) ) {
+			throw new ApiError( 'moderation_blocked', (string) ( $decision['message'] ?: 'Ce contenu ne respecte pas les règles de la plateforme.' ) );
 		}
 
 		$now = current_time( 'mysql', true );

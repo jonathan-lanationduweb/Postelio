@@ -177,6 +177,27 @@ publique ⇒ `verified`**. Appliquée par `postelio-jobs` au Lot 04 (`POST /jobs
 **`Api\InterviewDirectory`** (contexte d'entretien pour Notifications/e-mail de preuve,
 compteur à venir, historique). Ces façades évitent toute dépendance circulaire.
 
+`postelio-moderation` (Lot 11) centralise la **modération** : **réactif** (signalements
+utilisateur → **cas** regroupés par ressource) **et** **préventif** (passerelle
+`postelio/moderation/evaluate`, appelée par la messagerie et les offres avant
+insertion/publication). **Moteur de règles local uniquement** en V1 (aucun provider
+externe, aucune dépendance Composer) ; l'interface `ModerationProvider` (filtre
+`postelio/moderation/provider`) reste **branchable** pour un futur provider — `GET
+/moderation/health` rapporte `provider: local_only`. Le domaine **décide** puis **délègue
+l'exécution** aux domaines propriétaires via leurs **contrats publics** (jamais d'`UPDATE`
+direct d'une table tierce) : `JobSourcesModeration` (hide/unhide), `MessagingDirectory`
+(close_conversation), `JobModeration`→`JobService::admin_transition` (suspend offre),
+`CompanyModeration`→`VerificationService::decide` (suspend entreprise ; un écouteur
+découplé `CompanySuspensionSync` suspend alors les offres **publiées**), `UserModeration`
+(suspension **réversible** : statut + révocation des jetons Bearer + destruction des
+sessions WP, **jamais** d'écriture directe dans `wp_users`). Contrats additifs (tous non
+destructifs) introduits ce lot : `UserModeration` +
+`UserDirectory::{public_uuid,id_from_public_uuid,is_active}` (users), `JobModeration` +
+`CompanySuspensionSync` + gate de pré-publication (jobs), `CompanyModeration` (companies),
+`JobSourcesModeration` (job-sources), `send()` appelle la passerelle (messaging), garde
+`is_active` (interviews). `postelio-core` gagne un **nouveau** code d'erreur stable
+`moderation_blocked` → **422** (catalogue : 11 → 12 codes).
+
 `postelio-job-sources` (Lot 10) agrège des offres **externes** (France Travail V1) dans une
 **table dédiée** `wp_postelio_external_jobs` (jamais le CPT — volumétrie), et les fusionne à
 la recherche `/jobs` via le filtre existant **`postelio/jobs/search_provider`**

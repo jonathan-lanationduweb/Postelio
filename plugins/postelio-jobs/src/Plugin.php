@@ -73,6 +73,9 @@ final class Plugin {
 		// Synchronise le nom d'entreprise dénormalisé (cache) sur company.updated.
 		( new \Postelio\Jobs\Integration\CompanyRenameSync( $core->events() ) )->register();
 
+		// Cascade : suspension d'entreprise → retrait de diffusion des offres actives.
+		( new \Postelio\Jobs\Integration\CompanySuspensionSync( $core->events(), $this->jobs ) )->register();
+
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 
 		// Cron d'expiration quotidien (abstraction du core).

@@ -56,11 +56,21 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 | `skill.published` | skills | notifications (option), core(audit) |
 | `skill.reported` | skills | moderation, core(audit) |
 | `company_content.submitted` | skills | moderation, core(audit) |
-| `content.reported` | moderation | admin, core(audit) |
+| `moderation.report_created` | moderation | (interne : ouvre/rattache un **cas**), core(audit) — *Lot 11 ; remplace `content.reported`* |
 | `job_source.sync_started` / `.sync_completed` / `.sync_failed` | job-sources | (admin/observabilité — **jamais** Notifications) — *Lot 10* |
 | `external_job.created` / `.updated` / `.removed` | job-sources | (interne domaine offres) — *Lot 10* |
 | `external_job.apply_redirected` | job-sources | (analytics — **jamais** une candidature) — *Lot 10* |
-| `moderation.decided` | moderation | messaging/skills/jobs (appliquer allowed/blocked), notifications, core(audit) |
+| `moderation.case_opened` | moderation | notifications (file admin), core(audit) — *Lot 11* |
+| `moderation.review_started` | moderation | core(audit) — *Lot 11* |
+| `moderation.decision_made` | moderation | domaines propriétaires (exécution **déléguée**), core(audit) — *Lot 11 ; remplace `moderation.decided`* |
+| `moderation.content_hidden` | moderation | core(audit) — *Lot 11* |
+| `moderation.content_restored` | moderation | core(audit) — *Lot 11* |
+| `moderation.user_warned` | moderation | notifications (option), core(audit) — *Lot 11* |
+
+> **Suspensions (Lot 11) :** les notifications de suspension passent par les événements
+> **propriétaires** (`job.suspended` / `company.suspended` / `user.suspended`) — la
+> modération ne **duplique jamais** ces notifications ; ces événements ne créent pas de
+> doublon de Notification.
 
 ## Matrice de notifications
 
@@ -95,7 +105,11 @@ Canaux : **in-app** (cloche), **email** (transactionnel), *push Tauri* (plus tar
 | company.verification_requested | — | — | ✅ | option | ✅ file admin |
 | payment.succeeded / invoice.created | — | ✅ | — | ✅ (reçu) | ✅ |
 | payment.failed | — | ✅ | — | ✅ | ✅ |
-| content.reported / moderation | — | — | ✅ | option | ✅ file admin |
+| moderation.case_opened / decision_made | — | — | ✅ | option | ✅ file admin |
+
+> **Modération (Lot 11) :** une **suspension** (utilisateur/entreprise/offre) notifie via
+> l'événement **propriétaire** (`*.suspended`) ; la modération ne crée **aucune**
+> notification en double.
 
 > Les préférences de notification (candidat : nouvelles offres, changement de statut,
 > nouveau message, proposition d'entretien, rappel, conseils) existent déjà côté front
