@@ -30,6 +30,7 @@ final class Errors {
 		'payload_too_large'     => 413,
 		'unsupported_media_type' => 415,
 		'payment_required'      => 402,
+		'moderation_blocked'    => 422,
 		'server_error'          => 500,
 	);
 

@@ -207,6 +207,71 @@ contenu. La disparition d'un message se fait par **suppression logique** (soft-d
 | reported → moderated | admin/modo |
 | sent/read → deleted (logique) | auteur (le sien) / admin-modo — **pas d'édition** (D6) |
 
+## Modération (Moderation) — implémenté Lot 11
+
+Modération **centralisée**, contrôlée serveur (`CaseStateMachine`). Deux entrées : le
+**réactif** (signalement → **cas**) et le **préventif** (passerelle
+`postelio/moderation/evaluate`). Le domaine **décide** et **délègue** l'exécution aux
+domaines propriétaires (jamais d'`UPDATE` direct d'une table tierce).
+
+### Cas de modération — machine à états
+
+États : `open`, `in_review`, `resolved`, `dismissed`, `escalated`. Actifs =
+`{open, in_review, escalated}`. `resolved` et `dismissed` sont **terminaux**. **1 cas
+actif par ressource** (regroupement des signalements) ; `priority` = **max** des
+signalements rattachés.
+
+| Transition | Autorisé par | Note |
+|---|---|---|
+| (création) → open | signalement (`report`) **ou** passerelle (`auto`) | 1 cas actif/ressource ; sinon rattachement |
+| open → in_review | modo/admin | prise en charge (`review_started`) |
+| open → escalated | modo/admin | |
+| in_review → resolved | modo/admin | **terminal** (décision + action) |
+| in_review → dismissed | modo/admin | **terminal** (sans suite) |
+| in_review → escalated | modo/admin | |
+| escalated → in_review | modo/admin | |
+
+- Après un cas **terminal** (`resolved`/`dismissed`), un **nouveau** signalement sur la
+  **même** ressource ouvre un **nouveau** cas.
+- Chaque décision/action/note écrit une ligne **append-only** `ModerationCaseEvent`
+  (`event`, `decision`, `action`, `reason_codes`, `from_state`/`to_state`, `note`,
+  `policy_version`).
+
+### Passerelle préventive (gateway)
+
+Niveaux de risque → verdict : `low` → **autorisé** ; `medium` → **review_required**
+(le contenu **passe** + un cas est ouvert/rattaché = « envoyer + signaler ») ;
+`high|critical` → **bloqué** (fail-closed). Message de blocage **générique**.
+
+| Point d'appel | `blocked` (high/critical) | `medium` |
+|---|---|---|
+| Messagerie `send()` (évaluation **PRE-insert**) | **aucune** ligne, **aucun** `message.created`, erreur générique `moderation_blocked` (**422**) | message **envoyé** + cas rattaché à la **conversation** (pas au message) |
+| Offres `publish()` (gate de pré-publication) | l'offre **reste en `draft`** + `moderation_blocked` | offre **publiée** + signalée (flag) |
+
+- **Aucun** état `pending` n'est introduit (ni pour les offres, ni pour les messages).
+- Coordonnées (e-mail/téléphone) = **medium contextuel**.
+
+### Actions & exécution déléguée
+
+Décision : `{action, reason_codes?, note?, resolve?, target?}`. Un `target{type,uuid}`
+optionnel permet à un **admin** de suspendre l'**auteur** (par UUID public) depuis un cas
+de contenu. Exécution **toujours** via le contrat public du domaine propriétaire :
+
+| Action | Délégué à | Réversible |
+|---|---|---|
+| `hide` / `unhide` | `JobSourcesModeration` (`local_visibility`) | ✅ |
+| `close_conversation` | `MessagingDirectory` | (réouverture messaging) |
+| `suspend_job` / `unsuspend_job` | `JobModeration` → `JobService::admin_transition` | ✅ |
+| `suspend_company` / `unsuspend_company` | `CompanyModeration` → `VerificationService::decide` (+ `CompanySuspensionSync` : suspend les offres **publiées**, notify:false) | ✅ |
+| `suspend_user` / `unsuspend_user` | `UserModeration` (statut + révocation jetons Bearer + destruction sessions WP) | ✅ (jamais d'écriture directe dans `wp_users`) |
+
+- **Modérateur** : `no_action`/`hide`/`unhide`/`close_conversation`/`warning`/`dismiss`/
+  `escalate`. **Admin** : en plus les `suspend_*`/`unsuspend_*` (re-vérifiées par
+  capability dans l'exécuteur).
+- Les **suspensions** notifient via les événements **propriétaires**
+  (`job.suspended`/`company.suspended`/`user.suspended`) — la modération ne **duplique
+  jamais** ces notifications.
+
 ## §7 Relations métier (vue synthèse)
 
 ```

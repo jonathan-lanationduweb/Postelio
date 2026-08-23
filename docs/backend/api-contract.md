@@ -36,6 +36,7 @@ Erreur :
 | `payload_too_large` | 413 | Fichier trop volumineux. |
 | `unsupported_media_type` | 415 | MIME non autorisé. |
 | `payment_required` | 402 | Action nécessitant un paiement (renouvellement). |
+| `moderation_blocked` | 422 | Contenu bloqué par la modération préventive (Lot 11 ; message **générique**, jamais la règle ni le `reason_code`). |
 | `server_error` | 500 | Erreur interne (loggée). |
 
 ## 3. Authentification
@@ -222,8 +223,34 @@ Erreur :
 - `GET /job-sources/health` — admin (`pst_manage_platform`) : état par provider (disponible,
   offres actives, dernière sync/succès, dernière erreur ; aucun secret).
 
-### Modération — `postelio-moderation`
-- `GET /moderation/queue` · `GET /moderation/reports` · `POST /moderation/reports/{id}/decide`. R: admin/modo.
+### Modération — `postelio-moderation` (implémenté Lot 11)
+> Modération centralisée : **signalements** (réactif → **cas** regroupés par ressource) +
+> **passerelle préventive** (`postelio/moderation/evaluate`, appelée par messagerie/offres).
+> UUID v4 uniquement (jamais d'ID SQL) ; **non-divulgation** systématique → **404** ;
+> `reporter_user_id` reste interne ; message de blocage **générique** (n'expose jamais la
+> règle ni les `reason_code`). Moteur de règles **local** (aucun provider externe en V1).
+- `POST /moderation/reports` — signaler (`pst_report_content`) : `{resource_type,
+  resource_uuid, reason_code, description?}`. Ressource inconnue/inaccessible → **404**.
+  Réponse **générique** (statut) + flag `duplicate` (dédup). err: `validation_error`, `rate_limited`.
+- `GET /me/moderation/reports` — **ses** signalements (`pst_report_content`) ; statuts
+  génériques `received|under_review|resolved` ; jamais d'ID SQL, de note interne ni de tiers.
+- `GET /moderation/cases` — file paginée + filtres `status|priority|resource_type`.
+  R: `pst_view_moderation_queue`.
+- `GET /moderation/cases/{uuid}` — détail + **historique** des événements. R:
+  `pst_view_moderation_queue`. Notes internes visibles **ici uniquement** (file admin).
+- `POST /moderation/cases/{uuid}/assign` — assigner. R: `pst_decide_report`.
+- `POST /moderation/cases/{uuid}/decision` — décider (`pst_moderate_content`) : `{action,
+  reason_codes?, note?, resolve?, target?}`. `target{type,uuid}` optionnel permet à un
+  **admin** de suspendre l'auteur (par UUID public) depuis un cas de contenu. Les actions
+  **admin** (`suspend_*`) sont **re-vérifiées par capability** dans l'exécuteur d'action.
+  err: `forbidden`, `invalid_transition`.
+- `POST /moderation/cases/{uuid}/note` — note interne. R: `pst_moderate_content`.
+- `GET /moderation/health` — état (`provider: local_only`). R: `pst_view_moderation_queue`.
+- **Actions déléguées** (via contrats propriétaires, jamais d'écriture directe) :
+  `hide/unhide`→JobSources, `close_conversation`→Messaging, `suspend_job/unsuspend_job`→Jobs,
+  `suspend_company/unsuspend_company`→Companies (+ `CompanySuspensionSync`),
+  `suspend_user/unsuspend_user`→Users (réversible). Modo : `no_action/hide/unhide/
+  close_conversation/warning/dismiss/escalate` ; suspensions = **admin**.
 
 ### Core
 - `GET /health` · `GET /version` · `GET /config` (public non sensible).

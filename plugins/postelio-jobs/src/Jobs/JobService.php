@@ -43,6 +43,7 @@ final class JobService {
 	 * @throws ApiError
 	 */
 	public function create( int $actor_id, array $input ): int {
+		$this->assert_actor_active( $actor_id );
 		$company_id = CompanyDirectory::company_of_user( $actor_id );
 		if ( 0 === $company_id ) {
 			throw new ApiError( 'conflict', 'Aucune entreprise rattachée : créez d\'abord votre entreprise.' );
@@ -95,6 +96,7 @@ final class JobService {
 	 * @return array<string, mixed>
 	 */
 	public function publish( int $actor_id, int $job_id ): array {
+		$this->assert_actor_active( $actor_id );
 		$job     = $this->owned_or_fail( $actor_id, $job_id );
 		$company = (int) $job['company']['id'];
 
@@ -107,6 +109,25 @@ final class JobService {
 
 		if ( ! CompanyVerification::can_publish_jobs( $company ) ) {
 			throw ApiError::forbidden( 'Publication impossible : l\'entreprise doit être vérifiée.' );
+		}
+
+		// Gate de pré-publication (contrat entrant modération, découplé). Sans le module :
+		// null → publication normale. `blocked` (risque haut/critique) → fail-closed :
+		// l'offre RESTE en brouillon (aucune transition). `review_required` (medium) →
+		// publication + case ouvert côté modération (publish + flag). Jamais d'état `pending`.
+		$decision = apply_filters(
+			'postelio/moderation/evaluate',
+			null,
+			array(
+				'resource_type' => 'job',
+				'text'          => trim( (string) ( $job['titre'] ?? '' ) . "\n" . (string) ( $job['description'] ?? '' ) ),
+				'actor_id'      => $actor_id,
+				'resource_uuid' => (string) ( $job['uuid'] ?? '' ),
+				'context'       => array( 'company_id' => $company ),
+			)
+		);
+		if ( is_array( $decision ) && ! empty( $decision['blocked'] ) ) {
+			throw new ApiError( 'moderation_blocked', (string) ( $decision['message'] ?: 'Cette offre ne respecte pas les règles de la plateforme.' ) );
 		}
 
 		$today = gmdate( 'Y-m-d' ); // dates en UTC (Y-m-d), cohérentes avec l'expiration
@@ -183,6 +204,18 @@ final class JobService {
 	}
 
 	// --- Helpers -----------------------------------------------------------
+
+	/**
+	 * Refuse toute action d'écriture sensible à un compte non actif (suspendu). Défense en
+	 * profondeur : les jetons sont déjà révoqués à la suspension. Contrat public users,
+	 * dépendance déjà déclarée (registry `requires` → users).
+	 */
+	private function assert_actor_active( int $actor_id ): void {
+		if ( class_exists( '\\Postelio\\Users\\Api\\UserDirectory' )
+			&& ! \Postelio\Users\Api\UserDirectory::is_active( $actor_id ) ) {
+			throw ApiError::forbidden( 'Action indisponible pour ce compte.' );
+		}
+	}
 
 	/** @return array<string, mixed> */
 	private function owned_or_fail( int $actor_id, int $job_id ): array {

@@ -218,20 +218,50 @@ non choisi (filtre `postelio/notifications/email_provider`).
 
 ---
 
-## postelio-moderation
+## postelio-moderation (implémenté Lot 11)
 
-**Responsabilité.** File de modération et signalements pour messages, offres, profils,
-savoir-faire, contenus entreprise. États : Allowed / Blocked / Review required.
+**Responsabilité.** **Modération centralisée** — signalements utilisateur (**réactif** →
+**cas** regroupés par ressource) **et** passerelle **préventive** (filtre
+`postelio/moderation/evaluate` appelé par la messagerie et les offres avant
+insertion/publication). Revue humaine par modérateurs/admins. Le domaine **décide** puis
+**délègue l'exécution** aux domaines propriétaires (jamais d'écriture directe d'une table
+tierce). **Moteur de règles local uniquement** en V1 : aucun provider externe, aucune
+dépendance Composer.
 
-**Dépendances :** core (+ écoute les événements de contenu).
-**Données possédées :** `ModerationReport` (table dédiée), état de modération des objets
-(champ possédé par chaque plugin, décision journalisée ici).
-**Endpoints :** `/moderation/reports` (admin), `/moderation/reports/{id}/decide`,
-`/moderation/queue`.
-**Émet :** `content.reported`, `moderation.decided`.
-**Écoute :** `message.reported`, `skill.reported`, `job.created`, `skill.submitted`,
-`company_content.submitted` (mise en file si review requise).
-**Interactions :** aucune API de modération externe branchée dans ce lot.
+**Dépendances :** core, users, companies, jobs, job-sources, messaging (contrats publics
+uniquement). **load_order 90.**
+**Données possédées :** `ModerationReport` + `ModerationCase` + `ModerationCaseEvent`
+(**3 tables** `wp_postelio_moderation_*`, migration idempotente, désactivation non
+destructive). Voir [data-model.md](data-model.md#modération--wp_postelio_moderation_-implémenté-lot-11).
+**Provider :** interface `ModerationProvider` (filtre `postelio/moderation/provider`)
+**prête** pour un futur provider externe, **non branchée** en V1 ; `GET /moderation/health`
+rapporte `provider: local_only`.
+**Passerelle préventive :** `low`→autorisé ; `medium`→`review_required` (le contenu **passe**
++ cas ouvert/rattaché = « envoyer + signaler ») ; `high|critical`→**bloqué** (fail-closed,
+erreur générique `moderation_blocked`/422). **Aucun** état `pending` (ni offres ni messages).
+**Endpoints :** voir [api-contract.md](api-contract.md#modération--postelio-moderation-implémenté-lot-11).
+**Émet :** `moderation.report_created`, `moderation.case_opened`,
+`moderation.review_started`, `moderation.decision_made`, `moderation.content_hidden`,
+`moderation.content_restored`, `moderation.user_warned`. Les **suspensions** notifient via
+les événements **propriétaires** (`job.suspended`/`company.suspended`/`user.suspended`) —
+jamais de doublon.
+**Écoute :** appelé en **filtre** par messaging/jobs (passerelle préventive) ; le réactif
+entre par `POST /moderation/reports` (pas d'abonnement à un flux d'événements pour décider).
+**Actions déléguées** (contrats propriétaires, jamais d'`UPDATE` direct) :
+`hide/unhide`→`JobSourcesModeration` ; `close_conversation`→`MessagingDirectory` ;
+`suspend_job/unsuspend_job`→`JobModeration`→`JobService::admin_transition` ;
+`suspend_company/unsuspend_company`→`CompanyModeration`→`VerificationService::decide`
+(+ écouteur découplé `CompanySuspensionSync` qui suspend les offres **publiées**, notify:false) ;
+`suspend_user/unsuspend_user`→`UserModeration` (statut suspendu + révocation des jetons
+Bearer + destruction des sessions WP ; **réversible** ; jamais d'écriture directe dans
+`wp_users`).
+**Contrats additifs introduits ce lot** (tous non destructifs) : `UserModeration` +
+`UserDirectory::{public_uuid,id_from_public_uuid,is_active}` (users) ; `JobModeration` +
+`CompanySuspensionSync` + gate de pré-publication + gardes `is_active` sur `create()`/
+`publish()` (jobs) ; `CompanyModeration` (companies) ; `JobSourcesModeration`
+(hide/unhide/is_visible) (job-sources) ; `send()` appelle la passerelle + garde `is_active`
+(messaging) ; garde `is_active` sur `propose()` (interviews) ; **nouveau** code d'erreur
+`moderation_blocked`→422 (core, 11→12 codes).
 
 ---
 

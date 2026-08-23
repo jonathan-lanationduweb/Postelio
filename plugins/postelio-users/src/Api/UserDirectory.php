@@ -22,6 +22,24 @@ final class UserDirectory {
 		return (bool) get_userdata( $user_id );
 	}
 
+	public const META_PUBLIC_UUID = 'postelio_public_uuid';
+
+	/** UUID public STABLE d'un utilisateur (généré paresseusement). Jamais l'ID SQL. */
+	public static function public_uuid( int $user_id ): string {
+		$uuid = (string) get_user_meta( $user_id, self::META_PUBLIC_UUID, true );
+		if ( '' === $uuid ) {
+			$uuid = wp_generate_uuid4();
+			update_user_meta( $user_id, self::META_PUBLIC_UUID, $uuid );
+		}
+		return $uuid;
+	}
+
+	/** ID interne depuis l'UUID public (0 si inconnu). */
+	public static function id_from_public_uuid( string $uuid ): int {
+		$users = get_users( array( 'meta_key' => self::META_PUBLIC_UUID, 'meta_value' => $uuid, 'number' => 1, 'fields' => 'ID' ) );
+		return $users ? (int) $users[0] : 0;
+	}
+
 	/** Compte actif (ni suspendu ni supprimé). */
 	public static function is_active( int $user_id ): bool {
 		return self::exists( $user_id ) && AccountService::STATUS_ACTIVE === AccountService::status( $user_id );

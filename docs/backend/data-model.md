@@ -22,7 +22,7 @@ contraintes, index, données sensibles, conservation (RGPD → voir
 | Notification | **table dédiée** | Fort volume, index `user_id`/`read_at`, purge périodique. |
 | SkillContent, CompanyContent | **CPT** `postelio_skill` / `postelio_company_content` | Contenu éditorial public modéré (comme les articles). |
 | Payment, Invoice, Renewal, WebhookEvent | **tables dédiées** | Financier, traçable, immuable, webhooks. |
-| ModerationReport | **table dédiée** | File admin, requêtes par statut/type. |
+| ModerationReport, ModerationCase, ModerationCaseEvent | **3 tables dédiées** | Signalements + cas regroupés par ressource + historique append-only (Lot 11). |
 | AuditLog | **table dédiée** (append-only) | Journal immuable, index `actor`/`resource`/`created_at`. |
 
 > **Décision explicite : pas de « tout en CPT ».** Le transactionnel/sensible/volumineux
@@ -46,6 +46,7 @@ wp_postelio_interview_history
 wp_postelio_notifications          wp_postelio_payments
 wp_postelio_invoices               wp_postelio_renewals
 wp_postelio_webhook_events         wp_postelio_moderation_reports
+wp_postelio_moderation_cases       wp_postelio_moderation_case_events
 wp_postelio_audit_log
 ```
 
@@ -339,11 +340,33 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
 - **WebhookEvent :** id, provider, provider_event_id (unique), type, payload (JSON),
   received_at, processed_at. **Sensible :** financier ; **immuable/traçable**.
 
-## ModerationReport
-- **Propriétaire :** moderation. **Table dédiée.**
-- **Champs :** id, resource_type (message|job|profile|skill|company_content),
-  resource_id, reporter_id, reason, status (open|allowed|blocked|review), decided_by,
-  decided_at, created_at. **Index :** status, resource_type.
+## Modération — `wp_postelio_moderation_*` (implémenté Lot 11)
+- **Propriétaire :** moderation. **3 tables dédiées** (pas davantage : ni décisions, ni
+  cache, ni préférences, ni appels). Migration **idempotente** (`CREATE TABLE IF NOT
+  EXISTS`) ; désactivation/désinstallation **non destructives** (jamais de hard-delete du
+  contenu métier). `reporter_user_id` reste **interne**.
+
+### ModerationReport — `wp_postelio_moderation_reports`
+- **Champs :** id, `public_uuid` (UNIQUE), reporter_user_id (interne), resource_type,
+  resource_uuid, reason_code, description `VARCHAR(500)`, status (défaut `received`),
+  case_id, created_at.
+- **Index :** `UNIQUE public_uuid` ; index de **dédup** composite utilisant un **préfixe**
+  de colonne sur `resource_uuid` (reste sous la limite de clé de 1000 octets).
+
+### ModerationCase — `wp_postelio_moderation_cases`
+- **Champs :** id, `public_uuid` (UNIQUE), resource_type, resource_uuid, status (défaut
+  `open`), priority (défaut `medium`), risk_level, origin (`report|auto`), assigned_to,
+  assigned_at, reports_count, opened_at, resolved_at, created_at, updated_at.
+- **Regroupement :** **1 cas actif par ressource** (les signalements s'y rattachent) ;
+  `priority` = **max** des signalements. Actifs = `{open, in_review, escalated}`. Machine
+  à états → [workflows.md](workflows.md#modération-moderation--implémenté-lot-11).
+
+### ModerationCaseEvent — `wp_postelio_moderation_case_events`
+- **Table append-only** (historique des décisions/actions/notes).
+- **Champs :** id, case_id, actor_user_id, actor_role, event, decision, action,
+  reason_codes (JSON/LONGTEXT), from_state, to_state, note, policy_version, created_at.
+- **Sensible :** on stocke **seulement** le nécessaire (reason_codes, métadonnées,
+  description du signalement) — **jamais** le contenu complet d'un message/offre/CV.
 
 ## AuditLog
 - **Propriétaire :** core. **Table dédiée (append-only).**

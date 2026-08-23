@@ -61,11 +61,21 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 | E-mail (livraison) | worker interne ; jamais de motif/note/token/ID SQL/corps complet dans l'audit | — (immuable) | conservé pour observabilité (statut, provider_message_id) |
 | Offre externe (Lot 10) | publique (source autoritaire) ; `external_id` jamais exposé ; secrets provider en constantes/env (jamais base/Git) | SOURCE-OWNED (non éditable) ; masquage admin `local_visibility` | disparition source confirmée → `removed` + **anonymisation** (Licence FT Art. 7) |
 | Redirection candidat externe | URL revalidée (https, pas de `javascript:`/IP privée) ; serveur n'appelle QUE les hôtes FT (anti-SSRF) ; HTML source assaini (liste blanche) | — | — |
+| Signalement / cas de modération (Lot 11) | file admin (`pst_view_moderation_queue`) ; note interne = admin/modo ; `reporter_user_id` **interne** (signaleur anonyme vis-à-vis du contenu) | décision via cas (historique **append-only**) | **non destructif** (jamais de hard-delete du contenu métier) |
 | Notes recruteur | recruteurs de la company + admin | recruteur | recruteur |
 | Adresse personnelle | candidat + recruteur autorisé | candidat | anonymisée |
 | Historique candidature | candidat (le sien), recruteur concerné, admin | système (append-only) | anonymisé selon conservation |
 | Identité légale entreprise | recruteur de la company + admin | recruteur | avec l'entreprise |
 | Paiements / factures | recruteur de la company + admin | — (immuable) | conservation légale |
+
+> **Modération (Lot 11) :** on ne stocke **que le nécessaire** (reason_codes, métadonnées,
+> description du signalement ≤ 500 car.) — **jamais** le contenu complet d'un message, d'une
+> offre ou d'un CV. Non-divulgation systématique (ressource inconnue/inaccessible → **404**) ;
+> message de blocage **générique** (n'expose ni règle ni `reason_code`). **Anonymat** du
+> signaleur vis-à-vis du contenu signalé. **Rate-limit + dédup** des signalements (filtres
+> `postelio/moderation/report_rate_per_hour`, `postelio/moderation/report_dedup_window`).
+> **Suspension utilisateur réversible** (statut + révocation des jetons Bearer + destruction
+> des sessions WP ; jamais d'écriture directe dans `wp_users`).
 
 ## 5. Fichiers (CV & documents)
 - **Jamais d'URL publique directe.** Stockage **hors webroot** (ou dossier protégé

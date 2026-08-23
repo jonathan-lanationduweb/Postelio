@@ -74,6 +74,7 @@ capability. Le front n'accorde aucun droit.
 | Annuler un entretien confirmé | ✅ (le sien) | ✅ (ceux de sa company) | ✅ |
 | Modifier / accepter re-créneau / marquer réalisé | ❌ | ✅ (ceux de sa company) | ✅ |
 | Vérifier une entreprise | ❌ | ❌ | ✅ |
+| Signaler un contenu | ✅ | ✅ | ✅ |
 | Modérer un contenu | ❌ | ❌ | ✅ / modo |
 | Télécharger un CV | ✅ (le sien) | ✅ (candidature reçue) | ✅ |
 | Lire une conversation | ✅ (participant) | ✅ (candidature de sa company) | ✅ (audit) |
@@ -106,6 +107,16 @@ capability. Le front n'accorde aucun droit.
   B). Certaines catégories sont **obligatoires** (entretien annulé, preuve de confirmation,
   entreprise suspendue) : l'e-mail part malgré une préférence OFF. Le compteur cloche
   (notifications) est distinct du compteur messagerie (messages non lus).
+- **Modération (Lot 11)** : **aucune nouvelle capability** — les rôles sont **réutilisés**.
+  Le **modérateur** (`pst_view_moderation_queue`, `pst_moderate_content`, `pst_decide_report`)
+  accède à la file, assigne, revoit, note et exécute les actions `no_action`/`hide`/`unhide`/
+  `close_conversation`/`warning`/`dismiss`/`escalate`. L'**admin** (toutes capabilities) peut
+  en plus `suspend_user`/`unsuspend_user`, `suspend_company`/`unsuspend_company`,
+  `suspend_job`/`unsuspend_job` — ces actions admin sont **re-vérifiées par capability dans
+  l'exécuteur d'action**. Le **support n'a aucun accès modération**. Signaler un contenu =
+  `pst_report_content` (candidat + recruteur). Les **notes internes** d'un cas ne sont
+  visibles que dans `GET /moderation/cases/{uuid}` (file admin), jamais côté auteur du
+  signalement. Non-divulgation systématique → **404**.
 - **Accès aux CV** : le candidat (propriétaire) et **uniquement** les recruteurs d'une
   entreprise ayant reçu une candidature avec ce CV (via snapshot). Admin pour audit.
 - **Coordonnées candidat** : soumises à `CandidateProfile.visibility` (email/tel) —

@@ -79,7 +79,8 @@ function throws( callable $fn ): bool {
 }
 
 echo "== Errors ==\n";
-check( 'MAP contient les 11 codes', count( Errors::MAP ) === 11 );
+check( 'MAP contient les 12 codes', count( Errors::MAP ) === 12 );
+check( 'moderation_blocked => 422', Errors::http_status( 'moderation_blocked' ) === 422 );
 check( 'forbidden => 403', Errors::http_status( 'forbidden' ) === 403 );
 check( 'code inconnu => 500', Errors::http_status( 'nope' ) === 500 );
 check( 'is_known(validation_error)', Errors::is_known( 'validation_error' ) );

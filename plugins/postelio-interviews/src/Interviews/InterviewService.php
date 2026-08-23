@@ -86,6 +86,11 @@ final class InterviewService {
 	 * @throws ApiError
 	 */
 	public function propose( int $recruiter_id, string $application_uuid, array $input ): array {
+		// Compte suspendu : aucune écriture sensible (jetons déjà révoqués à la suspension).
+		if ( class_exists( '\\Postelio\\Users\\Api\\UserDirectory' )
+			&& ! \Postelio\Users\Api\UserDirectory::is_active( $recruiter_id ) ) {
+			throw ApiError::forbidden( 'Action indisponible pour ce compte.' );
+		}
 		$ctx = ApplicationDirectory::context( $application_uuid );
 		if ( null === $ctx || ! CompanyDirectory::is_member( (int) $ctx['company_id'], $recruiter_id ) ) {
 			throw ApiError::not_found();
