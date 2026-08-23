@@ -177,6 +177,15 @@ publique ⇒ `verified`**. Appliquée par `postelio-jobs` au Lot 04 (`POST /jobs
 **`Api\InterviewDirectory`** (contexte d'entretien pour Notifications/e-mail de preuve,
 compteur à venir, historique). Ces façades évitent toute dépendance circulaire.
 
+`postelio-job-sources` (Lot 10) agrège des offres **externes** (France Travail V1) dans une
+**table dédiée** `wp_postelio_external_jobs` (jamais le CPT — volumétrie), et les fusionne à
+la recherche `/jobs` via le filtre existant **`postelio/jobs/search_provider`**
+(`CompositeJobSearchProvider` = natif CPT ⊕ externe). Détail/présentation/candidature externe
+passent par les filtres `postelio/jobs/{present_external,resolve_external}` (aucune
+dépendance circulaire). Candidature externe = **redirection** (`/jobs/{uuid}/apply-redirect`),
+jamais de candidature Postelio. Providers derrière `JobSourceProvider` (FranceTravailProvider
+réel ; Indeed/HelloWork/ATS = futur/partenariat). Sync par slices via **Core Scheduler**.
+
 `postelio-notifications` (Lot 09) est **réactif** : il écoute les événements des autres
 domaines et décide des canaux (in-app / e-mail) via une matrice + préférences. Il n'appelle
 jamais `wp_mail()` directement (Router → EmailDispatcher → file → **`EmailProvider`**) et

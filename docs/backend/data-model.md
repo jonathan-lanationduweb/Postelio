@@ -353,6 +353,31 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
 
 ---
 
+## ExternalJob — `wp_postelio_external_jobs` (implémenté Lot 10)
+- **Propriétaire :** job-sources. **Table dédiée** (PAS le CPT — volumétrie 100k–500k).
+- **Champs :** id, `public_uuid` (exposé), `source_key`, `external_id` (jamais exposé),
+  `sync_status` (`active|stale|removed`), `local_visibility` (`visible|hidden`), `slice_key`,
+  title, description (sanitizée), company_name (nullable), company_logo_url, ville,
+  commune_insee, code_postal, latitude, longitude, contract_code_source/contract_normalized,
+  nature_contract, rome_code/label, naf_code/sector_label, experience_code/label, salary_text,
+  working_time, alternance, source_published_at, source_updated_at, external_url,
+  external_apply_url, application_mode (`external_redirect`), attribution_data (JSON),
+  source_metadata (JSON, affichage conforme licence), content_hash, mapping_version,
+  last_synced_at, removed_at, created_at, updated_at.
+- **Contraintes :** `UNIQUE public_uuid`, `UNIQUE(source_key, external_id)` (une offre
+  resynchronisée N fois = une ressource, UUID stable). Index source/status/visibility/slice/
+  commune/contract/rome/dates. Champs **SOURCE-OWNED** non éditables par un recruteur Postelio ;
+  Postelio possède uuid, sync, visibility, hash.
+- **Retrait :** disparition source confirmée → `removed` + **anonymisation** (Licence Art. 7).
+
+## JobSourceSyncRun — `wp_postelio_job_source_sync_runs` (implémenté Lot 10)
+- **Propriétaire :** job-sources. Observabilité des synchronisations (métriques agrégées).
+- **Champs :** id, public_uuid, provider_key, slice_key, status
+  (`running|success|partial|failed`), sync_cursor, pages, fetched, created/updated/unchanged/
+  stale/removed_count, error_count, last_error (court), started_at, finished_at, created_at.
+- **Sécurité :** jamais de secret ni de gros payload ; l'audit global n'est pas rempli offre
+  par offre lors d'un import.
+
 ## Relations (résumé)
 ```
 Company 1─n CompanyMember n─1 User(recruiter)

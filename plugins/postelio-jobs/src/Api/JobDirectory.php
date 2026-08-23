@@ -33,6 +33,37 @@ final class JobDirectory {
 		return self::repo()->exists( $job_id );
 	}
 
+	/**
+	 * Une offre (par UUID public) est-elle une offre EXTERNE (Lot 10) ? Le natif est résolu
+	 * par le CPT ; sinon on interroge postelio-job-sources via un filtre (pas de dépendance).
+	 */
+	public static function is_external( string $job_uuid ): bool {
+		if ( self::id_from_uuid( $job_uuid ) > 0 ) {
+			return false; // offre native
+		}
+		$ext = apply_filters( 'postelio/jobs/resolve_external', null, $job_uuid );
+		return is_array( $ext ) && ! empty( $ext['found'] );
+	}
+
+	/**
+	 * Descripteur d'une offre externe (source/application_mode/état/public_view), ou null.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public static function external( string $job_uuid ): ?array {
+		$ext = apply_filters( 'postelio/jobs/resolve_external', null, $job_uuid );
+		return ( is_array( $ext ) && ! empty( $ext['found'] ) ) ? $ext : null;
+	}
+
+	/** Mode de candidature : `postelio` (natif), `external_redirect` (externe), ou null. */
+	public static function application_mode( string $job_uuid ): ?string {
+		if ( self::id_from_uuid( $job_uuid ) > 0 ) {
+			return 'postelio';
+		}
+		$ext = self::external( $job_uuid );
+		return $ext ? (string) $ext['application_mode'] : null;
+	}
+
 	/** UUID public depuis l'ID interne (pour construire une action de notification). */
 	public static function uuid_of( int $job_id ): ?string {
 		$j = self::repo()->get( $job_id );

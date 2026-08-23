@@ -101,6 +101,26 @@ candidat). Toutes les transitions sont contrôlées serveur (`InterviewStateMach
   pour `published`/`expiring`/`expired` avec candidature active. Les entretiens **existants**
   restent consultables/confirmables/annulables/complétables (historique jamais détruit).
 
+## Offre externe (Job Source) — implémenté Lot 10
+
+Cycle **indépendant** du workflow natif (`draft/published/…`). États sync
+`active → stale → removed` (`postelio-job-sources`).
+
+| Situation source | État Postelio | Visible ? | Action |
+|---|---|---|---|
+| Présente & à jour | `active` | ✅ (si `local_visibility=visible` et source disponible) | upsert (UUID stable, content_hash) |
+| Panne / 429 / timeout / run partiel | inchangé | ✅ (grâce) | **aucun retrait** (§17 CAS A) |
+| Refresh **complet** réussi + absente | `removed` | ❌ (détail → 410) | anonymisation (Licence Art. 7) |
+| Masquée par admin | `active` + `hidden` | ❌ | **préservé à la resync** |
+| Source désactivée / non configurée | — | ❌ (exclue de la recherche) | pas de hard-delete |
+
+- **Candidature** : offre externe ⇒ `application_mode=external_redirect` → `GET /jobs/{uuid}/
+  apply-redirect` (302 vers la source) ; **jamais** de candidature Postelio (garde `409`).
+- **Recherche** : unifiée native ⊕ externe via `CompositeJobSearchProvider` ; filtre
+  `source=all|postelio|partners`. Favoris/alertes futurs opèrent sur le **Job UUID**.
+- **Attribution/licence France Travail** : source + date de mise à jour + lien Licence +
+  contenu complet + logo (fournis dans `source.attribution`).
+
 ## Entreprise (Company) — vérification
 
 **Machine à états canonique (6 états)** — implémentée dans

@@ -22,6 +22,13 @@ final class JobPresenter {
 	 * @return array<string, mixed>
 	 */
 	public static function public_view( array $j ): array {
+		// Offre EXTERNE (Lot 10) : présentation déléguée à postelio-job-sources via filtre.
+		if ( 'external' === ( $j['source_type'] ?? 'native' ) ) {
+			$ext = apply_filters( 'postelio/jobs/present_external', null, $j );
+			if ( is_array( $ext ) ) {
+				return $ext;
+			}
+		}
 		$d = is_array( $j['detail'] ) ? $j['detail'] : array();
 		return array(
 			'uuid'             => $j['uuid'],
@@ -51,6 +58,9 @@ final class JobPresenter {
 			'avantages'        => $d['avantages'] ?? array(),
 			'processus'        => $d['processus'] ?? array(),
 			'company'          => CompanyDirectory::public_summary( (int) $j['company']['id'] ),
+			// Provenance (Lot 10) : offre native Postelio, candidature Postelio.
+			'source'           => array( 'type' => 'native', 'key' => 'postelio', 'label' => 'Postelio', 'external' => false ),
+			'application'      => array( 'mode' => 'postelio' ),
 		);
 		// Exclus du public : id/author interne, email_reception, questions_preselection, statut brut.
 	}

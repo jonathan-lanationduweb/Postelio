@@ -250,6 +250,32 @@ provider (Stripe prévu). Aucun code Stripe dans ce lot.
 
 ---
 
+## postelio-job-sources (implémenté Lot 10)
+
+**Responsabilité.** Agrégation/synchronisation d'**offres externes** (France Travail V1)
+dans une **table dédiée**, fusionnées à la recherche `/jobs` (aucune page séparée).
+Candidature externe = **redirection** (jamais de candidature Postelio). Aucun scraping ;
+Indeed/HelloWork/ATS = FUTUR/partenariat.
+
+**Dépendances :** core, jobs (contrats/filtres publics uniquement). **load_order 80.**
+**Données possédées :** `ExternalJob` (`wp_postelio_external_jobs`) + `JobSourceSyncRun`
+(`wp_postelio_job_source_sync_runs`). **Ne touche pas** au CPT `postelio_job`.
+**Providers :** `JobSourceProvider` (interface) ; `FranceTravailProvider` (OAuth2
+client_credentials, token caché, RateLimiter, UrlGuard SSRF) ; `FakeJobSourceProvider`
+(tests). Secrets en constantes/env (`POSTELIO_FT_CLIENT_ID`/`_SECRET`), jamais en base/Git.
+**Recherche :** `CompositeJobSearchProvider` branché via `postelio/jobs/search_provider`
+(natif CPT ⊕ externe table) ; filtre `source=all|postelio|partners`.
+**Sync :** slices configurables + import progressif (caps) via **Core Scheduler**
+(`job_sources_sync`, défaut horaire ; refresh complet ≥24h — licence FT). Disparition
+confirmée (refresh complet réussi) ⇒ `removed` + **anonymisation** (licence Art. 7) ;
+panne ⇒ aucun retrait.
+**Endpoints :** `GET /jobs/{uuid}/apply-redirect` (302 externe), `GET /job-sources/health`
+(admin). Contrat sortant : présentation/résolution via filtres jobs.
+**Émet :** `job_source.sync_started|completed|failed`, `external_job.created|updated|
+removed|apply_redirected` (jamais vers Notifications).
+**Licence France Travail** respectée (attribution, contenu complet + logo, refresh 24h,
+retrait/anonymisation, RGPD UE) — voir [integrations.md](integrations.md).
+
 ## postelio-skills
 
 **Responsabilité.** Savoir-faire candidat (preuves de compétences) et contenus
