@@ -43,6 +43,13 @@ Règles : dépendances **descendantes** uniquement ; toute autre interaction pas
 | 14 | Outils admin (dashboards, exports, audit UI) | *(à créer)* `feature/admin-tools` |
 | 15 | Intégration Tauri (auth app, push) — **plus tard** | *(à créer)* `feature/tauri-integration` |
 
+> **Livré hors roadmap initiale — `postelio-job-sources`** (agrégation d'offres externes,
+> France Travail V1) sur `feature/job-sources-backend`. Ajoute une table dédiée
+> `wp_postelio_external_jobs` + un `CompositeJobSearchProvider` branché sur le seam
+> `postelio/jobs/search_provider` (recherche unifiée), sans toucher au CPT natif. Extensions
+> additives de `postelio-jobs` (présentation/résolution/filtre `source`) et
+> `postelio-applications` (garde offre externe → 409). Indeed/HelloWork/ATS = futur/partenariat.
+
 ## Mapping avec les branches Git existantes
 
 Déjà créées (issues de `develop`) :

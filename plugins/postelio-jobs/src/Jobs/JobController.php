@@ -102,15 +102,32 @@ final class JobController extends Controller {
 				$out[ $flag ] = true;
 			}
 		}
+		// Filtre de provenance (Lot 10). Défaut = toutes les sources autorisées.
+		$source = (string) ( $r->get_param( 'source' ) ?? '' );
+		if ( in_array( $source, array( 'all', 'postelio', 'partners' ), true ) ) {
+			$out['source'] = $source;
+		}
 		return $out;
 	}
 
 	public function get_public( \WP_REST_Request $r ): \WP_REST_Response {
-		$j = $this->jobs->get_by_uuid( self::uuid_param( $r ) );
-		if ( null === $j || ! JobStateMachine::is_public( $j['status'] ) ) {
-			throw ApiError::not_found();
+		$uuid = self::uuid_param( $r );
+		$j    = $this->jobs->get_by_uuid( $uuid );
+		if ( null !== $j && JobStateMachine::is_public( $j['status'] ) ) {
+			return $this->ok( JobPresenter::public_view( $j ) );
 		}
-		return $this->ok( JobPresenter::public_view( $j ) );
+		// Repli offre EXTERNE (Lot 10) : résolution déléguée à postelio-job-sources.
+		if ( null === $j ) {
+			$ext = apply_filters( 'postelio/jobs/resolve_external', null, $uuid );
+			if ( is_array( $ext ) && ! empty( $ext['found'] ) ) {
+				// Offre retirée à la source ou masquée localement → 410 Gone.
+				if ( 'active' !== ( $ext['sync_status'] ?? '' ) || 'visible' !== ( $ext['local_visibility'] ?? '' ) ) {
+					return new \WP_REST_Response( array( 'error' => array( 'code' => 'gone', 'message' => 'Cette offre n\'est plus disponible.', 'details' => (object) array() ) ), 410 );
+				}
+				return $this->ok( (array) $ext['public_view'] );
+			}
+		}
+		throw ApiError::not_found();
 	}
 
 	public function list_mine(): \WP_REST_Response {

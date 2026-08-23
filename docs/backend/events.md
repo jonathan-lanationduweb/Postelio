@@ -57,6 +57,9 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 | `skill.reported` | skills | moderation, core(audit) |
 | `company_content.submitted` | skills | moderation, core(audit) |
 | `content.reported` | moderation | admin, core(audit) |
+| `job_source.sync_started` / `.sync_completed` / `.sync_failed` | job-sources | (admin/observabilité — **jamais** Notifications) — *Lot 10* |
+| `external_job.created` / `.updated` / `.removed` | job-sources | (interne domaine offres) — *Lot 10* |
+| `external_job.apply_redirected` | job-sources | (analytics — **jamais** une candidature) — *Lot 10* |
 | `moderation.decided` | moderation | messaging/skills/jobs (appliquer allowed/blocked), notifications, core(audit) |
 
 ## Matrice de notifications

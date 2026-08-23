@@ -68,6 +68,10 @@ final class ApplicationService {
 		}
 		$job_id = JobDirectory::id_from_uuid( $job_uuid );
 		if ( 0 === $job_id ) {
+			// Offre EXTERNE (Lot 10) : aucune candidature Postelio — redirection vers la source.
+			if ( JobDirectory::is_external( $job_uuid ) ) {
+				throw new ApiError( 'conflict', 'Cette offre externe ne se candidate pas sur Postelio ; utilisez le lien de redirection vers la source.' );
+			}
 			throw ApiError::not_found( 'Offre introuvable.' );
 		}
 		if ( ! JobDirectory::is_candidateable( $job_id ) ) {

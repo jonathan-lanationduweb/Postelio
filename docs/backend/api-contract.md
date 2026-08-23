@@ -201,6 +201,22 @@ Erreur :
 - `GET /skills` (public) · `GET /skills/{id}` · `GET/POST/PUT/DELETE /me/skills`. R: candidate.
 - `GET/POST /companies/{id}/contents`. R: recruiter (sa company).
 
+### Offres externes — `postelio-job-sources` (implémenté Lot 10)
+> Les offres externes sont **fusionnées** dans les endpoints `/jobs` existants (pas de route
+> dédiée candidat). UUID Postelio uniquement ; `external_id` jamais exposé.
+- `GET /jobs?source=all|postelio|partners` — recherche **unifiée** (natif ⊕ externe), défaut
+  `all`. Chaque item porte `source{type,key,label,external,attribution}` et
+  `application{mode}`. Offre externe : `application.mode=external_redirect`.
+- `GET /jobs/{uuid}` — détail natif OU externe. Offre externe **retirée/masquée** → **410**.
+  Externe : bloc `seo{noindex,canonical,in_sitemap}` + `attribution{notice,licence_url,
+  source_updated_at,logo_url}`.
+- `GET /jobs/{uuid}/apply-redirect` — offre externe active → **302** vers l'URL officielle/
+  partenaire (revalidée) ; native → 404 ; retirée → 410. Émet `external_job.apply_redirected`
+  (jamais une candidature). **Aucune** candidature Postelio sur une offre externe
+  (`POST /jobs/{uuid}/applications` → **409**).
+- `GET /job-sources/health` — admin (`pst_manage_platform`) : état par provider (disponible,
+  offres actives, dernière sync/succès, dernière erreur ; aucun secret).
+
 ### Modération — `postelio-moderation`
 - `GET /moderation/queue` · `GET /moderation/reports` · `POST /moderation/reports/{id}/decide`. R: admin/modo.
 
