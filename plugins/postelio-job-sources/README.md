@@ -74,10 +74,17 @@ secrets → **no-op** (sécurité).
 - Période de grâce implicite : tant qu'un refresh complet ne confirme pas l'absence, l'offre
   reste affichée.
 
-## Masquage admin & désactivation
+## Masquage admin & désactivation (règle V1 figée)
 `local_visibility` `visible|hidden` — **préservé à la resync** (jamais réactivé
-automatiquement). Source **désactivée** (secrets retirés ou filtre off) → offres **exclues
-de la recherche** ; non hard-deletées.
+automatiquement). Une **source désactivée / non configurée** (secrets absents ou filtre off)
+ou une offre **masquée** rend l'offre **indisponible côté public** partout de façon
+cohérente : exclue de `GET /jobs`, **`GET /jobs/{uuid}` → 404**, **apply-redirect → 404**.
+Les lignes sont **conservées en base** (health admin les voit) ; **jamais** de hard-delete.
+Réactivation → l'offre redevient visible si toujours `active` + `visible`.
+
+**Codes HTTP publics :** **404** tant que la source est administrativement désactivée /
+l'offre masquée (indisponibilité réversible) ; **410 Gone** uniquement pour une offre
+réellement **removed** (retirée à la source + anonymisée, définitif).
 
 ## Candidature externe (§17/29/30)
 `external` + `external_redirect` ⇒ **aucune Application Postelio** (garde dans
@@ -101,10 +108,23 @@ removed/hidden → **410**.
 - `GET /job-sources/health` (admin `pst_manage_platform`) : par provider — disponible,
   offres actives, dernière sync/succès, dernière erreur (jamais de secret).
 
-## SEO (contrat, front non modifié)
-Offres externes : `seo.noindex=true`, `seo.canonical` = URL source (si fiable),
-`seo.in_sitemap=false`. Fiche externe removed → 410. Dates : `source_published_at` /
-`source_updated_at` / `synced` distinctes (jamais une date Postelio trompeuse).
+## Recherche unifiée & pagination (limitation V1 explicite)
+`CompositeJobSearchProvider` fusionne natif ⊕ externe par date décroissante. **V1 : ce n'est
+PAS un moteur de ranking global massif** — la fusion est exacte **dans la fenêtre récupérée**
+(`merge_cap`, filtre `postelio/job_sources/merge_cap`, défaut 100). Le `total` renvoyé est la
+**somme exacte** ; au-delà de `merge_cap`, l'ordre/la profondeur de pagination peuvent être
+approximatifs. L'API l'indique honnêtement : `meta.pagination.total_is_exact`
+(`true` si l'ensemble ≤ merge_cap, sinon `false`). Remplaçable plus tard par
+`postelio-search` / Meilisearch / Typesense via le **même** `JobSearchProvider`.
+
+## SEO — **contrat prêt, NON appliqué** (front non modifié)
+Le backend expose `seo.noindex=true`, `seo.canonical`, `seo.in_sitemap=false` dans la vue
+publique externe, **mais rien n'est réellement noindexé tant que le front/routeur ne
+consomme pas ce contrat**. À intégrer côté front (reste ouvert). **Canonical** : `noindex`
+est la règle principale ; `canonical` = `external_url` **uniquement si validée** (l'URL n'est
+stockée que si `UrlGuard::safe_redirect_url` a réussi au normalize), sinon `null` — jamais
+une canonical vers une URL non validée. Dates distinctes `source_published_at` /
+`source_updated_at` / `last_synced_at` (jamais une date Postelio trompeuse).
 
 ## Événements
 `job_source.sync_started|completed|failed` (admin/observabilité), `external_job.created|
@@ -138,10 +158,15 @@ contract_code_source`+`contract_normalized`, `natureContrat`, `romeCode/romeLibe
   apply-redirect 302/410/refus, garde applications (aucune row), attribution, provider
   désactivé.
 
-## Points À VALIDER
-- Provider e-mail/clé **production** FT (compte + souscription) — hors code.
-- Cohérence détail/apply-redirect quand la source est **désactivée** (aujourd'hui la
-  recherche exclut, le détail par UUID résout encore) — à arbitrer.
-- Périmètre d'import V1 (slices) + cadence précise selon quota constaté.
-- SEO : application front (noindex/canonical/sitemap) — front non touché ce lot.
-- Indeed / HelloWork / ATS : partenariats.
+## Décisions FIGÉES (V1)
+Table dédiée · redirect externe · filtre `source` backend · SEO `noindex` (contrat) ·
+désactivation source = indisponible public (404) / removed = 410 · pagination
+`total_is_exact`. Ces choix sont arrêtés.
+
+## Points À VALIDER (réduits)
+- Vraies **clés / compte production** France Travail (compte + souscription) — hors code.
+- **Périmètre métier initial des slices** (départements/ROME/fenêtres).
+- **Cadence exacte** selon quota réel observé.
+- **Branchement SEO dans le front** (noindex/canonical/sitemap non appliqués tant que le
+  front ne consomme pas le contrat).
+- Futurs partenaires **Indeed / HelloWork / ATS**.

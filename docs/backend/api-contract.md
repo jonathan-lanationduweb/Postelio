@@ -207,13 +207,18 @@ Erreur :
 - `GET /jobs?source=all|postelio|partners` — recherche **unifiée** (natif ⊕ externe), défaut
   `all`. Chaque item porte `source{type,key,label,external,attribution}` et
   `application{mode}`. Offre externe : `application.mode=external_redirect`.
-- `GET /jobs/{uuid}` — détail natif OU externe. Offre externe **retirée/masquée** → **410**.
-  Externe : bloc `seo{noindex,canonical,in_sitemap}` + `attribution{notice,licence_url,
-  source_updated_at,logo_url}`.
-- `GET /jobs/{uuid}/apply-redirect` — offre externe active → **302** vers l'URL officielle/
-  partenaire (revalidée) ; native → 404 ; retirée → 410. Émet `external_job.apply_redirected`
-  (jamais une candidature). **Aucune** candidature Postelio sur une offre externe
-  (`POST /jobs/{uuid}/applications` → **409**).
+  **`meta.pagination.total_is_exact`** (bool) : la fusion V1 est exacte dans la fenêtre
+  `merge_cap` ; au-delà, `total` reste la somme exacte mais l'ordre/pagination profonde
+  peut être approximatif (`false`). Défaut `true` (moteur natif).
+- `GET /jobs/{uuid}` — détail natif OU externe. **404** si la source est désactivée/non
+  configurée ou l'offre masquée (indisponibilité réversible) ; **410 Gone** si l'offre est
+  **removed** (retirée à la source + anonymisée). Externe : `seo{noindex,canonical,
+  in_sitemap}` + `attribution{notice,licence_url,source_updated_at,logo_url}`.
+- `GET /jobs/{uuid}/apply-redirect` — offre externe active+disponible → **302** vers l'URL
+  officielle/partenaire (revalidée) ; native → 404 ; source désactivée/masquée → **404** ;
+  removed → **410** ; URL invalide / mauvais mode → 404/400. Émet
+  `external_job.apply_redirected` (jamais une candidature). **Aucune** candidature Postelio
+  sur une offre externe (`POST /jobs/{uuid}/applications` → **409**).
 - `GET /job-sources/health` — admin (`pst_manage_platform`) : état par provider (disponible,
   offres actives, dernière sync/succès, dernière erreur ; aucun secret).
 

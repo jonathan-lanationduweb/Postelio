@@ -16,6 +16,7 @@ use Postelio\Core\Plugin as Core;
 use Postelio\Core\Permissions\Guard;
 use Postelio\Core\Rest\Controller;
 use Postelio\JobSources\Jobs\ExternalJobRepository;
+use Postelio\JobSources\Sources\JobSourceRegistry;
 use Postelio\JobSources\Sources\UrlGuard;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,9 +28,11 @@ final class ApplyRedirectController extends Controller {
 	private const UUID = '(?P<uuid>[0-9a-fA-F-]{36})';
 
 	private ExternalJobRepository $repo;
+	private JobSourceRegistry $registry;
 
-	public function __construct( ExternalJobRepository $repo ) {
-		$this->repo = $repo;
+	public function __construct( ExternalJobRepository $repo, JobSourceRegistry $registry ) {
+		$this->repo     = $repo;
+		$this->registry = $registry;
 	}
 
 	public function register_routes(): void {
@@ -47,8 +50,14 @@ final class ApplyRedirectController extends Controller {
 		if ( null === $row ) {
 			return new \WP_REST_Response( array( 'error' => array( 'code' => 'not_found', 'message' => 'Offre introuvable.' ) ), 404 );
 		}
-		if ( 'removed' === $row['sync_status'] || 'hidden' === $row['local_visibility'] ) {
-			return new \WP_REST_Response( array( 'error' => array( 'code' => 'gone', 'message' => 'Cette offre n\'est plus disponible.' ) ), 410 );
+		// Retirée à la source → 410 (définitif) ; source désactivée / masquée → 404 (indispo).
+		if ( 'removed' === $row['sync_status'] ) {
+			return new \WP_REST_Response( array( 'error' => array( 'code' => 'gone', 'message' => 'Cette offre a été retirée.' ) ), 410 );
+		}
+		$provider = $this->registry->get( (string) $row['source_key'] );
+		$available = null !== $provider && $provider->is_available();
+		if ( ! $available || 'hidden' === $row['local_visibility'] ) {
+			return new \WP_REST_Response( array( 'error' => array( 'code' => 'not_found', 'message' => 'Offre indisponible.' ) ), 404 );
 		}
 		if ( 'external_redirect' !== $row['application_mode'] ) {
 			return new \WP_REST_Response( array( 'error' => array( 'code' => 'invalid_mode', 'message' => 'Redirection non applicable.' ) ), 400 );

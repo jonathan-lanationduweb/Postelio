@@ -63,6 +63,8 @@ final class JobsBridge {
 		if ( null === $row ) {
 			return $default;
 		}
+		$provider         = $this->registry->get( (string) $row['source_key'] );
+		$source_available = null !== $provider && $provider->is_available();
 		return array(
 			'found'            => true,
 			'source_type'      => 'external',
@@ -70,6 +72,7 @@ final class JobsBridge {
 			'application_mode' => (string) $row['application_mode'],
 			'sync_status'      => (string) $row['sync_status'],
 			'local_visibility' => (string) $row['local_visibility'],
+			'source_available' => $source_available, // source désactivée/non configurée → indisponible public
 			'apply_url'        => (string) ( $row['external_apply_url'] ?: $row['external_url'] ),
 			'public_view'      => ExternalJobPresenter::public_view( $row ),
 		);

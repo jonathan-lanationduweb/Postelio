@@ -89,7 +89,7 @@ final class Plugin {
 	}
 
 	public function register_routes(): void {
-		( new ApplyRedirectController( $this->jobs ) )->register_routes();
+		( new ApplyRedirectController( $this->jobs, $this->registry ) )->register_routes();
 		( new AdminController( $this->registry, $this->jobs, $this->runs ) )->register_routes();
 	}
 

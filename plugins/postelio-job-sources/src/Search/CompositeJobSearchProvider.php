@@ -43,7 +43,9 @@ if ( interface_exists( '\\Postelio\\Jobs\\Search\\JobSearchProvider' ) ) {
 			$per    = max( 1, $per_page );
 
 			if ( 'postelio' === $source ) {
-				return $this->tag_native( $this->native->search( $filters, $page, $per ) );
+				$r                    = $this->tag_native( $this->native->search( $filters, $page, $per ) );
+				$r['total_is_exact']  = true; // provider natif : total exact
+				return $r;
 			}
 			if ( 'partners' === $source ) {
 				return $this->external_only( $filters, $page, $per );
@@ -68,7 +70,10 @@ if ( interface_exists( '\\Postelio\\Jobs\\Search\\JobSearchProvider' ) ) {
 			$slice = array_slice( $merged, ( $page - 1 ) * $per, $per );
 			$items = array_map( static fn( $x ) => $x['row'], $slice );
 
-			return array( 'items' => $items, 'total' => (int) $nat['total'] + (int) $ext['total'] );
+			$total = (int) $nat['total'] + (int) $ext['total'];
+			// Fusion V1 : ordre/pagination exacts DANS le périmètre récupéré (merge_cap).
+			// Au-delà, le total (somme) reste juste mais l'ordre global n'est pas garanti.
+			return array( 'items' => $items, 'total' => $total, 'total_is_exact' => ( $total <= $cap ) );
 		}
 
 		/**
@@ -76,10 +81,11 @@ if ( interface_exists( '\\Postelio\\Jobs\\Search\\JobSearchProvider' ) ) {
 		 * @return array{items: array<int, array<string,mixed>>, total:int}
 		 */
 		private function external_only( array $filters, int $page, int $per ): array {
-			$need = $page * $per;
-			$ext  = $this->external->search_public( $filters, $need, $this->registry->disabled_source_keys() );
+			$cap   = (int) apply_filters( 'postelio/job_sources/merge_cap', 100 );
+			$need  = min( $cap, $page * $per );
+			$ext   = $this->external->search_public( $filters, $need, $this->registry->disabled_source_keys() );
 			$items = array_slice( (array) $ext['items'], ( $page - 1 ) * $per, $per );
-			return array( 'items' => array_values( $items ), 'total' => (int) $ext['total'] );
+			return array( 'items' => array_values( $items ), 'total' => (int) $ext['total'], 'total_is_exact' => ( (int) $ext['total'] <= $cap ) );
 		}
 
 		/**

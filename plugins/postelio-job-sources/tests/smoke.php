@@ -129,6 +129,15 @@ $t( 'offre externe : source.external=true', $ext && true === ( $ext['source']['e
 $t( 'offre externe : application_mode=external_redirect', $ext && 'external_redirect' === ( $ext['application']['mode'] ?? '' ) );
 $t( 'offre externe : attribution présente', $ext && ! empty( $ext['source']['attribution']['notice'] ) && ! empty( $ext['source']['attribution']['source_updated_at'] ) );
 $t( 'offre externe : pas d\'external_id exposé', $ext && ! isset( $ext['external_id'] ) );
+$t( 'meta.total_is_exact présent + true (petit jeu)', array_key_exists( 'total_is_exact', (array) ( $list['meta']['pagination'] ?? array() ) ) && true === $list['meta']['pagination']['total_is_exact'] );
+
+echo "== Pagination mixte : total_is_exact=false au-delà du merge_cap ==\n";
+$capCb = static function () { return 1; };
+add_filter( 'postelio/job_sources/merge_cap', $capCb );
+$listCap = $req( 'GET', '/postelio/v1/jobs', null, 0 )->get_data();
+$t( 'merge_cap=1 => total_is_exact=false', false === ( $listCap['meta']['pagination']['total_is_exact'] ?? true ) );
+$t( 'total reste la somme (exacte) même si ordre approximatif', (int) $listCap['meta']['pagination']['total'] >= 2 );
+remove_filter( 'postelio/job_sources/merge_cap', $capCb );
 
 echo "== Filtre source ==\n";
 $onlyN = $req( 'GET', '/postelio/v1/jobs', null, 0 ); $rN = new WP_REST_Request( 'GET', '/postelio/v1/jobs' ); $rN->set_query_params( array( 'source' => 'postelio' ) ); $dN = rest_do_request( $rN )->get_data();
@@ -158,11 +167,31 @@ $applyExt = $req( 'POST', '/postelio/v1/jobs/' . $uuidA1 . '/applications', arra
 $t( 'candidature Postelio sur offre externe refusée (409)', 409 === $applyExt->get_status() );
 $t( 'aucune row Applications créée', $appCount() === $before );
 
-echo "== Provider désactivé => offres externes exclues ==\n";
+echo "== Redirect refusé : offre masquée (hidden) => 404 ==\n";
+$repo->set_visibility( $uuidA1, 'hidden' );
+$t( 'apply-redirect offre hidden => 404', 404 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA1 . '/apply-redirect', null, $cand )->get_status() );
+$t( 'détail offre hidden => 404', 404 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA1, null, 0 )->get_status() );
+$qh = new WP_REST_Request( 'GET', '/postelio/v1/jobs' ); $qh->set_query_params( array( 'source' => 'partners' ) );
+$t( 'offre hidden absente de la recherche', 0 === count( (array) rest_do_request( $qh )->get_data()['data'] ) );
+$repo->set_visibility( $uuidA1, 'visible' );
+
+echo "== Provider désactivé => indisponible côté public (recherche + détail + redirect) ==\n";
 $fake->available = false;
 $rDis = new WP_REST_Request( 'GET', '/postelio/v1/jobs' ); $rDis->set_query_params( array( 'source' => 'partners' ) ); $dDis = rest_do_request( $rDis )->get_data();
-$t( 'source désactivée => 0 offre externe', 0 === count( (array) $dDis['data'] ) );
+$t( 'source désactivée => 0 offre externe (recherche)', 0 === count( (array) $dDis['data'] ) );
+$t( 'source désactivée => détail public 404', 404 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA1, null, 0 )->get_status() );
+$t( 'source désactivée => apply-redirect 404', 404 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA1 . '/apply-redirect', null, $cand )->get_status() );
+$t( 'source désactivée : ligne conservée en base (health)', 1 <= (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$EJ} WHERE external_id='A1'" ) ) );
 $fake->available = true;
+$t( 'réactivation => offre de nouveau visible (détail 200)', 200 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA1, null, 0 )->get_status() );
+$t( 'réactivation : hidden resté visible ici (non masqué)', 'visible' === (string) $wpdb->get_var( $wpdb->prepare( "SELECT local_visibility FROM {$EJ} WHERE external_id='A1'" ) ) );
+
+echo "== Conformité licence France Travail (points vérifiés) ==\n";
+$attr = $ext['source']['attribution'] ?? array();
+$t( 'attribution: notice source présente', ! empty( $attr['notice'] ) );
+$t( 'attribution: lien licence présent', ! empty( $attr['licence_url'] ) );
+$t( 'attribution: date de mise à jour source présente', ! empty( $attr['source_updated_at'] ) );
+$t( 'licence: offre removed anonymisée (déjà vérifié A2)', null === $wpdb->get_var( $wpdb->prepare( "SELECT company_name FROM {$EJ} WHERE external_id='A2'" ) ) );
 
 echo "== Nettoyage ==\n";
 $wpdb->query( "DELETE FROM {$EJ} WHERE source_key='france_travail'" );

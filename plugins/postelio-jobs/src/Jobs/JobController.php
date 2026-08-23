@@ -74,7 +74,11 @@ final class JobController extends Controller {
 
 		$res   = $this->search->search( $filters, $page, $per_page );
 		$items = array_map( array( JobPresenter::class, 'public_view' ), $res['items'] );
-		return $this->raw( Response::paginated( $items, $page, $per_page, (int) $res['total'] ) );
+		$env   = Response::paginated( $items, $page, $per_page, (int) $res['total'] );
+		// Honnêteté du total : un moteur composite (natif + externe) peut être approximatif
+		// au-delà de sa fenêtre de fusion. Défaut exact pour le moteur natif seul.
+		$env['meta']['pagination']['total_is_exact'] = (bool) ( $res['total_is_exact'] ?? true );
+		return $this->raw( $env );
 	}
 
 	/**
@@ -120,9 +124,13 @@ final class JobController extends Controller {
 		if ( null === $j ) {
 			$ext = apply_filters( 'postelio/jobs/resolve_external', null, $uuid );
 			if ( is_array( $ext ) && ! empty( $ext['found'] ) ) {
-				// Offre retirée à la source ou masquée localement → 410 Gone.
-				if ( 'active' !== ( $ext['sync_status'] ?? '' ) || 'visible' !== ( $ext['local_visibility'] ?? '' ) ) {
-					return new \WP_REST_Response( array( 'error' => array( 'code' => 'gone', 'message' => 'Cette offre n\'est plus disponible.', 'details' => (object) array() ) ), 410 );
+				// Retirée à la source (removed + anonymisée) → 410 Gone (définitif).
+				if ( 'removed' === ( $ext['sync_status'] ?? '' ) ) {
+					return new \WP_REST_Response( array( 'error' => array( 'code' => 'gone', 'message' => 'Cette offre a été retirée.', 'details' => (object) array() ) ), 410 );
+				}
+				// Source désactivée/non configurée OU masquée localement → indisponible (404).
+				if ( empty( $ext['source_available'] ) || 'visible' !== ( $ext['local_visibility'] ?? '' ) ) {
+					throw ApiError::not_found();
 				}
 				return $this->ok( (array) $ext['public_view'] );
 			}
