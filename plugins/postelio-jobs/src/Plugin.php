@@ -27,7 +27,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Plugin {
 
-	public const MODULE = 'jobs';
+	public const MODULE        = 'jobs';
+	public const SCHEMA_OPTION = 'postelio_jobs_schema';
 
 	private static ?Plugin $instance = null;
 	private bool $booted            = false;
@@ -70,6 +71,10 @@ final class Plugin {
 
 		( new JobPostType() )->register();
 
+		// Registre d'idempotence des renouvellements (exactly-once — contrainte UNIQUE).
+		$core->migrator()->register( self::MODULE, self::SCHEMA_OPTION, self::migrations() );
+		add_action( 'init', array( $this, 'maybe_upgrade' ), 2 );
+
 		// Synchronise le nom d'entreprise dénormalisé (cache) sur company.updated.
 		( new \Postelio\Jobs\Integration\CompanyRenameSync( $core->events() ) )->register();
 
@@ -106,6 +111,18 @@ final class Plugin {
 		( new Expiration( $this->jobs ) )->run();
 	}
 
+	/** @return \Postelio\Jobs\Migrations\CreateJobRenewalsTable[] */
+	private static function migrations(): array {
+		return array( new \Postelio\Jobs\Migrations\CreateJobRenewalsTable() );
+	}
+
+	public function maybe_upgrade(): void {
+		$migrator = Core::instance()->migrator();
+		if ( (string) get_option( self::SCHEMA_OPTION, '0' ) !== $migrator->target_version( self::MODULE ) ) {
+			$migrator->migrate( self::MODULE );
+		}
+	}
+
 	public function service(): JobService {
 		return $this->service;
 	}
@@ -121,7 +138,10 @@ final class Plugin {
 			return;
 		}
 		( new JobPostType() )->register_type();
-		// Pas de migration (CPT + meta). Le cron est (re)planifié au boot.
+		// Registre d'idempotence des renouvellements (table dédiée). Le cron est (re)planifié au boot.
+		$m = Core::instance()->migrator();
+		$m->register( self::MODULE, self::SCHEMA_OPTION, self::migrations() );
+		$m->migrate( self::MODULE );
 	}
 
 	public static function deactivate(): void {

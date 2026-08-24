@@ -28,6 +28,12 @@ final class JobRepository {
 	public const META_RENEWED_AT    = 'pst_renewed_at';
 	public const META_RENEWAL_COUNT = 'pst_renewal_count';
 
+	/** Registre d'idempotence des renouvellements (garantie de concurrence par UNIQUE). */
+	public static function renewals_table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'postelio_job_renewals';
+	}
+
 	/** Champs scalaires filtrables (meta discrète). */
 	private const FILTER_FIELDS = array(
 		'ville', 'departement', 'contrat', 'teletravail', 'categorie',
@@ -265,6 +271,68 @@ final class JobRepository {
 		update_post_meta( $id, self::META_RENEWAL_COUNT, $count );
 
 		return array( 'new_expiration' => $new_exp, 'count' => $count );
+	}
+
+	/** Un renouvellement a-t-il déjà été enregistré pour cette clé ? (order_uuid globalement unique) */
+	public function renewal_applied( string $ref ): bool {
+		global $wpdb;
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . self::renewals_table() . ' WHERE idempotency_key = %s', $ref ) ) > 0;
+	}
+
+	/**
+	 * Renouvellement IDEMPOTENT (exactly-once) piloté par une clé métier `$ref` (= order_uuid).
+	 *
+	 * Concurrence : l'arbitrage repose sur la contrainte `UNIQUE(idempotency_key)` via un
+	 * `INSERT IGNORE` atomique — PAS sur une hypothèse de séquentialité. Deux tentatives
+	 * simultanées calculent chacune une cible, mais une SEULE gagne l'INSERT ; les autres lisent
+	 * la MÊME cible persistée. Le registre est écrit AVANT l'application ; l'application est un
+	 * SET ABSOLU (jamais un ++/+=), donc tout rejeu/retry/crash converge vers la même valeur.
+	 * `won` = true seulement pour la tentative gagnante (→ un seul `job.renewed`).
+	 *
+	 * @return array{new_expiration:string, count:int, already_applied:bool, won:bool}
+	 */
+	public function apply_renewal_idempotent( int $id, int $days, string $ref ): array {
+		global $wpdb;
+		$table = self::renewals_table();
+
+		// Cible prospective (peut être recalculée à l'identique par une tentative concurrente).
+		$today   = gmdate( 'Y-m-d' );
+		$current = (string) get_post_meta( $id, self::META_DATE_EXP, true );
+		$base    = ( $current && $current > $today ) ? $current : $today; // ne perd pas de temps restant
+		$new_exp = gmdate( 'Y-m-d', strtotime( $base . ' +' . $days . ' days' ) );
+		$count   = (int) get_post_meta( $id, self::META_RENEWAL_COUNT, true ) + 1;
+		$now     = current_time( 'mysql', true );
+
+		// Claim ATOMIQUE : INSERT IGNORE → 1 ligne si gagné, 0 si collision UNIQUE (concurrent).
+		$affected = (int) $wpdb->query( $wpdb->prepare(
+			"INSERT IGNORE INTO {$table} (job_id, idempotency_key, target_status, target_expiration, target_renewal_count, status, created_at, applied_at) VALUES (%d, %s, %s, %s, %d, %s, %s, %s)",
+			$id, $ref, JobStateMachine::PUBLISHED, $new_exp, $count, 'applied', $now, $now
+		) );
+
+		// Cible AUTORITAIRE = la ligne persistée (celle du gagnant), pas notre calcul local.
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT target_status, target_expiration, target_renewal_count, applied_at FROM {$table} WHERE idempotency_key = %s", $ref ), ARRAY_A );
+		$t_status = $row ? (string) $row['target_status'] : JobStateMachine::PUBLISHED;
+		$t_exp    = $row ? (string) $row['target_expiration'] : $new_exp;
+		$t_count  = $row ? (int) $row['target_renewal_count'] : $count;
+		$t_at     = $row ? (string) ( $row['applied_at'] ?: $now ) : $now;
+
+		// Application par SET ABSOLU (idempotente : rejouer réécrit les mêmes valeurs).
+		$this->set_renewal_absolute( $id, $t_status, $t_exp, $t_count, $t_at );
+
+		return array(
+			'new_expiration'  => $t_exp,
+			'count'           => $t_count,
+			'already_applied' => 1 !== $affected, // collision UNIQUE → déjà revendiqué ailleurs
+			'won'             => 1 === $affected,
+		);
+	}
+
+	/** Applique par valeurs ABSOLUES (idempotent au replay). */
+	private function set_renewal_absolute( int $id, string $status, string $new_exp, int $count, string $renewed_at ): void {
+		update_post_meta( $id, self::META_STATUS, $status );
+		update_post_meta( $id, self::META_DATE_EXP, $new_exp );
+		update_post_meta( $id, self::META_RENEWAL_COUNT, $count );
+		update_post_meta( $id, self::META_RENEWED_AT, $renewed_at );
 	}
 
 	/** Incrémente la version métier (utilisée pour le snapshot de candidature). */

@@ -13,9 +13,11 @@ choisit jamais un statut arbitrairement.
 - **`pending`** (modération d'offre) : **retiré de la V1**. Sera réintroduit par
   `postelio-moderation` ; aucun code actuel ne peut y entrer.
 - **`renewed`** : **n'est pas un état persistant**. Le renouvellement est la transition
-  `expired → published` (+ nouvelle échéance) accompagnée de l'événement `job.renewed`,
-  déclenchée **uniquement** par `postelio-billing` après paiement (contrat
-  `Postelio\Jobs\Api\JobLifecycle` ; aucun paiement en V1).
+  `expiring|expired → published` (+ nouvelle échéance) accompagnée de l'événement
+  `job.renewed`, déclenchée **uniquement** par `postelio-billing` après paiement (contrat
+  `Postelio\Jobs\Api\JobLifecycle::renew_after_payment()` ; **implémenté Lot 12**). Application
+  **exactly-once** (clé `idempotency_key = order_uuid`, registre `pst_renewal_ledger` + SET
+  absolu — voir [#facturation-billing--implémenté-lot-12](#facturation-billing--implémenté-lot-12)).
 
 | Transition | Autorisé par |
 |---|---|
@@ -271,6 +273,66 @@ de contenu. Exécution **toujours** via le contrat public du domaine propriétai
 - Les **suspensions** notifient via les événements **propriétaires**
   (`job.suspended`/`company.suspended`/`user.suspended`) — la modération ne **duplique
   jamais** ces notifications.
+
+## Facturation (Billing) — implémenté Lot 12
+
+Renouvellement **payant** d'une offre (10 € TTC / 30 j) via **Stripe Checkout hosted**.
+Toutes les transitions sont **côté serveur** ; le front ne fixe **jamais** un statut. Le
+**webhook signé** est la **seule source de vérité** (le retour navigateur / `success_url` ne
+confirme jamais un paiement). L'achat est **initié par l'utilisateur** — Billing **n'écoute
+pas** `job.expiring`.
+
+### Commande (Order) — machine à états
+
+États : `created`, `awaiting_payment`, `paid`, `fulfillment_pending`, `fulfilled` ; branches
+`payment_failed`, `expired`, `fulfillment_failed`, `manual_review`, `refunded`.
+
+| Transition | Déclencheur |
+|---|---|
+| (création) → created | `POST /billing/checkout` (conditions vérifiées ; snapshot figé) |
+| created → awaiting_payment | session Checkout créée (`checkout.created`) |
+| awaiting_payment → paid | **webhook signé** `checkout.session.completed` / `async_payment_succeeded` |
+| awaiting_payment → payment_failed | `async_payment_failed` |
+| awaiting_payment → expired | `checkout.session.expired` |
+| paid → fulfillment_pending → fulfilled | délégation à `JobLifecycle::renew_after_payment()` (exactly-once) |
+| fulfillment_pending → fulfillment_failed | échec d'application (retry `postelio_15min`, max 5) |
+| fulfillment_failed → manual_review | attempts épuisés |
+| paid/fulfilled → refunded | `charge.refunded` (**pas** de rollback des jours ajoutés — décision admin) |
+
+### Paiement (Payment) — machine à états
+
+États : `created → pending → succeeded | failed` ; `succeeded → refunded | disputed`.
+
+- **Doublon :** un **2e** paiement réussi sur une commande déjà `fulfilled` → **revue admin**,
+  **jamais** un 2e renouvellement.
+- **Refund** → événement `payment.refunded`, **aucun** rollback des jours ajoutés à l'offre.
+- **Dispute** (`charge.dispute.created`) → `payment.disputed`, **aucune** suspension
+  automatique de l'utilisateur / de l'entreprise / de l'offre.
+
+### Exactly-once (fulfillment)
+
+Le renouvellement est clé par `idempotency_key = order_uuid`, passé à
+`JobLifecycle::renew_after_payment($job_id, $days, ['idempotency_key' => order_uuid])`. `jobs`
+tient un **registre** (`pst_renewal_ledger`, cible figée) et applique un **SET absolu**
+(jamais `++`/`+=`), écrit **avant** le SET. Rejeu du webhook, retry de fulfillment et crash
+entre l'application côté Jobs et la persistance côté Billing **convergent** vers **une seule**
+prolongation, **un seul** `renewal_count++`, **un seul** `job.renewed`. Nouvelle échéance
+calculée **par Jobs** : `max(échéance_courante, aujourd'hui) + 30`.
+
+### Webhook Stripe (V1)
+
+Traités : `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+`checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`,
+`charge.dispute.created`. `payment_intent.*` et `invoice.*` sont **ignorés** (loggés) — pas de
+double pipeline. Idempotence via `wp_postelio_billing_events` (`UNIQUE(provider, event_id)`) ;
+signature invalide → **400** ; événement bien signé → **200**.
+
+### Conditions du checkout
+
+Authentifié, compte actif, **membre** (owner OU recruteur) de l'entreprise propriétaire de
+l'offre, entreprise **vérifiée & non suspendue**, `JobLifecycle::can_renew()` (statuts
+`expiring|expired` — pas de contournement de modération). Offre inconnue / d'une autre
+entreprise → **404** (non-divulgation) ; candidat → **403**.
 
 ## §7 Relations métier (vue synthèse)
 

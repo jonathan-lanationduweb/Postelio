@@ -20,9 +20,9 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 | `company.followed` | companies | core(audit) |
 | `job.created` | jobs | moderation (si review), core(audit) |
 | `job.published` | jobs | notifications (suiveurs + alertes), core(audit) |
-| `job.expiring` | jobs (cron) | notifications (recruteur), billing (proposer renouvellement) |
+| `job.expiring` | jobs (cron) | notifications (recruteur) — *billing n'écoute PAS (achat initié par l'utilisateur)* |
 | `job.expired` | jobs (cron) | notifications, core(audit) |
-| `job.renewed` | jobs | notifications, core(audit) |
+| `job.renewed` | jobs | notifications (recruteur, e-mail `job_renewed`), core(audit) — *émis après fulfillment billing (Lot 12), une seule fois (exactly-once)* |
 | `job.filled` | jobs | applications (info), notifications, core(audit) |
 | `alert.created` | jobs | core(audit) |
 | `favorite.added` | jobs | core(audit) |
@@ -48,10 +48,15 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 | `notification.created` | notifications | (interne — **jamais réécouté** par notifications) — *Lot 09* |
 | `notification.read` | notifications | (métrique interne) — *Lot 09* |
 | `email.queued` / `email.sent` / `email.failed` | notifications | (observabilité interne ; **jamais réécouté** → anti-boucle) — *Lot 09* |
-| `payment.succeeded` | billing | jobs (appliquer renouvellement), notifications, core(audit) |
-| `payment.failed` | billing | notifications (recruteur), core(audit) |
-| `renewal.applied` | billing | jobs, core(audit) |
-| `invoice.created` | billing | notifications, core(audit) |
+| `order.created` | billing | core(audit) — *Lot 12* |
+| `checkout.created` | billing | core(audit) — *Lot 12 ; session Checkout ouverte* |
+| `payment.succeeded` | billing | core(audit) — *Lot 12 ; déclenche la délégation à `JobLifecycle` (exactly-once)* |
+| `payment.failed` | billing | notifications (recruteur), core(audit) — *Lot 12* |
+| `payment.refunded` | billing | core(audit) — *Lot 12 ; PAS de rollback des jours ajoutés* |
+| `payment.disputed` | billing | core(audit) — *Lot 12 ; PAS de suspension automatique* |
+| `renewal.applied` | billing | core(audit) — *Lot 12 ; effet métier réel via `job.renewed` (émis par jobs)* |
+| `fulfillment.failed` | billing | core(audit) — *Lot 12 ; retry `postelio_15min`, max 5* |
+| `order.manual_review` | billing | notifications (file admin, option), core(audit) — *Lot 12 ; doublon / attempts épuisés* |
 | `skill.submitted` | skills | moderation (si review), core(audit) |
 | `skill.published` | skills | notifications (option), core(audit) |
 | `skill.reported` | skills | moderation, core(audit) |
@@ -103,7 +108,8 @@ Canaux : **in-app** (cloche), **email** (transactionnel), *push Tauri* (plus tar
 | job.expiring | — | ✅ | — | ✅ | ✅ |
 | company.verified | — | ✅ | — | ✅ | ✅ |
 | company.verification_requested | — | — | ✅ | option | ✅ file admin |
-| payment.succeeded / invoice.created | — | ✅ | — | ✅ (reçu) | ✅ |
+| job.renewed (Lot 12) | — | ✅ | — | ✅ (`job_renewed`) | ✅ recruteur |
+| payment.succeeded (Lot 12) | — | — | — | — *(reçu = e-mail Stripe, pas Notifications)* | — *(interne/observabilité)* |
 | payment.failed | — | ✅ | — | ✅ | ✅ |
 | moderation.case_opened / decision_made | — | — | ✅ | option | ✅ file admin |
 

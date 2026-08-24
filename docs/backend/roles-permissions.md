@@ -62,6 +62,8 @@ capability. Le front n'accorde aucun droit.
 |---|---|---|---|
 | Voir offres publiées | ✅ (public) | ✅ | ✅ |
 | Publier/éditer une offre | ❌ | ✅ (sa company) | ✅ |
+| Payer un renouvellement d'offre (Lot 12) | ❌ | ✅ (owner **ou** recruteur, sa company) | ✅ |
+| Facturation admin / santé (Lot 12) | ❌ | ❌ | ✅ (`pst_manage_billing`) |
 | Postuler | ✅ | ❌ | ❌ |
 | Voir une candidature | ✅ (la sienne) | ✅ (reçue par sa company) | ✅ |
 | Changer le statut d'une candidature | ❌ | ✅ | ✅ |
@@ -117,6 +119,13 @@ capability. Le front n'accorde aucun droit.
   `pst_report_content` (candidat + recruteur). Les **notes internes** d'un cas ne sont
   visibles que dans `GET /moderation/cases/{uuid}` (file admin), jamais côté auteur du
   signalement. Non-divulgation systématique → **404**.
+- **Facturation (Lot 12)** : **aucune nouvelle capability** — les rôles sont **réutilisés**.
+  Le **checkout** (`POST /billing/checkout`) et la consultation des commandes exigent
+  `pst_pay_renewal` (**owner ET recruteur** membres de l'entreprise peuvent payer) **+
+  `pst_email_verified`** ; conditions supplémentaires : entreprise **`verified` & non
+  suspendue**, `JobLifecycle::can_renew()`. Les endpoints **admin** (`/billing/admin/*`,
+  `/billing/health`) exigent `pst_manage_billing` (**admin uniquement**). Le **candidat** et
+  le **support** n'ont **aucun** accès facturation. Non-divulgation inter-entreprise → **404**.
 - **Accès aux CV** : le candidat (propriétaire) et **uniquement** les recruteurs d'une
   entreprise ayant reçu une candidature avec ce CV (via snapshot). Admin pour audit.
 - **Coordonnées candidat** : soumises à `CandidateProfile.visibility` (email/tel) —

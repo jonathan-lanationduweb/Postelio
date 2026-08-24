@@ -81,6 +81,12 @@ final class JobDirectory {
 		return $j ? (string) $j['status'] : null;
 	}
 
+	/** Entreprise propriétaire de l'offre (0 si inconnue). Contrat pour postelio-billing. */
+	public static function company_id_of( int $job_id ): int {
+		$j = self::repo()->get( $job_id );
+		return $j ? (int) ( $j['company']['id'] ?? 0 ) : 0;
+	}
+
 	/**
 	 * Auteur (créateur) de l'offre — recruteur qui l'a publiée. Sert au ciblage des
 	 * notifications (D3 Lot 09). Retourne null si l'offre n'existe pas / auteur absent.

@@ -265,18 +265,57 @@ Bearer + destruction des sessions WP ; **réversible** ; jamais d'écriture dire
 
 ---
 
-## postelio-billing
+## postelio-billing (implémenté Lot 12)
 
-**Responsabilité.** Renouvellement d'offre (10 €/30 j), paiements, factures, webhooks
-provider (Stripe prévu). Aucun code Stripe dans ce lot.
+**Responsabilité.** **Renouvellement payant** d'une offre (10 € TTC / 30 j) via **Stripe
+Checkout hosted**. Le plugin **paie puis délègue** l'effet métier à `postelio-jobs`
+(contrat `JobLifecycle`) : il n'écrit **jamais** `pst_status`/`pst_date_expiration`. Le
+**webhook signé** est la **seule source de vérité** (le retour navigateur / `success_url`
+ne confirme jamais). **Aucune dépendance Composer** (client Stripe léger via `wp_remote_*`) ;
+**aucune donnée carte** ne transite (PCI SAQ-A) ; Billing **n'envoie aucun e-mail**.
 
-**Dépendances :** core, jobs (cible du renouvellement).
-**Données possédées :** `Payment`, `Invoice`, `Renewal`, `WebhookEvent` (tables dédiées).
-**Endpoints :** `/billing/renewals` (initier), `/billing/payments`, `/billing/invoices`,
-`/billing/webhook` (public signé, provider).
-**Émet :** `payment.succeeded`, `payment.failed`, `renewal.applied`, `invoice.created`.
-**Écoute :** `job.expiring` (proposer le renouvellement).
-**Interactions :** sur `payment.succeeded`, notifie `jobs` d'appliquer le renouvellement.
+**Modèle économique V1 :** 1re publication **gratuite** (Billing ne touche pas
+`JobService::publish`) ; produit `job_renewal` = **1000 cents** (10 € TTC), **EUR** seul,
+**+30 j** ; renouvelable **uniquement si `JobLifecycle::can_renew()`** (statuts
+`expiring|expired` — pas de contournement de modération). Aucun crédit / pack / abonnement /
+prépaiement.
+
+**Dépendances :** core, jobs (cible du renouvellement), companies (identité de facturation).
+**Données possédées :** **3 tables** (pas de table facture en V1) `wp_postelio_billing_orders`,
+`wp_postelio_billing_payments`, `wp_postelio_billing_events` — montants en **cents entiers**,
+migrations idempotentes non destructives (désactivation = conservation comptable). Voir
+[data-model.md](data-model.md#facturation--wp_postelio_billing_-implémenté-lot-12).
+**Provider :** interface `PaymentProvider` ; `StripePaymentProvider` (`wp_remote_*`, signature
+webhook **HMAC-SHA256** de `t.payload` + tolérance de timestamp) ; `FakePaymentProvider` (tests) ;
+résolu au point d'usage via le filtre `postelio/billing/provider` (`ProviderRegistry`). Détection
+test/live via `sk_test_`/`sk_live_` (config incohérente → santé `degraded`, pas de checkout live).
+Client Stripe créé **paresseusement, un par ENTREPRISE**. Clé publiable **non requise** en V1.
+**Endpoints :** voir [api-contract.md](api-contract.md#facturation--postelio-billing-implémenté-lot-12)
+(`POST /billing/checkout`, `GET /billing/orders[/{uuid}]`, `POST /billing/webhook/stripe`
+public signé, `GET|POST /billing/admin/*`, `GET /billing/health`).
+**Émet :** `order.created`, `checkout.created`, `payment.succeeded`, `payment.failed`,
+`payment.refunded`, `payment.disputed`, `renewal.applied`, `fulfillment.failed`,
+`order.manual_review` (nommage par agrégat, **pas** de préfixe `billing.*`, **pas** de
+`invoice.created` en V1).
+**Écoute :** **aucun événement métier** — l'achat est **initié par l'utilisateur** ; la
+confirmation vient **du webhook Stripe signé**, jamais du bus (Billing **n'écoute pas**
+`job.expiring`).
+**Exactly-once (mécanisme critique) :** renouvellement clé par `idempotency_key = order_uuid`,
+passé à `JobLifecycle::renew_after_payment($job_id, $days, ['idempotency_key' => order_uuid])`
+(extension **additive** de jobs). Jobs tient un **registre** (`pst_renewal_ledger`, cible figée)
+et applique un **SET absolu** (jamais `++`/`+=`), écrit **avant** le SET → rejeu webhook, retry
+de fulfillment et crash intermédiaire convergent vers **une seule** prolongation, **un seul**
+`renewal_count++`, **un seul** `job.renewed`. Nouvelle échéance calculée **par Jobs** :
+`max(échéance_courante, aujourd'hui) + 30`. Retry via récurrence Core Scheduler `postelio_15min`
+(max 5 → `fulfillment_failed`/`manual_review`).
+**Reçu vs facture :** V1 expose le **reçu Stripe** (`receipt_url`) comme justificatif — ce
+**n'est pas** une « facture ». Facture légale française numérotée = **phase ultérieure** (gated
+`SellerConfig` via `POSTELIO_SELLER_*`, TVA, numérotation) ; santé expose `seller_configured` /
+`invoice_legal_ready=false`. **Aucun PDF** de facture en V1.
+**Contrats additifs introduits ce lot :** `JobLifecycle` (idempotency_key) + `JobRepository`
+(registre/SET absolu) + `JobDirectory::company_id_of` (jobs) ; `CompanyBilling::identity`
+(companies) ; écouteur `job.renewed` + template e-mail `job_renewed` (notifications). **Core
+inchangé** (`pst_manage_billing` et `payment_required`/402 préexistent).
 
 ---
 
