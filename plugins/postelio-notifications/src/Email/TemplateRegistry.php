@@ -110,6 +110,12 @@ final class TemplateRegistry {
 				'body'      => "Bonjour {recipient_name},\n\nVotre offre « {job_title} » a été suspendue. Pour en savoir plus, consultez votre espace recruteur ou contactez le support.",
 				'cta'       => 'Gérer l\'offre',
 			),
+			'job_renewed' => array(
+				'subject'   => 'Votre offre « {job_title} » a été renouvelée',
+				'preheader' => 'Offre de nouveau en ligne',
+				'body'      => "Bonjour {recipient_name},\n\nVotre offre « {job_title} » a été renouvelée et est de nouveau visible des candidats jusqu'au {new_expiration}.",
+				'cta'       => 'Voir l\'offre',
+			),
 			'company_verified' => array(
 				'subject'   => 'Votre entreprise {company_name} est vérifiée',
 				'preheader' => 'Vérification confirmée',

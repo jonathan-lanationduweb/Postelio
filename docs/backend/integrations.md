@@ -39,10 +39,25 @@ Aucune intégration n'est branchée dans ce lot. Pour chaque service : **objecti
 - **Envoyé :** token challenge. **Reçu :** validation. **Fallback :** rate limiting + honeypot.
 - **Plugin :** users/core.
 
-### 5. Paiement — **Stripe, provider cible V1 (D9)**
-- **Objectif :** renouvellement d'offre 10 €/30 j. **Criticité :** haute (monétisation).
-- **Envoyé :** montant, référence, client. **Reçu :** statut paiement + **webhooks** (idempotents).
-- **Fallback :** mode « demo » (déjà côté front) tant que non branché. **Plugin :** billing.
+### 5. Paiement — **Stripe (Checkout hosted) — implémenté Lot 12 (D9)**
+- **Objectif :** renouvellement payant d'offre 10 € TTC / 30 j. **Criticité :** haute (monétisation).
+- **Envoyé :** création d'une **session Checkout hosted** (produit, montant en **cents**, devise
+  EUR, client Stripe créé **paresseusement, un par ENTREPRISE**). **Reçu :** `checkout_url` +
+  **webhooks signés** (idempotents). **Aucune donnée carte** ne transite par Postelio (PCI SAQ-A).
+- **État Lot 12 (implémenté) :** interface **`PaymentProvider`** ; `StripePaymentProvider`
+  (client HTTP léger via **`wp_remote_*`**, **aucune dépendance Composer**, comme France Travail
+  au Lot 10 ; signature webhook **HMAC-SHA256** de `t.payload` + tolérance de timestamp) ;
+  `FakePaymentProvider` (tests) ; résolu via le filtre `postelio/billing/provider`
+  (`ProviderRegistry`). Le **webhook signé** est la **seule source de vérité** (`POST
+  /billing/webhook/stripe`, idempotent via `wp_postelio_billing_events`) ; le retour navigateur /
+  `success_url` ne confirme jamais. Billing **paie puis délègue** à `JobLifecycle` (exactly-once,
+  clé `order_uuid`) — il n'écrit jamais le statut d'offre. Secrets
+  `POSTELIO_STRIPE_SECRET_KEY`/`POSTELIO_STRIPE_WEBHOOK_SECRET` en env/`wp-config`, **jamais** en
+  base/Git. Détection test/live `sk_test_`/`sk_live_`. **Reçu Stripe** (`receipt_url`) comme
+  justificatif V1 ; **facture légale numérotée = phase ultérieure** (gated `POSTELIO_SELLER_*`,
+  TVA, numérotation ; `invoice_legal_ready=false`). **Plugin :** billing.
+- **Fallback :** mode « demo » côté front tant que les clés ne sont pas configurées (santé
+  `not configured`/`degraded`).
 
 ### 6. Modération (ex. service de scoring de contenu)
 - **Objectif :** pré-filtrer messages/offres/savoir-faire. **Criticité :** moyenne.

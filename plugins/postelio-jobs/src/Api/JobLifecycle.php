@@ -49,7 +49,12 @@ final class JobLifecycle {
 	/**
 	 * Applique un renouvellement après paiement validé (appelé par billing).
 	 *
-	 * @param array<string, mixed> $meta  Traçabilité (ex. provider_ref) — non sensible.
+	 * Idempotence (exactly-once) : si `$meta['idempotency_key']` est fourni (= order_uuid), le
+	 * renouvellement est piloté par un registre côté Jobs. Un rejeu avec la même clé N'ajoute
+	 * PAS un second renouvellement et N'émet PAS un second `job.renewed`. Sans clé, comportement
+	 * historique (compat ascendante) : contrôle `can_renew` strict + application incrémentale.
+	 *
+	 * @param array<string, mixed> $meta  Traçabilité (provider_ref) + `idempotency_key` optionnel.
 	 * @return array<string, mixed> Offre à jour.
 	 * @throws ApiError invalid_transition | not_found
 	 */
@@ -59,26 +64,48 @@ final class JobLifecycle {
 		if ( null === $job ) {
 			throw ApiError::not_found();
 		}
+		$days = $days > 0 ? $days : self::DEFAULT_DAYS;
+		$ref  = isset( $meta['idempotency_key'] ) ? (string) $meta['idempotency_key'] : '';
+
+		if ( '' !== $ref ) {
+			$already = isset( $repo->renewal_ledger( $job_id )[ $ref ] );
+			// Rejeu déjà appliqué : SET absolu idempotent, aucun événement dupliqué.
+			if ( ! $already && ! self::can_renew( $job_id ) ) {
+				throw new ApiError( 'invalid_transition', 'Offre non renouvelable (statut : ' . $job['status'] . ').' );
+			}
+			$result = $repo->apply_renewal_idempotent( $job_id, $days, $ref );
+			if ( ! $result['already_applied'] ) {
+				self::emit_renewed( $job_id, (int) $job['company']['id'], $result, $meta );
+			}
+			return $repo->get( $job_id );
+		}
+
 		if ( ! self::can_renew( $job_id ) ) {
 			throw new ApiError( 'invalid_transition', 'Offre non renouvelable (statut : ' . $job['status'] . ').' );
 		}
-		$days   = $days > 0 ? $days : self::DEFAULT_DAYS;
 		$result = $repo->apply_renewal( $job_id, $days );
+		self::emit_renewed( $job_id, (int) $job['company']['id'], $result, $meta );
+		return $repo->get( $job_id );
+	}
 
+	/**
+	 * @param array{new_expiration:string, count:int} $result
+	 * @param array<string,mixed> $meta
+	 */
+	private static function emit_renewed( int $job_id, int $company_id, array $result, array $meta ): void {
 		Core::instance()->events()->emit(
 			'job.renewed',
 			array(
-				'job_id'         => $job_id,
-				'company_id'     => (int) $job['company']['id'],
-				'resource_type'  => 'job',
-				'resource_id'    => (string) $job_id,
-				'audit'          => array(
+				'job_id'        => $job_id,
+				'company_id'    => $company_id,
+				'resource_type' => 'job',
+				'resource_id'   => (string) $job_id,
+				'audit'         => array(
 					'new_expiration' => $result['new_expiration'],
 					'renewal_count'  => $result['count'],
 					'provider_ref'   => isset( $meta['provider_ref'] ) ? (string) $meta['provider_ref'] : null,
 				),
 			)
 		);
-		return $repo->get( $job_id );
 	}
 }

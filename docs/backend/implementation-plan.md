@@ -50,6 +50,17 @@ Règles : dépendances **descendantes** uniquement ; toute autre interaction pas
 > additives de `postelio-jobs` (présentation/résolution/filtre `source`) et
 > `postelio-applications` (garde offre externe → 409). Indeed/HelloWork/ATS = futur/partenariat.
 
+> **`postelio-billing` — Lot 12, implémenté** sur la branche **`feature/billing-backend`**.
+> Renouvellement payant d'offre (10 € TTC / 30 j) via **Stripe Checkout hosted** (client
+> `wp_remote_*`, **aucune dépendance Composer** ; PCI SAQ-A). **3 tables**
+> `wp_postelio_billing_{orders,payments,events}` (cents entiers, migrations idempotentes). Billing
+> **paie puis délègue** à `postelio-jobs` via `JobLifecycle::renew_after_payment()` (extension
+> **additive** : idempotency_key + registre `pst_renewal_ledger`/SET absolu → **exactly-once**) ;
+> il n'écrit jamais le statut d'offre et **n'écoute pas** `job.expiring` (achat initié par
+> l'utilisateur, confirmé par le **webhook signé**). Contrats additifs : `CompanyBilling::identity`
+> (companies), écouteur `job.renewed` + template `job_renewed` (notifications). Core inchangé.
+> Reçu Stripe en V1 ; facture légale numérotée = phase ultérieure.
+
 ## Mapping avec les branches Git existantes
 
 Déjà créées (issues de `develop`) :

@@ -87,6 +87,7 @@ final class NotificationRouter {
 		$events->on( 'job.expiring', array( $this, 'on_job_expiring' ) );
 		$events->on( 'job.expired', array( $this, 'on_job_expired' ) );
 		$events->on( 'job.suspended', array( $this, 'on_job_suspended' ) );
+		$events->on( 'job.renewed', array( $this, 'on_job_renewed' ) ); // Lot 12 : après renouvellement payé
 
 		// Worker file e-mail + rappels d'entretien (Scheduler unique du core).
 		$this->emails->set_scheduler( $scheduler ); // pour les one-shots à l'échéance exacte
@@ -451,6 +452,31 @@ final class NotificationRouter {
 	/** @param array<string,mixed> $p */
 	public function on_job_suspended( $p ): void {
 		$this->job_notice( $p, 'job_suspended', 'job_suspended', 'important', 'Offre suspendue', 'Une de vos offres a été suspendue.' );
+	}
+
+	/**
+	 * Offre renouvelée (paiement confirmé — Lot 12). Écoute l'événement PROPRIÉTAIRE
+	 * `job.renewed` (émis par Jobs) : pas de doublon avec un événement billing. Ne double PAS
+	 * le reçu Stripe (message métier « offre renouvelée », pas un reçu de paiement).
+	 *
+	 * @param array<string,mixed> $p
+	 */
+	public function on_job_renewed( $p ): void {
+		$job_id     = (int) ( $p['job_id'] ?? 0 );
+		$company_id = (int) ( $p['company_id'] ?? 0 );
+		$new_exp    = (string) ( $p['audit']['new_expiration'] ?? '' );
+		$job_uuid   = JobDirectory::uuid_of( $job_id );
+		$job_title  = $this->job_title( $job_id );
+		$body       = '' !== $new_exp ? ( 'Votre offre est de nouveau en ligne jusqu\'au ' . $new_exp . '.' ) : 'Votre offre a été renouvelée.';
+		foreach ( $this->recruiter_recipients( $job_id, $company_id, 0 ) as $rec ) {
+			$this->notify( $rec, array(
+				'category' => 'job_expiration', 'type' => 'job_renewed', 'event_name' => 'job.renewed', 'priority' => 'normal',
+				'title' => 'Offre renouvelée — ' . $job_title, 'body' => $body,
+				'resource_type' => 'job', 'resource_uuid' => $job_uuid, 'action_type' => 'manage_job',
+				'group_key' => 'job:' . $job_id,
+				'email_template' => 'job_renewed', 'email_vars' => array( 'job_title' => $job_title, 'new_expiration' => $new_exp ),
+			) );
+		}
 	}
 
 	/** @param array<string,mixed> $p */

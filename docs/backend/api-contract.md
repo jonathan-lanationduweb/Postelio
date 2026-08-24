@@ -102,7 +102,9 @@ Erreur :
 - Expiration automatique (cron, dates **UTC**) : `published → expiring` (J‑7) → `expired`.
 - **Renouvellement** (`expiring|expired → published`, événement `job.renewed`) : via le
   contrat **`Postelio\Jobs\Api\JobLifecycle::renew_after_payment()`** appelé par
-  **postelio-billing** après paiement (hors Lot 04 ; aucun endpoint payant en V1).
+  **postelio-billing** après paiement (**implémenté Lot 12** ; le checkout payant est exposé
+  par billing — voir [#facturation--postelio-billing-implémenté-lot-12](#facturation--postelio-billing-implémenté-lot-12) —
+  jamais un endpoint de `postelio-jobs`).
 - Favoris / alertes candidat (`/me/favorites`, `/me/alerts`) : **hors Lot 04.**
 
 ### Candidatures — `postelio-applications` (identification par **UUID**, D2)
@@ -193,10 +195,37 @@ Erreur :
 - Contrat sortant : `\Postelio\Notifications\Api\NotificationDirectory` (`unread_count`,
   `recent`). E-mails : jamais d'action sensible par GET, jamais de token en URL.
 
-### Facturation — `postelio-billing`
-- `POST /billing/renewals` (initier un renouvellement d'offre). R: recruiter.
-- `GET /billing/payments` · `GET /billing/invoices`. R: recruiter/admin.
-- `POST /billing/webhook` — endpoint provider (public **signé**), idempotent via `WebhookEvent`.
+### Facturation — `postelio-billing` (implémenté Lot 12)
+> Renouvellement **payant** d'offre (10 € TTC / 30 j) via **Stripe Checkout hosted**. Billing
+> **paie puis délègue** l'effet à `JobLifecycle` (jamais d'écriture de statut d'offre). Le
+> **webhook signé** est la **seule source de vérité** (le `success_url` ne confirme jamais).
+> UUID uniquement (jamais d'ID SQL ni de secret provider) ; **non-divulgation** inter-entreprise
+> → **404**. Montants en **cents entiers**.
+- `POST /billing/checkout` — crée une commande + une session Checkout. Body **`{product_code,
+  resource_type, resource_uuid}` UNIQUEMENT** (montant/devise/durée envoyés par le front sont
+  **ignorés**). R: `pst_pay_renewal` **+ `pst_email_verified`** ; conditions : authentifié,
+  actif, **membre** (owner OU recruteur) de l'entreprise propriétaire de l'offre, entreprise
+  **`verified` & non suspendue**, `JobLifecycle::can_renew()`. → `{order_uuid, checkout_url,
+  expires_at}`. err: `forbidden` (candidat → 403), `not_found` (offre inconnue / autre
+  entreprise → 404), `payment_required`/`invalid_transition` (non renouvelable),
+  `validation_error`.
+- `GET /billing/orders` — historique paginé, **scope entreprise** (source du dashboard).
+  R: `pst_pay_renewal` **+ `pst_email_verified`**.
+- `GET /billing/orders/{uuid}` — statut synthétique (`status`/`payment_status`/
+  `fulfillment_status`/`product`/`resource`/`amount`/`currency`/`receipt_available`) ;
+  inter-entreprise → **404** ; jamais d'ID SQL ni de secret provider.
+- `POST /billing/webhook/stripe` — **PUBLIC**, cryptographiquement **signé** (aucun
+  nonce/session/Bearer) : corps **brut** + signature + tolérance de timestamp ; **idempotent**
+  via le magasin d'événements. Signature invalide → **400** ; événement bien signé → **200**.
+  V1 : `checkout.session.{completed,async_payment_succeeded,async_payment_failed,expired}`,
+  `charge.refunded`, `charge.dispute.created` (les `payment_intent.*` / `invoice.*` sont ignorés).
+- `GET /billing/admin/orders` · `GET /billing/admin/orders/{uuid}` ·
+  `POST /billing/admin/orders/{uuid}/retry-fulfillment` · `GET /billing/health`. R: **admin**
+  (`pst_manage_billing`). Health : `status/provider/mode/configured/webhook_configured/
+  last_webhook_at/last_successful_payment_at/failed_fulfillment_count/seller_configured/
+  invoice_legal_ready` — **aucun secret**.
+- **Reçu vs facture :** V1 expose le **reçu Stripe** (`receipt_url`), ce **n'est pas** une
+  facture ; facture légale numérotée = **phase ultérieure** (`invoice_legal_ready=false`).
 
 ### Savoir-faire & contenus — `postelio-skills`
 - `GET /skills` (public) · `GET /skills/{id}` · `GET/POST/PUT/DELETE /me/skills`. R: candidate.

@@ -21,7 +21,7 @@ contraintes, index, données sensibles, conservation (RGPD → voir
 | Interview | **table dédiée** | Transactionnel, statuts, dates, relations. |
 | Notification | **table dédiée** | Fort volume, index `user_id`/`read_at`, purge périodique. |
 | SkillContent, CompanyContent | **CPT** `postelio_skill` / `postelio_company_content` | Contenu éditorial public modéré (comme les articles). |
-| Payment, Invoice, Renewal, WebhookEvent | **tables dédiées** | Financier, traçable, immuable, webhooks. |
+| BillingOrder, BillingPayment, BillingEvent | **3 tables dédiées** | Financier, traçable, immuable, idempotent (webhooks). Montants en **cents entiers** ; pas de table facture en V1 (Lot 12). |
 | ModerationReport, ModerationCase, ModerationCaseEvent | **3 tables dédiées** | Signalements + cas regroupés par ressource + historique append-only (Lot 11). |
 | AuditLog | **table dédiée** (append-only) | Journal immuable, index `actor`/`resource`/`created_at`. |
 
@@ -43,9 +43,9 @@ wp_postelio_cv_snapshots           wp_postelio_conversations
 wp_postelio_conversation_participants
 wp_postelio_messages               wp_postelio_interviews
 wp_postelio_interview_history
-wp_postelio_notifications          wp_postelio_payments
-wp_postelio_invoices               wp_postelio_renewals
-wp_postelio_webhook_events         wp_postelio_moderation_reports
+wp_postelio_notifications          wp_postelio_billing_orders
+wp_postelio_billing_payments       wp_postelio_billing_events
+wp_postelio_moderation_reports
 wp_postelio_moderation_cases       wp_postelio_moderation_case_events
 wp_postelio_audit_log
 ```
@@ -330,15 +330,43 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
 - **Statut :** moderation_state (allowed|review|blocked). **Index :** candidate_id/company_id,
   moderation_state, categorie.
 
-## Payment / Invoice / Renewal / WebhookEvent
-- **Propriétaire :** billing. **Tables dédiées.**
-- **Payment :** id, user_id, company_id, amount (1000 = 10 €), currency (EUR),
-  provider (stripe|demo), provider_ref, status (pending|succeeded|failed|refunded),
-  purpose (job_renewal), job_id, created_at.
-- **Invoice :** id, payment_id, number, amount, issued_at, pdf_path.
-- **Renewal :** id, job_id, payment_id, days (30), new_expiration, applied_at.
-- **WebhookEvent :** id, provider, provider_event_id (unique), type, payload (JSON),
-  received_at, processed_at. **Sensible :** financier ; **immuable/traçable**.
+## Facturation — `wp_postelio_billing_*` (implémenté Lot 12)
+- **Propriétaire :** billing. **Exactement 3 tables** (pas de table facture en V1).
+  Montants **INTEGER cents** (jamais FLOAT). Migrations **idempotentes non destructives** ;
+  index composites via **préfixes de colonne** (limite de clé 1000 octets). Désactivation =
+  **conservation** de toutes les données (comptabilité). Exposé public = **UUID uniquement**
+  (jamais les ids SQL, jamais les secrets provider).
+
+### BillingOrder — `wp_postelio_billing_orders`
+- **Champs :** id, `public_uuid` (UNIQUE), company_id, company_uuid, buyer_user_id,
+  product_code, resource_type, resource_uuid, `status`, `fulfillment_status`, currency,
+  unit_amount, tax_mode, tax_rate, tax_amount, total_amount, duration_days, `snapshot_json`
+  (produit + acheteur + vendeur, **figé** à la création), invoice_number (**null** en V1),
+  provider, provider_customer_id, provider_session_id, `idempotency_key` (UNIQUE = order_uuid),
+  checkout_url, checkout_expires_at, fulfillment_attempts, last_fulfillment_error, created_at,
+  updated_at, paid_at, fulfilled_at.
+- **Snapshot :** produit + acheteur (identité légale vérifiée via `CompanyBilling::identity` :
+  raison_sociale, siren, siret, tva, adresse_siege, cp_siege, ville_siege, pays, billing_email)
+  + vendeur (`SellerConfig`). **Immuable** ensuite (un changement ultérieur d'entreprise / de
+  prix / de catalogue n'altère jamais l'historique financier).
+- **État (server-only, le front ne fixe jamais un statut) :** `created → awaiting_payment →
+  paid → fulfillment_pending → fulfilled` ; branches `payment_failed`, `expired`,
+  `fulfillment_failed` (retry), `manual_review`, `refunded`. Voir
+  [workflows.md](workflows.md#facturation-billing--implémenté-lot-12).
+
+### BillingPayment — `wp_postelio_billing_payments`
+- **Champs :** id, `public_uuid` (UNIQUE), order_id, `status`, amount, currency, provider,
+  `provider_session_id` (UNIQUE), `provider_payment_intent_id` (UNIQUE), provider_charge_id,
+  receipt_url, failure_code, created_at, paid_at, failed_at, refunded_at, disputed_at.
+- **État :** `created → pending → succeeded | failed` ; `succeeded → refunded | disputed` ;
+  un **2e** paiement réussi sur une commande déjà `fulfilled` = **doublon** → revue admin,
+  **jamais** un 2e renouvellement.
+
+### BillingEvent — `wp_postelio_billing_events`
+- **Champs :** id, provider, event_id, event_type, related_order_id, status
+  (`received|processed|ignored|error`), attempts, received_at, processed_at, last_error ;
+  **UNIQUE(provider, event_id)** (idempotence du webhook). **Aucun payload Stripe brut**
+  conservé durablement.
 
 ## Modération — `wp_postelio_moderation_*` (implémenté Lot 11)
 - **Propriétaire :** moderation. **3 tables dédiées** (pas davantage : ni décisions, ni
@@ -414,6 +442,7 @@ Application 1─1 CVSnapshot ; 1─n ApplicationHistory ; 1─n PreselectionAnsw
             1─n RecruiterNote ; 1─n Interview ; 0..1 Conversation
 Conversation 1─n Message
 User 1─n Notification
-Payment 1─1 Invoice ; 1─1 Renewal ─1 Job
+Company 1─n BillingOrder ; BillingOrder 1─n BillingPayment ; BillingOrder(job_renewal) ─1 Job
+BillingEvent (webhook Stripe) n─1 BillingOrder
 ```
 Détail des relations métier : [workflows.md](workflows.md) §7.

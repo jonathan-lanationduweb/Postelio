@@ -66,7 +66,7 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 | Adresse personnelle | candidat + recruteur autorisé | candidat | anonymisée |
 | Historique candidature | candidat (le sien), recruteur concerné, admin | système (append-only) | anonymisé selon conservation |
 | Identité légale entreprise | recruteur de la company + admin | recruteur | avec l'entreprise |
-| Paiements / factures | recruteur de la company + admin | — (immuable) | conservation légale |
+| Paiements / commandes (Lot 12) | recruteur/owner de la company + admin ; **UUID** seul exposé (jamais d'ID SQL ni de secret provider) ; inter-entreprise → **404** | — (immuable ; snapshot figé à la création) | conservation comptable — **retenue même si le compte utilisateur est supprimé** (`À VALIDER`) |
 
 > **Modération (Lot 11) :** on ne stocke **que le nécessaire** (reason_codes, métadonnées,
 > description du signalement ≤ 500 car.) — **jamais** le contenu complet d'un message, d'une
@@ -76,6 +76,15 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 > `postelio/moderation/report_rate_per_hour`, `postelio/moderation/report_dedup_window`).
 > **Suspension utilisateur réversible** (statut + révocation des jetons Bearer + destruction
 > des sessions WP ; jamais d'écriture directe dans `wp_users`).
+
+> **Paiement / PCI / RGPD (Lot 12) :** **aucune donnée carte** ne transite ni n'est stockée
+> par Postelio (Stripe **Checkout hosted** → **PCI SAQ-A**). Le **webhook signé** (HMAC-SHA256)
+> est la **seule source de vérité** ; le retour navigateur / `success_url` ne confirme jamais un
+> paiement. **Aucun payload Stripe brut** conservé durablement ; montants en **cents entiers**.
+> Secrets `POSTELIO_STRIPE_SECRET_KEY` / `POSTELIO_STRIPE_WEBHOOK_SECRET` / `POSTELIO_SELLER_*`
+> en **env/`wp-config`** — **jamais** en base / Git / logs / Audit. Non-divulgation
+> inter-entreprise → **404**. L'historique financier (snapshot auto-suffisant de la commande)
+> est **conservé même après suppression du compte** ; durées `À VALIDER`.
 
 ## 5. Fichiers (CV & documents)
 - **Jamais d'URL publique directe.** Stockage **hors webroot** (ou dossier protégé
@@ -142,6 +151,12 @@ lecture admin uniquement.
 Aucune clé secrète commitée (voir [implementation-plan.md](implementation-plan.md#environnements)).
 Clés provider (Stripe, e-mail, Sirene) via variables d'environnement / `wp-config`
 hors dépôt.
+
+- **Billing / Stripe (Lot 12, implémenté) :** `POSTELIO_STRIPE_SECRET_KEY`,
+  `POSTELIO_STRIPE_WEBHOOK_SECRET` et `POSTELIO_SELLER_*` (identité légale du **vendeur**,
+  **valeurs À FOURNIR**, jamais inventées) en env/`wp-config` uniquement — jamais base / Git /
+  logs / audit. Détection test/live via `sk_test_`/`sk_live_` ; configuration incohérente →
+  santé `degraded`, **pas** de checkout live. Clé publiable **non requise** en V1.
 
 ## 9. Jetons applicatifs (Bearer)
 

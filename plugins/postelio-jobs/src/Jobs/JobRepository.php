@@ -27,6 +27,7 @@ final class JobRepository {
 	public const META_REVISION      = 'pst_revision';
 	public const META_RENEWED_AT    = 'pst_renewed_at';
 	public const META_RENEWAL_COUNT = 'pst_renewal_count';
+	public const META_RENEWAL_LEDGER = 'pst_renewal_ledger'; // registre idempotent { ref => cible }
 
 	/** Champs scalaires filtrables (meta discrète). */
 	private const FILTER_FIELDS = array(
@@ -265,6 +266,55 @@ final class JobRepository {
 		update_post_meta( $id, self::META_RENEWAL_COUNT, $count );
 
 		return array( 'new_expiration' => $new_exp, 'count' => $count );
+	}
+
+	/** @return array<string, array<string,mixed>> Registre des renouvellements appliqués. */
+	public function renewal_ledger( int $id ): array {
+		$raw = (string) get_post_meta( $id, self::META_RENEWAL_LEDGER, true );
+		$dec = '' !== $raw ? json_decode( $raw, true ) : array();
+		return is_array( $dec ) ? $dec : array();
+	}
+
+	/**
+	 * Renouvellement IDEMPOTENT (exactly-once) piloté par une clé métier `$ref` (= order_uuid).
+	 *
+	 * Garantie : rejouer avec le même `$ref` (retry / crash après application mais avant que
+	 * l'appelant ait persisté son propre état) NE crée jamais un second renouvellement. Le
+	 * registre stocke la CIBLE figée ; l'application est un SET ABSOLU (jamais un ++/+= ), donc
+	 * un replay converge vers la même valeur. Le registre est écrit AVANT le SET.
+	 *
+	 * @return array{new_expiration:string, count:int, already_applied:bool}
+	 */
+	public function apply_renewal_idempotent( int $id, int $days, string $ref ): array {
+		$ledger = $this->renewal_ledger( $id );
+		if ( isset( $ledger[ $ref ] ) ) {
+			$target = $ledger[ $ref ];
+			$this->set_renewal_absolute( $id, (string) $target['status'], (string) $target['new_expiration'], (int) $target['count'], (string) $target['applied_at'] );
+			return array( 'new_expiration' => (string) $target['new_expiration'], 'count' => (int) $target['count'], 'already_applied' => true );
+		}
+
+		$today   = gmdate( 'Y-m-d' );
+		$current = (string) get_post_meta( $id, self::META_DATE_EXP, true );
+		$base    = ( $current && $current > $today ) ? $current : $today; // ne perd pas de temps restant
+		$new_exp = gmdate( 'Y-m-d', strtotime( $base . ' +' . $days . ' days' ) );
+		$count   = (int) get_post_meta( $id, self::META_RENEWAL_COUNT, true ) + 1;
+		$now     = current_time( 'mysql', true );
+
+		// Écrit le registre AVANT d'appliquer : un crash après cette ligne rend le replay
+		// idempotent (il retrouvera la cible et fera un SET absolu identique).
+		$ledger[ $ref ] = array( 'status' => JobStateMachine::PUBLISHED, 'new_expiration' => $new_exp, 'count' => $count, 'applied_at' => $now );
+		update_post_meta( $id, self::META_RENEWAL_LEDGER, wp_json_encode( $ledger ) );
+
+		$this->set_renewal_absolute( $id, JobStateMachine::PUBLISHED, $new_exp, $count, $now );
+		return array( 'new_expiration' => $new_exp, 'count' => $count, 'already_applied' => false );
+	}
+
+	/** Applique par valeurs ABSOLUES (idempotent au replay). */
+	private function set_renewal_absolute( int $id, string $status, string $new_exp, int $count, string $renewed_at ): void {
+		update_post_meta( $id, self::META_STATUS, $status );
+		update_post_meta( $id, self::META_DATE_EXP, $new_exp );
+		update_post_meta( $id, self::META_RENEWAL_COUNT, $count );
+		update_post_meta( $id, self::META_RENEWED_AT, $renewed_at );
 	}
 
 	/** Incrémente la version métier (utilisée pour le snapshot de candidature). */

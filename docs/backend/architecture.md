@@ -63,7 +63,7 @@ Le graphe de dépendances complet (sans cycle) est décrit dans
 | `postelio-interviews` | Entretiens, créneaux, formats | [plugins.md](plugins.md#postelio-interviews) |
 | `postelio-notifications` | Notifications in-app + e-mails | [plugins.md](plugins.md#postelio-notifications) |
 | `postelio-moderation` | File de modération, signalements | [plugins.md](plugins.md#postelio-moderation) |
-| `postelio-billing` | Renouvellement d'offre, paiements, factures | [plugins.md](plugins.md#postelio-billing) |
+| `postelio-billing` | Renouvellement payant d'offre (Stripe Checkout), paiements, reçus | [plugins.md](plugins.md#postelio-billing) |
 | `postelio-skills` | Savoir-faire candidat + contenus entreprise | [plugins.md](plugins.md#postelio-skills) |
 
 ## 4. Périmètre fonctionnel (dérivé du front existant)
@@ -121,7 +121,7 @@ dans les docs référencées. Les durées de conservation **RGPD restent `À VAL
 | D6 | **Messages :** **immuables en V1** une fois envoyés ; **suppression logique/modération** possible si nécessaire (pas d'édition libre). | [security.md](security.md#4-données-sensibles), [data-model.md](data-model.md) |
 | D7 | **Adresse IP :** stockée **uniquement** pour les événements de **sécurité/audit** où c'est justifié. | [security.md](security.md#7-audit-log) |
 | D8 | **2FA :** **prévue pour les comptes administrateurs** ; **non obligatoire** candidat/recruteur en V1. | [security.md](security.md#1-authentification) |
-| D9 | **Paiement :** **Stripe** comme provider cible. | [integrations.md](integrations.md) |
+| D9 | **Paiement :** **Stripe** (Checkout hosted) — **implémenté Lot 12** (`postelio-billing`). | [integrations.md](integrations.md) |
 | D10 | **Vérification entreprise :** **Sirene / RNE** comme providers cibles. | [integrations.md](integrations.md) |
 | D11 | **Conservation RGPD :** durées **`À VALIDER`**, non inventées. | [security.md](security.md#6-rgpd) |
 | D12 | **Vérification e-mail obligatoire pour les actions sensibles** (postuler, écrire à une entreprise, publier une offre, contacter un candidat…). Contrôle centralisé via la capability virtuelle **`pst_email_verified`**. Inscription/connexion/profil/public restent ouverts sans vérification. | [security.md](security.md#1-authentification) |
@@ -176,6 +176,34 @@ publique ⇒ `verified`**. Appliquée par `postelio-jobs` au Lot 04 (`POST /jobs
 **`Api\MessagingDirectory`** ; `postelio-interviews` (Lot 08) expose
 **`Api\InterviewDirectory`** (contexte d'entretien pour Notifications/e-mail de preuve,
 compteur à venir, historique). Ces façades évitent toute dépendance circulaire.
+
+`postelio-billing` (Lot 12) gère le **renouvellement payant** d'une offre (10 € TTC / 30 j)
+via **Stripe Checkout hosted**. Il **paie puis délègue** l'effet métier à `postelio-jobs`
+via le contrat **`JobLifecycle`** : il n'écrit **jamais** `pst_status`/`pst_date_expiration`.
+Le **webhook signé** est la **seule source de vérité** (le retour navigateur / `success_url`
+ne confirme jamais un paiement). **Aucune dépendance Composer** (client HTTP Stripe léger via
+`wp_remote_*`, comme France Travail au Lot 10) ; **aucune donnée carte** ne transite par
+Postelio (PCI SAQ-A) ; Billing **n'envoie aucun e-mail** (émet des événements → Notifications).
+**Exactly-once :** le renouvellement est clé par `idempotency_key = order_uuid`, passé à
+`JobLifecycle::renew_after_payment($job_id, $days, ['idempotency_key' => order_uuid])`
+(extension **additive** de `postelio-jobs`) ; Jobs tient un **registre** (post meta
+`pst_renewal_ledger`) figeant la cible et applique un **SET absolu** (jamais `++`/`+=`), écrit
+**avant** le SET — rejeu du webhook, retry de fulfillment et crash intermédiaire convergent
+vers **une seule** prolongation, **un seul** `renewal_count++`, **un seul** `job.renewed`.
+La nouvelle échéance est calculée **par Jobs** : `max(échéance_courante, aujourd'hui) + 30`
+(Billing ne la recalcule jamais). Provider derrière l'interface `PaymentProvider`
+(`StripePaymentProvider` via `wp_remote_*`, signature webhook HMAC-SHA256 ; `FakePaymentProvider`
+pour les tests ; filtre `postelio/billing/provider`, `ProviderRegistry`). Client Stripe créé
+**paresseusement, un par ENTREPRISE**. Contrats **additifs** introduits ce lot : `JobLifecycle`
+(idempotency_key) + registre/SET absolu + `JobDirectory::company_id_of` (jobs) ;
+`CompanyBilling::identity` (companies) ; écouteur `job.renewed` + template e-mail `job_renewed`
+(notifications). **Core inchangé** (`pst_manage_billing` et `payment_required`/402 préexistent).
+**3 tables** `wp_postelio_billing_{orders,payments,events}` (montants en **cents entiers**,
+migrations idempotentes non destructives). Retry de fulfillment via la récurrence Core Scheduler
+`postelio_15min` (max 5 → `fulfillment_failed`/`manual_review`). **Reçu Stripe** (`receipt_url`)
+comme justificatif V1 ; **facture légale numérotée = phase ultérieure** (gated `SellerConfig` /
+`POSTELIO_SELLER_*`). Billing **n'écoute pas** `job.expiring` : l'achat est **initié par
+l'utilisateur**.
 
 `postelio-moderation` (Lot 11) centralise la **modération** : **réactif** (signalements
 utilisateur → **cas** regroupés par ressource) **et** **préventif** (passerelle
