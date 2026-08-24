@@ -345,21 +345,66 @@ removed|apply_redirected` (jamais vers Notifications).
 **Licence France Travail** respectée (attribution, contenu complet + logo, refresh 24h,
 retrait/anonymisation, RGPD UE) — voir [integrations.md](integrations.md).
 
-## postelio-skills
+## postelio-skills (implémenté Lot 13)
 
-**Responsabilité.** Savoir-faire candidat (preuves de compétences) et contenus
-entreprise (marque employeur) : publication, statuts de modération, notes/avis/vues,
-compétences démontrées.
+**Responsabilité.** **« Savoir-faire & Avis »** — **contenu éditorial public** (savoir-faire)
+publié par un **candidat** (en son nom) ou un **recruteur** (en son nom **ou** au nom de son
+entreprise via `as_company`), plus des **commentaires** (« Avis »). Publication **modérée en
+amont** (passerelle préventive, comme les offres). **Aucun rendu WordPress public** (exposé
+**uniquement** via l'API REST ; SEO livré comme **contrat d'API**), **aucune** dépendance
+externe, **aucun** e-mail direct (événements → Notifications), **aucune** UI d'admin (la file
+de modération centrale suffit).
 
-**Dépendances :** core, users, companies.
-**Données possédées :** `SkillContent`, `CompanyContent` (CPT ou tables dédiées, voir
-[data-model.md](data-model.md#skillcontent--companycontent)), notes/avis/vues.
-**Endpoints :** `/skills`, `/skills/{id}`, `/me/skills`, `/companies/{id}/contents`.
-**Émet :** `skill.submitted`, `skill.published`, `skill.reported`,
-`company_content.submitted`.
-**Écoute :** `moderation.decided` (publier/bloquer), `user.deleted`.
-**Interactions :** `moderation` valide avant publication publique ; `users` affiche les
-compétences démontrées dans le profil.
+**Dépendances :** core, users, companies, moderation (contrats publics uniquement).
+**Données possédées :** CPT **`postelio_skill`** (`public=false`, `publicly_queryable=false` —
+comme les offres ; `post_status` reste `publish`, statut métier en meta) — **pas de table
+dédiée** pour le contenu principal — + table dédiée **`wp_postelio_skill_comments`** pour les
+commentaires (migration idempotente, désactivation non destructive). Meta : `pst_uuid` (UNIQUE,
+exposé), `pst_status` (`draft|published|archived`), `pst_author_type` (`candidate`=personnel |
+`company`), `pst_company_id`/`pst_company_uuid`, `pst_revision`, `pst_summary`, `pst_details`
+(JSON), `pst_mod_hidden`, `pst_susp_hidden`. Image = **image à la une** (Media Library WP,
+publique — **jamais** `postelio-files`). Taxonomies : `postelio_skill_category` (hiérarchique)
++ `postelio_skill_tag` (libre). Voir
+[data-model.md](data-model.md#savoir-faire--avis--postelio_skill--implémenté-lot-13).
+**Définition V1 :** contenu libre (titre, résumé, HTML restreint `wp_kses`, catégorie, tags,
+image optionnelle) + blocs structurés **optionnels** (matériel/étapes/conseils/erreurs/résultat/
+galerie/difficulté/durée/métier) en `pst_details` — **jamais requis**. **Requis : titre, contenu,
+catégorie.** Notation multi-critères, réactions/likes, compteur de vues, avis employeurs = **hors
+V1** (le front garde ces éléments en mock).
+**Statuts & visibilité :** `draft → published → archived` (+ `published → draft` si une édition
+est bloquée). **« hidden » n'est pas un statut** : c'est une suppression de visibilité **à cause
+tracée** via deux flags **indépendants** `pst_mod_hidden` (modération) et `pst_susp_hidden`
+(suspension utilisateur/entreprise). Visibilité publique = `published && !mod_hidden &&
+!susp_hidden`. Lever une suspension **ne réexpose jamais** un contenu masqué par la modération.
+Voir [workflows.md](workflows.md#savoir-faire--avis-skills--implémenté-lot-13).
+**Modération :** `ModerationGateway::evaluate` (filtre `postelio/moderation/evaluate`) à la
+publication et à l'édition significative d'un contenu publié (bloqué → retour `draft`) ;
+`low`→publié, `medium`→publié + cas, `high|critical`→reste `draft` (fail-closed
+`moderation_blocked`/422, message **générique**). **Commentaires** évalués **PRE-insert**
+(`low`→publié, `medium`→publié + flag, `high|critical`→**aucune ligne**). Signalements via
+`POST /moderation/reports` (types **`skill`** et **`skill_comment`** ajoutés au catalogue de
+`reason_code`) ; masquage/démasquage modérateur routé depuis `ModerationActions` vers le
+contrat `SkillModeration::set_visibility`.
+**Endpoints :** voir [api-contract.md](api-contract.md#savoir-faire--avis--postelio-skills-implémenté-lot-13).
+**Émet :** `skill.created`, `skill.updated`, `skill.published`, `skill.archived`,
+`skill.hidden`, `skill.restored`, `skill.comment_created`. (`skill.published` **ne
+s'auto-notifie pas** ; commentaire reçu → notification à l'auteur du savoir-faire.)
+**Écoute :** `user.suspended`/`user.unsuspended`/`user.deleted`/`company.suspended`/
+`company.verified` (écouteurs découplés `SuspensionSync` — masquage/restauration via
+`pst_susp_hidden`).
+**Contrats sortants :** `\Postelio\Skills\Api\SkillDirectory` (`get_context`, `belongs_to_user`,
+`belongs_to_company`, `public_view`, `published_for_user`, `published_for_company`) et
+`\Postelio\Skills\Api\SkillModeration` (`hide`/`unhide`/`set_visibility`/`is_visible`).
+**Contrats additifs introduits ce lot :** capability `pst_comment_skill` + caps skill
+(`pst_publish_own_skill`/`pst_manage_own_skill`) sur le rôle **recruteur** (core) ;
+`UserDirectory::public_author` — byline publique, **jamais** e-mail/téléphone (users) ;
+`ModerationActions` route skill/skill_comment vers `SkillModeration`, `ReasonCodes` gagne
+`skill_comment`, visibilité répondue via le filtre `postelio/moderation/resource_visible`
+**fourni par Skills** (moderation). **`pst_comment_skill` est la SEULE nouvelle capability.**
+**Sécurité :** auteur/entreprise **dérivés côté serveur** (anti-spoofing : `author_user_id`/
+`company_id` du body ignorés) ; non-divulgation inter-utilisateur/entreprise → **404** ; XSS
+neutralisé (`wp_kses`, liens dangereux retirés) ; rate-limit des commentaires (filtre
+`postelio/skills/comment_rate_per_hour`) ; pas de hard-delete.
 
 ---
 

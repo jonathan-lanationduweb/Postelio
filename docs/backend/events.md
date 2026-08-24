@@ -57,10 +57,13 @@ Les plugins **émettent** et **écoutent** ; jamais d'appel direct inter-plugins
 | `renewal.applied` | billing | core(audit) — *Lot 12 ; effet métier réel via `job.renewed` (émis par jobs)* |
 | `fulfillment.failed` | billing | core(audit) — *Lot 12 ; retry `postelio_15min`, max 5* |
 | `order.manual_review` | billing | notifications (file admin, option), core(audit) — *Lot 12 ; doublon / attempts épuisés* |
-| `skill.submitted` | skills | moderation (si review), core(audit) |
-| `skill.published` | skills | notifications (option), core(audit) |
-| `skill.reported` | skills | moderation, core(audit) |
-| `company_content.submitted` | skills | moderation, core(audit) |
+| `skill.created` | skills | core(audit) — *Lot 13 ; brouillon créé* |
+| `skill.updated` | skills | core(audit) — *Lot 13* |
+| `skill.published` | skills | core(audit) — *Lot 13 ; **ne s'auto-notifie pas** l'auteur* |
+| `skill.archived` | skills | core(audit) — *Lot 13* |
+| `skill.hidden` | skills | core(audit) — *Lot 13 ; masquage modération (`pst_mod_hidden`)* |
+| `skill.restored` | skills | core(audit) — *Lot 13 ; démasquage* |
+| `skill.comment_created` | skills | notifications (auteur du savoir-faire), core(audit) — *Lot 13* |
 | `moderation.report_created` | moderation | (interne : ouvre/rattache un **cas**), core(audit) — *Lot 11 ; remplace `content.reported`* |
 | `job_source.sync_started` / `.sync_completed` / `.sync_failed` | job-sources | (admin/observabilité — **jamais** Notifications) — *Lot 10* |
 | `external_job.created` / `.updated` / `.removed` | job-sources | (interne domaine offres) — *Lot 10* |
@@ -112,6 +115,7 @@ Canaux : **in-app** (cloche), **email** (transactionnel), *push Tauri* (plus tar
 | payment.succeeded (Lot 12) | — | — | — | — *(reçu = e-mail Stripe, pas Notifications)* | — *(interne/observabilité)* |
 | payment.failed | — | ✅ | — | ✅ | ✅ |
 | moderation.case_opened / decision_made | — | — | ✅ | option | ✅ file admin |
+| skill.comment_created (Lot 13) | ✅ (si auteur) | ✅ (si auteur) | — | option | ✅ auteur du savoir-faire |
 
 > **Modération (Lot 11) :** une **suspension** (utilisateur/entreprise/offre) notifie via
 > l'événement **propriétaire** (`*.suspended`) ; la modération ne crée **aucune**

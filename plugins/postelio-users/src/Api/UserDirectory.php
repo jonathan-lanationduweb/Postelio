@@ -65,6 +65,33 @@ final class UserDirectory {
 		return $p ? (string) ( $p['public_uuid'] ?? '' ) : null;
 	}
 
+	/**
+	 * Byline AUTEUR PUBLIC (pour un contenu éditorial public, ex. savoir-faire). N'expose
+	 * JAMAIS d'e-mail/téléphone. Le métier/l'avatar ne sont exposés que pour un candidat
+	 * (depuis son profil). `profile_uuid` seulement si visible.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function public_author( int $user_id ): array {
+		$out = array(
+			'display_name' => self::display_name( $user_id ),
+			'role'         => self::role( $user_id ),
+			'metier'       => null,
+			'avatar_url'   => null,
+			'profile_uuid' => null,
+		);
+		if ( self::is_candidate( $user_id ) ) {
+			$p = ( new CandidateProfileRepository() )->get_by_user( $user_id );
+			if ( $p ) {
+				$out['metier']       = isset( $p['metier'] ) ? (string) $p['metier'] : null;
+				$photo               = isset( $p['photo'] ) ? (string) $p['photo'] : '';
+				$out['avatar_url']   = ( '' !== $photo && preg_match( '#^https?://#i', $photo ) ) ? $photo : null;
+				$out['profile_uuid'] = isset( $p['public_uuid'] ) ? (string) $p['public_uuid'] : null;
+			}
+		}
+		return $out;
+	}
+
 	public static function email_verified( int $user_id ): bool {
 		return '' !== (string) get_user_meta( $user_id, AccountService::META_EMAIL_VERIFIED, true );
 	}

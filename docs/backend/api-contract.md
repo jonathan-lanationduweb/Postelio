@@ -227,9 +227,33 @@ Erreur :
 - **Reçu vs facture :** V1 expose le **reçu Stripe** (`receipt_url`), ce **n'est pas** une
   facture ; facture légale numérotée = **phase ultérieure** (`invoice_legal_ready=false`).
 
-### Savoir-faire & contenus — `postelio-skills`
-- `GET /skills` (public) · `GET /skills/{id}` · `GET/POST/PUT/DELETE /me/skills`. R: candidate.
-- `GET/POST /companies/{id}/contents`. R: recruiter (sa company).
+### Savoir-faire & Avis — `postelio-skills` (implémenté Lot 13)
+> **Contenu éditorial public** modéré **en amont** (comme les offres). Exposé **uniquement**
+> via l'API (aucun rendu WordPress ; SEO livré comme **contrat**). Identification par **UUID**
+> (`pst_uuid`) ; **jamais** d'ID SQL, le `slug` n'est pas une clé métier. Auteur/entreprise
+> **dérivés serveur** (body `author_user_id`/`company_id` **ignorés** — anti-spoofing).
+> Non-divulgation inter-utilisateur/entreprise → **404**. Image = Media Library WP.
+- `GET /skills` — **public** (`published` **et** visible = `!mod_hidden && !susp_hidden`).
+  Filtres : `q`, `category`, `tag`, `author_type`, `company`, `sort=recent|oldest`,
+  `page`/`per_page`. → liste (byline publique + entreprise publique + catégorie/tags + image).
+- `GET /skills/{uuid}` — **public** ; **404** si non public. → contenu + **byline auteur
+  publique** + entreprise publique + catégorie/tags + image/galerie + dates + **bloc `seo`**.
+  Jamais d'ID SQL ni de donnée privée.
+- `GET /me/skills` — les savoir-faire de l'utilisateur (tous statuts). R: authentifié.
+- `POST /me/skills` — crée un **brouillon** (requis : `title`, `content`, `category` ; `as_company`
+  pour un recruteur au nom de son entreprise). R: `pst_publish_own_skill`/`pst_manage_own_skill`.
+- `GET /me/skills/{uuid}` · `PUT /me/skills/{uuid}` — owner-aware ; hors périmètre → **404**.
+- `POST /me/skills/{uuid}/publish` — passerelle `ModerationGateway::evaluate`. R: **+
+  `pst_email_verified`**. err: `moderation_blocked` (**422**, générique), `invalid_transition`.
+- `POST /me/skills/{uuid}/archive` — R: auteur (owner/entreprise).
+- `GET /skills/{uuid}/comments` — **public** (commentaires visibles). ·
+  `POST /skills/{uuid}/comments` — commenter (modéré **PRE-insert**). R: `pst_comment_skill`
+  **+ `pst_email_verified`**. err: `moderation_blocked`, `rate_limited`, `validation_error`.
+- **Bloc `seo`** (dans la vue publique, non rendu par WP en V1) : `{ slug, title,
+  meta_description, canonical (null V1), author, date_published, date_modified, noindex,
+  in_sitemap }` — `noindex=false` **uniquement** si `published` **et** visible.
+- **Signalements** : via `POST /moderation/reports` (`resource_type` ∈ `skill`, `skill_comment`).
+- Contrats sortants : `\Postelio\Skills\Api\SkillDirectory`, `\Postelio\Skills\Api\SkillModeration`.
 
 ### Offres externes — `postelio-job-sources` (implémenté Lot 10)
 > Les offres externes sont **fusionnées** dans les endpoints `/jobs` existants (pas de route

@@ -20,7 +20,7 @@ contraintes, index, données sensibles, conservation (RGPD → voir
 | Conversation, Message | **tables dédiées** | Fort volume, index par conversation/date, temps réel futur. **Pas** de CPT. |
 | Interview | **table dédiée** | Transactionnel, statuts, dates, relations. |
 | Notification | **table dédiée** | Fort volume, index `user_id`/`read_at`, purge périodique. |
-| SkillContent, CompanyContent | **CPT** `postelio_skill` / `postelio_company_content` | Contenu éditorial public modéré (comme les articles). |
+| Skill (Savoir-faire & Avis) | **CPT** `postelio_skill` (statut métier en meta) + table dédiée `wp_postelio_skill_comments` | Contenu éditorial public modéré (comme les offres) ; **pas** de table pour le contenu principal ; commentaires en table dédiée (Lot 13). |
 | BillingOrder, BillingPayment, BillingEvent | **3 tables dédiées** | Financier, traçable, immuable, idempotent (webhooks). Montants en **cents entiers** ; pas de table facture en V1 (Lot 12). |
 | ModerationReport, ModerationCase, ModerationCaseEvent | **3 tables dédiées** | Signalements + cas regroupés par ressource + historique append-only (Lot 11). |
 | AuditLog | **table dédiée** (append-only) | Journal immuable, index `actor`/`resource`/`created_at`. |
@@ -47,6 +47,7 @@ wp_postelio_notifications          wp_postelio_billing_orders
 wp_postelio_billing_payments       wp_postelio_billing_events
 wp_postelio_moderation_reports
 wp_postelio_moderation_cases       wp_postelio_moderation_case_events
+wp_postelio_skill_comments
 wp_postelio_audit_log
 ```
 
@@ -322,13 +323,40 @@ ne capturent pas fiablement les meta) → on retient une **version métier**
   sur le catalogue, les défauts, les catégories obligatoires et la séparation
   transactionnel/marketing.
 
-## SkillContent / CompanyContent
-- **Propriétaire :** skills. **Stockage :** CPT.
-- **SkillContent :** id, candidate_id, titre, resume, categorie, competences (JSON),
-  etapes (JSON), note, avis, vues, date, moderation_state.
-- **CompanyContent :** id, company_id, titre, resume, categorie, corps, date, moderation_state.
-- **Statut :** moderation_state (allowed|review|blocked). **Index :** candidate_id/company_id,
-  moderation_state, categorie.
+## Savoir-faire & Avis — `postelio_skill` (implémenté Lot 13)
+- **Propriétaire :** skills. **Stockage :** CPT **`postelio_skill`** (`public=false`,
+  `publicly_queryable=false` — comme `postelio_job` ; exposé **uniquement** via l'API REST).
+  **Aucune table dédiée** pour le contenu principal. `post_status` reste `publish` ; le statut
+  **métier** vit en meta. **Auteur** = candidat (en son nom) ou recruteur (en son nom **ou** au
+  nom de son entreprise via `as_company`).
+- **Identifiants :** `id` interne (post ID, jamais exposé) + **`pst_uuid`** (UUID v4, **UNIQUE**,
+  seul exposé — D2). Le `slug` (`post_name`) n'est **jamais** une clé métier.
+- **Champs :** titre = `post_title`, contenu HTML restreint = `post_content` (liste blanche
+  `wp_kses`), image = **image à la une** (Media Library WP, publique). Meta : `pst_uuid`,
+  `pst_status` (`draft|published|archived`), `pst_author_type` (`candidate`=personnel |
+  `company`), `pst_company_id`/`pst_company_uuid` (contenu d'entreprise), `pst_revision`
+  (version métier), `pst_summary` (résumé), `pst_details` (**JSON** de blocs structurés
+  **optionnels** : materiel/etapes/conseils/erreurs/resultat/galerie/difficulte/duree/metier —
+  jamais requis), `pst_mod_hidden` (bool, modération), `pst_susp_hidden` (bool, suspension).
+- **Requis :** titre, contenu, catégorie. **Hors V1 :** note multi-critères, réactions/likes,
+  compteur de vues, avis employeurs.
+- **Visibilité publique :** `pst_status = published` **ET** `!pst_mod_hidden` **ET**
+  `!pst_susp_hidden` (les deux flags sont **indépendants** — voir
+  [workflows.md](workflows.md#savoir-faire--avis-skills--implémenté-lot-13)).
+- **Taxonomies :** `postelio_skill_category` (hiérarchique) + `postelio_skill_tag` (libre).
+- **Index/requêtes :** meta `pst_uuid` (unicité applicative), `pst_status`, `pst_author_type`,
+  `pst_company_id` ; filtres via `WP_Query`/meta + taxonomies.
+- **Sécurité :** auteur/entreprise **dérivés serveur** (jamais du body) ; contenu = `wp_kses`
+  (script/iframe/style/on*/javascript:/data:/file: interdits).
+
+### SkillComment — `wp_postelio_skill_comments` (implémenté Lot 13)
+- **Propriétaire :** skills. **Table dédiée** (migration idempotente, désactivation non
+  destructive).
+- **Champs :** id, `public_uuid` (UNIQUE), skill_id, skill_uuid, author_user_id, author_role,
+  body, status (`published|hidden|deleted`), created_at, updated_at, deleted_at.
+- **Modération PRE-insert :** `high|critical` ⇒ **aucune ligne** (`moderation_blocked`) ;
+  `medium` ⇒ ligne `published` + flag/cas ; `low` ⇒ `published`.
+- **Index :** `UNIQUE public_uuid`, skill_id, (skill_uuid).
 
 ## Facturation — `wp_postelio_billing_*` (implémenté Lot 12)
 - **Propriétaire :** billing. **Exactement 3 tables** (pas de table facture en V1).

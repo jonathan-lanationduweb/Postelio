@@ -36,6 +36,7 @@ final class ReasonCodes {
 			'external_job' => array( 'expired_offer', 'broken_link', 'fraud', 'scam', 'other' ),
 			'company'      => array( 'impersonation', 'fraud', 'scam', 'illegal_content', 'other' ),
 			'skill'        => array( 'hate', 'harassment', 'sexual_content', 'spam', 'personal_data', 'illegal_content', 'other' ),
+			'skill_comment' => array( 'hate', 'harassment', 'sexual_content', 'spam', 'personal_data', 'illegal_content', 'other' ),
 			'profile'      => array( 'hate', 'harassment', 'sexual_content', 'spam', 'personal_data', 'illegal_content', 'other' ),
 		);
 	}

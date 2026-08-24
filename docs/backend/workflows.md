@@ -334,6 +334,60 @@ l'offre, entreprise **vérifiée & non suspendue**, `JobLifecycle::can_renew()` 
 `expiring|expired` — pas de contournement de modération). Offre inconnue / d'une autre
 entreprise → **404** (non-divulgation) ; candidat → **403**.
 
+## Savoir-faire & Avis (Skills) — implémenté Lot 13
+
+Contenu éditorial public modéré **en amont** (comme les offres, **pas d'état `pending`**).
+Toutes les transitions sont **côté serveur** ; le front ne fixe jamais un statut. Auteur =
+candidat (personnel) ou recruteur (personnel **ou** entreprise via `as_company`) ; auteur/
+entreprise **dérivés serveur** (anti-spoofing). Non-divulgation → **404**.
+
+### Savoir-faire — machine à états
+
+États (meta `pst_status`) : `draft`, `published`, `archived`.
+
+| Transition | Autorisé par | Note |
+|---|---|---|
+| (création) → draft | auteur (`POST /me/skills`) | requis : titre, contenu, catégorie |
+| draft → published | auteur (`.../publish`) | passerelle `ModerationGateway::evaluate` + `pst_email_verified` |
+| published → draft | système (modération) | **édition significative** d'un contenu publié bloquée (`high|critical`) |
+| published → archived | auteur (`.../archive`) | |
+| draft/published → archived | auteur | |
+
+- **Passerelle préventive** à la publication et à l'édition significative d'un publié :
+  `low`→**publié** ; `medium`→**publié + cas** ouvert/rattaché ; `high|critical`→**reste
+  `draft`** (fail-closed, `moderation_blocked`/**422**, message **générique**).
+
+### Visibilité (`hidden` n'est PAS un statut)
+
+La visibilité publique est indépendante du statut : elle combine le statut **et** deux flags
+**indépendants** à **cause tracée** :
+
+```
+visible_publiquement = (pst_status == published) && !pst_mod_hidden && !pst_susp_hidden
+```
+
+- `pst_mod_hidden` — masquage **modération** (`SkillModeration::hide/unhide`, routé depuis
+  `ModerationActions`).
+- `pst_susp_hidden` — masquage **suspension** (utilisateur suspendu/supprimé → savoir-faire
+  personnels masqués ; entreprise suspendue → contenus d'entreprise masqués) via écouteurs
+  découplés `SuspensionSync`.
+- **Lever une suspension ne réexpose JAMAIS** un contenu masqué par la modération (flags
+  indépendants). Restauration sur `user.unsuspended` / `company.verified`.
+
+### Commentaires (« Avis »)
+
+Évaluation **PRE-insert** par la passerelle : `low`→`published` ; `medium`→`published` + flag ;
+`high|critical`→**aucune ligne** (`moderation_blocked`). Commenter exige `pst_comment_skill` +
+`pst_email_verified`. Statut : `published|hidden|deleted` (masquage modération, pas de
+hard-delete). Rate-limité (`postelio/skills/comment_rate_per_hour`).
+
+### Signalements & modération
+
+Signalement via `POST /moderation/reports` (types **`skill`** et **`skill_comment`** ajoutés
+au catalogue) ; masquage/démasquage délégué au contrat **`SkillModeration`** (Skills répond la
+visibilité via le filtre `postelio/moderation/resource_visible`). Pas de hard-delete : auteur =
+`archive`, modérateur = `hide`, admin = suppression logique **exceptionnelle**.
+
 ## §7 Relations métier (vue synthèse)
 
 ```

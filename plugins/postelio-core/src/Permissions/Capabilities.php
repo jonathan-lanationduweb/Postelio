@@ -45,6 +45,7 @@ final class Capabilities {
 			'pst_reject_interview',
 			'pst_publish_own_skill',
 			'pst_manage_own_skill',
+			'pst_comment_skill',
 			'pst_export_own_data',
 			'pst_delete_own_account',
 		);
@@ -69,6 +70,9 @@ final class Capabilities {
 			'pst_report_content',
 			'pst_manage_company_content',
 			'pst_pay_renewal',
+			'pst_publish_own_skill',
+			'pst_manage_own_skill',
+			'pst_comment_skill',
 		);
 	}
 

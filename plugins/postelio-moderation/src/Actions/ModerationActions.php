@@ -105,6 +105,10 @@ final class ModerationActions {
 		if ( ( 'external_job' === $resource_type || 'job' === $resource_type ) && class_exists( '\\Postelio\\JobSources\\Api\\JobSourcesModeration' ) ) {
 			\Postelio\JobSources\Api\JobSourcesModeration::set_visibility( $resource_uuid, $visibility );
 		}
+		// Savoir-faire (Lot 13) : masquage/démasquage délégué au contrat Skills.
+		if ( 'skill' === $resource_type && class_exists( '\\Postelio\\Skills\\Api\\SkillModeration' ) ) {
+			\Postelio\Skills\Api\SkillModeration::set_visibility( $resource_uuid, $visibility );
+		}
 	}
 
 	private function call_jobs( string $op, int $actor_id, string $job_uuid ): void {
