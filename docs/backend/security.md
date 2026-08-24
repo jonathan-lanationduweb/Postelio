@@ -62,6 +62,7 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 | Offre externe (Lot 10) | publique (source autoritaire) ; `external_id` jamais exposé ; secrets provider en constantes/env (jamais base/Git) | SOURCE-OWNED (non éditable) ; masquage admin `local_visibility` | disparition source confirmée → `removed` + **anonymisation** (Licence FT Art. 7) |
 | Redirection candidat externe | URL revalidée (https, pas de `javascript:`/IP privée) ; serveur n'appelle QUE les hôtes FT (anti-SSRF) ; HTML source assaini (liste blanche) | — | — |
 | Signalement / cas de modération (Lot 11) | file admin (`pst_view_moderation_queue`) ; note interne = admin/modo ; `reporter_user_id` **interne** (signaleur anonyme vis-à-vis du contenu) | décision via cas (historique **append-only**) | **non destructif** (jamais de hard-delete du contenu métier) |
+| Savoir-faire & Avis (Lot 13) | **public** (contenu `published` **et** visible) ; brouillons/archivés = auteur/entreprise + admin ; byline publique **sans** e-mail/téléphone | auteur (owner/entreprise) ; auteur/entreprise **dérivés serveur** (jamais du body) | pas de hard-delete (auteur = archive, modo = masque via flags, admin = suppression logique exceptionnelle) |
 | Notes recruteur | recruteurs de la company + admin | recruteur | recruteur |
 | Adresse personnelle | candidat + recruteur autorisé | candidat | anonymisée |
 | Historique candidature | candidat (le sien), recruteur concerné, admin | système (append-only) | anonymisé selon conservation |
@@ -85,6 +86,21 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 > en **env/`wp-config`** — **jamais** en base / Git / logs / Audit. Non-divulgation
 > inter-entreprise → **404**. L'historique financier (snapshot auto-suffisant de la commande)
 > est **conservé même après suppression du compte** ; durées `À VALIDER`.
+
+> **Savoir-faire & Avis (Lot 13) :** contenu **éditorial public** — pas d'exposition de donnée
+> privée. **XSS** neutralisé à l'entrée par une **liste blanche `wp_kses`** (p, listes, strong/em,
+> h2/h3, blockquote, liens **https**) ; `script`/`iframe`/`style`/`on*`/`javascript:`/`data:`/
+> `file:` **interdits** (liens dangereux retirés). Images = **Media Library WordPress** (publique) —
+> **jamais** `postelio-files` (stockage CV privé). **Anti-spoofing** : auteur et entreprise
+> **dérivés côté serveur** (`author_user_id`/`company_id` du body ignorés). **Non-divulgation**
+> systématique → **404** (contenu d'un autre utilisateur/entreprise, brouillon non possédé). La
+> **byline publique** ne contient **jamais** e-mail/téléphone (`UserDirectory::public_author`).
+> **Mass-assignment** : liste blanche de champs ; **UUID** seul exposé. Commentaires **rate-limités**
+> (`postelio/skills/comment_rate_per_hour`) ; spam/abus traités par la **Modération** (passerelle
+> préventive + signalements `skill`/`skill_comment`), pas d'anti-spam parallèle. Suspension/
+> suppression : masquage via `pst_susp_hidden`, **sans jamais** réexposer un contenu masqué par la
+> modération (`pst_mod_hidden`, flags indépendants) ; nouvelle publication/commentaire refusés
+> (garde `is_active`). Anonymisation post-suppression (RGPD/SEO) = **futur, `À VALIDER`**.
 
 ## 5. Fichiers (CV & documents)
 - **Jamais d'URL publique directe.** Stockage **hors webroot** (ou dossier protégé

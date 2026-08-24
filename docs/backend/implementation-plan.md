@@ -61,6 +61,24 @@ Règles : dépendances **descendantes** uniquement ; toute autre interaction pas
 > (companies), écouteur `job.renewed` + template `job_renewed` (notifications). Core inchangé.
 > Reçu Stripe en V1 ; facture légale numérotée = phase ultérieure.
 
+> **`postelio-skills` — Lot 13, implémenté** sur la branche **`feature/skills-backend`**
+> (« Savoir-faire & Avis »). Contenu éditorial **public** publié par un candidat (en son nom)
+> ou un recruteur (en son nom **ou** au nom de son entreprise via `as_company`) + commentaires,
+> **modéré en amont** (passerelle préventive, **pas d'état `pending`**). **CPT `postelio_skill`**
+> (`public=false`, statut métier en meta `pst_status` ∈ `draft|published|archived`) **sans table
+> dédiée** pour le contenu + table `wp_postelio_skill_comments` (migrations idempotentes non
+> destructives). **Aucun rendu WP public** (exposé via l'API ; SEO = contrat d'API), **aucune**
+> dépendance externe, **aucun** e-mail direct (événements → Notifications), **aucune** UI admin.
+> Visibilité = `published && !pst_mod_hidden && !pst_susp_hidden` (flags **indépendants** ; lever
+> une suspension ne réexpose jamais un contenu masqué par la modération). Image = Media Library WP
+> (jamais `postelio-files`) ; contenu = liste blanche `wp_kses`. Contrats **additifs** : capability
+> `pst_comment_skill` (**seule** nouvelle) + caps skill sur le recruteur (core),
+> `UserDirectory::public_author` (users), routage `ModerationActions`→`SkillModeration` +
+> `ReasonCodes` (skill/skill_comment) + filtre `postelio/moderation/resource_visible` (moderation).
+> Contrats publics : `SkillDirectory`, `SkillModeration`. *(Le Lot 13 « Recherche & alertes » du
+> tableau de roadmap ci-dessus reste à faire sur `feature/search-alerts` — numérotation de la
+> phase de conception, distincte du lot d'implémentation `postelio-skills`.)*
+
 ## Mapping avec les branches Git existantes
 
 Déjà créées (issues de `develop`) :

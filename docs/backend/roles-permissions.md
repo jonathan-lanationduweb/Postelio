@@ -27,7 +27,7 @@ capability. Le front n'accorde aucun droit.
 - `pst_manage_own_favorites`, `pst_manage_own_alerts`, `pst_follow_company`
 - `pst_send_message` (dans ses conversations), `pst_report_content`
 - `pst_confirm_interview`, `pst_reschedule_interview`, `pst_reject_interview`
-- `pst_publish_own_skill`, `pst_manage_own_skill`
+- `pst_publish_own_skill`, `pst_manage_own_skill`, `pst_comment_skill` *(Lot 13)*
 - `pst_export_own_data`, `pst_delete_own_account`
 
 ### postelio_recruiter
@@ -38,6 +38,8 @@ capability. Le front n'accorde aucun droit.
 - `pst_propose_interview`, `pst_cancel_interview`
 - `pst_send_message`, `pst_report_content`
 - `pst_manage_company_content`, `pst_pay_renewal`
+- `pst_publish_own_skill`, `pst_manage_own_skill`, `pst_comment_skill` *(gagnées au Lot 13 ;
+  `pst_manage_company_content` couvre le savoir-faire au nom de l'entreprise via `as_company`)*
 
 > Un recruteur n'agit que sur **son entreprise** : garde par `company_id` (le recruteur
 > doit être `CompanyMember`). Vérifié en plus de la capability.
@@ -126,6 +128,14 @@ capability. Le front n'accorde aucun droit.
   suspendue**, `JobLifecycle::can_renew()`. Les endpoints **admin** (`/billing/admin/*`,
   `/billing/health`) exigent `pst_manage_billing` (**admin uniquement**). Le **candidat** et
   le **support** n'ont **aucun** accès facturation. Non-divulgation inter-entreprise → **404**.
+- **Savoir-faire & Avis (Lot 13)** : **une seule** nouvelle capability, `pst_comment_skill`.
+  Publier/gérer son savoir-faire = `pst_publish_own_skill` + `pst_manage_own_skill` (candidat
+  **et** recruteur) ; contenu au nom de l'entreprise = `pst_manage_company_content` (recruteur,
+  membre) via le flag `as_company`. **Publier** et **commenter** exigent en plus
+  `pst_email_verified`. Lecture publique = visiteur (contenu `published` **et** visible). Le
+  masquage/démasquage modérateur passe par la Modération (`pst_moderate_content`) et le contrat
+  `SkillModeration` — jamais une capability skill dédiée. Le **support n'a aucun accès**.
+  Ownership strict (auteur/entreprise dérivés serveur) ; hors périmètre → **404**.
 - **Accès aux CV** : le candidat (propriétaire) et **uniquement** les recruteurs d'une
   entreprise ayant reçu une candidature avec ce CV (via snapshot). Admin pour audit.
 - **Coordonnées candidat** : soumises à `CandidateProfile.visibility` (email/tel) —

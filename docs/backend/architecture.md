@@ -64,7 +64,7 @@ Le graphe de dépendances complet (sans cycle) est décrit dans
 | `postelio-notifications` | Notifications in-app + e-mails | [plugins.md](plugins.md#postelio-notifications) |
 | `postelio-moderation` | File de modération, signalements | [plugins.md](plugins.md#postelio-moderation) |
 | `postelio-billing` | Renouvellement payant d'offre (Stripe Checkout), paiements, reçus | [plugins.md](plugins.md#postelio-billing) |
-| `postelio-skills` | Savoir-faire candidat + contenus entreprise | [plugins.md](plugins.md#postelio-skills) |
+| `postelio-skills` | Savoir-faire & Avis : contenu éditorial public (candidat/recruteur) + commentaires, modéré en amont | [plugins.md](plugins.md#postelio-skills) |
 
 ## 4. Périmètre fonctionnel (dérivé du front existant)
 
@@ -176,6 +176,54 @@ publique ⇒ `verified`**. Appliquée par `postelio-jobs` au Lot 04 (`POST /jobs
 **`Api\MessagingDirectory`** ; `postelio-interviews` (Lot 08) expose
 **`Api\InterviewDirectory`** (contexte d'entretien pour Notifications/e-mail de preuve,
 compteur à venir, historique). Ces façades évitent toute dépendance circulaire.
+
+`postelio-skills` (Lot 13) publie les **« Savoir-faire & Avis »** : du **contenu éditorial
+public** (savoir-faire) rédigé par un **candidat** (en son nom) ou un **recruteur** (en son
+nom **ou** au nom de son entreprise via `as_company`), plus des **commentaires** (« Avis »).
+**Aucun rendu WordPress public** (exposition **uniquement** via l'API REST Postelio ; le SEO
+est livré comme **contrat d'API**, non rendu par WP en V1), **aucune** dépendance externe,
+**aucun** e-mail direct (événements → Notifications), **aucune** UI d'admin (la file de
+modération centrale suffit). **CPT `postelio_skill`** (`public=false`, `publicly_queryable=false`
+— comme les offres ; `post_status` reste `publish`, le statut métier vit en meta `pst_status`
+∈ `draft|published|archived`) **sans table dédiée** pour le contenu principal ; les
+**commentaires** vivent dans la table dédiée `wp_postelio_skill_comments`. Champs requis :
+**titre, contenu, catégorie** ; blocs structurés (matériel/étapes/conseils/erreurs/résultat/
+galerie/difficulté/durée/métier) **optionnels** en JSON `pst_details`, jamais requis (notation
+multi-critères, réactions/likes, compteur de vues, avis employeurs = **hors V1**). Image =
+**Media Library WordPress** (publique), **jamais** `postelio-files` (stockage CV privé) ;
+contenu = **liste blanche `wp_kses`** (p, listes, strong/em, h2/h3, blockquote, liens https ;
+script/iframe/style/on*/javascript:/data:/file: interdits). Taxonomies :
+`postelio_skill_category` (hiérarchique) + `postelio_skill_tag` (libre). **Modération
+préventive** (comme les offres, **pas d'état `pending`**) : `ModerationGateway::evaluate`
+(filtre `postelio/moderation/evaluate`) à la publication et à l'édition significative d'un
+contenu publié (bloqué → retour `draft`, fail-closed `moderation_blocked`/422, message
+générique) ; les **commentaires** sont évalués **PRE-insert** (high/critical → aucune ligne) ;
+signalements via `POST /moderation/reports` (types `skill` et `skill_comment` **ajoutés** au
+catalogue) ; masquage/démasquage modérateur routé par `ModerationActions` → contrat
+`SkillModeration`. **« hidden » n'est pas un statut** : c'est une **suppression de visibilité à
+cause tracée** via deux **flags indépendants** `pst_mod_hidden` (modération) et `pst_susp_hidden`
+(suspension utilisateur/entreprise) — visibilité publique = `published && !mod_hidden &&
+!susp_hidden` ; **lever une suspension ne réexpose jamais** un contenu masqué par la modération.
+Auteur/entreprise **toujours dérivés côté serveur** (anti-spoofing : `author_user_id`/
+`company_id` du body ignorés) ; non-divulgation inter-utilisateur/entreprise → **404**. **Une
+seule** nouvelle capability : `pst_comment_skill` (le candidat a déjà `pst_publish_own_skill` +
+`pst_manage_own_skill` ; le recruteur les **gagne** + `pst_comment_skill`, en plus de
+`pst_manage_company_content` pour le contenu d'entreprise) ; `pst_email_verified` requis pour
+publier/commenter. Contrats **additifs** introduits ce lot : `pst_comment_skill` + caps skill
+sur le rôle recruteur (core) ; `UserDirectory::public_author` — byline publique, **jamais**
+e-mail/téléphone (users) ; `ModerationActions` route skill/skill_comment vers `SkillModeration`,
+`ReasonCodes` gagne `skill_comment`, visibilité skill/skill_comment répondue via le filtre
+`postelio/moderation/resource_visible` **fourni par Skills** (moderation). Contrats **publics**
+du plugin : `SkillDirectory` (`get_context`, `belongs_to_user`, `belongs_to_company`,
+`public_view`, `published_for_user`, `published_for_company`) et `SkillModeration`
+(`hide`/`unhide`/`set_visibility`/`is_visible`). Rate-limit des commentaires via le filtre
+`postelio/skills/comment_rate_per_hour` (pas d'anti-spam parallèle — la modération s'en charge).
+Suspension/suppression : compte suspendu **ou** supprimé → savoir-faire personnels masqués
+(`pst_susp_hidden`), restaurés au rétablissement (jamais ceux masqués par la modération) ;
+entreprise suspendue → contenus d'entreprise masqués, restaurés sur `company.verified` ; écouteurs
+découplés `SuspensionSync` (`user.suspended`/`user.unsuspended`/`user.deleted`/`company.suspended`/
+`company.verified`). Pas de hard-delete (auteur = archive, modérateur = masque, admin = suppression
+logique exceptionnelle) ; anonymisation post-suppression = **futur** (RGPD/SEO `À VALIDER`).
 
 `postelio-billing` (Lot 12) gère le **renouvellement payant** d'une offre (10 € TTC / 30 j)
 via **Stripe Checkout hosted**. Il **paie puis délègue** l'effet métier à `postelio-jobs`
