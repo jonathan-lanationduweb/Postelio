@@ -177,6 +177,32 @@ $t( 'crash-window : renewal_count inchangé', $cnt_after_apply === (int) $job_c[
 $t( 'crash-window : pas de 2e job.renewed', $renew_evt_after_apply === (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$audit} WHERE action='job.renewed' AND resource_id=%s", (string) $cid ) ) );
 $t( 'crash-window : ordre finalement fulfilled', OrderStatus::FULFILLED === $corder['status'] );
 
+echo "== CONCURRENCE renewal : deux tentatives, même order_uuid (contrainte UNIQUE) ==\n";
+$renewals = JobRepository::renewals_table();
+list( $ku, $kid ) = $make_expired_job();
+$kref = wp_generate_uuid4();
+$kcnt0 = (int) $jrepo->get( $kid )['renewal_count'];
+$kev0  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$audit} WHERE action='job.renewed' AND resource_id=%s", (string) $kid ) );
+JobLifecycle::renew_after_payment( $kid, 30, array( 'idempotency_key' => $kref ) ); // tentative A (gagne le claim)
+JobLifecycle::renew_after_payment( $kid, 30, array( 'idempotency_key' => $kref ) ); // tentative B (collision UNIQUE)
+$t( 'concurrence : une seule ligne renewals', 1 === (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$renewals} WHERE idempotency_key=%s", $kref ) ) );
+$t( 'concurrence : renewal_count +1 une seule fois', $kcnt0 + 1 === (int) $jrepo->get( $kid )['renewal_count'] );
+$t( 'concurrence : un seul job.renewed', $kev0 + 1 === (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$audit} WHERE action='job.renewed' AND resource_id=%s", (string) $kid ) ) );
+
+echo "== CONCURRENCE (interleaved) : le perdant du claim n'émet pas ==\n";
+list( $iu, $iid ) = $make_expired_job();
+$iref = wp_generate_uuid4();
+$itarget_exp = gmdate( 'Y-m-d', strtotime( gmdate( 'Y-m-d' ) . ' +30 days' ) );
+$now_i = current_time( 'mysql', true );
+// Simule « worker A a déjà revendiqué » : ligne renewals pré-insérée (A n'émet pas ici).
+$wpdb->query( $wpdb->prepare( "INSERT INTO {$renewals} (job_id, idempotency_key, target_status, target_expiration, target_renewal_count, status, created_at, applied_at) VALUES (%d,%s,%s,%s,%d,%s,%s,%s)", $iid, $iref, 'published', $itarget_exp, 1, 'applied', $now_i, $now_i ) );
+$iev0 = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$audit} WHERE action='job.renewed' AND resource_id=%s", (string) $iid ) );
+JobLifecycle::renew_after_payment( $iid, 30, array( 'idempotency_key' => $iref ) ); // worker B : perd le claim
+$job_i = $jrepo->get( $iid );
+$t( 'interleaved : converge vers la cible A (échéance)', $itarget_exp === (string) $job_i['date_expiration'] );
+$t( 'interleaved : count = cible A (1)', 1 === (int) $job_i['renewal_count'] );
+$t( 'interleaved : le perdant N\'émet PAS job.renewed', $iev0 === (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$audit} WHERE action='job.renewed' AND resource_id=%s", (string) $iid ) ) );
+
 echo "== Double paiement réussi => 1 seul renouvellement + manual_review ==\n";
 $before_cnt = (int) $jrepo->get( $jid )['renewal_count'];
 $sess_dup = array( 'id' => 'cs_dup', 'client_reference_id' => $order_uuid, 'payment_intent' => 'pi_dup', 'amount_total' => 1000, 'currency' => 'eur' );
@@ -186,6 +212,8 @@ $t( 'double paiement => order manual_review', OrderStatus::MANUAL_REVIEW === $or
 $t( 'double paiement => renewal_count inchangé', $before_cnt === (int) $jrepo->get( $jid )['renewal_count'] );
 $dup = array_filter( $payments->list_for_order( (int) $order_dup['id'] ), static fn( $p ) => 'duplicate' === $p['status'] );
 $t( 'double paiement => 2e paiement marqué duplicate', count( $dup ) === 1 );
+$t( '1 Order = 1 renouvellement (clé = order_uuid, pas payment_uuid)', 1 === (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$renewals} WHERE idempotency_key=%s", $order_uuid ) ) );
+$t( 'event store : evt_1 marqué processed', 'processed' === (string) $wpdb->get_var( $wpdb->prepare( "SELECT status FROM {$wpdb->prefix}postelio_billing_events WHERE event_id=%s", 'evt_1' ) ) );
 
 echo "== Webhook : refund (sans rollback Job) ==\n";
 $exp_pre_refund = (string) $jrepo->get( $jid )['date_expiration'];
@@ -269,7 +297,9 @@ echo "== Nettoyage ==\n";
 $wpdb->query( "DELETE FROM " . OrderRepository::table() );
 $wpdb->query( "DELETE FROM " . PaymentRepository::table() );
 $wpdb->query( "DELETE FROM " . $wpdb->prefix . 'postelio_billing_events' );
-foreach ( array_unique( $jobs ) as $j ) { wp_delete_post( $j, true ); }
+$job_ids = array_map( 'intval', array_unique( array_filter( $jobs ) ) );
+if ( $job_ids ) { $wpdb->query( 'DELETE FROM ' . JobRepository::renewals_table() . ' WHERE job_id IN (' . implode( ',', $job_ids ) . ')' ); }
+foreach ( $job_ids as $j ) { wp_delete_post( $j, true ); }
 if ( $company_id ) { ( new \Postelio\Companies\Members\MembershipRepository() )->remove_all_for_company( $company_id ); wp_delete_post( $company_id, true ); }
 foreach ( $users as $u ) { ( new CandidateProfileRepository() )->delete_for( $u ); ( new RecruiterProfileRepository() )->delete_for( $u ); wp_delete_user( $u ); }
 $wpdb->query( "DELETE FROM {$audit} WHERE action LIKE 'order.%' OR action LIKE 'payment.%' OR action LIKE 'renewal.%' OR action LIKE 'checkout.%' OR action LIKE 'fulfillment.%' OR action LIKE 'job.%' OR action LIKE 'company.%' OR action LIKE 'user.%' OR action LIKE 'plugin.%'" );

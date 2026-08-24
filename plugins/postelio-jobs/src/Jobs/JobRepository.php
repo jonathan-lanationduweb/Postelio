@@ -27,7 +27,12 @@ final class JobRepository {
 	public const META_REVISION      = 'pst_revision';
 	public const META_RENEWED_AT    = 'pst_renewed_at';
 	public const META_RENEWAL_COUNT = 'pst_renewal_count';
-	public const META_RENEWAL_LEDGER = 'pst_renewal_ledger'; // registre idempotent { ref => cible }
+
+	/** Registre d'idempotence des renouvellements (garantie de concurrence par UNIQUE). */
+	public static function renewals_table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'postelio_job_renewals';
+	}
 
 	/** Champs scalaires filtrables (meta discrète). */
 	private const FILTER_FIELDS = array(
@@ -268,31 +273,29 @@ final class JobRepository {
 		return array( 'new_expiration' => $new_exp, 'count' => $count );
 	}
 
-	/** @return array<string, array<string,mixed>> Registre des renouvellements appliqués. */
-	public function renewal_ledger( int $id ): array {
-		$raw = (string) get_post_meta( $id, self::META_RENEWAL_LEDGER, true );
-		$dec = '' !== $raw ? json_decode( $raw, true ) : array();
-		return is_array( $dec ) ? $dec : array();
+	/** Un renouvellement a-t-il déjà été enregistré pour cette clé ? (order_uuid globalement unique) */
+	public function renewal_applied( string $ref ): bool {
+		global $wpdb;
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . self::renewals_table() . ' WHERE idempotency_key = %s', $ref ) ) > 0;
 	}
 
 	/**
 	 * Renouvellement IDEMPOTENT (exactly-once) piloté par une clé métier `$ref` (= order_uuid).
 	 *
-	 * Garantie : rejouer avec le même `$ref` (retry / crash après application mais avant que
-	 * l'appelant ait persisté son propre état) NE crée jamais un second renouvellement. Le
-	 * registre stocke la CIBLE figée ; l'application est un SET ABSOLU (jamais un ++/+= ), donc
-	 * un replay converge vers la même valeur. Le registre est écrit AVANT le SET.
+	 * Concurrence : l'arbitrage repose sur la contrainte `UNIQUE(idempotency_key)` via un
+	 * `INSERT IGNORE` atomique — PAS sur une hypothèse de séquentialité. Deux tentatives
+	 * simultanées calculent chacune une cible, mais une SEULE gagne l'INSERT ; les autres lisent
+	 * la MÊME cible persistée. Le registre est écrit AVANT l'application ; l'application est un
+	 * SET ABSOLU (jamais un ++/+=), donc tout rejeu/retry/crash converge vers la même valeur.
+	 * `won` = true seulement pour la tentative gagnante (→ un seul `job.renewed`).
 	 *
-	 * @return array{new_expiration:string, count:int, already_applied:bool}
+	 * @return array{new_expiration:string, count:int, already_applied:bool, won:bool}
 	 */
 	public function apply_renewal_idempotent( int $id, int $days, string $ref ): array {
-		$ledger = $this->renewal_ledger( $id );
-		if ( isset( $ledger[ $ref ] ) ) {
-			$target = $ledger[ $ref ];
-			$this->set_renewal_absolute( $id, (string) $target['status'], (string) $target['new_expiration'], (int) $target['count'], (string) $target['applied_at'] );
-			return array( 'new_expiration' => (string) $target['new_expiration'], 'count' => (int) $target['count'], 'already_applied' => true );
-		}
+		global $wpdb;
+		$table = self::renewals_table();
 
+		// Cible prospective (peut être recalculée à l'identique par une tentative concurrente).
 		$today   = gmdate( 'Y-m-d' );
 		$current = (string) get_post_meta( $id, self::META_DATE_EXP, true );
 		$base    = ( $current && $current > $today ) ? $current : $today; // ne perd pas de temps restant
@@ -300,13 +303,28 @@ final class JobRepository {
 		$count   = (int) get_post_meta( $id, self::META_RENEWAL_COUNT, true ) + 1;
 		$now     = current_time( 'mysql', true );
 
-		// Écrit le registre AVANT d'appliquer : un crash après cette ligne rend le replay
-		// idempotent (il retrouvera la cible et fera un SET absolu identique).
-		$ledger[ $ref ] = array( 'status' => JobStateMachine::PUBLISHED, 'new_expiration' => $new_exp, 'count' => $count, 'applied_at' => $now );
-		update_post_meta( $id, self::META_RENEWAL_LEDGER, wp_json_encode( $ledger ) );
+		// Claim ATOMIQUE : INSERT IGNORE → 1 ligne si gagné, 0 si collision UNIQUE (concurrent).
+		$affected = (int) $wpdb->query( $wpdb->prepare(
+			"INSERT IGNORE INTO {$table} (job_id, idempotency_key, target_status, target_expiration, target_renewal_count, status, created_at, applied_at) VALUES (%d, %s, %s, %s, %d, %s, %s, %s)",
+			$id, $ref, JobStateMachine::PUBLISHED, $new_exp, $count, 'applied', $now, $now
+		) );
 
-		$this->set_renewal_absolute( $id, JobStateMachine::PUBLISHED, $new_exp, $count, $now );
-		return array( 'new_expiration' => $new_exp, 'count' => $count, 'already_applied' => false );
+		// Cible AUTORITAIRE = la ligne persistée (celle du gagnant), pas notre calcul local.
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT target_status, target_expiration, target_renewal_count, applied_at FROM {$table} WHERE idempotency_key = %s", $ref ), ARRAY_A );
+		$t_status = $row ? (string) $row['target_status'] : JobStateMachine::PUBLISHED;
+		$t_exp    = $row ? (string) $row['target_expiration'] : $new_exp;
+		$t_count  = $row ? (int) $row['target_renewal_count'] : $count;
+		$t_at     = $row ? (string) ( $row['applied_at'] ?: $now ) : $now;
+
+		// Application par SET ABSOLU (idempotente : rejouer réécrit les mêmes valeurs).
+		$this->set_renewal_absolute( $id, $t_status, $t_exp, $t_count, $t_at );
+
+		return array(
+			'new_expiration'  => $t_exp,
+			'count'           => $t_count,
+			'already_applied' => 1 !== $affected, // collision UNIQUE → déjà revendiqué ailleurs
+			'won'             => 1 === $affected,
+		);
 	}
 
 	/** Applique par valeurs ABSOLUES (idempotent au replay). */

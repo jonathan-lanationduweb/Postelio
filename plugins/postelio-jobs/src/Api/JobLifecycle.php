@@ -68,13 +68,15 @@ final class JobLifecycle {
 		$ref  = isset( $meta['idempotency_key'] ) ? (string) $meta['idempotency_key'] : '';
 
 		if ( '' !== $ref ) {
-			$already = isset( $repo->renewal_ledger( $job_id )[ $ref ] );
-			// Rejeu déjà appliqué : SET absolu idempotent, aucun événement dupliqué.
-			if ( ! $already && ! self::can_renew( $job_id ) ) {
+			// N'exige can_renew que si aucun renouvellement n'a encore été enregistré pour la
+			// clé (un rejeu/collision légitime peut survenir alors que l'offre est déjà published).
+			if ( ! $repo->renewal_applied( $ref ) && ! self::can_renew( $job_id ) ) {
 				throw new ApiError( 'invalid_transition', 'Offre non renouvelable (statut : ' . $job['status'] . ').' );
 			}
 			$result = $repo->apply_renewal_idempotent( $job_id, $days, $ref );
-			if ( ! $result['already_applied'] ) {
+			// `job.renewed` émis EXACTEMENT UNE FOIS : seule la tentative gagnante du claim émet
+			// (arbitrage par la contrainte UNIQUE, robuste à la concurrence).
+			if ( ! empty( $result['won'] ) ) {
 				self::emit_renewed( $job_id, (int) $job['company']['id'], $result, $meta );
 			}
 			return $repo->get( $job_id );

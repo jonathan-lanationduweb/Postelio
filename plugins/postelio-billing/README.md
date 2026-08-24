@@ -51,15 +51,20 @@ SQL ni de secret provider.
 - **Payment** : `created → pending → succeeded | failed` ; `succeeded → refunded | disputed` ;
   `duplicate` (2e paiement d'un ordre déjà fulfilé → revue admin, jamais de 2e renouvellement).
 
-## Exactly-once (point critique)
+## Exactly-once (point critique — garantie par contrainte DB)
 Le renouvellement est piloté par une **clé d'idempotence = `order_uuid`** passée à
 `JobLifecycle::renew_after_payment($job_id, $days, ['idempotency_key' => order_uuid])`
-(extension **additive** de postelio-jobs). Côté Jobs, un **registre** (`pst_renewal_ledger`)
-stocke la **cible figée** du renouvellement ; l'application est un **SET ABSOLU** (jamais
-`++`/`+=`). Le registre est écrit **avant** le SET. Conséquence : un rejeu de webhook, un retry
-de fulfillment, ou un **crash entre l'application côté Jobs et la persistance côté Billing**
-convergent vers la même valeur → **une seule extension, un seul `renewal_count++`, un seul
-`job.renewed`**. Le calcul d'échéance (`max(exp, today) + days`) reste géré par Jobs.
+(extension **additive** de postelio-jobs). La garantie de concurrence n'est **pas** une
+hypothèse « webhooks + scheduler séquentiels » : elle repose sur une **table dédiée Jobs
+`wp_postelio_job_renewals` avec `UNIQUE(idempotency_key)`**. Le claim est un **`INSERT IGNORE`
+atomique** : sur deux tentatives simultanées, une seule gagne l'INSERT (`won=true` → émet
+`job.renewed`), les autres subissent la collision UNIQUE et **relisent la même cible
+persistée**. L'application est ensuite un **SET ABSOLU** (jamais `++`/`+=`). Conséquence : un
+rejeu de webhook, un retry de fulfillment, un **crash entre l'application côté Jobs et la
+persistance côté Billing**, ou **deux workers concurrents** convergent vers la même valeur →
+**une seule extension, un seul `renewal_count`, un seul `job.renewed`**. Le calcul d'échéance
+(`max(exp, today) + days`) reste géré par Jobs. La table n'appartient PAS à Billing (domaine
+Jobs) et ne contient aucune donnée financière.
 
 ## Catalogue & TVA
 Catalogue **en code** (`ProductCatalog`), source d'autorité tarifaire. `job_renewal` =
@@ -119,8 +124,9 @@ Non-divulgation (404) hors entreprise. Logs structurés : `order_uuid, payment_u
 
 ## Contrats additifs (non destructifs)
 - `postelio-jobs` : `JobLifecycle::renew_after_payment` (support `idempotency_key`, exactly-once
-  via registre) ; `JobRepository::apply_renewal_idempotent` + `renewal_ledger` (SET absolu) ;
-  `JobDirectory::company_id_of`.
+  via table `wp_postelio_job_renewals` + `UNIQUE(idempotency_key)`, `INSERT IGNORE` + SET absolu) ;
+  `JobRepository::apply_renewal_idempotent`/`renewal_applied` ; `JobDirectory::company_id_of` ;
+  migration Jobs additive (`CreateJobRenewalsTable`).
 - `postelio-companies` : `CompanyBilling::identity` (identité de facturation acheteur, lecture seule).
 - `postelio-notifications` : écoute `job.renewed` → notification recruteur + e-mail `job_renewed`.
 
