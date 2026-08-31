@@ -24,6 +24,10 @@ final class UsersPage extends Page {
 	}
 
 	protected function body(): string {
+		$view = $this->current( 'view' );
+		if ( '' !== $view ) {
+			return $this->detail( $view );
+		}
 		$tab   = $this->current( 'tab', 'all' );
 		$q     = $this->current( 's' );
 		$paged = $this->paged();
@@ -105,17 +109,89 @@ final class UsersPage extends Page {
 	}
 
 	private function actions( int $id, string $status, string $role ): string {
-		if ( 'deleted' === $status || ! class_exists( '\\Postelio\\Users\\Api\\UserModeration' ) ) {
-			return Ui::text( '—', false, true );
-		}
 		$uuid = class_exists( '\\Postelio\\Users\\Api\\UserDirectory' ) ? \Postelio\Users\Api\UserDirectory::public_uuid( $id ) : '';
-		if ( '' === $uuid ) {
-			return Ui::text( '—', false, true );
+		$h    = '<div class="pst-admin-actions">';
+		if ( '' !== $uuid ) {
+			$h .= '<a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-users', array( 'view' => $uuid ) ) ) . '">Voir</a>';
 		}
-		if ( 'suspended' === $status ) {
-			return Ui::action_button( 'pst_admin_user_unsuspend', array( 'uuid' => $uuid ), 'Réactiver', 'primary' );
+		if ( '' !== $uuid && 'deleted' !== $status && class_exists( '\\Postelio\\Users\\Api\\UserModeration' ) ) {
+			if ( 'suspended' === $status ) {
+				$h .= Ui::action_button( 'pst_admin_user_unsuspend', array( 'uuid' => $uuid ), 'Réactiver', 'primary' );
+			} else {
+				$h .= Ui::action_button( 'pst_admin_user_suspend', array( 'uuid' => $uuid ), 'Suspendre', 'danger', 'Suspendre ce compte ? Ses jetons et sessions seront révoqués (réversible).' );
+			}
 		}
-		return Ui::action_button( 'pst_admin_user_suspend', array( 'uuid' => $uuid ), 'Suspendre', 'danger', 'Suspendre ce compte ? Ses jetons et sessions seront révoqués (réversible).' );
+		return $h . '</div>';
+	}
+
+	/** Détail utilisateur. */
+	private function detail( string $uuid ): string {
+		$id = class_exists( '\\Postelio\\Users\\Api\\UserDirectory' ) ? \Postelio\Users\Api\UserDirectory::id_from_public_uuid( $uuid ) : 0;
+		$u  = $id > 0 ? get_userdata( $id ) : false;
+		if ( ! $u ) {
+			return Ui::header( 'Utilisateur', 'Back-office Postelio' ) . Ui::empty_state( 'Introuvable', 'Cet utilisateur n\'existe pas ou plus.', '👤' );
+		}
+		$status = class_exists( '\\Postelio\\Users\\Users\\AccountService' ) ? \Postelio\Users\Users\AccountService::status( $id ) : 'active';
+		$role   = class_exists( '\\Postelio\\Users\\Api\\UserDirectory' ) ? \Postelio\Users\Api\UserDirectory::role( $id ) : '';
+		$verif  = class_exists( '\\Postelio\\Users\\Api\\UserDirectory' ) && \Postelio\Users\Api\UserDirectory::email_verified( $id );
+
+		$back = '<a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-users' ) ) . '">← Liste</a>';
+		$out  = Ui::header( (string) $u->display_name, 'Fiche utilisateur', $back . ' ' . $this->actions( $id, $status, $role ) );
+		$out .= '<div class="pst-admin-cols">';
+
+		// Identité
+		$out .= '<div>' . Ui::card_open( 'Identité' ) . '<dl class="pst-admin-kv">';
+		$out .= '<dt>Nom</dt><dd>' . esc_html( (string) $u->display_name ) . '</dd>';
+		$out .= '<dt>E-mail</dt><dd>' . esc_html( (string) $u->user_email ) . '</dd>';
+		$out .= '<dt>Rôle</dt><dd>' . esc_html( '' !== $role ? $role : '—' ) . '</dd>';
+		$out .= '<dt>UUID public</dt><dd>' . esc_html( $uuid ) . '</dd>';
+		$out .= '<dt>Statut</dt><dd>' . Ui::badge( ucfirst( $status ), 'active' === $status ? 'success' : ( 'suspended' === $status ? 'error' : 'neutral' ), true ) . '</dd>';
+		$out .= '<dt>E-mail vérifié</dt><dd>' . Ui::badge( $verif ? 'Oui' : 'Non', $verif ? 'success' : 'warning' ) . '</dd>';
+		$out .= '<dt>Inscription</dt><dd>' . esc_html( mysql2date( 'd/m/Y', (string) $u->user_registered ) ) . '</dd>';
+		$out .= '</dl>' . Ui::card_close();
+
+		// Profil
+		$out .= $this->profile_card( $id, $role ) . '</div>';
+
+		// Activité (compteurs accessibles proprement)
+		$out .= '<div>' . Ui::card_open( 'Activité' ) . '<dl class="pst-admin-kv">';
+		$out .= '<dt>Entretiens à venir</dt><dd>' . esc_html( $this->count_or_dash( class_exists( '\\Postelio\\Interviews\\Api\\InterviewDirectory' ) ? \Postelio\Interviews\Api\InterviewDirectory::upcoming_count( $id ) : null ) ) . '</dd>';
+		$out .= '<dt>Notifications non lues</dt><dd>' . esc_html( $this->count_or_dash( class_exists( '\\Postelio\\Notifications\\Api\\NotificationDirectory' ) ? \Postelio\Notifications\Api\NotificationDirectory::unread_count( $id ) : null ) ) . '</dd>';
+		$skills = class_exists( '\\Postelio\\Skills\\Api\\SkillDirectory' ) ? count( \Postelio\Skills\Api\SkillDirectory::published_for_user( $id ) ) : null;
+		$out .= '<dt>Savoir-faire publiés</dt><dd>' . esc_html( $this->count_or_dash( $skills ) ) . '</dd>';
+		$out .= '<dt>Candidatures</dt><dd>' . esc_html( '—' ) . '</dd>';
+		$out .= '<dt>Conversations</dt><dd>' . esc_html( '—' ) . '</dd>';
+		$out .= '</dl><p class="pst-admin-stat__sub">« — » : compteur non exposé par un contrat de lecture (phase ultérieure).</p>' . Ui::card_close();
+		$out .= '</div>';
+
+		return $out . '</div>';
+	}
+
+	private function profile_card( int $id, string $role ): string {
+		$h = Ui::card_open( 'Profil' );
+		if ( 'candidate' === $role && class_exists( '\\Postelio\\Users\\Profiles\\CandidateProfileRepository' ) ) {
+			$p = ( new \Postelio\Users\Profiles\CandidateProfileRepository() )->get_by_user( $id );
+			if ( $p ) {
+				$h .= '<dl class="pst-admin-kv">';
+				$h .= '<dt>Métier</dt><dd>' . esc_html( (string) ( $p['metier'] ?? '—' ) ) . '</dd>';
+				$h .= '<dt>Ville</dt><dd>' . esc_html( (string) ( $p['ville'] ?? '—' ) ) . '</dd>';
+				$h .= '<dt>Recherche</dt><dd>' . esc_html( (string) ( $p['statut_recherche'] ?? '—' ) ) . '</dd>';
+				$h .= '<dt>Visibilité</dt><dd>' . esc_html( (string) ( $p['profile_visibility'] ?? '—' ) ) . '</dd>';
+				$h .= '</dl>';
+			} else {
+				$h .= '<p class="pst-admin-stat__sub">Profil candidat non renseigné.</p>';
+			}
+		} elseif ( 'recruiter' === $role ) {
+			$cid = class_exists( '\\Postelio\\Companies\\Api\\CompanyDirectory' ) ? \Postelio\Companies\Api\CompanyDirectory::company_of_user( $id ) : 0;
+			$h  .= '<dl class="pst-admin-kv"><dt>Entreprise</dt><dd>' . ( $cid > 0 ? esc_html( (string) \Postelio\Companies\Api\CompanyDirectory::name_of( $cid ) ) : '—' ) . '</dd></dl>';
+		} else {
+			$h .= '<p class="pst-admin-stat__sub">Aucun profil détaillé pour ce rôle.</p>';
+		}
+		return $h . Ui::card_close();
+	}
+
+	private function count_or_dash( ?int $n ): string {
+		return null === $n ? '—' : (string) $n;
 	}
 
 	private function search_form( string $base, string $tab, string $q ): string {

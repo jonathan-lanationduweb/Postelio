@@ -27,6 +27,10 @@ final class ModerationPage extends Page {
 			return Ui::header( 'Modération', 'Back-office Postelio' )
 				. Ui::empty_state( 'Module indisponible', 'Le module Modération n\'est pas actif.', '🛡️' );
 		}
+		$view = $this->current( 'view' );
+		if ( '' !== $view ) {
+			return $this->detail( $view );
+		}
 		$status   = $this->current( 'status', 'open' );
 		$priority = $this->current( 'priority' );
 		$paged    = $this->paged();
@@ -86,17 +90,105 @@ final class ModerationPage extends Page {
 	}
 
 	private function actions( string $uuid, string $status ): string {
-		if ( '' === $uuid || in_array( $status, array( 'resolved', 'dismissed' ), true ) ) {
-			return Ui::text( '—', false, true );
-		}
-		$h = '<div class="pst-admin-actions">';
-		if ( current_user_can( 'pst_decide_report' ) ) {
-			$h .= Ui::action_button( 'pst_admin_mod_assign', array( 'uuid' => $uuid ), 'M\'assigner', '' );
-		}
-		if ( current_user_can( 'pst_moderate_content' ) ) {
-			$h .= Ui::action_button( 'pst_admin_mod_resolve', array( 'uuid' => $uuid ), 'Résoudre', 'primary', 'Résoudre ce dossier sans action supplémentaire ?' );
-			$h .= Ui::action_button( 'pst_admin_mod_escalate', array( 'uuid' => $uuid ), 'Escalader', 'danger' );
+		$h = '<div class="pst-admin-actions"><a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-moderation', array( 'view' => $uuid ) ) ) . '">Voir</a>';
+		if ( '' !== $uuid && ! in_array( $status, array( 'resolved', 'dismissed' ), true ) ) {
+			if ( current_user_can( 'pst_decide_report' ) ) {
+				$h .= Ui::action_button( 'pst_admin_mod_assign', array( 'uuid' => $uuid ), 'M\'assigner', '' );
+			}
+			if ( current_user_can( 'pst_moderate_content' ) ) {
+				$h .= Ui::action_button( 'pst_admin_mod_resolve', array( 'uuid' => $uuid ), 'Résoudre', 'primary', 'Résoudre ce dossier sans action supplémentaire ?' );
+			}
 		}
 		return $h . '</div>';
+	}
+
+	/** Détail complet d'une case : contexte + historique + actions contextuelles. */
+	private function detail( string $uuid ): string {
+		$back = '<a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-moderation' ) ) . '">← File</a>';
+		$res  = Contracts::rest( 'GET', '/postelio/v1/moderation/cases/' . $uuid );
+		if ( 200 !== $res['status'] || ! is_array( $res['data'] ) ) {
+			return Ui::header( 'Dossier de modération', 'Modération', $back ) . Ui::empty_state( 'Introuvable', 'Dossier introuvable ou accès refusé.', '🛡️' );
+		}
+		$c      = (array) ( $res['data']['data'] ?? array() );
+		$status = (string) ( $c['status'] ?? '' );
+		$rtype  = (string) ( $c['resource_type'] ?? '' );
+
+		$out  = Ui::header( 'Dossier ' . mb_substr( $uuid, 0, 8 ), 'Ressource : ' . $rtype, $back );
+		$out .= '<div class="pst-admin-cols"><div>';
+
+		// Contexte
+		$out .= Ui::card_open( 'Contexte' ) . '<dl class="pst-admin-kv">';
+		$out .= '<dt>Type de ressource</dt><dd>' . esc_html( $rtype ) . '</dd>';
+		$out .= '<dt>Ressource</dt><dd>' . esc_html( mb_substr( (string) ( $c['resource_uuid'] ?? '' ), 0, 12 ) ) . '…</dd>';
+		$out .= '<dt>Statut</dt><dd>' . Ui::badge( $status, 'open' === $status ? 'info' : 'neutral', true ) . '</dd>';
+		$out .= '<dt>Priorité</dt><dd>' . Ui::badge( (string) ( $c['priority'] ?? 'medium' ), (string) ( $c['priority'] ?? 'medium' ) ) . '</dd>';
+		$out .= '<dt>Risque</dt><dd>' . Ui::badge( (string) ( $c['risk_level'] ?? 'medium' ), (string) ( $c['risk_level'] ?? 'medium' ) ) . '</dd>';
+		$out .= '<dt>Origine</dt><dd>' . esc_html( (string) ( $c['origin'] ?? '—' ) ) . '</dd>';
+		$out .= '<dt>Signalements</dt><dd>' . esc_html( (string) (int) ( $c['reports_count'] ?? 0 ) ) . '</dd>';
+		$out .= '<dt>Assigné à</dt><dd>' . esc_html( $c['assigned_to'] ? (string) $c['assigned_to'] : '—' ) . '</dd>';
+		$out .= '</dl>' . Ui::card_close();
+
+		// Historique (append-only)
+		$erows = array();
+		foreach ( (array) ( $c['events'] ?? array() ) as $e ) {
+			$e       = (array) $e;
+			$erows[] = array(
+				Ui::text( (string) ( $e['event'] ?? '' ), true ),
+				Ui::text( (string) ( $e['actor_role'] ?? '' ), false, true ),
+				Ui::text( trim( (string) ( $e['action'] ?? '' ) . ' ' . (string) ( $e['decision'] ?? '' ) ) ?: '—', false, true ),
+				Ui::text( (string) ( $e['note'] ?? '' ) ?: '—' ),
+				Ui::text( substr( (string) ( $e['at'] ?? '' ), 0, 16 ), false, true ),
+			);
+		}
+		$out .= Ui::card_open( 'Historique' ) . Ui::table( array( 'Événement', 'Rôle', 'Décision', 'Note', 'Quand' ), $erows, 'Aucun événement.' ) . Ui::card_close();
+		$out .= '</div><div>';
+
+		// Actions contextuelles
+		$out .= Ui::card_open( 'Actions' );
+		if ( in_array( $status, array( 'resolved', 'dismissed' ), true ) ) {
+			$out .= '<p class="pst-admin-stat__sub">Dossier clôturé.</p>';
+		} else {
+			$out .= '<div class="pst-admin-actions" style="flex-direction:column;align-items:stretch">';
+			if ( current_user_can( 'pst_decide_report' ) ) {
+				$out .= Ui::action_button( 'pst_admin_mod_assign', array( 'uuid' => $uuid ), 'M\'assigner', '' );
+			}
+			if ( current_user_can( 'pst_moderate_content' ) ) {
+				// Actions modérateur communes
+				$out .= Ui::action_button( 'pst_admin_mod_resolve', array( 'uuid' => $uuid ), 'Résoudre (sans action)', 'primary' );
+				$out .= Ui::action_button( 'pst_admin_mod_dismiss', array( 'uuid' => $uuid ), 'Ignorer', '' );
+				$out .= Ui::action_button( 'pst_admin_mod_escalate', array( 'uuid' => $uuid ), 'Escalader', '' );
+				$out .= Ui::action_button( 'pst_admin_mod_warning', array( 'uuid' => $uuid ), 'Avertir', '' );
+				// Actions contextuelles selon la ressource
+				if ( in_array( $rtype, array( 'skill', 'external_job', 'job' ), true ) ) {
+					$out .= Ui::action_button( 'pst_admin_mod_hide', array( 'uuid' => $uuid ), 'Masquer le contenu', 'danger', 'Masquer ce contenu ?' );
+					$out .= Ui::action_button( 'pst_admin_mod_unhide', array( 'uuid' => $uuid ), 'Restaurer le contenu', '' );
+				}
+				if ( 'conversation' === $rtype ) {
+					$out .= Ui::action_button( 'pst_admin_mod_close', array( 'uuid' => $uuid ), 'Fermer la conversation', 'danger' );
+				}
+				// Actions admin (l'endpoint applique la garde de capability)
+				if ( current_user_can( 'pst_manage_platform' ) ) {
+					if ( 'job' === $rtype ) {
+						$out .= Ui::action_button( 'pst_admin_mod_suspend_job', array( 'uuid' => $uuid ), 'Suspendre l\'offre', 'danger', 'Suspendre l\'offre concernée ?' );
+					}
+					if ( 'company' === $rtype ) {
+						$out .= Ui::action_button( 'pst_admin_mod_suspend_company', array( 'uuid' => $uuid ), 'Suspendre l\'entreprise', 'danger', 'Suspendre l\'entreprise ?' );
+					}
+				}
+			}
+			$out .= '</div>';
+
+			// Note interne
+			if ( current_user_can( 'pst_moderate_content' ) ) {
+				$out .= '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin-top:12px">';
+				$out .= '<input type="hidden" name="action" value="pst_admin_mod_note"><input type="hidden" name="uuid" value="' . esc_attr( $uuid ) . '">';
+				$out .= wp_nonce_field( 'pst_admin_mod_note', '_pstnonce', true, false );
+				$out .= '<textarea name="note" rows="2" style="width:100%;border:1px solid var(--pst-border);border-radius:8px;padding:8px" placeholder="Note interne…"></textarea>';
+				$out .= '<button class="pst-btn pst-btn--sm" type="submit" style="margin-top:6px">Ajouter une note</button></form>';
+			}
+		}
+		$out .= Ui::card_close();
+		$out .= '</div></div>';
+		return $out;
 	}
 }

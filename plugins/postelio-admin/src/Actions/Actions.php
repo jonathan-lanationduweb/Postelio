@@ -28,6 +28,20 @@ final class Actions {
 		'pst_admin_mod_assign'        => array( 'cap' => 'pst_decide_report', 'handler' => 'mod_assign', 'redirect' => 'postelio-moderation' ),
 		'pst_admin_mod_resolve'       => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_resolve', 'redirect' => 'postelio-moderation' ),
 		'pst_admin_mod_escalate'      => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_escalate', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_hide'          => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_hide', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_unhide'        => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_unhide', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_warning'       => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_warning', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_close'         => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_close', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_dismiss'       => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_dismiss', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_note'          => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_note', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_suspend_job'   => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_suspend_job', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_suspend_company' => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_suspend_company', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_mod_suspend_user'  => array( 'cap' => 'pst_moderate_content', 'handler' => 'mod_suspend_user', 'redirect' => 'postelio-moderation' ),
+		'pst_admin_billing_retry'     => array( 'cap' => 'pst_manage_billing', 'handler' => 'billing_retry', 'redirect' => 'postelio-billing' ),
+		'pst_admin_skill_hide'        => array( 'cap' => 'pst_moderate_content', 'handler' => 'skill_hide', 'redirect' => 'postelio-skills' ),
+		'pst_admin_skill_unhide'      => array( 'cap' => 'pst_moderate_content', 'handler' => 'skill_unhide', 'redirect' => 'postelio-skills' ),
+		'pst_admin_extjob_hide'       => array( 'cap' => 'pst_moderate_content', 'handler' => 'extjob_hide', 'redirect' => 'postelio-jobs' ),
+		'pst_admin_extjob_unhide'     => array( 'cap' => 'pst_moderate_content', 'handler' => 'extjob_unhide', 'redirect' => 'postelio-jobs' ),
 	);
 
 	public function register(): void {
@@ -137,8 +151,93 @@ final class Actions {
 		return 200 === $r['status'] ? array( 'pst_msg' => 'moderated' ) : array( 'pst_err' => 'failed' );
 	}
 	private function mod_escalate( string $uuid ): array {
-		$r = \Postelio\Admin\Support\Contracts::rest( 'POST', '/postelio/v1/moderation/cases/' . $uuid . '/decision', array(), array( 'action' => 'escalate' ) );
-		return 200 === $r['status'] ? array( 'pst_msg' => 'moderated' ) : array( 'pst_err' => 'failed' );
+		return $this->mod_decision( $uuid, 'escalate' );
+	}
+	private function mod_hide( string $uuid ): array {
+		return $this->mod_decision( $uuid, 'hide' );
+	}
+	private function mod_unhide( string $uuid ): array {
+		return $this->mod_decision( $uuid, 'unhide' );
+	}
+	private function mod_warning( string $uuid ): array {
+		return $this->mod_decision( $uuid, 'warning' );
+	}
+	private function mod_close( string $uuid ): array {
+		return $this->mod_decision( $uuid, 'close_conversation' );
+	}
+	private function mod_dismiss( string $uuid ): array {
+		return $this->mod_decision( $uuid, 'dismiss' );
+	}
+	private function mod_suspend_job( string $uuid ): array {
+		return $this->mod_decision( $uuid, 'suspend_job' );
+	}
+	private function mod_suspend_company( string $uuid ): array {
+		return $this->mod_decision( $uuid, 'suspend_company' );
+	}
+	private function mod_suspend_user( string $uuid ): array {
+		$target = $this->target_from_post();
+		return $this->mod_decision( $uuid, 'suspend_user', $target );
+	}
+	private function mod_note( string $uuid ): array {
+		$note = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['note'] ) ) : '';
+		if ( '' === trim( $note ) ) {
+			return array( 'pst_err' => 'invalid' );
+		}
+		$r = \Postelio\Admin\Support\Contracts::rest( 'POST', '/postelio/v1/moderation/cases/' . $uuid . '/note', array(), array( 'note' => $note ) );
+		return 200 === $r['status'] ? array( 'pst_msg' => 'done' ) : array( 'pst_err' => 'failed' );
+	}
+
+	/** @param array<string,string>|null $target @return array<string,string> */
+	private function mod_decision( string $uuid, string $action, ?array $target = null ): array {
+		$body = array( 'action' => $action );
+		if ( null !== $target ) {
+			$body['target'] = $target;
+		}
+		$r = \Postelio\Admin\Support\Contracts::rest( 'POST', '/postelio/v1/moderation/cases/' . $uuid . '/decision', array(), $body );
+		if ( 200 === $r['status'] ) {
+			return array( 'pst_msg' => 'moderated' );
+		}
+		if ( 403 === $r['status'] ) {
+			return array( 'pst_err' => 'forbidden' );
+		}
+		return array( 'pst_err' => 'failed' );
+	}
+
+	/** @return array<string,string>|null */
+	private function target_from_post(): ?array {
+		$type = isset( $_POST['target_type'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['target_type'] ) ) : '';
+		$uuid = isset( $_POST['target_uuid'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['target_uuid'] ) ) : '';
+		return ( '' !== $type && '' !== $uuid ) ? array( 'type' => $type, 'uuid' => $uuid ) : null;
+	}
+
+	private function billing_retry( string $uuid ): array {
+		$r = \Postelio\Admin\Support\Contracts::rest( 'POST', '/postelio/v1/billing/admin/orders/' . $uuid . '/retry-fulfillment' );
+		return 200 === $r['status'] ? array( 'pst_msg' => 'retried' ) : array( 'pst_err' => 'failed' );
+	}
+
+	private function skill_hide( string $uuid ): array {
+		if ( ! class_exists( '\\Postelio\\Skills\\Api\\SkillModeration' ) ) {
+			return array( 'pst_err' => 'module_absent' );
+		}
+		return \Postelio\Skills\Api\SkillModeration::hide( $uuid ) ? array( 'pst_msg' => 'moderated' ) : array( 'pst_err' => 'failed' );
+	}
+	private function skill_unhide( string $uuid ): array {
+		if ( ! class_exists( '\\Postelio\\Skills\\Api\\SkillModeration' ) ) {
+			return array( 'pst_err' => 'module_absent' );
+		}
+		return \Postelio\Skills\Api\SkillModeration::unhide( $uuid ) ? array( 'pst_msg' => 'reactivated' ) : array( 'pst_err' => 'failed' );
+	}
+	private function extjob_hide( string $uuid ): array {
+		if ( ! class_exists( '\\Postelio\\JobSources\\Api\\JobSourcesModeration' ) ) {
+			return array( 'pst_err' => 'module_absent' );
+		}
+		return \Postelio\JobSources\Api\JobSourcesModeration::hide( $uuid ) ? array( 'pst_msg' => 'moderated' ) : array( 'pst_err' => 'failed' );
+	}
+	private function extjob_unhide( string $uuid ): array {
+		if ( ! class_exists( '\\Postelio\\JobSources\\Api\\JobSourcesModeration' ) ) {
+			return array( 'pst_err' => 'module_absent' );
+		}
+		return \Postelio\JobSources\Api\JobSourcesModeration::unhide( $uuid ) ? array( 'pst_msg' => 'reactivated' ) : array( 'pst_err' => 'failed' );
 	}
 
 	/** @param array<string,string> $args */

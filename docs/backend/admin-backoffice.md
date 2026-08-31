@@ -28,8 +28,15 @@ Tableau de bord · Utilisateurs · Entreprises · Offres · Candidatures · CV &
 Entretiens · Notifications · Sources d'offres · Modération · Facturation · Savoir-faire ·
 Favoris & Alertes (préparé Lot 14) · Réglages · Santé du système.
 
-Phase 1 : pages **complètes** = Tableau de bord, Utilisateurs, Entreprises, Offres, Modération,
-Santé. Les autres = emplacement de menu + écran « en préparation » (implémentation phases suivantes).
+Phases livrées :
+- **Phase 1** : Tableau de bord, Utilisateurs, Entreprises, Offres, Modération (file), Santé.
+- **Phase 2** : **détails** Utilisateur/Entreprise/Offre + **aperçus** (entreprise, offre, savoir-faire) ;
+  **Facturation** complète (KPI + liste + détail + retry fulfillment) ; **Sources d'offres** ;
+  **Notifications** (observabilité de la file d'envoi) ; **Savoir-faire** (liste + détail + hide/unhide) ;
+  **Modération enrichie** (détail de case : contexte, historique, actions contextuelles, note interne).
+
+Restent Phase 3 / après Lot 14 : Candidatures, CV & fichiers, Messagerie, Entretiens, Réglages
+avancés, Favoris & Alertes.
 
 ## 3. Droits (capabilities réutilisées — aucune nouvelle)
 
@@ -55,10 +62,22 @@ capability + délégation au service propriétaire.
   `/moderation/cases/{uuid}/assign|decision`.
 
 ### Contrats additifs créés (lecture seule, non destructifs)
-- `Postelio\Jobs\Api\JobAdminDirectory` — `counts()`, `list(filters,page,per_page)`.
-- `Postelio\Companies\Api\CompanyAdminDirectory` — `counts()`, `list(filters,page,per_page)`.
+- `Postelio\Jobs\Api\JobAdminDirectory` — `counts()`, `list()`, **`detail(uuid)`** (Phase 2).
+- `Postelio\Companies\Api\CompanyAdminDirectory` — `counts()`, `list()`, **`detail(uuid)` + membres** (Phase 2).
+- `Postelio\Skills\Api\SkillAdminDirectory` — `counts()`, `list()`, `detail(uuid)` (Phase 2).
+- `Postelio\Notifications\Api\NotificationDirectory::delivery_stats()` — observabilité de la file (Phase 2).
 
-Ces façades interrogent le CPT de leur PROPRE domaine (légitime) ; elles n'écrivent rien.
+Ces façades interrogent le CPT/la table de leur PROPRE domaine (légitime) ; elles n'écrivent rien.
+Facturation, Sources et Modération (détail) consomment directement les endpoints REST existants
+(`/billing/admin/orders[/{uuid}]`, `/billing/health`, `/job-sources/health`, `/moderation/cases/{uuid}`).
+
+### Actions Phase 2 (admin-post, nonce + capability + délégation)
+Retry fulfillment (`/billing/.../retry-fulfillment`) · hide/unhide savoir-faire (`SkillModeration`) ·
+hide/unhide offre externe (`JobSourcesModeration`) · décisions modération contextuelles
+(hide/unhide/warning/close_conversation/dismiss/escalate/suspend_job/suspend_company/suspend_user +
+note) via `/moderation/cases/{uuid}/decision|note` (les gardes de capability admin sont appliquées
+par le domaine). Confidentialité : aucune donnée privée superflue (CV, messages), aucun secret Stripe,
+aucun destinataire d'e-mail, aucun ID SQL.
 
 ## 5. Pages (Phase 1)
 

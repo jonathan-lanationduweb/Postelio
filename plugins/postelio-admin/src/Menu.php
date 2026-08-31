@@ -12,12 +12,16 @@
 
 namespace Postelio\Admin;
 
+use Postelio\Admin\Pages\BillingPage;
 use Postelio\Admin\Pages\CompaniesPage;
 use Postelio\Admin\Pages\DashboardPage;
 use Postelio\Admin\Pages\HealthPage;
 use Postelio\Admin\Pages\JobsPage;
 use Postelio\Admin\Pages\ModerationPage;
+use Postelio\Admin\Pages\NotificationsPage;
 use Postelio\Admin\Pages\PlaceholderPage;
+use Postelio\Admin\Pages\SkillsPage;
+use Postelio\Admin\Pages\SourcesPage;
 use Postelio\Admin\Pages\UsersPage;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -55,11 +59,11 @@ final class Menu {
 			array( 'CV & fichiers', 'postelio-files', self::CAP_ADMIN, new PlaceholderPage( 'CV & fichiers', 'État du stockage privé, quarantaine et scanner. (Accès aux fichiers restreint.)', self::CAP_ADMIN ) ),
 			array( 'Messagerie', 'postelio-messaging', self::CAP_ADMIN, new PlaceholderPage( 'Messagerie', 'Métriques et statuts de conversations. L\'accès au contenu reste réservé à la modération.', self::CAP_ADMIN ) ),
 			array( 'Entretiens', 'postelio-interviews', self::CAP_ADMIN, new PlaceholderPage( 'Entretiens', 'Liste et statuts des entretiens (sans exposer téléphone/lien visio en tableau).', self::CAP_ADMIN ) ),
-			array( 'Notifications', 'postelio-notifications', self::CAP_ADMIN, new PlaceholderPage( 'Notifications', 'Observabilité des envois : en attente, envoyés, échoués, prochain retry.', self::CAP_ADMIN ) ),
-			array( 'Sources d\'offres', 'postelio-sources', self::CAP_ADMIN, new PlaceholderPage( 'Sources d\'offres', 'État des connecteurs (France Travail…) : configuré, dernier sync, erreurs.', self::CAP_ADMIN ) ),
+			array( 'Notifications', 'postelio-notifications', self::CAP_ADMIN, new NotificationsPage() ),
+			array( 'Sources d\'offres', 'postelio-sources', self::CAP_ADMIN, new SourcesPage() ),
 			array( 'Modération', 'postelio-moderation', self::CAP_VIEW, new ModerationPage() ),
-			array( 'Facturation', 'postelio-billing', 'pst_manage_billing', new PlaceholderPage( 'Facturation', 'Commandes, paiements, fulfillment et santé Stripe. Aucun secret exposé.', 'pst_manage_billing' ) ),
-			array( 'Savoir-faire', 'postelio-skills', self::CAP_ADMIN, new PlaceholderPage( 'Savoir-faire', 'Contenus par statut/auteur/catégorie + modération (via le contrat existant).', self::CAP_ADMIN ) ),
+			array( 'Facturation', 'postelio-billing', 'pst_manage_billing', new BillingPage() ),
+			array( 'Savoir-faire', 'postelio-skills', self::CAP_ADMIN, new SkillsPage() ),
 			array( 'Favoris & Alertes', 'postelio-alerts', self::CAP_ADMIN, new PlaceholderPage( 'Favoris & Alertes', 'Préparé pour le Lot 14 (favoris, recherches sauvegardées, alertes). Non implémenté.', self::CAP_ADMIN ) ),
 			array( 'Réglages', 'postelio-settings', self::CAP_ADMIN, new PlaceholderPage( 'Réglages', 'Réglages Postelio sûrs et modifiables. Les secrets restent en environnement (jamais ici).', self::CAP_ADMIN ) ),
 			array( 'Santé du système', 'postelio-health', self::CAP_ADMIN, new HealthPage() ),

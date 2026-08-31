@@ -93,4 +93,14 @@ final class JobAdminDirectory {
 		}
 		return array( 'items' => $items, 'total' => (int) $q->found_posts );
 	}
+
+	/**
+	 * Détail admin d'une offre native (tous champs, contexte admin). Retourne null si inconnue.
+	 * Pour une offre EXTERNE, l'appelant utilisera JobDirectory::external($uuid).
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public static function detail( string $uuid ): ?array {
+		return ( new JobRepository() )->get_by_uuid( $uuid );
+	}
 }

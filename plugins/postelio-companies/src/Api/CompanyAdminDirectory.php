@@ -85,4 +85,33 @@ final class CompanyAdminDirectory {
 		}
 		return array( 'items' => $items, 'total' => (int) $q->found_posts );
 	}
+
+	/**
+	 * Détail admin d'une entreprise : identité + éditorial + légal + vérification + membres.
+	 * Retourne null si inconnue.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public static function detail( string $uuid ): ?array {
+		$id = CompanyDirectory::id_from_uuid( $uuid );
+		if ( $id <= 0 ) {
+			return null;
+		}
+		$c = ( new CompanyRepository() )->get( $id );
+		if ( null === $c ) {
+			return null;
+		}
+		$members = array();
+		foreach ( ( new \Postelio\Companies\Members\MembershipRepository() )->members_of( $id ) as $m ) {
+			$uid       = (int) ( is_array( $m ) ? ( $m['user_id'] ?? $m['ID'] ?? 0 ) : $m );
+			$members[] = array(
+				'user_id' => $uid,
+				'role'    => (string) ( is_array( $m ) ? ( $m['role'] ?? '' ) : '' ),
+				'name'    => class_exists( '\\Postelio\\Users\\Api\\UserDirectory' ) ? \Postelio\Users\Api\UserDirectory::display_name( $uid ) : '',
+			);
+		}
+		$c['members']    = $members;
+		$c['company_id'] = $id;
+		return $c;
+	}
 }
