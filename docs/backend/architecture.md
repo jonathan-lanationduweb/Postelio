@@ -305,6 +305,20 @@ actor_user_id sur `interview.*`, `JobDirectory::created_by/uuid_of/title_of`,
   filtres (`postelio/files/authorize_download`, `postelio/files/file_is_referenced`).
   Le CV étant immuable, référencer son UUID depuis une candidature garantit le snapshot.
 
+`postelio-admin` (Phase 1) est le **back-office wp-admin** : une **couche d'orchestration**
+au-dessus des plugins de domaine, **sans logique métier, sans table, sans SQL/meta direct**.
+Il **lit** via les contrats publics (`Api\*Directory`) et le **REST interne**
+(`rest_do_request` exécuté **comme l'admin courant** — capabilities et presenters
+s'appliquent) et **délègue les actions** aux services propriétaires (`UserModeration`,
+`CompanyModeration`, `VerificationService`, `JobModeration`, REST de modération) : il n'écrit
+**jamais** les tables des autres domaines. Modules **optionnels et détectés** à l'exécution
+(`Registry::has`/`class_exists` → « Module indisponible », jamais de fatal). **Aucune nouvelle
+capability** (`pst_view_moderation_queue`/`pst_manage_platform`/`pst_manage_billing`,
+re-vérifiées côté serveur ; actions `admin-post` + nonce). Deux **façades additives en lecture
+seule** créées côté propriétaires : `Postelio\Jobs\Api\JobAdminDirectory` et
+`Postelio\Companies\Api\CompanyAdminDirectory` (compteurs + liste). **Front public inchangé.**
+Voir [admin-backoffice.md](admin-backoffice.md).
+
 ## 7. Ce qui est HORS de ce lot
 
 - CPT métier, tables, endpoints complets, migrations exécutées.

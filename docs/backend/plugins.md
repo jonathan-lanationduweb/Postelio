@@ -408,6 +408,47 @@ neutralisé (`wp_kses`, liens dangereux retirés) ; rate-limit des commentaires 
 
 ---
 
+## postelio-admin (implémenté — Phase 1 back-office)
+
+**Responsabilité.** **Back-office wp-admin** (centre de contrôle) : une **couche
+d'administration/orchestration pure**, **sans logique métier, sans table, sans SQL/meta
+direct** dans les plugins propriétaires. Il **consomme des contrats** pour lire (façades
+`Api\*Directory` + REST interne via `rest_do_request` **exécuté comme l'admin courant** —
+capabilities et presenters s'appliquent) et **délègue les actions** aux services
+propriétaires (`UserModeration`, `CompanyModeration`, `VerificationService`,
+`JobModeration`, REST de modération). **Ne fatal jamais** si un module est absent
+(détection `Registry::has` / `class_exists` → « Module indisponible »).
+
+**Principe.** Jamais d'écriture directe d'une table tierce ; toute action passe par le
+contrat public du domaine propriétaire. Détection défensive des modules désactivés.
+
+**Dépendances :** core + **contrats des autres modules**, **tous optionnels et détectés**
+à l'exécution (aucune dépendance dure ; un module manquant dégrade la page, pas le plugin).
+
+**Menu unique « Postelio »** (sous-menus) : Tableau de bord, Utilisateurs, Entreprises,
+Offres, Candidatures, CV & fichiers, Messagerie, Entretiens, Notifications, Sources
+d'offres, Modération, Facturation, Savoir-faire, Favoris & Alertes (**préparé pour le
+Lot 14**), Réglages, Santé du système.
+**Pages complètes Phase 1 :** Tableau de bord, Utilisateurs, Entreprises, Offres,
+Modération, Santé. Les autres = **emplacements de menu** (« en préparation »).
+
+**Capabilities réutilisées (aucune nouvelle) :** menu + tableau de bord + modération =
+`pst_view_moderation_queue` (admin + modérateur) ; utilisateurs / entreprises / offres /
+santé / réglages / placeholders = `pst_manage_platform` (admin) ; facturation =
+`pst_manage_billing`. Chaque page **re-vérifie la capability côté serveur** ; actions via
+`admin-post` **avec nonce**.
+
+**Contrats additifs (lecture seule) introduits côté plugins propriétaires, aucune nouvelle
+capability :** `Postelio\Jobs\Api\JobAdminDirectory` (compteurs + liste) et
+`Postelio\Companies\Api\CompanyAdminDirectory` (compteurs + liste).
+
+**Design :** `assets/admin.css` scopé sous `.pst-admin`, palette Postelio (bleu nuit
+`#17324D` + corail `#FF6B6B`), **aucun framework JS**. **Front public non modifié.**
+
+Doc complète : [admin-backoffice.md](admin-backoffice.md).
+
+---
+
 ## Anti-cycles
 
 - Les plugins métier **ne s'appellent jamais directement** entre eux : ils émettent /

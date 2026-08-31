@@ -136,6 +136,13 @@ capability. Le front n'accorde aucun droit.
   masquage/démasquage modérateur passe par la Modération (`pst_moderate_content`) et le contrat
   `SkillModeration` — jamais une capability skill dédiée. Le **support n'a aucun accès**.
   Ownership strict (auteur/entreprise dérivés serveur) ; hors périmètre → **404**.
+- **Back-office (postelio-admin, Phase 1)** : **aucune nouvelle capability** — les rôles
+  sont **réutilisés**. Menu, tableau de bord et pages de modération = `pst_view_moderation_queue`
+  (admin + modérateur) ; utilisateurs, entreprises, offres, santé, réglages et emplacements en
+  préparation = `pst_manage_platform` (admin) ; facturation = `pst_manage_billing`. Chaque page
+  **re-vérifie la capability côté serveur** et chaque action passe par `admin-post` **avec nonce**.
+  **Recruteur, candidat et support n'ont aucun accès** au back-office. Voir
+  [admin-backoffice.md](admin-backoffice.md).
 - **Accès aux CV** : le candidat (propriétaire) et **uniquement** les recruteurs d'une
   entreprise ayant reçu une candidature avec ce CV (via snapshot). Admin pour audit.
 - **Coordonnées candidat** : soumises à `CandidateProfile.visibility` (email/tel) —
