@@ -134,11 +134,11 @@ final class JobsPage extends Page {
 
 		// Aperçu
 		$out .= Ui::card_open( 'Aperçu' );
-		$out .= '<div style="border:1px solid var(--pst-border);border-radius:12px;padding:16px;background:#fff">';
-		$out .= '<div style="font-weight:800;color:var(--pst-primary);font-size:16px">' . esc_html( (string) $j['titre'] ) . '</div>';
-		$out .= '<div class="pst-admin-stat__sub">' . esc_html( (string) ( $j['company']['nom'] ?? '' ) ) . ' · ' . esc_html( (string) ( $j['ville'] ?? '' ) ) . '</div>';
+		$out .= '<div class="pst-preview">';
+		$out .= '<div class="pst-preview__title">' . esc_html( (string) $j['titre'] ) . '</div>';
+		$out .= '<div class="pst-preview__meta">' . esc_html( (string) ( $j['company']['nom'] ?? '' ) ) . ' · ' . esc_html( (string) ( $j['ville'] ?? '' ) ) . '</div>';
 		$out .= '<p style="margin:8px 0">' . Ui::badge( (string) ( $j['contrat'] ?? '' ), 'neutral' ) . '</p>';
-		$out .= '<p style="color:var(--pst-text-soft);font-size:13px">' . esc_html( mb_substr( wp_strip_all_tags( (string) ( $j['description'] ?? '' ) ), 0, 260 ) ) . '</p>';
+		$out .= '<p class="pst-preview__body">' . esc_html( mb_substr( wp_strip_all_tags( (string) ( $j['description'] ?? '' ) ), 0, 260 ) ) . '</p>';
 		$out .= '</div>' . Ui::card_close();
 		$out .= '</div></div>';
 		return $out;

@@ -16,19 +16,40 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Ui {
 
 	/** En-tête de page : titre + description + actions (HTML déjà échappé) à droite. */
-	public static function header( string $title, string $subtitle = '', string $actions_html = '' ): string {
-		return '<div class="pst-admin-header"><div class="pst-admin-header__titles"><h1>' . esc_html( $title ) . '</h1>'
+	public static function header( string $title, string $subtitle = '', string $actions_html = '', string $eyebrow = 'Postelio' ): string {
+		return '<div class="pst-admin-header"><div class="pst-admin-header__titles">'
+			. ( '' !== $eyebrow ? '<span class="pst-eyebrow">' . esc_html( $eyebrow ) . '</span>' : '' )
+			. '<h1>' . esc_html( $title ) . '</h1>'
 			. ( '' !== $subtitle ? '<p>' . esc_html( $subtitle ) . '</p>' : '' )
 			. '</div><div class="pst-admin-header__actions">' . $actions_html . '</div></div>';
 	}
 
-	/** Carte statistique. $value string déjà prêt ; $muted grise la valeur (indisponible). */
-	public static function stat( string $label, $value, string $sub = '', bool $accent = false, bool $muted = false ): string {
+	/** Carte statistique. $value string déjà prêt ; $muted grise la valeur ; $icon = emoji léger. */
+	public static function stat( string $label, $value, string $sub = '', bool $accent = false, bool $muted = false, string $icon = '' ): string {
 		$cls = 'pst-admin-card pst-admin-stat' . ( $accent ? ' pst-admin-stat--accent' : '' );
 		$vcl = 'pst-admin-stat__value' . ( $muted ? ' pst-admin-stat__value--muted' : '' );
-		return '<div class="' . esc_attr( $cls ) . '"><span class="' . esc_attr( $vcl ) . '">' . esc_html( (string) $value ) . '</span>'
+		return '<div class="' . esc_attr( $cls ) . '">'
+			. ( '' !== $icon ? '<span class="pst-admin-stat__icon">' . esc_html( $icon ) . '</span>' : '' )
+			. '<span class="' . esc_attr( $vcl ) . '">' . esc_html( (string) $value ) . '</span>'
 			. '<span class="pst-admin-stat__label">' . esc_html( $label ) . '</span>'
 			. ( '' !== $sub ? '<span class="pst-admin-stat__sub">' . esc_html( $sub ) . '</span>' : '' ) . '</div>';
+	}
+
+	/**
+	 * Timeline verticale. $items = [ ['label'=>, 'time'=>, 'done'=>bool], … ].
+	 * @param array<int,array<string,mixed>> $items
+	 */
+	public static function timeline( array $items ): string {
+		if ( empty( $items ) ) {
+			return '<p class="pst-help">Aucun événement.</p>';
+		}
+		$h = '<ul class="pst-timeline">';
+		foreach ( $items as $it ) {
+			$done = ! empty( $it['done'] ) ? ' is-done' : '';
+			$h   .= '<li class="' . esc_attr( trim( $done ) ) . '"><span class="pst-timeline__label">' . esc_html( (string) $it['label'] ) . '</span>'
+				. ( ! empty( $it['time'] ) ? '<div class="pst-timeline__time">' . esc_html( (string) $it['time'] ) . '</div>' : '' ) . '</li>';
+		}
+		return $h . '</ul>';
 	}
 
 	public static function badge( string $text, string $variant = 'neutral', bool $dot = false ): string {

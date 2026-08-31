@@ -123,12 +123,12 @@ final class SkillsPage extends Page {
 
 		// Aperçu public
 		$out .= Ui::card_open( 'Aperçu public' );
-		$out .= '<div style="border:1px solid var(--pst-border);border-radius:12px;padding:16px;background:#fff">';
+		$out .= '<div class="pst-preview">';
 		if ( ! empty( $s['image_url'] ) ) {
-			$out .= '<img src="' . esc_url( (string) $s['image_url'] ) . '" alt="" style="max-width:100%;border-radius:8px;margin-bottom:8px">';
+			$out .= '<img class="pst-preview__img" src="' . esc_url( (string) $s['image_url'] ) . '" alt="">';
 		}
-		$out .= '<div style="font-weight:800;color:var(--pst-primary);font-size:16px">' . esc_html( (string) $s['title'] ) . '</div>';
-		$out .= '<p style="color:var(--pst-text-soft);font-size:13px">' . esc_html( mb_substr( wp_strip_all_tags( (string) ( $s['content'] ?? '' ) ), 0, 260 ) ) . '</p>';
+		$out .= '<div class="pst-preview__title">' . esc_html( (string) $s['title'] ) . '</div>';
+		$out .= '<p class="pst-preview__body">' . esc_html( mb_substr( wp_strip_all_tags( (string) ( $s['content'] ?? '' ) ), 0, 260 ) ) . '</p>';
 		$out .= '</div>' . Ui::card_close();
 		$out .= '</div></div>';
 		return $out;

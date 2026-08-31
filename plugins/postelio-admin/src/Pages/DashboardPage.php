@@ -28,7 +28,7 @@ final class DashboardPage extends Page {
 		$core = Health::snapshot()['core'];
 		$health_badge = Ui::badge( 'Santé : ' . Health::label( (string) $core['status'] ), Health::badge_variant( (string) $core['status'] ), true );
 
-		$out  = Ui::header( 'Postelio', 'Vue d\'ensemble de la plateforme', $health_badge );
+		$out  = Ui::header( 'Vue d\'ensemble', 'Pilotage de la plateforme Postelio en un coup d\'œil.', $health_badge, 'Postelio' );
 
 		// --- KPI principaux -------------------------------------------------
 		$users = Metrics::user_counts();
@@ -36,15 +36,15 @@ final class DashboardPage extends Page {
 		$mod_crit = Metrics::moderation_critical();
 
 		$grid  = '<div class="pst-admin-grid">';
-		$grid .= self::stat_or_dash( 'Candidats', $is_admin ? $users['candidates'] : null, $is_admin ? '' : 'réservé admin', false );
-		$grid .= self::stat_or_dash( 'Recruteurs', $is_admin ? $users['recruiters'] : null, '', false );
+		$grid .= self::stat_or_dash( 'Candidats', $is_admin ? $users['candidates'] : null, $is_admin ? '' : 'réservé admin', false, '👤' );
+		$grid .= self::stat_or_dash( 'Recruteurs', $is_admin ? $users['recruiters'] : null, '', false, '🧑‍💼' );
 
 		$cc = $is_admin ? Metrics::company_counts() : null;
-		$grid .= self::stat_or_dash( 'Entreprises', $cc ? $cc['total'] : null, $cc ? ( (int) ( $cc['verified'] ?? 0 ) . ' vérifiées' ) : '' );
+		$grid .= self::stat_or_dash( 'Entreprises', $cc ? $cc['total'] : null, $cc ? ( (int) ( $cc['verified'] ?? 0 ) . ' vérifiées' ) : '', false, '🏢' );
 		$jc = $is_admin ? Metrics::job_counts() : null;
-		$grid .= self::stat_or_dash( 'Offres publiées', $jc ? (int) ( $jc['published'] ?? 0 ) : null, $jc ? ( (int) ( $jc['expiring'] ?? 0 ) . ' expirent bientôt' ) : '' );
-		$grid .= self::stat_or_dash( 'Modération à traiter', $mod_open, null !== $mod_crit ? ( (int) $mod_crit . ' critiques' ) : '', true );
-		$grid .= self::stat_or_dash( 'Savoir-faire publiés', Metrics::skills_published() );
+		$grid .= self::stat_or_dash( 'Offres publiées', $jc ? (int) ( $jc['published'] ?? 0 ) : null, $jc ? ( (int) ( $jc['expiring'] ?? 0 ) . ' expirent bientôt' ) : '', false, '📄' );
+		$grid .= self::stat_or_dash( 'Modération à traiter', $mod_open, null !== $mod_crit ? ( (int) $mod_crit . ' critiques' ) : '', true, '🛡️' );
+		$grid .= self::stat_or_dash( 'Savoir-faire publiés', Metrics::skills_published(), '', false, '📝' );
 		$grid .= '</div>';
 		$out  .= $grid;
 
@@ -100,10 +100,10 @@ final class DashboardPage extends Page {
 	}
 
 	/** Rend une carte stat, ou « — » grisé si la valeur est indisponible (null). */
-	private static function stat_or_dash( string $label, $value, string $sub = '', bool $accent = false ): string {
+	private static function stat_or_dash( string $label, $value, string $sub = '', bool $accent = false, string $icon = '' ): string {
 		if ( null === $value ) {
-			return Ui::stat( $label, '—', '' !== $sub ? $sub : 'indisponible', $accent, true );
+			return Ui::stat( $label, '—', '' !== $sub ? $sub : 'indisponible', $accent, true, $icon );
 		}
-		return Ui::stat( $label, (string) $value, $sub, $accent, false );
+		return Ui::stat( $label, (string) $value, $sub, $accent, false, $icon );
 	}
 }

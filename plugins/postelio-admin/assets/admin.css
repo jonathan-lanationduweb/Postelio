@@ -1,150 +1,241 @@
 /**
- * Design system du back-office Postelio. Tout est préfixé `pst-` et encapsulé sous
- * `.pst-admin` pour ne pas entrer en conflit avec wp-admin. Identité POSTELIO :
- * bleu nuit + corail sur fond crème. Aucune dépendance externe.
- */
+ * ============================================================================
+ * POSTELIO — Back-office · Design system
+ * Bleu nuit + corail sur fond très clair. Tout est préfixé `pst-` et encapsulé
+ * sous `.pst-admin`. Chargé UNIQUEMENT sur les pages Postelio (enqueue ciblé),
+ * d'où le style autorisé de #wpcontent pour le fond de page.
+ * Sections : TOKENS · LAYOUT · HEADERS · CARDS · GRIDS · STATS · TABS ·
+ * FILTERS · FORMS · TABLES · BADGES · BUTTONS · PREVIEWS · TIMELINES ·
+ * HEALTH · EMPTY · ALERTS · PAGER · RESPONSIVE
+ * ============================================================================ */
 
+/* ---------- TOKENS ---------- */
 .pst-admin {
 	--pst-primary:       #17324D;
 	--pst-primary-hover: #0F2337;
 	--pst-accent:        #FF6B6B;
 	--pst-accent-hover:  #EF5A5A;
-	--pst-bg:            #FAF7F1;
+	--pst-bg:            #F5F7FA;
+	--pst-bg-warm:       #FAF7F1;
 	--pst-surface:       #FFFFFF;
 	--pst-text:          #17324D;
 	--pst-text-soft:     #566575;
-	--pst-border:        #E7E1D7;
+	--pst-border:        #E6EAF0;
+	--pst-border-soft:   #F0F3F7;
 	--pst-success:       #2F6B5E;
-	--pst-error:         #A83232;
 	--pst-warning:       #955700;
+	--pst-error:         #A83232;
 	--pst-info:          #2F6EA3;
-	--pst-radius:        14px;
-	--pst-shadow:        0 1px 2px rgba(23,50,77,.06), 0 6px 20px rgba(23,50,77,.05);
+	--pst-radius:        18px;
+	--pst-radius-sm:     11px;
+	--pst-shadow:        0 1px 2px rgba(23,50,77,.05), 0 8px 24px rgba(23,50,77,.05);
+	--pst-shadow-sm:     0 1px 2px rgba(23,50,77,.06);
+	--pst-shadow-hover:  0 2px 4px rgba(23,50,77,.06), 0 14px 34px rgba(23,50,77,.08);
+}
 
-	margin: 0 20px 0 2px;
-	padding: 8px 0 40px;
+/* Fond de page (uniquement chargé sur les écrans Postelio). */
+#wpcontent, #wpbody-content { background: #F5F7FA; }
+#wpbody-content { padding-bottom: 0; }
+
+/* ---------- LAYOUT ---------- */
+.pst-admin {
+	max-width: 1500px;
+	margin: 6px auto 0;
+	padding: 20px 30px 70px;
 	color: var(--pst-text);
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-	background: var(--pst-bg);
-	min-height: calc(100vh - 32px);
+	font-size: 14px;
+	line-height: 1.55;
 }
 .pst-admin * { box-sizing: border-box; }
+.pst-admin a { color: var(--pst-info); }
 
-/* Header */
+/* ---------- HEADERS ---------- */
 .pst-admin-header {
-	display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
-	gap: 16px; padding: 26px 28px; margin: 12px 0 22px;
-	background: linear-gradient(180deg, var(--pst-surface), #FCFAF6);
-	border: 1px solid var(--pst-border); border-radius: var(--pst-radius); box-shadow: var(--pst-shadow);
+	display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+	gap: 18px; padding: 26px 30px; margin: 4px 0 26px;
+	background: linear-gradient(135deg, #FFFFFF 0%, #FCFAF6 100%);
+	border: 1px solid var(--pst-border); border-radius: var(--pst-radius);
+	box-shadow: var(--pst-shadow); position: relative; overflow: hidden;
 }
-.pst-admin-header__titles h1 { margin: 0 0 4px; font-size: 26px; line-height: 1.15; color: var(--pst-primary); font-weight: 700; }
-.pst-admin-header__titles p { margin: 0; color: var(--pst-text-soft); font-size: 14px; }
+.pst-admin-header::before {
+	content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+	background: linear-gradient(180deg, var(--pst-accent), #ff9a9a);
+}
+.pst-eyebrow {
+	display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1.4px;
+	text-transform: uppercase; color: var(--pst-accent); margin: 0 0 6px;
+}
+.pst-admin-header__titles h1 { margin: 0; font-size: 30px; line-height: 1.12; color: var(--pst-primary); font-weight: 800; letter-spacing: -.4px; }
+.pst-admin-header__titles p { margin: 6px 0 0; color: var(--pst-text-soft); font-size: 14.5px; max-width: 640px; }
 .pst-admin-header__actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
-/* Grid + cards */
-.pst-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 22px; }
-.pst-admin-grid--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+/* ---------- CARDS ---------- */
 .pst-admin-card {
 	background: var(--pst-surface); border: 1px solid var(--pst-border);
-	border-radius: var(--pst-radius); box-shadow: var(--pst-shadow); padding: 20px 22px;
+	border-radius: var(--pst-radius); box-shadow: var(--pst-shadow);
+	padding: 26px 28px; margin-bottom: 20px;
 }
-.pst-admin-card__title { margin: 0 0 14px; font-size: 15px; font-weight: 700; color: var(--pst-primary); display: flex; align-items: center; gap: 8px; }
-.pst-admin-card__title small { font-weight: 500; color: var(--pst-text-soft); }
+.pst-admin-card__title { margin: 0 0 18px; font-size: 15px; font-weight: 800; color: var(--pst-primary); display: flex; align-items: center; gap: 8px; letter-spacing: -.2px; }
+.pst-admin-card__title small { font-weight: 500; color: var(--pst-text-soft); font-size: 12.5px; }
+.pst-card--compact { padding: 16px 18px; }
+.pst-card--highlight { border-color: #cfe0ef; background: linear-gradient(180deg, #fff, #F3F8FC); }
+.pst-card--danger { border-color: #ecc9c9; background: #FCF4F4; }
 
-/* Stat cards */
-.pst-admin-stat { display: flex; flex-direction: column; gap: 6px; }
-.pst-admin-stat__value { font-size: 30px; font-weight: 800; color: var(--pst-primary); line-height: 1; }
-.pst-admin-stat__value--muted { color: var(--pst-text-soft); font-weight: 600; font-size: 18px; }
-.pst-admin-stat__label { font-size: 13px; color: var(--pst-text-soft); }
+/* ---------- GRIDS ---------- */
+.pst-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 18px; margin-bottom: 22px; }
+.pst-admin-grid--2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.pst-admin-cols { display: grid; grid-template-columns: 1.65fr 1fr; gap: 20px; align-items: start; }
+
+/* ---------- STATS ---------- */
+.pst-admin-stat { display: flex; flex-direction: column; gap: 7px; transition: box-shadow .15s, transform .15s; position: relative; }
+.pst-admin-stat:hover { box-shadow: var(--pst-shadow-hover); transform: translateY(-1px); }
+.pst-admin-stat__icon { position: absolute; top: 20px; right: 22px; font-size: 20px; opacity: .5; }
+.pst-admin-stat__value { font-size: 32px; font-weight: 800; color: var(--pst-primary); line-height: 1; letter-spacing: -1px; }
+.pst-admin-stat__value--muted { color: #9aa6b4; font-weight: 700; font-size: 22px; }
+.pst-admin-stat__label { font-size: 13px; color: var(--pst-text-soft); font-weight: 600; }
 .pst-admin-stat__sub { font-size: 12px; color: var(--pst-text-soft); }
 .pst-admin-stat--accent { border-left: 4px solid var(--pst-accent); }
 
-/* Badges */
-.pst-admin-badge {
-	display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px;
-	font-size: 11.5px; font-weight: 700; line-height: 1.6; letter-spacing: .2px;
-	background: #EEF1F4; color: var(--pst-text-soft); border: 1px solid transparent; white-space: nowrap;
-}
-.pst-admin-badge--success  { background: #E6F1EE; color: var(--pst-success); }
-.pst-admin-badge--error,
-.pst-admin-badge--critical { background: #F6E7E7; color: var(--pst-error); }
-.pst-admin-badge--warning,
-.pst-admin-badge--high     { background: #F6EEDD; color: var(--pst-warning); }
-.pst-admin-badge--info,
-.pst-admin-badge--medium   { background: #E6EFF6; color: var(--pst-info); }
-.pst-admin-badge--low,
-.pst-admin-badge--neutral  { background: #EEF1F4; color: var(--pst-text-soft); }
-.pst-admin-badge--dot::before { content: "●"; font-size: 9px; }
-
-/* Tabs */
-.pst-admin-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; border-bottom: 1px solid var(--pst-border); }
+/* ---------- TABS ---------- */
+.pst-admin-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 20px; padding: 5px; background: #EEF1F6; border-radius: 14px; width: fit-content; max-width: 100%; }
 .pst-admin-tabs a {
-	padding: 9px 15px; border-radius: 10px 10px 0 0; text-decoration: none; font-size: 13.5px; font-weight: 600;
-	color: var(--pst-text-soft); border: 1px solid transparent; border-bottom: none; margin-bottom: -1px;
+	padding: 8px 16px; border-radius: 10px; text-decoration: none; font-size: 13.5px; font-weight: 700;
+	color: var(--pst-text-soft); transition: .12s; white-space: nowrap;
 }
-.pst-admin-tabs a:hover { color: var(--pst-primary); background: #FCFAF6; }
-.pst-admin-tabs a.is-active { color: var(--pst-primary); background: var(--pst-surface); border-color: var(--pst-border); }
-.pst-admin-tabs a .count { color: var(--pst-text-soft); font-weight: 600; }
+.pst-admin-tabs a:hover { color: var(--pst-primary); background: rgba(255,255,255,.6); }
+.pst-admin-tabs a.is-active { color: #fff; background: var(--pst-primary); box-shadow: var(--pst-shadow-sm); }
+.pst-admin-tabs a .count { opacity: .7; font-weight: 700; }
+.pst-admin-tabs a.is-active .count { color: #cfe0ef; }
 
-/* Table */
+/* ---------- FILTERS ---------- */
+.pst-admin-filters {
+	display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px;
+	padding: 14px 16px; background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: var(--pst-radius-sm); box-shadow: var(--pst-shadow-sm);
+}
+.pst-admin-filters input[type="search"], .pst-admin-filters input[type="text"], .pst-admin-filters select {
+	padding: 8px 12px; border: 1px solid var(--pst-border); border-radius: 9px; font-size: 13px; background: #fff; color: var(--pst-text); min-height: 36px;
+}
+.pst-admin-filters input:focus, .pst-admin-filters select:focus { outline: 2px solid rgba(47,110,163,.3); border-color: var(--pst-info); }
+
+/* ---------- FORMS ---------- */
+.pst-admin label { font-weight: 700; color: var(--pst-primary); font-size: 13px; }
+.pst-admin textarea, .pst-admin input[type="text"], .pst-admin input[type="email"], .pst-admin select {
+	border: 1px solid var(--pst-border); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; background: #fff; color: var(--pst-text);
+}
+.pst-admin textarea:focus, .pst-admin input:focus, .pst-admin select:focus { outline: 2px solid rgba(47,110,163,.28); border-color: var(--pst-info); }
+.pst-help { color: var(--pst-text-soft); font-size: 12px; }
+
+/* ---------- TABLES ---------- */
 .pst-admin-table-wrap { overflow-x: auto; background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: var(--pst-radius); box-shadow: var(--pst-shadow); }
 .pst-admin-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 720px; }
-.pst-admin-table th { text-align: left; padding: 13px 16px; background: #FCFAF6; color: var(--pst-text-soft); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--pst-border); }
-.pst-admin-table td { padding: 13px 16px; border-bottom: 1px solid #F1ECE3; vertical-align: middle; }
+.pst-admin-table th { text-align: left; padding: 15px 18px; background: #FCFAF6; color: var(--pst-text-soft); font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; border-bottom: 1px solid var(--pst-border); }
+.pst-admin-table td { padding: 15px 18px; border-bottom: 1px solid var(--pst-border-soft); vertical-align: middle; }
 .pst-admin-table tr:last-child td { border-bottom: none; }
-.pst-admin-table tr:hover td { background: #FCFAF6; }
+.pst-admin-table tbody tr { transition: background .1s; }
+.pst-admin-table tbody tr:hover td { background: #FBFCFE; }
 .pst-admin-table__strong { font-weight: 700; color: var(--pst-primary); }
 .pst-admin-table__muted { color: var(--pst-text-soft); font-size: 12.5px; }
 
-/* Buttons */
-.pst-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 15px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid var(--pst-border); background: var(--pst-surface); color: var(--pst-primary); transition: .12s; }
-.pst-btn:hover { border-color: #d7cfc0; background: #FCFAF6; color: var(--pst-primary); }
+/* ---------- BADGES ---------- */
+.pst-admin-badge {
+	display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px;
+	font-size: 11.5px; font-weight: 800; line-height: 1.5; letter-spacing: .2px;
+	background: #EEF1F6; color: var(--pst-text-soft); white-space: nowrap;
+}
+.pst-admin-badge--success, .pst-admin-badge--verified, .pst-admin-badge--active, .pst-admin-badge--published, .pst-admin-badge--postelio { background: #E4F1ED; color: var(--pst-success); }
+.pst-admin-badge--error, .pst-admin-badge--critical, .pst-admin-badge--suspended, .pst-admin-badge--rejected { background: #F7E8E8; color: var(--pst-error); }
+.pst-admin-badge--warning, .pst-admin-badge--high, .pst-admin-badge--manualreview, .pst-admin-badge--expiring { background: #F7EFDD; color: var(--pst-warning); }
+.pst-admin-badge--info, .pst-admin-badge--medium, .pst-admin-badge--pending, .pst-admin-badge--external { background: #E4EFF7; color: var(--pst-info); }
+.pst-admin-badge--low, .pst-admin-badge--neutral, .pst-admin-badge--draft, .pst-admin-badge--archived { background: #EEF1F6; color: var(--pst-text-soft); }
+.pst-admin-badge--dot::before { content: "●"; font-size: 8px; }
+
+/* ---------- BUTTONS ---------- */
+.pst-btn {
+	display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+	padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer;
+	border: 1px solid var(--pst-border); background: var(--pst-surface); color: var(--pst-primary); transition: .12s; line-height: 1.2; white-space: nowrap;
+}
+.pst-btn:hover { border-color: #d3dae4; background: #FBFCFE; color: var(--pst-primary); box-shadow: var(--pst-shadow-sm); }
+.pst-btn:focus-visible { outline: 2px solid rgba(47,110,163,.5); outline-offset: 2px; }
 .pst-btn--primary { background: var(--pst-primary); border-color: var(--pst-primary); color: #fff; }
 .pst-btn--primary:hover { background: var(--pst-primary-hover); border-color: var(--pst-primary-hover); color: #fff; }
-.pst-btn--accent { background: var(--pst-accent); border-color: var(--pst-accent); color: #3a1010; }
-.pst-btn--accent:hover { background: var(--pst-accent-hover); border-color: var(--pst-accent-hover); color: #3a1010; }
-.pst-btn--danger { color: var(--pst-error); border-color: #e6c9c9; }
-.pst-btn--danger:hover { background: #F6E7E7; color: var(--pst-error); }
-.pst-btn--sm { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
-.pst-admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pst-btn--accent { background: var(--pst-accent); border-color: var(--pst-accent); color: #4a1414; }
+.pst-btn--accent:hover { background: var(--pst-accent-hover); border-color: var(--pst-accent-hover); color: #4a1414; }
+.pst-btn--secondary { background: #EEF1F6; border-color: #EEF1F6; color: var(--pst-primary); }
+.pst-btn--secondary:hover { background: #E3E8F0; border-color: #E3E8F0; }
+.pst-btn--danger { color: var(--pst-error); border-color: #ecc9c9; background: #fff; }
+.pst-btn--danger:hover { background: #F7E8E8; color: var(--pst-error); }
+.pst-btn--ghost { background: transparent; border-color: transparent; color: var(--pst-text-soft); }
+.pst-btn--ghost:hover { background: #EEF1F6; color: var(--pst-primary); box-shadow: none; }
+.pst-btn--sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+.pst-btn--lg { padding: 12px 22px; font-size: 14.5px; }
+.pst-admin-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-/* Empty + alerts */
-.pst-admin-empty { text-align: center; padding: 48px 24px; color: var(--pst-text-soft); background: var(--pst-surface); border: 1px dashed var(--pst-border); border-radius: var(--pst-radius); }
-.pst-admin-empty__icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
-.pst-admin-empty h3 { margin: 0 0 4px; color: var(--pst-primary); font-size: 16px; }
-.pst-admin-alert { display: flex; gap: 10px; padding: 13px 16px; border-radius: 12px; font-size: 13.5px; margin-bottom: 18px; border: 1px solid; }
-.pst-admin-alert--info    { background: #E6EFF6; border-color: #cfe0ef; color: var(--pst-info); }
-.pst-admin-alert--success { background: #E6F1EE; border-color: #cde5df; color: var(--pst-success); }
-.pst-admin-alert--warning { background: #F6EEDD; border-color: #ecdcbd; color: var(--pst-warning); }
-.pst-admin-alert--error   { background: #F6E7E7; border-color: #ecc9c9; color: var(--pst-error); }
+/* ---------- KEY/VALUE ---------- */
+.pst-admin-kv { display: grid; grid-template-columns: 160px 1fr; gap: 11px 16px; font-size: 13.5px; }
+.pst-admin-kv dt { color: var(--pst-text-soft); font-weight: 600; }
+.pst-admin-kv dd { margin: 0; color: var(--pst-text); font-weight: 700; }
 
-/* Health rows */
-.pst-health-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px; border-bottom: 1px solid #F1ECE3; gap: 12px; }
+/* ---------- PREVIEWS ---------- */
+.pst-preview {
+	border: 1px solid var(--pst-border); border-radius: 14px; padding: 18px; background: linear-gradient(180deg, #fff, #FCFAF6);
+	box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+}
+.pst-preview__title { font-weight: 800; color: var(--pst-primary); font-size: 16px; margin: 0 0 2px; }
+.pst-preview__meta { color: var(--pst-text-soft); font-size: 12.5px; }
+.pst-preview__body { margin: 8px 0 0; color: var(--pst-text-soft); font-size: 13px; }
+.pst-preview__logo { height: 44px; border-radius: 10px; margin-bottom: 8px; }
+.pst-preview__img { max-width: 100%; border-radius: 10px; margin-bottom: 10px; }
+
+/* ---------- TIMELINES ---------- */
+.pst-timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.pst-timeline::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--pst-border); }
+.pst-timeline li { position: relative; padding: 0 0 16px 26px; }
+.pst-timeline li:last-child { padding-bottom: 0; }
+.pst-timeline li::before { content: ""; position: absolute; left: 2px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--pst-accent); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--pst-border); }
+.pst-timeline li.is-done::before { background: var(--pst-success); }
+.pst-timeline__label { font-weight: 700; color: var(--pst-primary); font-size: 13.5px; }
+.pst-timeline__time { color: var(--pst-text-soft); font-size: 12px; }
+
+/* ---------- HEALTH ---------- */
+.pst-health-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 6px; border-bottom: 1px solid var(--pst-border-soft); gap: 12px; }
 .pst-health-row:last-child { border-bottom: none; }
-.pst-health-row__name { font-weight: 600; color: var(--pst-primary); }
+.pst-health-row__name { font-weight: 700; color: var(--pst-primary); }
 .pst-health-row__meta { color: var(--pst-text-soft); font-size: 12.5px; }
 
-/* Filters bar */
-.pst-admin-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
-.pst-admin-filters input[type="search"], .pst-admin-filters select { padding: 7px 11px; border: 1px solid var(--pst-border); border-radius: 9px; font-size: 13px; background: var(--pst-surface); color: var(--pst-text); }
+/* ---------- EMPTY ---------- */
+.pst-admin-empty { text-align: center; padding: 56px 24px; color: var(--pst-text-soft); background: var(--pst-surface); border: 1px dashed var(--pst-border); border-radius: var(--pst-radius); }
+.pst-admin-empty__icon { font-size: 38px; margin-bottom: 12px; opacity: .55; }
+.pst-admin-empty h3 { margin: 0 0 4px; color: var(--pst-primary); font-size: 17px; }
+.pst-admin-empty p { margin: 0; max-width: 460px; margin-inline: auto; }
 
-/* Detail two-column layout */
-.pst-admin-cols { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; align-items: start; }
-.pst-admin-kv { display: grid; grid-template-columns: 150px 1fr; gap: 8px 14px; font-size: 13.5px; }
-.pst-admin-kv dt { color: var(--pst-text-soft); }
-.pst-admin-kv dd { margin: 0; color: var(--pst-text); font-weight: 600; }
+/* ---------- ALERTS ---------- */
+.pst-admin-alert { display: flex; gap: 10px; padding: 14px 17px; border-radius: 12px; font-size: 13.5px; margin-bottom: 20px; border: 1px solid; font-weight: 600; }
+.pst-admin-alert--info    { background: #E4EFF7; border-color: #cfe0ef; color: var(--pst-info); }
+.pst-admin-alert--success { background: #E4F1ED; border-color: #cde5df; color: var(--pst-success); }
+.pst-admin-alert--warning { background: #F7EFDD; border-color: #ecdcbd; color: var(--pst-warning); }
+.pst-admin-alert--error   { background: #F7E8E8; border-color: #ecc9c9; color: var(--pst-error); }
 
-/* Pagination */
-.pst-admin-pager { display: flex; gap: 6px; margin-top: 16px; align-items: center; justify-content: flex-end; font-size: 13px; }
-.pst-admin-pager a, .pst-admin-pager span { padding: 6px 11px; border: 1px solid var(--pst-border); border-radius: 8px; text-decoration: none; color: var(--pst-primary); background: var(--pst-surface); }
+/* ---------- PAGER ---------- */
+.pst-admin-pager { display: flex; gap: 6px; margin-top: 18px; align-items: center; justify-content: flex-end; font-size: 13px; }
+.pst-admin-pager a, .pst-admin-pager span { padding: 7px 12px; border: 1px solid var(--pst-border); border-radius: 9px; text-decoration: none; color: var(--pst-primary); background: var(--pst-surface); font-weight: 700; }
+.pst-admin-pager a:hover { background: #FBFCFE; }
 .pst-admin-pager .is-current { background: var(--pst-primary); color: #fff; border-color: var(--pst-primary); }
 
-/* Responsive */
-@media (max-width: 1100px) { .pst-admin-cols { grid-template-columns: 1fr; } }
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 1200px) { .pst-admin-cols { grid-template-columns: 1fr; } }
 @media (max-width: 782px) {
-	.pst-admin { margin: 0; padding: 6px 10px 40px; }
+	.pst-admin { margin: 0; padding: 10px 12px 60px; }
 	.pst-admin-header { padding: 20px; }
-	.pst-admin-header__titles h1 { font-size: 22px; }
+	.pst-admin-header__titles h1 { font-size: 24px; }
+	.pst-admin-card { padding: 18px 16px; }
 	.pst-admin-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+	.pst-admin-header__actions { width: 100%; }
 }
-@media (max-width: 540px) { .pst-admin-grid { grid-template-columns: 1fr; } }
+@media (max-width: 480px) {
+	.pst-admin-grid { grid-template-columns: 1fr; }
+	.pst-admin-kv { grid-template-columns: 1fr; gap: 2px 0; }
+	.pst-admin-kv dt { margin-top: 8px; }
+	.pst-admin-stat__value { font-size: 28px; }
+}

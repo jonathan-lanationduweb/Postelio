@@ -134,15 +134,15 @@ final class CompaniesPage extends Page {
 
 		// Aperçu public
 		$out .= Ui::card_open( 'Aperçu public' );
-		$out .= '<div style="border:1px solid var(--pst-border);border-radius:12px;padding:16px;background:#fff">';
+		$out .= '<div class="pst-preview">';
 		$logo = (string) ( $edit['logo_url'] ?? '' );
 		if ( '' !== $logo ) {
-			$out .= '<img src="' . esc_url( $logo ) . '" alt="" style="height:44px;border-radius:8px;margin-bottom:8px">';
+			$out .= '<img class="pst-preview__logo" src="' . esc_url( $logo ) . '" alt="">';
 		}
-		$out .= '<div style="font-weight:800;color:var(--pst-primary);font-size:16px">' . esc_html( (string) $c['nom'] ) . ' ' . ( 'verified' === $status ? Ui::badge( 'Vérifiée', 'success' ) : '' ) . '</div>';
-		$out .= '<div class="pst-admin-stat__sub">' . esc_html( (string) ( $legal['ville_siege'] ?? '' ) ) . '</div>';
+		$out .= '<div class="pst-preview__title">' . esc_html( (string) $c['nom'] ) . ' ' . ( 'verified' === $status ? Ui::badge( 'Vérifiée', 'success' ) : '' ) . '</div>';
+		$out .= '<div class="pst-preview__meta">' . esc_html( (string) ( $legal['ville_siege'] ?? '' ) ) . '</div>';
 		$desc = wp_strip_all_tags( (string) ( $c['description'] ?? '' ) );
-		$out .= '<p style="margin:8px 0 0;color:var(--pst-text-soft);font-size:13px">' . esc_html( mb_substr( $desc, 0, 220 ) ) . '</p>';
+		$out .= '<p class="pst-preview__body">' . esc_html( mb_substr( $desc, 0, 220 ) ) . '</p>';
 		$out .= '</div>' . Ui::card_close();
 		$out .= '</div></div>';
 		return $out;

@@ -129,6 +129,13 @@ final class BillingPage extends Page {
 		$out .= Ui::card_open( 'Paiements' ) . Ui::table( array( 'Statut', 'Montant', 'Date' ), $prows, 'Aucun paiement.' ) . Ui::card_close();
 		$out .= '</div><div>';
 
+		// Chronologie
+		$tl = array();
+		$tl[] = array( 'label' => 'Commande créée', 'time' => $this->fmt( $o['created_at'] ?? '' ), 'done' => ! empty( $o['created_at'] ) );
+		$tl[] = array( 'label' => 'Paiement reçu', 'time' => $this->fmt( $o['paid_at'] ?? '' ), 'done' => ! empty( $o['paid_at'] ) );
+		$tl[] = array( 'label' => 'Renouvellement appliqué', 'time' => $this->fmt( $o['fulfilled_at'] ?? '' ), 'done' => ! empty( $o['fulfilled_at'] ) );
+		$out .= Ui::card_open( 'Chronologie' ) . Ui::timeline( $tl ) . Ui::card_close();
+
 		// Reçu
 		$out .= Ui::card_open( 'Justificatif' );
 		if ( ! empty( $o['receipt_url'] ) ) {
@@ -140,5 +147,10 @@ final class BillingPage extends Page {
 		$out .= Ui::card_close();
 		$out .= '</div></div>';
 		return $out;
+	}
+
+	private function fmt( $v ): string {
+		$v = (string) $v;
+		return ( '' !== $v && '0000-00-00 00:00:00' !== $v ) ? mysql2date( 'd/m/Y H:i', $v ) : '—';
 	}
 }
