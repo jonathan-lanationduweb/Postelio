@@ -12,17 +12,23 @@
 
 namespace Postelio\Admin;
 
+use Postelio\Admin\Pages\ApplicationsPage;
 use Postelio\Admin\Pages\BillingPage;
 use Postelio\Admin\Pages\CompaniesPage;
 use Postelio\Admin\Pages\DashboardPage;
+use Postelio\Admin\Pages\FilesPage;
 use Postelio\Admin\Pages\HealthPage;
+use Postelio\Admin\Pages\InterviewsPage;
 use Postelio\Admin\Pages\JobsPage;
+use Postelio\Admin\Pages\MessagingPage;
 use Postelio\Admin\Pages\ModerationPage;
 use Postelio\Admin\Pages\NotificationsPage;
 use Postelio\Admin\Pages\PlaceholderPage;
+use Postelio\Admin\Pages\SettingsPage;
 use Postelio\Admin\Pages\SkillsPage;
 use Postelio\Admin\Pages\SourcesPage;
 use Postelio\Admin\Pages\UsersPage;
+use Postelio\Admin\Support\Metrics;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -49,23 +55,30 @@ final class Menu {
 			3
 		);
 
-		// Ordre voulu (libellé, slug, cap, page).
+		// Ordre logique par groupes métier. Pas de séparateur WP fragile : l'ordre seul structure
+		// Gestion → Communication → Contenu/Données → Contrôle → Système.
 		$items = array(
+			// Tableau de bord
 			array( 'Tableau de bord', self::PARENT, self::CAP_VIEW, new DashboardPage() ),
+			// Gestion
 			array( 'Utilisateurs', 'postelio-users', self::CAP_ADMIN, new UsersPage() ),
 			array( 'Entreprises', 'postelio-companies', self::CAP_ADMIN, new CompaniesPage() ),
 			array( 'Offres', 'postelio-jobs', self::CAP_ADMIN, new JobsPage() ),
-			array( 'Candidatures', 'postelio-applications', self::CAP_ADMIN, new PlaceholderPage( 'Candidatures', 'Suivi des candidatures par statut, offre et entreprise.', self::CAP_ADMIN ) ),
-			array( 'CV & fichiers', 'postelio-files', self::CAP_ADMIN, new PlaceholderPage( 'CV & fichiers', 'État du stockage privé, quarantaine et scanner. (Accès aux fichiers restreint.)', self::CAP_ADMIN ) ),
-			array( 'Messagerie', 'postelio-messaging', self::CAP_ADMIN, new PlaceholderPage( 'Messagerie', 'Métriques et statuts de conversations. L\'accès au contenu reste réservé à la modération.', self::CAP_ADMIN ) ),
-			array( 'Entretiens', 'postelio-interviews', self::CAP_ADMIN, new PlaceholderPage( 'Entretiens', 'Liste et statuts des entretiens (sans exposer téléphone/lien visio en tableau).', self::CAP_ADMIN ) ),
+			array( 'Candidatures', 'postelio-applications', self::CAP_ADMIN, new ApplicationsPage() ),
+			array( 'Entretiens', 'postelio-interviews', self::CAP_ADMIN, new InterviewsPage() ),
+			// Communication
+			array( 'Messagerie', 'postelio-messaging', self::CAP_ADMIN, new MessagingPage() ),
 			array( 'Notifications', 'postelio-notifications', self::CAP_ADMIN, new NotificationsPage() ),
-			array( 'Sources d\'offres', 'postelio-sources', self::CAP_ADMIN, new SourcesPage() ),
-			array( 'Modération', 'postelio-moderation', self::CAP_VIEW, new ModerationPage() ),
-			array( 'Facturation', 'postelio-billing', 'pst_manage_billing', new BillingPage() ),
+			// Contenu & données
+			array( 'CV & fichiers', 'postelio-files', self::CAP_ADMIN, new FilesPage() ),
 			array( 'Savoir-faire', 'postelio-skills', self::CAP_ADMIN, new SkillsPage() ),
+			array( 'Sources d\'offres', 'postelio-sources', self::CAP_ADMIN, new SourcesPage() ),
 			array( 'Favoris & Alertes', 'postelio-alerts', self::CAP_ADMIN, new PlaceholderPage( 'Favoris & Alertes', 'Préparé pour le Lot 14 (favoris, recherches sauvegardées, alertes). Non implémenté.', self::CAP_ADMIN ) ),
-			array( 'Réglages', 'postelio-settings', self::CAP_ADMIN, new PlaceholderPage( 'Réglages', 'Réglages Postelio sûrs et modifiables. Les secrets restent en environnement (jamais ici).', self::CAP_ADMIN ) ),
+			// Contrôle
+			array( $this->moderation_label(), 'postelio-moderation', self::CAP_VIEW, new ModerationPage() ),
+			array( 'Facturation', 'postelio-billing', 'pst_manage_billing', new BillingPage() ),
+			// Système
+			array( 'Réglages', 'postelio-settings', self::CAP_ADMIN, new SettingsPage() ),
 			array( 'Santé du système', 'postelio-health', self::CAP_ADMIN, new HealthPage() ),
 		);
 
@@ -73,6 +86,19 @@ final class Menu {
 			list( $label, $slug, $cap, $page ) = $it;
 			add_submenu_page( self::PARENT, 'Postelio — ' . $label, $label, $cap, $slug, array( $page, 'render' ) );
 		}
+	}
+
+	/**
+	 * Libellé « Modération » avec pastille du nombre de dossiers ouverts (convention WordPress
+	 * `awaiting-mod`, rendue côté serveur — AUCUN polling JS). Silencieux si le module est absent
+	 * ou si aucun dossier n'est ouvert.
+	 */
+	private function moderation_label(): string {
+		$open = Metrics::moderation_open();
+		if ( null === $open || $open <= 0 ) {
+			return 'Modération';
+		}
+		return 'Modération <span class="awaiting-mod"><span class="pending-count">' . (int) $open . '</span></span>';
 	}
 
 	/** Icône du menu (SVG data-URI, bleu nuit). */

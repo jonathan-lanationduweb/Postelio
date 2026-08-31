@@ -48,6 +48,29 @@ final class DashboardPage extends Page {
 		$grid .= '</div>';
 		$out  .= $grid;
 
+		// --- Raccourcis (gérés par capability) ------------------------------
+		$shortcuts = array();
+		if ( $is_admin ) {
+			$shortcuts[] = array( 'Offres', 'postelio-jobs' );
+			$shortcuts[] = array( 'Entreprises', 'postelio-companies' );
+			$shortcuts[] = array( 'Candidatures', 'postelio-applications' );
+			$shortcuts[] = array( 'Entretiens', 'postelio-interviews' );
+		}
+		if ( current_user_can( \Postelio\Admin\Menu::CAP_VIEW ) ) {
+			$shortcuts[] = array( 'Modération', 'postelio-moderation' );
+		}
+		if ( current_user_can( 'pst_manage_billing' ) ) {
+			$shortcuts[] = array( 'Facturation', 'postelio-billing' );
+		}
+		if ( ! empty( $shortcuts ) ) {
+			$out .= Ui::card_open( 'Raccourcis' );
+			$out .= '<p class="pst-admin-actions">';
+			foreach ( $shortcuts as $s ) {
+				$out .= '<a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( $s[1] ) ) . '">' . esc_html( $s[0] ) . '</a> ';
+			}
+			$out .= '</p>' . Ui::card_close();
+		}
+
 		// --- Deux colonnes : modération + services --------------------------
 		$out .= '<div class="pst-admin-grid pst-admin-grid--2">';
 
