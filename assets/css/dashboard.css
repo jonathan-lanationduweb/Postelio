@@ -322,7 +322,7 @@
 .payment-total .amount {
   font-family: var(--font-serif);
   font-size: var(--text-3xl);
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
 }
 
 .payment-methods {
@@ -377,7 +377,7 @@
 }
 
 .auth-aside .eyebrow {
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   margin-bottom: 0;
 }
 
@@ -402,7 +402,7 @@
   content: "—";
   position: absolute;
   left: 0;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
 }
 
 .auth-aside__note {
@@ -959,7 +959,7 @@ body.kanban-dragging, body.kanban-dragging .pipeline-card { cursor: grabbing; }
   background: var(--c-accent); color: var(--c-primary-dark); font-weight: 700; font-size: var(--text-sm);
   border: 0; cursor: pointer;
 }
-.kanban-toast__undo:hover { background: #d69127; }
+.kanban-toast__undo:hover { background: var(--c-accent-hover); }
 .kanban-toast__undo:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 /* ---- Modale détail candidat ---- */
@@ -1002,7 +1002,7 @@ body.kanban-dragging, body.kanban-dragging .pipeline-card { cursor: grabbing; }
   list-style: none; padding: var(--sp-2) 0; user-select: none;
 }
 .cand-actions__more summary::-webkit-details-marker { display: none; }
-.cand-actions__more summary::before { content: "▸ "; color: var(--c-accent); }
+.cand-actions__more summary::before { content: "▸ "; color: var(--c-accent-dark); }
 .cand-actions__more[open] summary::before { content: "▾ "; }
 .cand-actions__menu { display: flex; gap: var(--sp-2); flex-wrap: wrap; padding-top: var(--sp-2); }
 
@@ -1230,8 +1230,8 @@ body.kanban-dragging, body.kanban-dragging .pipeline-card { cursor: grabbing; }
   position: relative; aspect-ratio: 16 / 9; width: 100%;
   background: linear-gradient(135deg, var(--c-primary), var(--c-primary-dark));
 }
-.content-thumb--metiers { background: linear-gradient(135deg, #2a6a5d, #14372f); }
-.content-thumb--locaux { background: linear-gradient(135deg, #e8a33d, #855805); }
+.content-thumb--metiers { background: linear-gradient(135deg, #2a5580, #17324d); }
+.content-thumb--locaux { background: linear-gradient(135deg, #ff8a8a, #ef5a5a); }
 .content-thumb--coulisses { background: linear-gradient(135deg, #3d6e9e, #24425f); }
 .content-thumb--equipe { background: linear-gradient(135deg, #7a5aa0, #422f63); }
 .content-thumb--conseils { background: linear-gradient(135deg, #2f6b5e, #143f38); }

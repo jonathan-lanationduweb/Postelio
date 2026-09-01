@@ -1,35 +1,52 @@
-/* Jetons de design — Postelio (v2, refonte)
-   Palette « vert sapin & miel » conservée, redistribuée :
-   blanc pour le contenu, crème en respiration, une section sapin forte
-   par page, orange réservé aux actions clés. */
+/* Jetons de design — Postelio (v3, refonte de marque)
+   Nouvelle identité : BLEU NUIT structurant (#17324D) + CORAIL d'accent (#FF6B6B).
+   Le bleu nuit porte la confiance (titres, texte, navigation, structure) ;
+   le corail reste une couleur d'ACCENT (CTA principal, favoris, notifications,
+   détails). Les fonds restent clairs (blanc + crème) pour laisser respirer les
+   nouvelles couleurs. Les couleurs SÉMANTIQUES (succès/erreur/avertissement/info)
+   sont indépendantes de la marque et restent distinctes et accessibles.
+
+   Accessibilité : texte blanc sur corail échoue le contraste AA (~2.7:1) ; on
+   utilise donc du texte BLEU NUIT sur corail (~4.8:1, AA) pour les CTA, et
+   --c-accent-dark (#b23a3a, ~5.9:1) quand le corail sert de couleur de TEXTE. */
 
 :root {
-  /* Couleurs */
-  --c-primary: #1e4f46;
-  --c-primary-dark: #14372f;
-  --c-primary-soft: #e9f0ec;
-  --c-accent: #e8a33d;
-  --c-accent-dark: #855805;
-  --c-accent-soft: #f9edd8;
-  --c-bg: #faf7f1;          /* crème : fond général */
-  --c-bg-alt: #f3efe5;      /* beige légèrement plus soutenu */
-  --c-surface: #ffffff;     /* blanc : contenu, respiration */
-  --c-ink: #22302b;
-  --c-ink-soft: #5a675f;
-  --c-line: #e8e2d5;        /* filet fin */
-  --c-border: #e8e2d5;
-  --c-border-strong: #cfc7b6;
-  --c-error: #a83232;
+  /* ===== Marque — Bleu nuit (structurant / confiance) ===== */
+  --c-primary: #17324d;
+  --c-primary-dark: #0f2337;      /* hover des surfaces bleues, texte fort */
+  --c-primary-hover: #0f2337;
+  --c-primary-soft: #e7ecf1;      /* surface bleutée légère : nav active, info */
+  --c-primary-surface: #f1f4f8;   /* surface bleutée très légère */
+
+  /* ===== Marque — Corail (accent / dynamisme) ===== */
+  --c-accent: #ff6b6b;
+  --c-accent-hover: #ef5a5a;      /* hover CTA corail */
+  --c-accent-dark: #b23a3a;       /* corail comme TEXTE sur fond clair (AA) */
+  --c-accent-soft: #ffe9e6;       /* surface corail légère : badge, favori, halo */
+
+  /* ===== Fonds & neutres (esprit clair conservé) ===== */
+  --c-bg: #faf7f1;                /* crème : fond général */
+  --c-bg-alt: #f4f1ea;            /* beige légèrement plus soutenu */
+  --c-surface: #ffffff;           /* blanc : contenu, respiration */
+  --c-ink: #17324d;               /* texte principal = bleu nuit (confiance) */
+  --c-ink-soft: #566575;          /* texte secondaire (bleu-gris, AA sur blanc) */
+  --c-line: #e6e0d4;              /* filet fin (neutre chaud, garde la crème) */
+  --c-border: #e6e0d4;
+  --c-border-strong: #cbc4b4;
+
+  /* ===== Sémantique (INDÉPENDANTE de la marque) ===== */
+  --c-error: #a83232;             /* rouge profond, distinct du corail */
   --c-error-soft: #f7e5e5;
-  --c-success: #2f6b5e;
+  --c-success: #2f6b5e;           /* vert = succès / entreprise vérifiée */
   --c-success-soft: #e3efe9;
-  --c-info-soft: #eef1f6;
+  --c-warning: #955700;           /* ambre = avertissement (distinct du corail ; blanc AA) */
+  --c-warning-soft: #fbedd6;
+  --c-info: #2f6ea3;              /* bleu info (distinct du bleu nuit de marque) */
+  --c-info-soft: #eaf1f8;
 
   /* Typographie */
   --font-serif: "Georgia", "Iowan Old Style", "Times New Roman", serif;
   --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  /* Échelle relevée (refonte lisibilité) : plancher 13 px,
-     texte secondaire 15 px, titres de section 30-36 px */
   --text-base: 1rem;
   --text-sm: 0.9375rem;                       /* 15 px */
   --text-xs: 0.8125rem;                       /* 13 px — plancher absolu */
@@ -49,23 +66,22 @@
   --sp-7: 3rem;
   --sp-8: 4.5rem;
 
-  /* Formes et ombres — 3 rayons, UNE famille d'ombres douces et naturelles
-     (deux couches : contact serré + halo diffus, teintées du vert du site) */
+  /* Formes et ombres — ombres teintées du bleu nuit de marque */
   --radius-s: 4px;
   --radius-m: 8px;
   --radius-l: 8px;
-  --radius-pill: 999px;      /* réservé aux avatars et pastilles d'état */
-  --shadow-s: 0 1px 2px rgba(20, 45, 38, 0.05), 0 2px 8px rgba(20, 45, 38, 0.05);
-  --shadow-m: 0 2px 4px rgba(20, 45, 38, 0.04), 0 12px 28px -6px rgba(20, 45, 38, 0.1);
-  --shadow-l: 0 4px 8px rgba(20, 45, 38, 0.05), 0 24px 48px -12px rgba(20, 45, 38, 0.14);
-  --shadow-focus: 0 0 0 3px rgba(232, 163, 61, 0.4);
+  --radius-pill: 999px;
+  --shadow-s: 0 1px 2px rgba(23, 50, 77, 0.05), 0 2px 8px rgba(23, 50, 77, 0.05);
+  --shadow-m: 0 2px 4px rgba(23, 50, 77, 0.04), 0 12px 28px -6px rgba(23, 50, 77, 0.1);
+  --shadow-l: 0 4px 8px rgba(23, 50, 77, 0.05), 0 24px 48px -12px rgba(23, 50, 77, 0.14);
+  --shadow-focus: 0 0 0 3px rgba(255, 107, 107, 0.45); /* anneau de focus corail */
 
   /* Mise en page */
   --container: 1200px;
   --container-narrow: 780px;
   --header-height: 76px;
-  --banner-h: 2.25rem;   /* bandeau démo : hauteur stable, déduite du hero */
+  --banner-h: 2.25rem;
 
-  /* Transitions — courbe douce commune à toute l'interface */
+  /* Transitions */
   --transition: 200ms cubic-bezier(0.2, 0, 0, 1);
 }

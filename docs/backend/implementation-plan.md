@@ -79,6 +79,19 @@ Règles : dépendances **descendantes** uniquement ; toute autre interaction pas
 > tableau de roadmap ci-dessus reste à faire sur `feature/search-alerts` — numérotation de la
 > phase de conception, distincte du lot d'implémentation `postelio-skills`.)*
 
+> **`postelio-admin` — back-office wp-admin, Phase 1, implémenté** sur la branche
+> **`feature/postelio-admin`**. **Chantier distinct**, mené **en parallèle** et **indépendant
+> du Lot 14** (« Outils admin » de la roadmap) : c'est une **couche d'orchestration pure**
+> (menu unique « Postelio », pages Tableau de bord / Utilisateurs / Entreprises / Offres /
+> Modération / Santé complètes ; autres sous-menus en emplacement), **sans logique métier, sans
+> table, sans écriture directe** — lecture via contrats `Api\*Directory` + REST interne
+> (`rest_do_request` comme l'admin courant), actions déléguées aux services propriétaires.
+> **Aucune nouvelle capability** (`pst_view_moderation_queue`/`pst_manage_platform`/
+> `pst_manage_billing`, re-check serveur + nonces). Deux façades **additives lecture seule** :
+> `JobAdminDirectory` (jobs), `CompanyAdminDirectory` (companies). Front public inchangé, Lot 14
+> non entamé (emplacement de menu « Favoris & Alertes » seulement). Doc :
+> [admin-backoffice.md](admin-backoffice.md).
+
 ## Mapping avec les branches Git existantes
 
 Déjà créées (issues de `develop`) :

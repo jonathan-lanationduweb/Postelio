@@ -1,0 +1,340 @@
+/**
+ * ============================================================================
+ * POSTELIO — Back-office · Design system
+ * Bleu nuit + corail sur fond très clair. Tout est préfixé `pst-` et encapsulé
+ * sous `.pst-admin`. Chargé UNIQUEMENT sur les pages Postelio (enqueue ciblé),
+ * d'où le style autorisé de #wpcontent pour le fond de page.
+ * Sections : TOKENS · LAYOUT · HEADERS · CARDS · GRIDS · STATS · TABS ·
+ * FILTERS · FORMS · TABLES · BADGES · BUTTONS · PREVIEWS · TIMELINES ·
+ * HEALTH · EMPTY · ALERTS · PAGER · RESPONSIVE
+ * ============================================================================ */
+
+/* ---------- TOKENS ---------- */
+.pst-admin {
+	--pst-primary:       #17324D;
+	--pst-primary-hover: #0F2337;
+	--pst-accent:        #FF6B6B;
+	--pst-accent-hover:  #EF5A5A;
+	--pst-bg:            #F5F7FA;
+	--pst-bg-warm:       #FAF7F1;
+	--pst-surface:       #FFFFFF;
+	--pst-text:          #17324D;
+	--pst-text-soft:     #566575;
+	--pst-border:        #E6EAF0;
+	--pst-border-soft:   #F0F3F7;
+	--pst-success:       #2F6B5E;
+	--pst-warning:       #955700;
+	--pst-error:         #A83232;
+	--pst-info:          #2F6EA3;
+	--pst-radius:        18px;
+	--pst-radius-sm:     11px;
+	--pst-shadow:        0 1px 2px rgba(23,50,77,.05), 0 8px 24px rgba(23,50,77,.05);
+	--pst-shadow-sm:     0 1px 2px rgba(23,50,77,.06);
+	--pst-shadow-hover:  0 2px 4px rgba(23,50,77,.06), 0 14px 34px rgba(23,50,77,.08);
+}
+
+/* Fond de page (uniquement chargé sur les écrans Postelio). */
+#wpcontent, #wpbody-content { background: #F5F7FA; }
+#wpbody-content { padding-bottom: 0; }
+
+/* ---------- LAYOUT ---------- */
+.pst-admin {
+	max-width: 1500px;
+	margin: 6px auto 0;
+	padding: 20px 30px 70px;
+	color: var(--pst-text);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.55;
+}
+.pst-admin * { box-sizing: border-box; }
+.pst-admin a { color: var(--pst-info); }
+
+/* ---------- HEADERS ---------- */
+.pst-admin-header {
+	display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+	gap: 18px; padding: 26px 30px; margin: 4px 0 26px;
+	background: linear-gradient(135deg, #FFFFFF 0%, #FCFAF6 100%);
+	border: 1px solid var(--pst-border); border-radius: var(--pst-radius);
+	box-shadow: var(--pst-shadow); position: relative; overflow: hidden;
+}
+.pst-admin-header::before {
+	content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+	background: linear-gradient(180deg, var(--pst-accent), #ff9a9a);
+}
+.pst-eyebrow {
+	display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1.4px;
+	text-transform: uppercase; color: var(--pst-accent); margin: 0 0 6px;
+}
+.pst-admin-header__titles h1 { margin: 0; font-size: 30px; line-height: 1.12; color: var(--pst-primary); font-weight: 800; letter-spacing: -.4px; }
+.pst-admin-header__titles p { margin: 6px 0 0; color: var(--pst-text-soft); font-size: 14.5px; max-width: 640px; }
+.pst-admin-header__actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* ---------- CARDS ---------- */
+.pst-admin-card {
+	background: var(--pst-surface); border: 1px solid var(--pst-border);
+	border-radius: var(--pst-radius); box-shadow: var(--pst-shadow);
+	padding: 26px 28px; margin-bottom: 20px;
+}
+.pst-admin-card__title { margin: 0 0 18px; font-size: 15px; font-weight: 800; color: var(--pst-primary); display: flex; align-items: center; gap: 8px; letter-spacing: -.2px; }
+.pst-admin-card__title small { font-weight: 500; color: var(--pst-text-soft); font-size: 12.5px; }
+.pst-card--compact { padding: 16px 18px; }
+.pst-card--highlight { border-color: #cfe0ef; background: linear-gradient(180deg, #fff, #F3F8FC); }
+.pst-card--danger { border-color: #ecc9c9; background: #FCF4F4; }
+
+/* ---------- GRIDS ---------- */
+.pst-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 18px; margin-bottom: 22px; }
+.pst-admin-grid--2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.pst-admin-cols { display: grid; grid-template-columns: 1.65fr 1fr; gap: 20px; align-items: start; }
+
+/* ---------- STATS ---------- */
+.pst-admin-stat { display: flex; flex-direction: column; gap: 7px; transition: box-shadow .15s, transform .15s; position: relative; }
+.pst-admin-stat:hover { box-shadow: var(--pst-shadow-hover); transform: translateY(-1px); }
+.pst-admin-stat__icon { position: absolute; top: 20px; right: 22px; font-size: 20px; opacity: .5; }
+.pst-admin-stat__value { font-size: 32px; font-weight: 800; color: var(--pst-primary); line-height: 1; letter-spacing: -1px; }
+.pst-admin-stat__value--muted { color: #9aa6b4; font-weight: 700; font-size: 22px; }
+.pst-admin-stat__label { font-size: 13px; color: var(--pst-text-soft); font-weight: 600; }
+.pst-admin-stat__sub { font-size: 12px; color: var(--pst-text-soft); }
+.pst-admin-stat--accent { border-left: 4px solid var(--pst-accent); }
+
+/* ---------- TABS ---------- */
+.pst-admin-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 20px; padding: 5px; background: #EEF1F6; border-radius: 14px; width: fit-content; max-width: 100%; }
+.pst-admin-tabs a {
+	padding: 8px 16px; border-radius: 10px; text-decoration: none; font-size: 13.5px; font-weight: 700;
+	color: var(--pst-text-soft); transition: .12s; white-space: nowrap;
+}
+.pst-admin-tabs a:hover { color: var(--pst-primary); background: rgba(255,255,255,.6); }
+.pst-admin-tabs a.is-active { color: #fff; background: var(--pst-primary); box-shadow: var(--pst-shadow-sm); }
+.pst-admin-tabs a .count { opacity: .7; font-weight: 700; }
+.pst-admin-tabs a.is-active .count { color: #cfe0ef; }
+
+/* ---------- FILTERS ---------- */
+.pst-admin-filters {
+	display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px;
+	padding: 14px 16px; background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: var(--pst-radius-sm); box-shadow: var(--pst-shadow-sm);
+}
+.pst-admin-filters input[type="search"], .pst-admin-filters input[type="text"], .pst-admin-filters select {
+	padding: 8px 12px; border: 1px solid var(--pst-border); border-radius: 9px; font-size: 13px; background: #fff; color: var(--pst-text); min-height: 36px;
+}
+.pst-admin-filters input:focus, .pst-admin-filters select:focus { outline: 2px solid rgba(47,110,163,.3); border-color: var(--pst-info); }
+
+/* ---------- FORMS ---------- */
+.pst-admin label { font-weight: 700; color: var(--pst-primary); font-size: 13px; }
+.pst-admin textarea, .pst-admin input[type="text"], .pst-admin input[type="email"], .pst-admin select {
+	border: 1px solid var(--pst-border); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; background: #fff; color: var(--pst-text);
+}
+.pst-admin textarea:focus, .pst-admin input:focus, .pst-admin select:focus { outline: 2px solid rgba(47,110,163,.28); border-color: var(--pst-info); }
+.pst-help { color: var(--pst-text-soft); font-size: 12px; }
+
+/* ---------- TABLES ---------- */
+.pst-admin-table-wrap { overflow-x: auto; background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: var(--pst-radius); box-shadow: var(--pst-shadow); }
+.pst-admin-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 720px; }
+.pst-admin-table th { text-align: left; padding: 15px 18px; background: #FCFAF6; color: var(--pst-text-soft); font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; border-bottom: 1px solid var(--pst-border); }
+.pst-admin-table td { padding: 15px 18px; border-bottom: 1px solid var(--pst-border-soft); vertical-align: middle; }
+.pst-admin-table tr:last-child td { border-bottom: none; }
+.pst-admin-table tbody tr { transition: background .1s; }
+.pst-admin-table tbody tr:hover td { background: #FBFCFE; }
+.pst-admin-table__strong { font-weight: 700; color: var(--pst-primary); }
+.pst-admin-table__muted { color: var(--pst-text-soft); font-size: 12.5px; }
+
+/* ---------- BADGES ---------- */
+.pst-admin-badge {
+	display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px;
+	font-size: 11.5px; font-weight: 800; line-height: 1.5; letter-spacing: .2px;
+	background: #EEF1F6; color: var(--pst-text-soft); white-space: nowrap;
+}
+.pst-admin-badge--success, .pst-admin-badge--verified, .pst-admin-badge--active, .pst-admin-badge--published, .pst-admin-badge--postelio { background: #E4F1ED; color: var(--pst-success); }
+.pst-admin-badge--error, .pst-admin-badge--critical, .pst-admin-badge--suspended, .pst-admin-badge--rejected { background: #F7E8E8; color: var(--pst-error); }
+.pst-admin-badge--warning, .pst-admin-badge--high, .pst-admin-badge--manualreview, .pst-admin-badge--expiring { background: #F7EFDD; color: var(--pst-warning); }
+.pst-admin-badge--info, .pst-admin-badge--medium, .pst-admin-badge--pending, .pst-admin-badge--external { background: #E4EFF7; color: var(--pst-info); }
+.pst-admin-badge--low, .pst-admin-badge--neutral, .pst-admin-badge--draft, .pst-admin-badge--archived { background: #EEF1F6; color: var(--pst-text-soft); }
+.pst-admin-badge--dot::before { content: "●"; font-size: 8px; }
+
+/* ---------- BUTTONS ---------- */
+.pst-btn {
+	display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+	padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer;
+	border: 1px solid var(--pst-border); background: var(--pst-surface); color: var(--pst-primary); transition: .12s; line-height: 1.2; white-space: nowrap;
+}
+.pst-btn:hover { border-color: #d3dae4; background: #FBFCFE; color: var(--pst-primary); box-shadow: var(--pst-shadow-sm); }
+.pst-btn:focus-visible { outline: 2px solid rgba(47,110,163,.5); outline-offset: 2px; }
+.pst-btn--primary { background: var(--pst-primary); border-color: var(--pst-primary); color: #fff; }
+.pst-btn--primary:hover { background: var(--pst-primary-hover); border-color: var(--pst-primary-hover); color: #fff; }
+.pst-btn--accent { background: var(--pst-accent); border-color: var(--pst-accent); color: #4a1414; }
+.pst-btn--accent:hover { background: var(--pst-accent-hover); border-color: var(--pst-accent-hover); color: #4a1414; }
+.pst-btn--secondary { background: #EEF1F6; border-color: #EEF1F6; color: var(--pst-primary); }
+.pst-btn--secondary:hover { background: #E3E8F0; border-color: #E3E8F0; }
+.pst-btn--danger { color: var(--pst-error); border-color: #ecc9c9; background: #fff; }
+.pst-btn--danger:hover { background: #F7E8E8; color: var(--pst-error); }
+.pst-btn--ghost { background: transparent; border-color: transparent; color: var(--pst-text-soft); }
+.pst-btn--ghost:hover { background: #EEF1F6; color: var(--pst-primary); box-shadow: none; }
+.pst-btn--sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+.pst-btn--lg { padding: 12px 22px; font-size: 14.5px; }
+.pst-admin-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ---------- KEY/VALUE ---------- */
+.pst-admin-kv { display: grid; grid-template-columns: 160px 1fr; gap: 11px 16px; font-size: 13.5px; }
+.pst-admin-kv dt { color: var(--pst-text-soft); font-weight: 600; }
+.pst-admin-kv dd { margin: 0; color: var(--pst-text); font-weight: 700; }
+
+/* ---------- PREVIEWS ---------- */
+.pst-preview {
+	border: 1px solid var(--pst-border); border-radius: 14px; padding: 18px; background: linear-gradient(180deg, #fff, #FCFAF6);
+	box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+}
+.pst-preview__title { font-weight: 800; color: var(--pst-primary); font-size: 16px; margin: 0 0 2px; }
+.pst-preview__meta { color: var(--pst-text-soft); font-size: 12.5px; }
+.pst-preview__body { margin: 8px 0 0; color: var(--pst-text-soft); font-size: 13px; }
+.pst-preview__logo { height: 44px; border-radius: 10px; margin-bottom: 8px; }
+.pst-preview__img { max-width: 100%; border-radius: 10px; margin-bottom: 10px; }
+
+/* ---------- TIMELINES ---------- */
+.pst-timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.pst-timeline::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--pst-border); }
+.pst-timeline li { position: relative; padding: 0 0 16px 26px; }
+.pst-timeline li:last-child { padding-bottom: 0; }
+.pst-timeline li::before { content: ""; position: absolute; left: 2px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--pst-accent); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--pst-border); }
+.pst-timeline li.is-done::before { background: var(--pst-success); }
+.pst-timeline__label { font-weight: 700; color: var(--pst-primary); font-size: 13.5px; }
+.pst-timeline__time { color: var(--pst-text-soft); font-size: 12px; }
+
+/* ---------- HEALTH ---------- */
+.pst-health-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 6px; border-bottom: 1px solid var(--pst-border-soft); gap: 12px; }
+.pst-health-row:last-child { border-bottom: none; }
+.pst-health-row__name { font-weight: 700; color: var(--pst-primary); }
+.pst-health-row__meta { color: var(--pst-text-soft); font-size: 12.5px; }
+
+/* ---------- EMPTY ---------- */
+.pst-admin-empty { text-align: center; padding: 30px 24px; color: var(--pst-text-soft); background: var(--pst-surface); border: 1px dashed var(--pst-border); border-radius: 12px; }
+.pst-admin-empty__icon { font-size: 28px; margin-bottom: 8px; opacity: .5; }
+.pst-admin-empty h3 { margin: 0 0 3px; color: var(--pst-primary); font-size: 15px; }
+.pst-admin-empty p { margin: 0; max-width: 460px; margin-inline: auto; font-size: 13px; }
+
+/* ---------- ALERTS ---------- */
+.pst-admin-alert { display: flex; gap: 10px; padding: 14px 17px; border-radius: 12px; font-size: 13.5px; margin-bottom: 20px; border: 1px solid; font-weight: 600; }
+.pst-admin-alert--info    { background: #E4EFF7; border-color: #cfe0ef; color: var(--pst-info); }
+.pst-admin-alert--success { background: #E4F1ED; border-color: #cde5df; color: var(--pst-success); }
+.pst-admin-alert--warning { background: #F7EFDD; border-color: #ecdcbd; color: var(--pst-warning); }
+.pst-admin-alert--error   { background: #F7E8E8; border-color: #ecc9c9; color: var(--pst-error); }
+
+/* ---------- PAGER ---------- */
+.pst-admin-pager { display: flex; gap: 6px; margin-top: 18px; align-items: center; justify-content: flex-end; font-size: 13px; }
+.pst-admin-pager a, .pst-admin-pager span { padding: 7px 12px; border: 1px solid var(--pst-border); border-radius: 9px; text-decoration: none; color: var(--pst-primary); background: var(--pst-surface); font-weight: 700; }
+.pst-admin-pager a:hover { background: #FBFCFE; }
+.pst-admin-pager .is-current { background: var(--pst-primary); color: #fff; border-color: var(--pst-primary); }
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 1200px) { .pst-admin-cols { grid-template-columns: 1fr; } }
+@media (max-width: 782px) {
+	.pst-admin { margin: 0; padding: 10px 12px 60px; }
+	.pst-admin-header { padding: 20px; }
+	.pst-admin-header__titles h1 { font-size: 24px; }
+	.pst-admin-card { padding: 18px 16px; }
+	.pst-admin-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+	.pst-admin-header__actions { width: 100%; }
+}
+@media (max-width: 480px) {
+	.pst-admin-grid { grid-template-columns: 1fr; }
+	.pst-admin-kv { grid-template-columns: 1fr; gap: 2px 0; }
+	.pst-admin-kv dt { margin-top: 8px; }
+	.pst-admin-stat__value { font-size: 28px; }
+}
+
+/* ==== Hub « Pages & contenus » (tuiles de page) ======================== */
+.pst-hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.pst-hub-card { background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: 12px; padding: 15px 16px 14px; box-shadow: var(--pst-shadow-sm); transition: border-color .15s ease, box-shadow .15s ease; display: flex; flex-direction: column; }
+.pst-hub-card:hover { border-color: #cdd6e2; box-shadow: var(--pst-shadow-hover); }
+.pst-hub-card__top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.pst-hub-card__icon { width: 32px; height: 32px; border-radius: 9px; background: var(--pst-accent-soft, #ffe9e6); display: flex; align-items: center; justify-content: center; font-size: 17px; flex: none; }
+.pst-hub-card__name { color: var(--pst-primary); font-size: 15px; font-weight: 700; }
+.pst-hub-card__desc { color: var(--pst-text-soft); font-size: 12.5px; line-height: 1.45; margin: 0 0 11px; flex: 1; }
+.pst-hub-card__badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.pst-hub-card__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ==== Cellule entité (avatar/logo + titre + sous-titre) =============== */
+.pst-entity { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.pst-entity__text { min-width: 0; }
+.pst-entity__title { display: block; font-weight: 600; color: var(--pst-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pst-entity__sub { display: block; font-size: 11.5px; color: var(--pst-text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pst-avatar { width: 36px; height: 36px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12.5px; color: #fff; background: linear-gradient(135deg, var(--pst-primary), #2c527a); background-size: cover; background-position: center; }
+.pst-avatar--square { border-radius: 10px; }
+.pst-avatar--accent { background: linear-gradient(135deg, var(--pst-accent), #ff9d78); }
+.pst-avatar--neutral { background: linear-gradient(135deg, #8595a8, #aab6c6); }
+.pst-avatar--success { background: linear-gradient(135deg, #2f6b5e, #4f9384); }
+
+/* ==== Toolbar de liste (en-tête léger) =============================== */
+.pst-admin-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 4px 0 18px; padding-bottom: 14px; border-bottom: 1px solid var(--pst-border); flex-wrap: wrap; }
+.pst-admin-toolbar__t h1 { margin: 0; font-size: 22px; font-weight: 800; color: var(--pst-primary); letter-spacing: -.01em; }
+.pst-admin-toolbar__t p { margin: 3px 0 0; color: var(--pst-text-soft); font-size: 13px; }
+.pst-admin-toolbar__a { display: flex; gap: 8px; align-items: center; }
+
+/* ==== KPI 6-up + contexte ============================================ */
+.pst-admin-grid--6 { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 1400px) { .pst-admin-grid--6 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 860px)  { .pst-admin-grid--6 { grid-template-columns: repeat(2, 1fr); } }
+
+/* ==== « À traiter » (zone d'action du dashboard) ===================== */
+.pst-todo { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.pst-todo__item { display: flex; align-items: flex-start; gap: 12px; background: var(--pst-surface); border: 1px solid var(--pst-border); border-left: 4px solid var(--pst-accent); border-radius: 14px; padding: 14px 16px; box-shadow: var(--pst-shadow-sm); transition: box-shadow .16s ease, transform .16s ease; }
+.pst-todo__item:hover { box-shadow: var(--pst-shadow-hover); transform: translateY(-1px); }
+.pst-todo__item--warn { border-left-color: var(--pst-warning); }
+.pst-todo__item--info { border-left-color: var(--pst-info); }
+.pst-todo__ic { font-size: 20px; line-height: 1; margin-top: 2px; }
+.pst-todo__body { flex: 1; min-width: 0; }
+.pst-todo__title { font-weight: 700; color: var(--pst-primary); font-size: 14px; }
+.pst-todo__title b { color: var(--pst-accent); }
+.pst-todo__desc { color: var(--pst-text-soft); font-size: 12px; margin: 2px 0 9px; line-height: 1.4; }
+.pst-todo__ok { display: flex; align-items: center; gap: 12px; background: #f0f7f3; border: 1px solid #d3e7de; border-radius: 14px; padding: 18px 20px; color: var(--pst-success); }
+.pst-todo__ok b { font-size: 22px; }
+
+/* ==== Ligne compacte santé ========================================== */
+.pst-health-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: 14px; padding: 13px 18px; box-shadow: var(--pst-shadow-sm); }
+.pst-health-line__dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.pst-health-line__txt { flex: 1; min-width: 0; color: var(--pst-text-soft); font-size: 13px; }
+.pst-health-line__txt b { color: var(--pst-primary); }
+
+/* ==== Résumé pipeline (candidatures) ================================ */
+.pst-pipe { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.pst-pipe__step { flex: 1; min-width: 120px; background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: 12px; padding: 12px 14px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+.pst-pipe__step:hover { border-color: var(--pst-accent); box-shadow: var(--pst-shadow-sm); }
+.pst-pipe__step.is-active { border-color: var(--pst-accent); box-shadow: 0 0 0 2px rgba(255,107,107,.14); }
+.pst-pipe__n { display: block; font-size: 24px; font-weight: 800; color: var(--pst-primary); line-height: 1; }
+.pst-pipe__l { display: block; font-size: 11.5px; color: var(--pst-text-soft); margin-top: 4px; }
+
+/* ==== Filtres compacts + table plus fine ============================ */
+.pst-admin-filters { align-items: center; }
+.pst-admin-table td { vertical-align: middle; }
+.pst-admin-table tbody tr { transition: background .12s ease; }
+.pst-admin-table tbody tr:hover { background: #fafbfd; }
+
+/* ==== Titre de section (dashboard/listes) ============================ */
+.pst-admin-section-title { font-size: 15px; font-weight: 800; color: var(--pst-primary); margin: 26px 0 12px; letter-spacing: -.01em; }
+.pst-admin-verif { font-size: 12px; font-weight: 700; }
+.pst-admin-verif--ok { color: var(--pst-success); }
+.pst-admin-verif--no { color: var(--pst-text-soft); }
+
+/* ==== Navigation secondaire « Mon site » (hub) ======================== */
+.pst-admin .pst-sitenav { display: flex; gap: 2px; margin: 0 0 18px; border-bottom: 1px solid var(--pst-border); overflow-x: auto; }
+.pst-admin .pst-sitenav__link { padding: 11px 15px; font-size: 13px; font-weight: 600; color: var(--pst-text-soft); text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s; }
+.pst-admin .pst-sitenav__link:hover { color: var(--pst-primary); }
+.pst-admin .pst-sitenav__link.is-active { color: var(--pst-accent); border-bottom-color: var(--pst-accent); }
+
+/* ==== Dashboard : KPI compacts + densité ============================== */
+.pst-admin-grid--6 { gap: 12px; margin-bottom: 16px; }
+.pst-admin-grid--6 .pst-admin-stat { padding: 13px 15px; gap: 3px; }
+.pst-admin-grid--6 .pst-admin-stat__value { font-size: 24px; letter-spacing: -.5px; }
+.pst-admin-grid--6 .pst-admin-stat__icon { top: 12px; right: 14px; font-size: 16px; opacity: .45; }
+.pst-admin-grid--6 .pst-admin-stat__label { font-size: 12px; }
+.pst-admin-grid--6 .pst-admin-stat__sub { font-size: 11px; }
+.pst-admin-section-title { margin: 20px 0 10px; }
+.pst-todo__ok { padding: 12px 16px; border-radius: 12px; }
+.pst-todo__ok b { font-size: 17px; }
+.pst-health-line { padding: 11px 16px; }
+
+/* ==== Détails techniques repliables (Santé, etc.) ==================== */
+.pst-admin-details { margin-top: 10px; }
+.pst-admin-details summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--pst-text-soft); list-style: none; padding: 4px 0; }
+.pst-admin-details summary::-webkit-details-marker { display: none; }
+.pst-admin-details summary::before { content: "▸ "; color: var(--pst-accent); }
+.pst-admin-details[open] summary::before { content: "▾ "; }
+.pst-admin-details .pst-admin-kv { margin-top: 8px; }

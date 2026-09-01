@@ -308,7 +308,7 @@ a:hover {
 
 .site-header--light.is-scrolled {
   background: rgba(250, 247, 241, 0.96);
-  box-shadow: 0 1px 0 rgba(20, 45, 38, 0.04), 0 8px 24px -12px rgba(20, 45, 38, 0.16);
+  box-shadow: 0 1px 0 rgba(23, 50, 77, 0.04), 0 8px 24px -12px rgba(23, 50, 77, 0.16);
 }
 
 .site-header--light .header-inner {
@@ -548,7 +548,7 @@ a:hover {
 /* ===== Pied de page — lisible sans être immense ===== */
 .site-footer {
   background: var(--c-primary-dark);
-  color: #b9c9bf;
+  color: #c2ccd8;
   margin-top: var(--sp-8);
   font-size: var(--text-sm);
 }
@@ -571,7 +571,7 @@ a:hover {
 }
 
 .footer-brand .logo-text strong {
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
 }
 
 .footer-brand p {
@@ -633,7 +633,7 @@ a:hover {
 }
 
 .footer-social a {
-  color: #93aa9d;
+  color: #9aa8b8;
   text-decoration: none;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -656,7 +656,7 @@ a:hover {
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   margin-bottom: var(--sp-4);
 }
 
@@ -688,7 +688,7 @@ a:hover {
   gap: var(--sp-3);
   justify-content: space-between;
   font-size: 0.875rem;
-  color: #93aa9d;
+  color: #9aa8b8;
 }
 
 /* Apparition douce au défilement — quelques pixels, jamais spectaculaire */
