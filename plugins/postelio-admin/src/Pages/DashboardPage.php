@@ -145,9 +145,10 @@ final class DashboardPage extends Page {
 		if ( empty( $links ) ) {
 			return '';
 		}
-		$h = '<div class="pst-admin-actions" style="margin-top:18px">';
-		foreach ( $links as $l ) {
-			$h .= '<a class="pst-btn pst-btn--sm pst-btn--primary" href="' . esc_url( $this->url( $l[1] ) ) . '">' . esc_html( $l[0] ) . '</a> ';
+		$h = '<h2 class="pst-admin-section-title">Raccourcis</h2><div class="pst-admin-actions">';
+		foreach ( $links as $i => $l ) {
+			$cls = 'pst-btn pst-btn--sm' . ( 0 === $i ? ' pst-btn--primary' : '' );
+			$h  .= '<a class="' . $cls . '" href="' . esc_url( $this->url( $l[1] ) ) . '">' . esc_html( $l[0] ) . '</a> ';
 		}
 		return $h . '</div>';
 	}

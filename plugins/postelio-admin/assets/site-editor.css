@@ -31,7 +31,7 @@
 	padding: 14px 28px;
 }
 .pst-sitenav { display: flex; gap: 2px; padding: 0 20px; overflow-x: auto; border-top: 1px solid var(--ed-line); }
-.pst-sitenav__link { padding: 11px 14px; font-size: 13px; font-weight: 600; color: var(--ed-muted); text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s; }
+.pst-sitenav__link { padding: 9px 12px; font-size: 12.5px; font-weight: 600; color: var(--ed-muted); text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s; }
 .pst-sitenav__link:hover { color: var(--ed-primary); }
 .pst-sitenav__link.is-active { color: var(--ed-accent); border-bottom-color: var(--ed-accent); }
 .pst-ed-head__titles { min-width: 0; }
@@ -62,11 +62,11 @@
 .pst-ed-preview-wrap { position: sticky; top: 42px; align-self: start; padding: 20px 28px 24px; min-width: 0; }
 
 /* ---- Cartes de section ------------------------------------------------ */
-.pst-ed-card { background: var(--ed-card); border: 1px solid var(--ed-line); border-radius: var(--ed-radius); margin-bottom: 16px; box-shadow: 0 1px 2px rgba(23,50,77,.04); transition: box-shadow .18s ease, border-color .18s ease; overflow: hidden; }
-.pst-ed-card:hover { box-shadow: 0 6px 20px rgba(23,50,77,.07); }
-.pst-ed-card.is-open { box-shadow: 0 8px 28px rgba(23,50,77,.09); border-color: #d3ddea; }
+.pst-ed-card { background: var(--ed-card); border: 1px solid var(--ed-line); border-radius: 12px; margin-bottom: 10px; box-shadow: 0 1px 1px rgba(23,50,77,.03); transition: box-shadow .15s ease, border-color .15s ease; overflow: hidden; }
+.pst-ed-card:hover { border-color: #d3ddea; }
+.pst-ed-card.is-open { box-shadow: 0 4px 16px rgba(23,50,77,.06); border-color: #d3ddea; }
 .pst-ed-card.is-off { opacity: .66; }
-.pst-ed-card__head { display: flex; align-items: center; gap: 11px; padding: 13px 16px; cursor: pointer; user-select: none; }
+.pst-ed-card__head { display: flex; align-items: center; gap: 11px; padding: 10px 14px; cursor: pointer; user-select: none; }
 .pst-ed-card__grip { color: #b8c2d0; cursor: grab; font-size: 15px; line-height: 1; }
 .pst-ed-card__titles { flex: 1; min-width: 0; }
 .pst-ed-card__title { display: block; font-weight: 700; color: var(--ed-primary); font-size: 14.5px; }
@@ -74,7 +74,7 @@
 .pst-ed-card.is-open .pst-ed-card__sub { display: none; }
 .pst-ed-card__chevron { color: var(--ed-muted); transition: transform .2s ease; font-size: 12px; }
 .pst-ed-card.is-open .pst-ed-card__chevron { transform: rotate(90deg); }
-.pst-ed-card__body { padding: 4px 20px 22px; border-top: 1px solid var(--ed-line); display: none; }
+.pst-ed-card__body { padding: 2px 16px 16px; border-top: 1px solid var(--ed-line); display: none; }
 .pst-ed-card.is-open .pst-ed-card__body { display: block; }
 .pst-ed-card__reorder { display: flex; flex-direction: column; gap: 1px; }
 .pst-ed-card__reorder button { border: 0; background: transparent; color: #a9b4c2; cursor: pointer; font-size: 10px; line-height: 1; padding: 1px; border-radius: 3px; }
@@ -170,10 +170,10 @@
 .pst-ed-devices { display: inline-flex; background: #dde4ee; border-radius: 999px; padding: 4px; gap: 3px; }
 .pst-ed-devices button { border: 0; background: transparent; padding: 7px 18px; border-radius: 999px; cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--ed-muted); transition: all .15s; }
 .pst-ed-devices button.is-active { background: #fff; color: var(--ed-primary); box-shadow: 0 2px 6px rgba(0,0,0,.1); }
-.pst-ed-canvas { margin: 0 auto; background: #fff; border: 1px solid #d7deea; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(23,50,77,.16); transition: max-width .25s ease; max-width: 100%; max-height: calc(100vh - 200px); overflow-y: auto; }
+.pst-ed-canvas { margin: 0 auto; background: #fff; border: 1px solid #d7deea; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 24px rgba(23,50,77,.09); transition: max-width .25s ease; max-width: 100%; max-height: calc(100vh - 200px); overflow-y: auto; }
 .pst-ed-canvas.is-tablet { max-width: 768px; }
 .pst-ed-canvas.is-mobile { max-width: 390px; }
-.pst-ed-preview-hint { text-align: center; color: var(--ed-muted); font-size: 12px; margin-top: 12px; }
+.pst-ed-preview-hint { text-align: center; color: var(--ed-muted); font-size: 11px; opacity: .75; margin-top: 10px; }
 
 /* ---- Save bar --------------------------------------------------------- */
 .pst-ed-savebar {

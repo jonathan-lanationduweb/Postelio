@@ -241,17 +241,15 @@
 }
 
 /* ==== Hub « Pages & contenus » (tuiles de page) ======================== */
-.pst-hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
-.pst-hub-card { background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: var(--pst-radius); overflow: hidden; box-shadow: var(--pst-shadow-sm); transition: box-shadow .18s ease, transform .18s ease; display: flex; flex-direction: column; }
-.pst-hub-card:hover { box-shadow: var(--pst-shadow-hover); transform: translateY(-2px); }
-.pst-hub-card__banner { height: 92px; background: linear-gradient(135deg, var(--pst-primary), #2c527a); display: flex; align-items: center; gap: 12px; padding: 0 20px; position: relative; }
-.pst-hub-card__banner::after { content: ""; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,107,107,.22); }
-.pst-hub-card__icon { font-size: 30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.2)); z-index: 1; }
-.pst-hub-card__name { color: #fff; font-size: 17px; font-weight: 800; z-index: 1; letter-spacing: -.01em; }
-.pst-hub-card__body { padding: 16px 18px 18px; display: flex; flex-direction: column; flex: 1; }
-.pst-hub-card__desc { color: var(--pst-text-soft); font-size: 12.5px; line-height: 1.45; margin: 0 0 12px; flex: 1; }
-.pst-hub-card__badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-.pst-hub-card__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pst-hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.pst-hub-card { background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: 12px; padding: 15px 16px 14px; box-shadow: var(--pst-shadow-sm); transition: border-color .15s ease, box-shadow .15s ease; display: flex; flex-direction: column; }
+.pst-hub-card:hover { border-color: #cdd6e2; box-shadow: var(--pst-shadow-hover); }
+.pst-hub-card__top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.pst-hub-card__icon { width: 32px; height: 32px; border-radius: 9px; background: var(--pst-accent-soft, #ffe9e6); display: flex; align-items: center; justify-content: center; font-size: 17px; flex: none; }
+.pst-hub-card__name { color: var(--pst-primary); font-size: 15px; font-weight: 700; }
+.pst-hub-card__desc { color: var(--pst-text-soft); font-size: 12.5px; line-height: 1.45; margin: 0 0 11px; flex: 1; }
+.pst-hub-card__badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.pst-hub-card__actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ==== Cellule entité (avatar/logo + titre + sous-titre) =============== */
 .pst-entity { display: flex; align-items: center; gap: 11px; min-width: 0; }
@@ -320,3 +318,15 @@
 .pst-admin .pst-sitenav__link { padding: 11px 15px; font-size: 13px; font-weight: 600; color: var(--pst-text-soft); text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s; }
 .pst-admin .pst-sitenav__link:hover { color: var(--pst-primary); }
 .pst-admin .pst-sitenav__link.is-active { color: var(--pst-accent); border-bottom-color: var(--pst-accent); }
+
+/* ==== Dashboard : KPI compacts + densité ============================== */
+.pst-admin-grid--6 { gap: 12px; margin-bottom: 16px; }
+.pst-admin-grid--6 .pst-admin-stat { padding: 13px 15px; gap: 3px; }
+.pst-admin-grid--6 .pst-admin-stat__value { font-size: 24px; letter-spacing: -.5px; }
+.pst-admin-grid--6 .pst-admin-stat__icon { top: 12px; right: 14px; font-size: 16px; opacity: .45; }
+.pst-admin-grid--6 .pst-admin-stat__label { font-size: 12px; }
+.pst-admin-grid--6 .pst-admin-stat__sub { font-size: 11px; }
+.pst-admin-section-title { margin: 20px 0 10px; }
+.pst-todo__ok { padding: 12px 16px; border-radius: 12px; }
+.pst-todo__ok b { font-size: 17px; }
+.pst-health-line { padding: 11px 16px; }

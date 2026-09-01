@@ -43,7 +43,7 @@ final class PagesHubPage extends Page {
 		}
 
 		$out  = SiteNav::render( 'postelio-site-pages' );
-		$out .= Ui::header( 'Mon site', 'Le centre de pilotage de votre site : configurez chaque page publique. « Modifier » ouvre l\'éditeur visuel.' );
+		$out .= Ui::toolbar( 'Mon site', 'Gérez les pages, la structure et l\'apparence de Postelio.' );
 		$out .= '<div class="pst-hub-grid">';
 
 		$seo = (array) call_user_func( array( self::DIR, 'config' ), 'seo' );
@@ -65,10 +65,10 @@ final class PagesHubPage extends Page {
 	private function structure_card( string $page, string $icon, string $title, string $desc ): string {
 		$edit = esc_url( $this->url( SiteMenu::slug_for( $page ) ) );
 		$h  = '<div class="pst-hub-card">';
-		$h .= '<div class="pst-hub-card__banner"><span class="pst-hub-card__icon">' . esc_html( $icon ) . '</span><span class="pst-hub-card__name">' . esc_html( $title ) . '</span></div>';
-		$h .= '<div class="pst-hub-card__body"><p class="pst-hub-card__desc">' . esc_html( $desc ) . '</p>';
+		$h .= '<div class="pst-hub-card__top"><span class="pst-hub-card__icon">' . esc_html( $icon ) . '</span><span class="pst-hub-card__name">' . esc_html( $title ) . '</span></div>';
+		$h .= '<p class="pst-hub-card__desc">' . esc_html( $desc ) . '</p>';
 		$h .= '<div class="pst-hub-card__actions"><a class="pst-btn pst-btn--sm pst-btn--primary" href="' . $edit . '">Modifier</a></div>';
-		$h .= '</div></div>';
+		$h .= '</div>';
 		return $h;
 	}
 
@@ -109,8 +109,7 @@ final class PagesHubPage extends Page {
 		}
 
 		$h  = '<div class="pst-hub-card">';
-		$h .= '<div class="pst-hub-card__banner"><span class="pst-hub-card__icon">' . esc_html( $icon ) . '</span><span class="pst-hub-card__name">' . esc_html( $label ) . '</span></div>';
-		$h .= '<div class="pst-hub-card__body">';
+		$h .= '<div class="pst-hub-card__top"><span class="pst-hub-card__icon">' . esc_html( $icon ) . '</span><span class="pst-hub-card__name">' . esc_html( $label ) . '</span></div>';
 		$h .= '<p class="pst-hub-card__desc">' . esc_html( self::DESCRIPTIONS[ $page ] ?? '' ) . '</p>';
 		$h .= '<div class="pst-hub-card__badges">' . $state_badge . ' ' . $seo_badge . '</div>';
 		$h .= '<div class="pst-hub-card__actions">'
@@ -118,7 +117,7 @@ final class PagesHubPage extends Page {
 			. '<a class="pst-btn pst-btn--sm" href="' . $seo_url . '">SEO</a>'
 			. $view
 			. '</div>';
-		$h .= '</div></div>';
+		$h .= '</div>';
 		return $h;
 	}
 }
