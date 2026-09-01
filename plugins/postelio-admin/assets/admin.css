@@ -252,3 +252,65 @@
 .pst-hub-card__desc { color: var(--pst-text-soft); font-size: 12.5px; line-height: 1.45; margin: 0 0 12px; flex: 1; }
 .pst-hub-card__badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .pst-hub-card__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ==== Cellule entité (avatar/logo + titre + sous-titre) =============== */
+.pst-entity { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.pst-entity__text { min-width: 0; }
+.pst-entity__title { display: block; font-weight: 600; color: var(--pst-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pst-entity__sub { display: block; font-size: 11.5px; color: var(--pst-text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pst-avatar { width: 36px; height: 36px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12.5px; color: #fff; background: linear-gradient(135deg, var(--pst-primary), #2c527a); background-size: cover; background-position: center; }
+.pst-avatar--square { border-radius: 10px; }
+.pst-avatar--accent { background: linear-gradient(135deg, var(--pst-accent), #ff9d78); }
+.pst-avatar--neutral { background: linear-gradient(135deg, #8595a8, #aab6c6); }
+.pst-avatar--success { background: linear-gradient(135deg, #2f6b5e, #4f9384); }
+
+/* ==== Toolbar de liste (en-tête léger) =============================== */
+.pst-admin-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 4px 0 18px; padding-bottom: 14px; border-bottom: 1px solid var(--pst-border); flex-wrap: wrap; }
+.pst-admin-toolbar__t h1 { margin: 0; font-size: 22px; font-weight: 800; color: var(--pst-primary); letter-spacing: -.01em; }
+.pst-admin-toolbar__t p { margin: 3px 0 0; color: var(--pst-text-soft); font-size: 13px; }
+.pst-admin-toolbar__a { display: flex; gap: 8px; align-items: center; }
+
+/* ==== KPI 6-up + contexte ============================================ */
+.pst-admin-grid--6 { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 1400px) { .pst-admin-grid--6 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 860px)  { .pst-admin-grid--6 { grid-template-columns: repeat(2, 1fr); } }
+
+/* ==== « À traiter » (zone d'action du dashboard) ===================== */
+.pst-todo { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.pst-todo__item { display: flex; align-items: flex-start; gap: 12px; background: var(--pst-surface); border: 1px solid var(--pst-border); border-left: 4px solid var(--pst-accent); border-radius: 14px; padding: 14px 16px; box-shadow: var(--pst-shadow-sm); transition: box-shadow .16s ease, transform .16s ease; }
+.pst-todo__item:hover { box-shadow: var(--pst-shadow-hover); transform: translateY(-1px); }
+.pst-todo__item--warn { border-left-color: var(--pst-warning); }
+.pst-todo__item--info { border-left-color: var(--pst-info); }
+.pst-todo__ic { font-size: 20px; line-height: 1; margin-top: 2px; }
+.pst-todo__body { flex: 1; min-width: 0; }
+.pst-todo__title { font-weight: 700; color: var(--pst-primary); font-size: 14px; }
+.pst-todo__title b { color: var(--pst-accent); }
+.pst-todo__desc { color: var(--pst-text-soft); font-size: 12px; margin: 2px 0 9px; line-height: 1.4; }
+.pst-todo__ok { display: flex; align-items: center; gap: 12px; background: #f0f7f3; border: 1px solid #d3e7de; border-radius: 14px; padding: 18px 20px; color: var(--pst-success); }
+.pst-todo__ok b { font-size: 22px; }
+
+/* ==== Ligne compacte santé ========================================== */
+.pst-health-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: 14px; padding: 13px 18px; box-shadow: var(--pst-shadow-sm); }
+.pst-health-line__dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.pst-health-line__txt { flex: 1; min-width: 0; color: var(--pst-text-soft); font-size: 13px; }
+.pst-health-line__txt b { color: var(--pst-primary); }
+
+/* ==== Résumé pipeline (candidatures) ================================ */
+.pst-pipe { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.pst-pipe__step { flex: 1; min-width: 120px; background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: 12px; padding: 12px 14px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+.pst-pipe__step:hover { border-color: var(--pst-accent); box-shadow: var(--pst-shadow-sm); }
+.pst-pipe__step.is-active { border-color: var(--pst-accent); box-shadow: 0 0 0 2px rgba(255,107,107,.14); }
+.pst-pipe__n { display: block; font-size: 24px; font-weight: 800; color: var(--pst-primary); line-height: 1; }
+.pst-pipe__l { display: block; font-size: 11.5px; color: var(--pst-text-soft); margin-top: 4px; }
+
+/* ==== Filtres compacts + table plus fine ============================ */
+.pst-admin-filters { align-items: center; }
+.pst-admin-table td { vertical-align: middle; }
+.pst-admin-table tbody tr { transition: background .12s ease; }
+.pst-admin-table tbody tr:hover { background: #fafbfd; }
+
+/* ==== Titre de section (dashboard/listes) ============================ */
+.pst-admin-section-title { font-size: 15px; font-weight: 800; color: var(--pst-primary); margin: 26px 0 12px; letter-spacing: -.01em; }
+.pst-admin-verif { font-size: 12px; font-weight: 700; }
+.pst-admin-verif--ok { color: var(--pst-success); }
+.pst-admin-verif--no { color: var(--pst-text-soft); }

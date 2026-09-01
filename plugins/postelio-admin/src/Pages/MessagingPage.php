@@ -46,7 +46,7 @@ final class MessagingPage extends Page {
 		$paged  = $this->paged();
 		$counts = call_user_func( array( self::DIR, 'counts' ) );
 
-		$out  = Ui::header( 'Messagerie', 'Supervision des échanges candidat ↔ entreprise' );
+		$out  = Ui::toolbar( 'Messagerie', 'Supervision des échanges candidat ↔ entreprise.' );
 
 		// KPI (aucun contenu).
 		$out .= '<div class="pst-admin-grid">';
@@ -75,7 +75,7 @@ final class MessagingPage extends Page {
 		foreach ( $res['items'] as $c ) {
 			$rows[] = $this->row( (array) $c );
 		}
-		$out .= Ui::table( array( 'Sujet', 'Candidat', 'Entreprise', 'Statut', 'Dernière activité', 'Actions' ), $rows, 'Aucune conversation.' );
+		$out .= Ui::table( array( 'Candidat', 'Entreprise', 'Statut', 'Dernière activité', 'Actions' ), $rows, 'Aucune conversation.' );
 		$out .= Ui::pager( $this->url( 'postelio-messaging', array( 'tab' => $tab ) ), $paged, self::PER_PAGE, (int) $res['total'] );
 		return $out;
 	}
@@ -86,9 +86,8 @@ final class MessagingPage extends Page {
 		$m   = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
 		$sub = trim( (string) ( $c['subject'] ?? '' ) );
 		return array(
-			Ui::text( '' !== $sub ? $sub : 'Conversation', true ),
-			Ui::text( (string) $c['candidate'], false, true ),
-			Ui::text( (string) $c['company'], false, true ),
+			Ui::entity_cell( (string) $c['candidate'], '' !== $sub ? $sub : 'Conversation' ),
+			Ui::entity_cell( (string) $c['company'], '', array( 'square' => true, 'variant' => 'neutral' ) ),
 			Ui::badge( $m[0], $m[1], true ),
 			Ui::text( $this->fmt( (string) ( $c['last_message_at'] ?? $c['created_at'] ?? '' ) ), false, true ),
 			'<a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-messaging', array( 'view' => (string) $c['uuid'] ) ) ) . '">Voir</a>',

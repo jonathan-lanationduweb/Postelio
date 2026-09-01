@@ -143,6 +143,59 @@ final class Ui {
 		return $h . '</div>';
 	}
 
+	/**
+	 * Avatar/logo réutilisable : image réelle si fournie (URL http), sinon initiales colorées,
+	 * sinon point générique. `$square` pour les entités (entreprises/offres), rond pour les personnes.
+	 */
+	public static function avatar( string $seed, string $img = '', bool $square = false, string $variant = 'primary' ): string {
+		$variant = preg_replace( '/[^a-z]/', '', strtolower( $variant ) );
+		$cls     = 'pst-avatar' . ( $square ? ' pst-avatar--square' : '' ) . ( 'primary' !== $variant ? ' pst-avatar--' . $variant : '' );
+		if ( '' !== $img && preg_match( '#^https?://#', $img ) ) {
+			return '<span class="' . esc_attr( $cls ) . '" style="background-image:url(' . esc_url( $img ) . ')"></span>';
+		}
+		return '<span class="' . esc_attr( $cls ) . '">' . esc_html( self::initials( $seed ) ) . '</span>';
+	}
+
+	/** Deux lettres d'initiales à partir d'un nom/e-mail (repli sur « ? »). */
+	public static function initials( string $s ): string {
+		$s = trim( $s );
+		if ( '' === $s ) {
+			return '?';
+		}
+		$parts = preg_split( '/[\s._@-]+/', $s, -1, PREG_SPLIT_NO_EMPTY );
+		if ( ! $parts ) {
+			return strtoupper( mb_substr( $s, 0, 1 ) );
+		}
+		$a = mb_substr( $parts[0], 0, 1 );
+		$b = count( $parts ) > 1 ? mb_substr( $parts[ count( $parts ) - 1 ], 0, 1 ) : '';
+		return strtoupper( $a . $b );
+	}
+
+	/**
+	 * Cellule « entité » : avatar/logo + titre + sous-titre. Standardise la 1re colonne des listes
+	 * (Utilisateurs, Entreprises, Offres, Candidatures, Messagerie). Tout est échappé ici.
+	 *
+	 * @param array<string,mixed> $opts img?, square?bool, variant?, seed?
+	 */
+	public static function entity_cell( string $title, string $subtitle = '', array $opts = array() ): string {
+		$seed = (string) ( $opts['seed'] ?? ( '' !== $title ? $title : $subtitle ) );
+		$av   = self::avatar( $seed, (string) ( $opts['img'] ?? '' ), ! empty( $opts['square'] ), (string) ( $opts['variant'] ?? 'primary' ) );
+		$h    = '<div class="pst-entity">' . $av . '<div class="pst-entity__text">';
+		$h   .= '<span class="pst-entity__title">' . esc_html( '' !== $title ? $title : '—' ) . '</span>';
+		if ( '' !== $subtitle ) {
+			$h .= '<span class="pst-entity__sub">' . esc_html( $subtitle ) . '</span>';
+		}
+		return $h . '</div></div>';
+	}
+
+	/** En-tête de liste léger (toolbar) : titre + description + actions, sans grande carte hero. */
+	public static function toolbar( string $title, string $subtitle = '', string $actions_html = '' ): string {
+		return '<div class="pst-admin-toolbar"><div class="pst-admin-toolbar__t">'
+			. '<h1>' . esc_html( $title ) . '</h1>'
+			. ( '' !== $subtitle ? '<p>' . esc_html( $subtitle ) . '</p>' : '' )
+			. '</div>' . ( '' !== $actions_html ? '<div class="pst-admin-toolbar__a">' . $actions_html . '</div>' : '' ) . '</div>';
+	}
+
 	/** Bouton-formulaire POST vers admin-post (action sécurisée par nonce). */
 	public static function action_button( string $action, array $fields, string $label, string $variant = '', string $confirm = '' ): string {
 		$cls = 'pst-btn pst-btn--sm' . ( '' !== $variant ? ' pst-btn--' . preg_replace( '/[^a-z]/', '', $variant ) : '' );

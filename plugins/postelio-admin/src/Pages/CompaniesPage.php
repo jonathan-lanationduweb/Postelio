@@ -44,7 +44,7 @@ final class CompaniesPage extends Page {
 		}
 		$res = \Postelio\Companies\Api\CompanyAdminDirectory::list( $filters, $paged, self::PER_PAGE );
 
-		$out  = Ui::header( 'Entreprises', 'Vérification et cycle de vie des entreprises' );
+		$out  = Ui::toolbar( 'Entreprises', 'Vérification et cycle de vie des entreprises.' );
 		$tabs = array( array( 'label' => 'Toutes', 'url' => $this->url( 'postelio-companies', array( 'tab' => 'all' ) ), 'count' => (int) ( $counts['total'] ?? 0 ), 'active' => 'all' === $tab ) );
 		foreach ( array( 'verified' => 'Vérifiées', 'pending' => 'En attente', 'manual_review' => 'Revue', 'rejected' => 'Rejetées', 'suspended' => 'Suspendues' ) as $st => $lbl ) {
 			$tabs[] = array( 'label' => $lbl, 'url' => $this->url( 'postelio-companies', array( 'tab' => $st ) ), 'count' => (int) ( $counts[ $st ] ?? 0 ), 'active' => $st === $tab );
@@ -63,7 +63,8 @@ final class CompaniesPage extends Page {
 
 	/** @param array<string,mixed> $c @return array<int,string> */
 	private function row( array $c ): array {
-		$name   = Ui::text( (string) $c['nom'], true );
+		$sub    = '' !== (string) $c['ville'] ? (string) $c['ville'] : ( '' !== (string) $c['siren'] ? 'SIREN ' . (string) $c['siren'] : '' );
+		$name   = Ui::entity_cell( (string) $c['nom'], $sub, array( 'square' => true, 'variant' => 'verified' === (string) $c['status'] ? 'success' : 'primary' ) );
 		$status = (string) $c['status'];
 		$var    = array( 'verified' => 'success', 'suspended' => 'error', 'rejected' => 'error', 'pending' => 'info', 'manual_review' => 'warning', 'unverified' => 'neutral' );
 		$lbl    = array( 'verified' => 'Vérifiée', 'suspended' => 'Suspendue', 'rejected' => 'Rejetée', 'pending' => 'En attente', 'manual_review' => 'Revue manuelle', 'unverified' => 'Non vérifiée' );

@@ -63,7 +63,7 @@ final class UsersPage extends Page {
 		$total = (int) $query->get_total();
 
 		$base = $this->url( 'postelio-users' );
-		$out  = Ui::header( 'Utilisateurs', 'Candidats et recruteurs de la plateforme' );
+		$out  = Ui::toolbar( 'Utilisateurs', 'Candidats et recruteurs de la plateforme.' );
 		$out .= Ui::tabs( array(
 			array( 'label' => 'Tous', 'url' => $this->url( 'postelio-users', array( 'tab' => 'all' ) ), 'active' => 'all' === $tab ),
 			array( 'label' => 'Candidats', 'url' => $this->url( 'postelio-users', array( 'tab' => 'candidates' ) ), 'active' => 'candidates' === $tab ),
@@ -92,7 +92,7 @@ final class UsersPage extends Page {
 		$role   = class_exists( '\\Postelio\\Users\\Api\\UserDirectory' ) ? \Postelio\Users\Api\UserDirectory::role( $id ) : '';
 		$verif  = class_exists( '\\Postelio\\Users\\Api\\UserDirectory' ) && \Postelio\Users\Api\UserDirectory::email_verified( $id );
 
-		$name = '<span class="pst-admin-table__strong">' . esc_html( (string) $u->display_name ) . '</span><br><span class="pst-admin-table__muted">' . esc_html( (string) $u->user_email ) . '</span>';
+		$name = Ui::entity_cell( (string) $u->display_name, (string) $u->user_email, array( 'variant' => 'recruiter' === $role ? 'accent' : 'primary' ) );
 
 		$type_map = array( 'candidate' => 'Candidat', 'recruiter' => 'Recruteur' );
 		$type     = Ui::badge( $type_map[ $role ] ?? ( '' !== $role ? $role : '—' ), 'candidate' === $role ? 'info' : 'neutral' );
@@ -101,7 +101,7 @@ final class UsersPage extends Page {
 		$status_lbl = array( 'active' => 'Actif', 'suspended' => 'Suspendu', 'deleted' => 'Supprimé' );
 		$status_b   = Ui::badge( $status_lbl[ $status ] ?? $status, $status_var[ $status ] ?? 'neutral', true );
 
-		$verif_b = Ui::badge( $verif ? 'Vérifié' : 'Non vérifié', $verif ? 'success' : 'warning' );
+		$verif_b = '<span class="pst-admin-verif pst-admin-verif--' . ( $verif ? 'ok' : 'no' ) . '">' . ( $verif ? '✓ Vérifié' : '— Non vérifié' ) . '</span>';
 		$reg     = Ui::text( mysql2date( 'd/m/Y', (string) $u->user_registered ), false, true );
 
 		$actions = $this->actions( $id, $status, $role );

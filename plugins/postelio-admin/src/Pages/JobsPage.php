@@ -44,7 +44,7 @@ final class JobsPage extends Page {
 		}
 		$res = \Postelio\Jobs\Api\JobAdminDirectory::list( $filters, $paged, self::PER_PAGE );
 
-		$out  = Ui::header( 'Offres', 'Cycle de vie des offres Postelio' );
+		$out  = Ui::toolbar( 'Offres', 'Cycle de vie des offres Postelio.' );
 		$tabs = array( array( 'label' => 'Toutes', 'url' => $this->url( 'postelio-jobs', array( 'tab' => 'all' ) ), 'count' => (int) ( $counts['total'] ?? 0 ), 'active' => 'all' === $tab ) );
 		foreach ( array( 'draft' => 'Brouillons', 'published' => 'Publiées', 'expiring' => 'Expirent', 'expired' => 'Expirées', 'filled' => 'Pourvues', 'archived' => 'Archivées', 'suspended' => 'Suspendues' ) as $st => $lbl ) {
 			$tabs[] = array( 'label' => $lbl, 'url' => $this->url( 'postelio-jobs', array( 'tab' => $st ) ), 'count' => (int) ( $counts[ $st ] ?? 0 ), 'active' => $st === $tab );
@@ -56,7 +56,7 @@ final class JobsPage extends Page {
 		foreach ( $res['items'] as $j ) {
 			$rows[] = $this->row( $j );
 		}
-		$out .= Ui::table( array( 'Titre', 'Entreprise', 'Source', 'Contrat', 'Ville', 'Statut', 'Expiration', 'Actions' ), $rows, 'Aucune offre.' );
+		$out .= Ui::table( array( 'Offre', 'Source', 'Contrat', 'Ville', 'Statut', 'Expiration', 'Actions' ), $rows, 'Aucune offre.' );
 		$out .= Ui::pager( $this->url( 'postelio-jobs', array( 'tab' => $tab ) ), $paged, self::PER_PAGE, (int) $res['total'] );
 		return $out;
 	}
@@ -68,9 +68,9 @@ final class JobsPage extends Page {
 		$badge  = Ui::badge( ucfirst( $status ), $var[ $status ] ?? 'neutral', true );
 		$source = Ui::badge( 'postelio' === $j['source'] ? 'Postelio' : (string) $j['source'], 'postelio' === $j['source'] ? 'info' : 'warning' );
 		$exp    = Ui::text( '' !== (string) $j['date_expiration'] ? (string) $j['date_expiration'] : '—', false, true );
+		$co     = (string) ( $j['company']['nom'] ?? '' );
 		return array(
-			Ui::text( (string) $j['title'], true ),
-			Ui::text( '' !== (string) $j['company']['nom'] ? (string) $j['company']['nom'] : '—', false, true ),
+			Ui::entity_cell( (string) $j['title'], '' !== $co ? $co : '—', array( 'square' => true, 'seed' => '' !== $co ? $co : (string) $j['title'] ) ),
 			$source,
 			Ui::text( '' !== (string) $j['contrat'] ? (string) $j['contrat'] : '—', false, true ),
 			Ui::text( '' !== (string) $j['ville'] ? (string) $j['ville'] : '—', false, true ),

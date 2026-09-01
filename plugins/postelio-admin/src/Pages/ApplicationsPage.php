@@ -64,9 +64,8 @@ final class ApplicationsPage extends Page {
 		}
 		$res = call_user_func( array( self::DIR, 'list' ), $filters, $paged, self::PER_PAGE );
 
-		$out  = Ui::header( 'Candidatures', 'Supervision des candidatures de la plateforme' );
+		$out  = Ui::toolbar( 'Candidatures', 'Supervision des candidatures de la plateforme.' );
 
-		// Onglets par statut.
 		$keep = array();
 		if ( $company > 0 ) {
 			$keep['company_id'] = $company;
@@ -74,6 +73,18 @@ final class ApplicationsPage extends Page {
 		if ( '' !== $job ) {
 			$keep['job_uuid'] = $job;
 		}
+
+		// Résumé pipeline (données réelles), cliquable → filtre par étape.
+		$out .= '<div class="pst-pipe">';
+		foreach ( array( 'new', 'review', 'shortlisted', 'interview', 'selected' ) as $st ) {
+			$meta = self::STATUSES[ $st ];
+			$out .= '<a class="pst-pipe__step' . ( $st === $tab ? ' is-active' : '' ) . '" href="' . esc_url( $this->url( 'postelio-applications', array_merge( array( 'tab' => $st ), $keep ) ) ) . '">'
+				. '<span class="pst-pipe__n">' . (int) ( $counts[ $st ] ?? 0 ) . '</span>'
+				. '<span class="pst-pipe__l">' . esc_html( $meta[0] ) . '</span></a>';
+		}
+		$out .= '</div>';
+
+		// Onglets par statut.
 		$tabs = array( array( 'label' => 'Tous', 'url' => $this->url( 'postelio-applications', array_merge( array( 'tab' => 'all' ), $keep ) ), 'count' => (int) ( $counts['total'] ?? 0 ), 'active' => 'all' === $tab ) );
 		foreach ( self::STATUSES as $st => $meta ) {
 			$tabs[] = array( 'label' => $meta[0], 'url' => $this->url( 'postelio-applications', array_merge( array( 'tab' => $st ), $keep ) ), 'count' => (int) ( $counts[ $st ] ?? 0 ), 'active' => $st === $tab );
@@ -88,7 +99,7 @@ final class ApplicationsPage extends Page {
 		foreach ( $res['items'] as $a ) {
 			$rows[] = $this->row( (array) $a );
 		}
-		$out .= Ui::table( array( 'Candidat', 'Offre', 'Entreprise', 'Statut', 'Reçue', 'Entretien', 'Actions' ), $rows, 'Aucune candidature.' );
+		$out .= Ui::table( array( 'Candidat', 'Offre', 'Statut', 'Reçue', 'Entretien', 'Actions' ), $rows, 'Aucune candidature.' );
 		$out .= Ui::pager( $this->url( 'postelio-applications', array_merge( array( 'tab' => $tab ), $keep ) ), $paged, self::PER_PAGE, (int) $res['total'] );
 		return $out;
 	}
@@ -98,10 +109,10 @@ final class ApplicationsPage extends Page {
 		$st  = (string) $a['status'];
 		$m   = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
 		$iv  = ! empty( $a['has_interview'] ) ? Ui::badge( 'Planifié', 'success', true ) : Ui::text( '—', false, true );
+		$offer_sub = (string) $a['company'];
 		return array(
-			Ui::text( (string) $a['candidate'], true ),
-			Ui::text( (string) $a['job_title'], false, true ),
-			Ui::text( (string) $a['company'], false, true ),
+			Ui::entity_cell( (string) $a['candidate'], '', array( 'variant' => 'primary' ) ),
+			Ui::entity_cell( (string) $a['job_title'], '' !== $offer_sub ? $offer_sub : '—', array( 'square' => true, 'seed' => '' !== $offer_sub ? $offer_sub : (string) $a['job_title'] ) ),
 			Ui::badge( $m[0], $m[1], true ),
 			Ui::text( substr( (string) $a['created_at'], 0, 10 ), false, true ),
 			$iv,
