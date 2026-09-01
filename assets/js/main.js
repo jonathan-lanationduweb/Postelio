@@ -77,47 +77,11 @@
       }
     },
 
-    /* ---- Session simulée (version front biface candidat / recruteur) ----
-       AUCUN mot de passe n'est stocké ni vérifié. La « session » est un
-       simple objet en stockage local : { loggedIn, role, firstName, ... }. */
-    auth: {
-      get: function () {
-        var s = window.SS.store.get(APP_CONFIG.storage.session, null);
-        return (s && s.loggedIn) ? s : null;
-      },
-      set: function (session) { window.SS.store.set(APP_CONFIG.storage.session, session); },
-      clear: function () { window.SS.store.remove(APP_CONFIG.storage.session); },
-      isLogged: function () { return !!this.get(); },
-      isCandidate: function () { var s = this.get(); return !!(s && s.role === "candidate"); },
-      isEmployer: function () { var s = this.get(); return !!(s && s.role === "employer"); },
-      displayName: function () {
-        var s = this.get() || {};
-        return ((s.firstName || "") + " " + (s.lastName || "")).trim() || (s.company || "");
-      },
-      initials: function () {
-        var s = this.get() || {};
-        var a = (s.firstName || "").trim(), b = (s.lastName || "").trim();
-        if (a && b) { return (a[0] + b[0]).toUpperCase(); }
-        if (a) { return a[0].toUpperCase(); }
-        if (s.company) { return s.company.trim()[0].toUpperCase(); }
-        return "?";
-      },
-      logout: function (redirect) {
-        this.clear();
-        window.location.href = redirect || "index.html";
-      },
-      /* Garde d'accès d'un espace : renvoie false et redirige si le rôle
-         ne correspond pas (visiteur → connexion ; mauvais rôle → son espace). */
-      require: function (role) {
-        var s = this.get();
-        if (!s) { window.location.href = "connexion.html"; return false; }
-        if (role && s.role !== role) {
-          window.location.href = s.role === "employer" ? "espace-entreprise.html" : "espace-candidat.html";
-          return false;
-        }
-        return true;
-      }
-    },
+    /* ---- Session ----
+       L'authentification simulée a été retirée (Lot d'intégration I1).
+       `SS.auth` est désormais un PONT vers la session RÉELLE, installé par le socle
+       (assets/js/auth/postelio-boot.js), qui délègue à PostelioAuth.session
+       (jeton Bearer + GET /me). Ne rien réintroduire ici. */
 
     /* ---- Aides diverses ---- */
     escapeHtml: function (value) {

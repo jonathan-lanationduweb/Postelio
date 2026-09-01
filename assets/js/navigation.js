@@ -60,11 +60,14 @@
     /* ---- Zone compte : avatar + menu déroulant selon la session ----
        Visiteur : on garde « Se connecter / Créer un compte ».
        Connecté : on remplace par l'avatar à initiales + un menu par rôle. */
-    (function accountNav() {
+    var accountHost0 = document.getElementById("account-nav");
+    var accountAnonHtml = accountHost0 ? accountHost0.innerHTML : "";
+    function accountNav() {
       var host = document.getElementById("account-nav");
       if (!host || !window.SS || !SS.auth) { return; }
       var session = SS.auth.get();
-      if (!session) { return; }
+      /* Anonyme (ou session invalidée après vérification /me) : rétablir les liens Connexion/Inscription. */
+      if (!session) { host.innerHTML = accountAnonHtml; return; }
 
       var e = SS.escapeHtml;
       var isEmp = session.role === "employer";
@@ -209,7 +212,11 @@
         host.querySelectorAll(".notif-item.is-unread").forEach(function (el) { el.classList.remove("is-unread"); });
         refreshBadge();
       });
-    })();
+    }
+    accountNav();
+    /* Re-rendu quand la session réelle est chargée/modifiée (socle I1). */
+    window.addEventListener("ss:auth-changed", accountNav);
+    window.addEventListener("ss:auth-ready", accountNav);
 
     /* ---- Footer en accordéon sur mobile (≤768px) ----
        Les colonnes du footer se replient pour éviter un pied de page qui

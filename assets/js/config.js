@@ -17,11 +17,22 @@ window.APP_CONFIG = {
     guidedSearch: "data/guided-search.json"
   },
 
-  /* Futures API — à connecter plus tard. Exemple pour WordPress :
-     baseUrl: "https://www.postelio.fr/wp-json" */
+  /* ⚠️ DÉPRÉCIÉ (Lot d'intégration I1).
+     La configuration et l'appel des API réelles Postelio sont désormais assurés par le SOCLE :
+       - assets/js/api/postelio-api.js  → window.PostelioAPI.config (base URL résolue par
+         environnement, surchargeable via window.POSTELIO_CONFIG) + client HTTP unique ;
+       - assets/js/auth/postelio-auth.js → session réelle (jeton Bearer + GET /me).
+     Les chemins ci-dessous NE sont PLUS l'API cible (les vraies routes sont sous
+     `/wp-json/postelio/v1`, cf. docs/backend/api-contract.md). Ne PAS réintroduire de
+     `fetch('/wp/v2/...')`. Seul `geocoding` (service public sans clé) reste réellement utilisé,
+     par assets/js/autocomplete.js. Ce bloc sera retiré au fil des lots d'intégration. */
   api: {
-    baseUrl: null,
+    baseUrl: null, /* déprécié — voir PostelioAPI.config.apiBaseUrl */
     endpoints: {
+      /* geocoding : SEUL endpoint encore actif (API Adresse — service public, sans clé). */
+      geocoding: "https://api-adresse.data.gouv.fr/search/",
+      /* --- ci-dessous : placeholders DÉPRÉCIÉS, non appelés (branchement lot par lot) --- */
+      _deprecated: true,
       offers: "/wp/v2/offre",
       companies: "/wp/v2/entreprise",
       articles: "/wp/v2/posts",
@@ -35,8 +46,7 @@ window.APP_CONFIG = {
       knowhowReports: "/postelio/v1/savoir-faire/signalements",
       guidedSearch: "/postelio/v1/recherche-guidee",
       recommendations: "/postelio/v1/recommandations",
-      geocoding: "https://api-adresse.data.gouv.fr/search/", /* API Adresse — service public, sans clé */
-      companiesDirectory: null /* ex. API Recherche d'entreprises */
+      companiesDirectory: null
     }
   },
 
