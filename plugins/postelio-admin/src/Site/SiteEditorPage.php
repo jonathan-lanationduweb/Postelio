@@ -65,7 +65,7 @@ final class SiteEditorPage {
 			. '<h1>' . esc_html( $label ) . '</h1>'
 			. '<p>' . esc_html( $subtitle ) . '</p>'
 			. '</div><div class="pst-ed-head__actions">'
-			. '<a class="pst-ed-btn" href="' . esc_url( $front ) . '" target="_blank" rel="noopener">Voir le site ↗</a>'
+			. '<a class="pst-ed-btn" id="pst-ed-voir" href="' . esc_url( $front ) . '" target="_blank" rel="noopener">Voir le site ↗</a>'
 			. '<button type="button" id="pst-ed-save" class="pst-ed-btn pst-ed-btn--primary">Enregistrer</button>'
 			. '</div></div>';
 		echo SiteNav::render( SiteMenu::slug_for( $this->page ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML échappé dans SiteNav
@@ -74,13 +74,17 @@ final class SiteEditorPage {
 		echo '<div class="pst-ed-body">'
 			. '<div class="pst-ed-panel" id="pst-ed-panel"></div>'
 			. '<div class="pst-ed-preview-wrap">'
+			. '<div class="pst-ed-pvbar">'
+			. '<span class="pst-ed-pvbar__label">Aperçu</span>'
 			. '<div class="pst-ed-devices">'
 			. '<button type="button" data-device="desktop" class="is-active">Desktop</button>'
 			. '<button type="button" data-device="tablet">Tablette</button>'
 			. '<button type="button" data-device="mobile">Mobile</button>'
 			. '</div>'
+			. '<a class="pst-ed-pvbar__open" id="pst-ed-pvopen" target="_blank" rel="noopener" href="' . esc_url( $front ) . '">Ouvrir ↗</a>'
+			. '</div>'
 			. '<div class="pst-ed-canvas" id="pst-ed-canvas"></div>'
-			. '<p class="pst-ed-preview-hint">Aperçu fidèle — reflète vos modifications non enregistrées.</p>'
+			. '<p class="pst-ed-preview-hint">Le vrai site — reflète vos modifications non enregistrées.</p>'
 			. '</div></div>';
 
 		echo '<div class="pst-ed-savebar" id="pst-ed-savebar">'

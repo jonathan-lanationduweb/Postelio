@@ -111,11 +111,11 @@ final class SiteSchema {
 			'title'      => array( 'type' => 'text', 'label' => 'Titre', 'default' => $title ),
 			'subtitle'   => array( 'type' => 'text', 'label' => 'Sous-titre', 'default' => $subtitle ),
 			'text'       => array( 'type' => 'textarea', 'label' => 'Texte', 'default' => '' ),
-			'background'  => array( 'type' => 'media', 'label' => 'Image de fond', 'default' => '' ),
-			'overlay'     => array( 'type' => 'toggle', 'label' => 'Overlay sombre', 'default' => true ),
-			'align'       => array( 'type' => 'select', 'label' => 'Alignement', 'default' => 'left', 'options' => array( 'left' => 'Gauche', 'center' => 'Centré' ) ),
-			'height'      => array( 'type' => 'select', 'label' => 'Hauteur', 'default' => 'medium', 'options' => array( 'medium' => 'Moyenne', 'large' => 'Grande', 'full' => 'Plein écran' ) ),
-			'text_light'  => array( 'type' => 'toggle', 'label' => 'Texte clair', 'default' => true ),
+			'background'  => array( 'type' => 'media', 'media_type' => 'image', 'accept' => array( 'jpg', 'jpeg', 'png', 'webp', 'avif' ), 'label' => 'Image de fond', 'default' => '' ),
+			'overlay'     => array( 'type' => 'toggle', 'label' => 'Overlay sombre', 'default' => true, 'col' => 'half' ),
+			'text_light'  => array( 'type' => 'toggle', 'label' => 'Texte clair', 'default' => true, 'col' => 'half' ),
+			'align'       => array( 'type' => 'select', 'label' => 'Alignement', 'default' => 'left', 'options' => array( 'left' => 'Gauche', 'center' => 'Centré' ), 'col' => 'half' ),
+			'height'      => array( 'type' => 'select', 'label' => 'Hauteur', 'default' => 'medium', 'options' => array( 'medium' => 'Moyenne', 'large' => 'Grande', 'full' => 'Plein écran' ), 'col' => 'half' ),
 		);
 		if ( $with_search ) {
 			$f['search_placeholder'] = array( 'type' => 'text', 'label' => 'Placeholder recherche', 'default' => 'Rechercher…' );
@@ -129,10 +129,10 @@ final class SiteSchema {
 			'label'  => 'Recherche',
 			'fields' => array(
 				'title'            => array( 'type' => 'text', 'label' => 'Titre', 'default' => '' ),
-				'placeholder_role' => array( 'type' => 'text', 'label' => 'Placeholder principal', 'default' => $role_ph ),
-				'placeholder_city' => array( 'type' => 'text', 'label' => 'Placeholder localisation', 'default' => $city_ph ),
-				'button_label'     => array( 'type' => 'text', 'label' => 'Bouton', 'default' => 'Rechercher' ),
-				'show_guided'      => array( 'type' => 'toggle', 'label' => 'Recherche guidée', 'default' => false, 'help' => 'Activé seulement si le front l\'implémente.' ),
+				'placeholder_role' => array( 'type' => 'text', 'label' => 'Placeholder principal', 'default' => $role_ph, 'col' => 'half' ),
+				'placeholder_city' => array( 'type' => 'text', 'label' => 'Placeholder localisation', 'default' => $city_ph, 'col' => 'half' ),
+				'button_label'     => array( 'type' => 'text', 'label' => 'Bouton', 'default' => 'Rechercher', 'col' => 'half' ),
+				'show_guided'      => array( 'type' => 'toggle', 'label' => 'Recherche guidée', 'default' => false, 'col' => 'half', 'help' => 'Activé seulement si le front l\'implémente.' ),
 			),
 		);
 	}
@@ -164,14 +164,14 @@ final class SiteSchema {
 		return array(
 			'label'  => $label,
 			'fields' => array(
-				'title'      => array( 'type' => 'text', 'label' => 'Titre', 'default' => $label ),
-				'subtitle'   => array( 'type' => 'text', 'label' => 'Sous-titre', 'default' => $subtitle ),
-				'mode'       => array( 'type' => 'select', 'label' => 'Contenu', 'default' => 'auto', 'options' => array( 'auto' => 'Automatique', 'manual' => 'Sélection manuelle' ) ),
-				'count'      => array( 'type' => 'number', 'label' => 'Nombre (mode auto)', 'default' => $count, 'min' => 1, 'max' => 24 ),
+				'title'      => array( 'type' => 'text', 'label' => 'Titre', 'default' => $label, 'col' => 'half' ),
+				'subtitle'   => array( 'type' => 'text', 'label' => 'Sous-titre', 'default' => $subtitle, 'col' => 'half' ),
+				'mode'       => array( 'type' => 'select', 'label' => 'Contenu', 'default' => 'auto', 'options' => array( 'auto' => 'Automatique', 'manual' => 'Sélection manuelle' ), 'col' => 'half' ),
+				'count'      => array( 'type' => 'number', 'label' => 'Nombre (mode auto)', 'default' => $count, 'min' => 1, 'max' => 24, 'col' => 'half' ),
 				'items'      => array( 'type' => 'collection', 'ref_type' => $ref_type, 'label' => 'Sélection (mode manuel)', 'default' => array(), 'help' => 'Recherchez et ajoutez du contenu ; le stockage se fait par référence stable.' ),
 				'empty_text' => array( 'type' => 'text', 'label' => 'Texte si vide', 'default' => 'Aucun résultat pour le moment.' ),
-				'cta_label'  => array( 'type' => 'text', 'label' => 'Bouton', 'default' => $cta_label ),
-				'cta_url'    => array( 'type' => 'text', 'label' => 'Lien du bouton', 'default' => $cta_url ),
+				'cta_label'  => array( 'type' => 'text', 'label' => 'Bouton', 'default' => $cta_label, 'col' => 'half' ),
+				'cta_url'    => array( 'type' => 'text', 'label' => 'Lien du bouton', 'default' => $cta_url, 'col' => 'half' ),
 			),
 		);
 	}
@@ -221,10 +221,10 @@ final class SiteSchema {
 				'hero' => array( 'label' => 'Hero', 'reorderable' => false, 'fields' => array_merge(
 					self::hero_fields( 'Trouvez le poste administratif qui vous ressemble', 'La plateforme emploi dédiée aux métiers du secrétariat et de l\'assistanat', true ),
 					array(
-						'cta_primary_label'   => array( 'type' => 'text', 'label' => 'CTA principal — libellé', 'default' => 'Voir les offres' ),
-						'cta_primary_url'     => array( 'type' => 'text', 'label' => 'CTA principal — lien', 'default' => '/offres' ),
-						'cta_secondary_label' => array( 'type' => 'text', 'label' => 'CTA secondaire — libellé', 'default' => 'Déposer mon profil' ),
-						'cta_secondary_url'   => array( 'type' => 'text', 'label' => 'CTA secondaire — lien', 'default' => '/inscription' ),
+						'cta_primary_label'   => array( 'type' => 'text', 'label' => 'CTA principal — libellé', 'default' => 'Voir les offres', 'col' => 'half' ),
+						'cta_primary_url'     => array( 'type' => 'text', 'label' => 'CTA principal — lien', 'default' => '/offres', 'col' => 'half' ),
+						'cta_secondary_label' => array( 'type' => 'text', 'label' => 'CTA secondaire — libellé', 'default' => 'Déposer mon profil', 'col' => 'half' ),
+						'cta_secondary_url'   => array( 'type' => 'text', 'label' => 'CTA secondaire — lien', 'default' => '/inscription', 'col' => 'half' ),
 						'video_intro'         => array( 'type' => 'toggle', 'label' => 'Activer l\'intro cinématique', 'default' => true, 'help' => 'Le comportement de défilement reste géré par le front ; on ne change ici que le média.' ),
 						'hero_video'          => array( 'type' => 'media', 'media_type' => 'video', 'accept' => array( 'mp4', 'webm' ), 'label' => 'Vidéo cinématique', 'default' => '', 'help' => 'MP4 ou WebM. Vide = vidéo par défaut du site. Compressez les vidéos lourdes pour un chargement rapide.' ),
 						'poster'              => array( 'type' => 'media', 'media_type' => 'image', 'accept' => array( 'jpg', 'jpeg', 'png', 'webp', 'avif' ), 'label' => 'Poster (image de la vidéo)', 'default' => '' ),
@@ -254,8 +254,8 @@ final class SiteSchema {
 				'items'       => array(
 					'type'   => 'repeater', 'label' => 'Liens du menu',
 					'fields' => array(
-						'label'      => array( 'type' => 'text', 'label' => 'Libellé' ),
-						'url'        => array( 'type' => 'text', 'label' => 'Lien' ),
+						'label'      => array( 'type' => 'text', 'label' => 'Libellé', 'col' => 'half' ),
+						'url'        => array( 'type' => 'text', 'label' => 'Lien', 'col' => 'half' ),
 						'visibility' => array( 'type' => 'select', 'label' => 'Visibilité', 'options' => array( 'all' => 'Tout le monde', 'guest' => 'Déconnecté', 'auth' => 'Connecté' ) ),
 					),
 					'default' => array(
@@ -265,12 +265,12 @@ final class SiteSchema {
 						array( 'label' => 'Conseils', 'url' => '/conseils', 'visibility' => 'all' ),
 					),
 				),
-				'show_login'  => array( 'type' => 'toggle', 'label' => 'Bouton Connexion', 'default' => true ),
-				'login_label' => array( 'type' => 'text', 'label' => 'Libellé Connexion', 'default' => 'Connexion' ),
-				'login_url'   => array( 'type' => 'text', 'label' => 'Lien Connexion', 'default' => '/connexion' ),
-				'show_signup' => array( 'type' => 'toggle', 'label' => 'Bouton Inscription', 'default' => true ),
-				'signup_label'=> array( 'type' => 'text', 'label' => 'Libellé Inscription', 'default' => 'Inscription' ),
-				'signup_url'  => array( 'type' => 'text', 'label' => 'Lien Inscription', 'default' => '/inscription' ),
+				'show_login'  => array( 'type' => 'toggle', 'label' => 'Bouton Connexion', 'default' => true, 'col' => 'half' ),
+				'show_signup' => array( 'type' => 'toggle', 'label' => 'Bouton Inscription', 'default' => true, 'col' => 'half' ),
+				'login_label' => array( 'type' => 'text', 'label' => 'Libellé Connexion', 'default' => 'Connexion', 'col' => 'half' ),
+				'login_url'   => array( 'type' => 'text', 'label' => 'Lien Connexion', 'default' => '/connexion', 'col' => 'half' ),
+				'signup_label'=> array( 'type' => 'text', 'label' => 'Libellé Inscription', 'default' => 'Inscription', 'col' => 'half' ),
+				'signup_url'  => array( 'type' => 'text', 'label' => 'Lien Inscription', 'default' => '/inscription', 'col' => 'half' ),
 			),
 			'groups' => array(
 				array( 'label' => 'Marque', 'fields' => array( 'use_identity_logo', 'logo', 'brand_text' ) ),
@@ -305,8 +305,8 @@ final class SiteSchema {
 				'socials'     => array(
 					'type'   => 'repeater', 'label' => 'Réseaux sociaux',
 					'fields' => array(
-						'network' => array( 'type' => 'text', 'label' => 'Réseau' ),
-						'url'     => array( 'type' => 'text', 'label' => 'Lien' ),
+						'network' => array( 'type' => 'text', 'label' => 'Réseau', 'col' => 'half' ),
+						'url'     => array( 'type' => 'text', 'label' => 'Lien', 'col' => 'half' ),
 					),
 					'default' => array( array( 'network' => 'LinkedIn', 'url' => 'https://linkedin.com' ) ),
 				),
@@ -334,17 +334,17 @@ final class SiteSchema {
 				'social_image'  => array( 'type' => 'media', 'label' => 'Image sociale par défaut', 'default' => '' ),
 				// Couleurs — valeurs par défaut = palette de marque VALIDÉE du front (bleu nuit + corail),
 				// pour qu'une configuration non modifiée rende le vrai site à l'identique.
-				'color_primary' => array( 'type' => 'color', 'label' => 'Couleur primaire', 'default' => '#17324D' ),
-				'color_accent'  => array( 'type' => 'color', 'label' => 'Couleur accent', 'default' => '#FF6B6B' ),
-				'color_bg'      => array( 'type' => 'color', 'label' => 'Couleur de fond', 'default' => '#FAF7F1' ),
-				'color_text'    => array( 'type' => 'color', 'label' => 'Couleur du texte', 'default' => '#17324D' ),
+				'color_primary' => array( 'type' => 'color', 'label' => 'Couleur primaire', 'default' => '#17324D', 'col' => 'half' ),
+				'color_accent'  => array( 'type' => 'color', 'label' => 'Couleur accent', 'default' => '#FF6B6B', 'col' => 'half' ),
+				'color_bg'      => array( 'type' => 'color', 'label' => 'Couleur de fond', 'default' => '#FAF7F1', 'col' => 'half' ),
+				'color_text'    => array( 'type' => 'color', 'label' => 'Couleur du texte', 'default' => '#17324D', 'col' => 'half' ),
 				// Typographie.
-				'font_headings' => array( 'type' => 'select', 'label' => 'Police des titres', 'default' => 'sans', 'options' => array( 'sans' => 'Sans-serif (défaut)', 'serif' => 'Serif', 'display' => 'Display' ) ),
-				'font_body'     => array( 'type' => 'select', 'label' => 'Police du texte', 'default' => 'sans', 'options' => array( 'sans' => 'Sans-serif (défaut)', 'serif' => 'Serif' ) ),
-				'base_size'     => array( 'type' => 'select', 'label' => 'Taille de base', 'default' => 'md', 'options' => array( 'sm' => 'Compact', 'md' => 'Standard', 'lg' => 'Confortable' ) ),
+				'font_headings' => array( 'type' => 'select', 'label' => 'Police des titres', 'default' => 'sans', 'options' => array( 'sans' => 'Sans-serif (défaut)', 'serif' => 'Serif', 'display' => 'Display' ), 'col' => 'half' ),
+				'font_body'     => array( 'type' => 'select', 'label' => 'Police du texte', 'default' => 'sans', 'options' => array( 'sans' => 'Sans-serif (défaut)', 'serif' => 'Serif' ), 'col' => 'half' ),
+				'base_size'     => array( 'type' => 'select', 'label' => 'Taille de base', 'default' => 'md', 'options' => array( 'sm' => 'Compact', 'md' => 'Standard', 'lg' => 'Confortable' ), 'col' => 'half' ),
 				// Boutons.
-				'button_radius' => array( 'type' => 'select', 'label' => 'Arrondi des boutons', 'default' => 'pill', 'options' => array( 'sm' => 'Léger', 'md' => 'Moyen', 'pill' => 'Arrondi' ) ),
-				'button_style'  => array( 'type' => 'select', 'label' => 'Style des boutons', 'default' => 'solid', 'options' => array( 'solid' => 'Plein', 'outline' => 'Contour' ) ),
+				'button_radius' => array( 'type' => 'select', 'label' => 'Arrondi des boutons', 'default' => 'pill', 'options' => array( 'sm' => 'Léger', 'md' => 'Moyen', 'pill' => 'Arrondi' ), 'col' => 'half' ),
+				'button_style'  => array( 'type' => 'select', 'label' => 'Style des boutons', 'default' => 'solid', 'options' => array( 'solid' => 'Plein', 'outline' => 'Contour' ), 'col' => 'half' ),
 			),
 			'groups' => array(
 				array( 'label' => 'Identité', 'fields' => array( 'logo', 'logo_light', 'favicon', 'social_image' ) ),

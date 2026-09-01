@@ -104,11 +104,12 @@
 	}
 
 	function plainCard( title, fill ) {
-		var body = el( 'div', { class: 'pst-ed-card__body' } );
-		fill( body );
+		var fields = el( 'div', { class: 'pst-ed-fields' } );
+		fill( fields );
+		var body = el( 'div', { class: 'pst-ed-card__body' }, [ fields ] );
 		var card = el( 'div', { class: 'pst-ed-card is-open' }, [
 			el( 'div', { class: 'pst-ed-card__head', onclick: function () { card.classList.toggle( 'is-open' ); } }, [
-				el( 'span', { class: 'pst-ed-card__title', text: title } ),
+				el( 'div', { class: 'pst-ed-card__titles' }, [ el( 'span', { class: 'pst-ed-card__title', text: title } ) ] ),
 				el( 'span', { class: 'pst-ed-card__chevron', text: '▸' } )
 			] ),
 			body
@@ -116,13 +117,34 @@
 		return card;
 	}
 
+	// Résumé compact affiché quand une section est fermée (ex. « 6 affichés », « 3 liens »).
+	function sectionSummary( skey, v, sdef ) {
+		var fields = sdef.fields || {};
+		var k;
+		for ( k in fields ) {
+			if ( fields[ k ].type === 'collection' ) {
+				if ( v.mode === 'manual' && Array.isArray( v.items ) ) { return v.items.length + ' sélectionné(s)'; }
+				return ( parseInt( v.count, 10 ) || 0 ) + ' affichés';
+			}
+		}
+		for ( k in fields ) {
+			if ( fields[ k ].type === 'repeater' ) {
+				var n = Array.isArray( v[ k ] ) ? v[ k ].length : 0;
+				return n + ' élément' + ( n > 1 ? 's' : '' );
+			}
+		}
+		if ( typeof v.title === 'string' && v.title ) { return v.title.length > 48 ? v.title.slice( 0, 46 ) + '…' : v.title; }
+		return '';
+	}
+
 	function sectionCard( skey, sdef ) {
 		var sval = state[ skey ] = state[ skey ] || {};
 		var noToggle = !! sdef.no_toggle;
 		var enabled = noToggle || sval._enabled !== false;
 
-		var body = el( 'div', { class: 'pst-ed-card__body' } );
-		Object.keys( sdef.fields || {} ).forEach( function ( fk ) { body.appendChild( fieldRow( fk, sdef.fields[ fk ], [ skey, fk ] ) ); } );
+		var fields = el( 'div', { class: 'pst-ed-fields' } );
+		Object.keys( sdef.fields || {} ).forEach( function ( fk ) { fields.appendChild( fieldRow( fk, sdef.fields[ fk ], [ skey, fk ] ) ); } );
+		var body = el( 'div', { class: 'pst-ed-card__body' }, [ fields ] );
 
 		var headKids = [];
 		if ( CFG.schema.type === 'sections' && sdef.reorderable !== false && ! CFG.schema.seo ) {
@@ -133,13 +155,21 @@
 		} else {
 			headKids.push( el( 'span', { class: 'pst-ed-card__grip', text: CFG.schema.seo ? '' : '⋮⋮' } ) );
 		}
-		headKids.push( el( 'span', { class: 'pst-ed-card__title', text: sdef.label || skey } ) );
+		var summary = sectionSummary( skey, sval, sdef );
+		headKids.push( el( 'div', { class: 'pst-ed-card__titles' }, [
+			el( 'span', { class: 'pst-ed-card__title', text: sdef.label || skey } ),
+			summary ? el( 'span', { class: 'pst-ed-card__sub', text: summary } ) : null
+		] ) );
 		if ( ! noToggle ) {
 			headKids.push( labelWrap( switchEl( enabled, function ( on ) { sval._enabled = on; card.classList.toggle( 'is-off', ! on ); markDirty(); } ) ) );
 		}
 		headKids.push( el( 'span', { class: 'pst-ed-card__chevron', text: '▸' } ) );
 
 		var head = el( 'div', { class: 'pst-ed-card__head', onclick: function () {
+			var willOpen = ! card.classList.contains( 'is-open' );
+			if ( CFG.schema.seo && willOpen ) { // SEO = accordéon : une seule page ouverte à la fois.
+				Array.prototype.forEach.call( document.querySelectorAll( '#pst-ed-panel .pst-ed-card.is-open' ), function ( c ) { if ( c !== card ) { c.classList.remove( 'is-open' ); } } );
+			}
 			card.classList.toggle( 'is-open' );
 			if ( CFG.schema.seo && card.classList.contains( 'is-open' ) && skey !== 'global' ) { activeSeo = skey; schedulePreview(); }
 		} }, headKids );
@@ -163,6 +193,11 @@
 
 	// ------------------------------------------------------------- champs
 	function fieldRow( fk, fdef, path ) {
+		var e = fieldRowBuild( fk, fdef, path );
+		if ( e && e.classList && fdef.col === 'half' ) { e.classList.add( 'pst-ed-field--half' ); }
+		return e;
+	}
+	function fieldRowBuild( fk, fdef, path ) {
 		var type = fdef.type || 'text';
 		if ( type === 'repeater' ) { return wrapField( fdef, repeaterField( fk, fdef, path ) ); }
 		if ( type === 'collection' ) { return wrapField( fdef, collectionField( fk, fdef, path ) ); }
@@ -282,26 +317,43 @@
 		var rows = getPath( path );
 		if ( ! Array.isArray( rows ) ) { rows = []; setPath( path, rows ); }
 		var wrap = el( 'div', { class: 'pst-ed-rep' } );
+		var openIndex = -1; // ligne à ouvrir après reconstruction (nouvel élément)
 		function rebuild() {
 			wrap.innerHTML = '';
 			rows.forEach( function ( row, i ) { wrap.appendChild( repRow( i ) ); } );
 			wrap.appendChild( el( 'button', { class: 'pst-ed-rep__add', type: 'button', text: '+ Ajouter', onclick: function () {
 				var blank = {}; Object.keys( fdef.fields ).forEach( function ( sk ) { blank[ sk ] = ''; } );
-				rows.push( blank ); markDirty(); rebuild(); schedulePreview();
+				rows.push( blank ); openIndex = rows.length - 1; markDirty(); rebuild(); schedulePreview();
 			} } ) );
+			openIndex = -1;
 		}
 		function repRow( i ) {
-			var body = el( 'div', { class: 'pst-ed-rep__row' } );
-			body.appendChild( el( 'div', { class: 'pst-ed-rep__row-head' }, [
-				el( 'span', { class: 'pst-ed-rep__row-title', text: ( fdef.label || 'Élément' ) + ' ' + ( i + 1 ) } ),
-				el( 'div', { class: 'pst-ed-rep__row-tools' }, [
-					el( 'button', { type: 'button', title: 'Monter', 'aria-label': 'Monter', text: '▲', onclick: function () { if ( i > 0 ) { rows.splice( i - 1, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); schedulePreview(); } } } ),
-					el( 'button', { type: 'button', title: 'Descendre', 'aria-label': 'Descendre', text: '▼', onclick: function () { if ( i < rows.length - 1 ) { rows.splice( i + 1, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); schedulePreview(); } } } ),
-					el( 'button', { type: 'button', title: 'Supprimer', 'aria-label': 'Supprimer', text: '✕', onclick: function () { rows.splice( i, 1 ); markDirty(); rebuild(); schedulePreview(); } } )
-				] )
-			] ) );
-			Object.keys( fdef.fields ).forEach( function ( sk ) { body.appendChild( fieldRow( sk, fdef.fields[ sk ], path.concat( [ i, sk ] ) ) ); } );
-			return body;
+			var row = rows[ i ] || {};
+			var keys = Object.keys( fdef.fields );
+			var title = ( keys[ 0 ] && row[ keys[ 0 ] ] ) ? String( row[ keys[ 0 ] ] ) : ( ( fdef.label || 'Élément' ) + ' ' + ( i + 1 ) );
+			var sub = ( keys[ 1 ] && row[ keys[ 1 ] ] ) ? String( row[ keys[ 1 ] ] ) : '';
+
+			var fieldsWrap = el( 'div', { class: 'pst-ed-fields' } );
+			keys.forEach( function ( sk ) { fieldsWrap.appendChild( fieldRow( sk, fdef.fields[ sk ], path.concat( [ i, sk ] ) ) ); } );
+
+			var tools = el( 'div', { class: 'pst-ed-rep__row-tools' }, [
+				el( 'button', { type: 'button', title: 'Monter', 'aria-label': 'Monter', text: '▲', onclick: function ( e ) { e.stopPropagation(); if ( i > 0 ) { rows.splice( i - 1, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); schedulePreview(); } } } ),
+				el( 'button', { type: 'button', title: 'Descendre', 'aria-label': 'Descendre', text: '▼', onclick: function ( e ) { e.stopPropagation(); if ( i < rows.length - 1 ) { rows.splice( i + 1, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); schedulePreview(); } } } ),
+				el( 'button', { type: 'button', title: 'Supprimer', 'aria-label': 'Supprimer', text: '✕', onclick: function ( e ) { e.stopPropagation(); rows.splice( i, 1 ); markDirty(); rebuild(); schedulePreview(); } } )
+			] );
+			var card = el( 'div', { class: 'pst-ed-rep__row' + ( i === openIndex ? ' is-open' : '' ) }, [
+				el( 'div', { class: 'pst-ed-rep__row-head', onclick: function ( e ) { if ( e.target.closest( 'button' ) ) { return; } card.classList.toggle( 'is-open' ); } }, [
+					el( 'span', { class: 'pst-ed-rep__grip', text: '⋮⋮' } ),
+					el( 'div', { class: 'pst-ed-rep__row-main' }, [
+						el( 'span', { class: 'pst-ed-rep__row-title', text: title } ),
+						sub ? el( 'span', { class: 'pst-ed-rep__row-sub', text: sub } ) : null
+					] ),
+					tools,
+					el( 'span', { class: 'pst-ed-rep__row-chevron', text: '▸' } )
+				] ),
+				el( 'div', { class: 'pst-ed-rep__fields' }, [ fieldsWrap ] )
+			] );
+			return card;
 		}
 		rebuild();
 		return wrap;
@@ -558,6 +610,8 @@
 		var s2 = document.getElementById( 'pst-ed-savebar-save' ); if ( s2 ) { s2.addEventListener( 'click', save ); }
 		var c = document.getElementById( 'pst-ed-savebar-cancel' ); if ( c ) { c.addEventListener( 'click', function () { state = deepClone( CFG.values || {} ); dirty = false; savebar( false ); renderEditor(); renderPreview(); } ); }
 		window.addEventListener( 'beforeunload', function ( e ) { if ( dirty ) { e.preventDefault(); e.returnValue = ''; } } );
+		var voir = document.getElementById( 'pst-ed-voir' ); if ( voir ) { voir.href = window.location.origin + '/'; }
+		var pvopen = document.getElementById( 'pst-ed-pvopen' ); if ( pvopen ) { pvopen.href = window.location.origin + ( FRONT_ROUTES[ CFG.page ] || '/index.html' ); }
 		wirePreview();
 		renderEditor(); renderPreview();
 	}
