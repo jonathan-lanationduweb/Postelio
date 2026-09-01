@@ -314,3 +314,9 @@
 .pst-admin-verif { font-size: 12px; font-weight: 700; }
 .pst-admin-verif--ok { color: var(--pst-success); }
 .pst-admin-verif--no { color: var(--pst-text-soft); }
+
+/* ==== Navigation secondaire « Mon site » (hub) ======================== */
+.pst-admin .pst-sitenav { display: flex; gap: 2px; margin: 0 0 18px; border-bottom: 1px solid var(--pst-border); overflow-x: auto; }
+.pst-admin .pst-sitenav__link { padding: 11px 15px; font-size: 13px; font-weight: 600; color: var(--pst-text-soft); text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s; }
+.pst-admin .pst-sitenav__link:hover { color: var(--pst-primary); }
+.pst-admin .pst-sitenav__link.is-active { color: var(--pst-accent); border-bottom-color: var(--pst-accent); }

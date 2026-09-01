@@ -24,13 +24,16 @@
 }
 .pst-editor * { box-sizing: border-box; }
 
-/* ---- Toolbar (en-tête léger d'éditeur, sticky) ------------------------ */
+/* ---- Toolbar + navigation « Mon site » -------------------------------- */
+.pst-ed-topbar { background: #fff; border-bottom: 1px solid var(--ed-line); }
 .pst-ed-head {
-	position: sticky; top: 32px; z-index: 20;
 	display: flex; align-items: center; justify-content: space-between; gap: 16px;
-	padding: 14px 28px; background: rgba(255,255,255,.96); backdrop-filter: blur(8px);
-	border-bottom: 1px solid var(--ed-line);
+	padding: 14px 28px;
 }
+.pst-sitenav { display: flex; gap: 2px; padding: 0 20px; overflow-x: auto; border-top: 1px solid var(--ed-line); }
+.pst-sitenav__link { padding: 11px 14px; font-size: 13px; font-weight: 600; color: var(--ed-muted); text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s; }
+.pst-sitenav__link:hover { color: var(--ed-primary); }
+.pst-sitenav__link.is-active { color: var(--ed-accent); border-bottom-color: var(--ed-accent); }
 .pst-ed-head__titles { min-width: 0; }
 .pst-ed-head__eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ed-accent); }
 .pst-ed-head h1 { margin: 1px 0 0; font-size: 21px; line-height: 1.1; color: var(--ed-primary); font-weight: 800; letter-spacing: -.01em; }
@@ -56,7 +59,7 @@
 /* ---- Corps : éditeur + aperçu ---------------------------------------- */
 .pst-ed-body { display: grid; grid-template-columns: 45fr 55fr; align-items: start; gap: 0; }
 .pst-ed-panel { padding: 24px 24px 60px; min-width: 0; }
-.pst-ed-preview-wrap { position: sticky; top: 96px; align-self: start; padding: 20px 28px 24px; min-width: 0; }
+.pst-ed-preview-wrap { position: sticky; top: 42px; align-self: start; padding: 20px 28px 24px; min-width: 0; }
 
 /* ---- Cartes de section ------------------------------------------------ */
 .pst-ed-card { background: var(--ed-card); border: 1px solid var(--ed-line); border-radius: var(--ed-radius); margin-bottom: 16px; box-shadow: 0 1px 2px rgba(23,50,77,.04); transition: box-shadow .18s ease, border-color .18s ease; overflow: hidden; }

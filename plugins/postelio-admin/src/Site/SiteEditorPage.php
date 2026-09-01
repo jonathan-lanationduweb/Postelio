@@ -59,14 +59,17 @@ final class SiteEditorPage {
 		$subtitle = self::SUBTITLES[ $this->page ] ?? '';
 		$front    = home_url( '/' );
 
+		echo '<div class="pst-ed-topbar">';
 		echo '<div class="pst-ed-head"><div class="pst-ed-head__titles">'
-			. '<span class="pst-ed-head__eyebrow">Postelio · Site</span>'
+			. '<span class="pst-ed-head__eyebrow">Postelio · Mon site</span>'
 			. '<h1>' . esc_html( $label ) . '</h1>'
 			. '<p>' . esc_html( $subtitle ) . '</p>'
 			. '</div><div class="pst-ed-head__actions">'
 			. '<a class="pst-ed-btn" href="' . esc_url( $front ) . '" target="_blank" rel="noopener">Voir le site ↗</a>'
 			. '<button type="button" id="pst-ed-save" class="pst-ed-btn pst-ed-btn--primary">Enregistrer</button>'
 			. '</div></div>';
+		echo SiteNav::render( SiteMenu::slug_for( $this->page ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML échappé dans SiteNav
+		echo '</div>';
 
 		echo '<div class="pst-ed-body">'
 			. '<div class="pst-ed-panel" id="pst-ed-panel"></div>'

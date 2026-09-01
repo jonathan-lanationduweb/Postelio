@@ -58,11 +58,9 @@ final class Menu {
 		$visible = array(
 			array( 'Tableau de bord', self::PARENT, self::CAP_VIEW, new DashboardPage() ),
 
-			// — Mon site — (Navigation/Footer sont dans « Pages & contenus » → Structure)
-			array( 'Accueil', SiteMenu::slug_for( 'home' ), $site, new SiteEditorPage( 'home' ) ),
-			array( 'Pages & contenus', 'postelio-site-pages', $site, new PagesHubPage() ),
-			array( 'Apparence', SiteMenu::slug_for( 'appearance' ), $site, new SiteEditorPage( 'appearance' ) ),
-			array( 'SEO', SiteMenu::slug_for( 'seo' ), $site, new SiteEditorPage( 'seo' ) ),
+			// — Mon site — UNE seule entrée (le hub) ; Accueil/Navigation/Footer/Apparence/SEO sont
+			// accessibles via la navigation secondaire interne (SiteNav), à la manière de la référence.
+			array( 'Mon site', 'postelio-site-pages', $site, new PagesHubPage() ),
 
 			// — Activité —
 			array( 'Utilisateurs', 'postelio-users', self::CAP_ADMIN, new UsersPage() ),
@@ -85,8 +83,11 @@ final class Menu {
 		// ROUTABLES mais MASQUÉS du menu (accès via les hubs Pages & contenus / Réglages). On NE fait
 		// PAS remove_submenu_page() (qui casserait la vérification de capability de wp-admin).
 		$hidden = array(
+			array( 'Accueil', SiteMenu::slug_for( 'home' ), $site, new SiteEditorPage( 'home' ) ),
 			array( 'Navigation', SiteMenu::slug_for( 'navigation' ), $site, new SiteEditorPage( 'navigation' ) ),
 			array( 'Footer', SiteMenu::slug_for( 'footer' ), $site, new SiteEditorPage( 'footer' ) ),
+			array( 'Apparence', SiteMenu::slug_for( 'appearance' ), $site, new SiteEditorPage( 'appearance' ) ),
+			array( 'SEO', SiteMenu::slug_for( 'seo' ), $site, new SiteEditorPage( 'seo' ) ),
 			array( 'Notifications', 'postelio-notifications', self::CAP_ADMIN, new NotificationsPage() ),
 			array( 'CV & fichiers', 'postelio-files', self::CAP_ADMIN, new FilesPage() ),
 			array( 'Santé du système', 'postelio-health', self::CAP_ADMIN, new HealthPage() ),
@@ -112,7 +113,8 @@ final class Menu {
 	/** @return string[] Tous les slugs à MASQUER du menu (mais routables). */
 	private static function hidden_menu_slugs(): array {
 		$slugs = array(
-			SiteMenu::slug_for( 'navigation' ), SiteMenu::slug_for( 'footer' ),
+			SiteMenu::slug_for( 'home' ), SiteMenu::slug_for( 'navigation' ), SiteMenu::slug_for( 'footer' ),
+			SiteMenu::slug_for( 'appearance' ), SiteMenu::slug_for( 'seo' ),
 			'postelio-notifications', 'postelio-files', 'postelio-health', 'postelio-alerts',
 		);
 		foreach ( self::hidden_editor_pages() as $page ) {
@@ -124,7 +126,6 @@ final class Menu {
 	/** Libellés de groupe du sous-menu (CSS ::before, ancrés par slug — robustes, sans JS). */
 	public function group_styles(): void {
 		$groups = array(
-			'postelio-site'       => 'Mon site',
 			'postelio-users'      => 'Activité',
 			'postelio-moderation' => 'Gestion',
 			'postelio-settings'   => 'Réglages',

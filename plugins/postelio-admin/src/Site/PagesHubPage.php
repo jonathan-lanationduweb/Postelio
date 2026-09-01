@@ -42,7 +42,8 @@ final class PagesHubPage extends Page {
 				. Ui::empty_state( 'Module Site indisponible', 'Activez le plugin Postelio Site.', '🧩' );
 		}
 
-		$out  = Ui::header( 'Pages & contenus', 'Le centre de pilotage de votre site : configurez chaque page publique. « Modifier » ouvre l\'éditeur visuel.' );
+		$out  = SiteNav::render( 'postelio-site-pages' );
+		$out .= Ui::header( 'Mon site', 'Le centre de pilotage de votre site : configurez chaque page publique. « Modifier » ouvre l\'éditeur visuel.' );
 		$out .= '<div class="pst-hub-grid">';
 
 		$seo = (array) call_user_func( array( self::DIR, 'config' ), 'seo' );
