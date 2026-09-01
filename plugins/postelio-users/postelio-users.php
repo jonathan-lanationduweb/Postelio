@@ -3,7 +3,7 @@
  * Plugin Name: Postelio Users
  * Plugin URI:  https://github.com/jonathan-lanationduweb/Postelio
  * Description: Comptes candidats/recruteurs, profils de base, inscription/connexion, récupération de mot de passe, vérification e-mail optionnelle, authentification applicative (Bearer) compatible web + Tauri, préférences, export/suppression RGPD. Dépend de postelio-core.
- * Version:     0.1.0
+ * Version:     0.2.0
  * Requires PHP: 8.1
  * Requires at least: 6.4
  * Author:      Postelio
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'POSTELIO_USERS_VERSION', '0.1.0' );
+define( 'POSTELIO_USERS_VERSION', '0.2.0' );
 define( 'POSTELIO_USERS_FILE', __FILE__ );
 define( 'POSTELIO_USERS_DIR', plugin_dir_path( __FILE__ ) );
 

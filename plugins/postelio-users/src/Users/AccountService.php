@@ -262,7 +262,7 @@ final class AccountService {
 		}
 		$role = self::role_slug( $user );
 
-		return array(
+		$data = array(
 			'account' => array(
 				'id'                => $user_id,
 				'email'             => $user->user_email,
@@ -277,6 +277,10 @@ final class AccountService {
 				? $this->recruiters->get_by_user( $user_id )
 				: $this->candidates->get_by_user( $user_id ),
 		);
+		// Extensible : les modules métier (ex. postelio-alerts) ajoutent leurs données
+		// personnelles à l'export RGPD via ce filtre (favoris, recherches sauvegardées, …).
+		$extended = apply_filters( 'postelio/users/export', $data, $user_id );
+		return is_array( $extended ) ? $extended : $data;
 	}
 
 	private function unique_login( string $email ): string {

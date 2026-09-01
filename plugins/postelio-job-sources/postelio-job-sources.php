@@ -3,7 +3,7 @@
  * Plugin Name: Postelio Job Sources
  * Plugin URI:  https://github.com/jonathan-lanationduweb/Postelio
  * Description: Agrégation/synchronisation d'offres EXTERNES (France Travail V1) dans une table dédiée, fusionnées à la recherche /jobs. Candidature externe par redirection (jamais de candidature Postelio). Dépend de core et jobs.
- * Version:     0.1.0
+ * Version:     0.2.0
  * Requires PHP: 8.1
  * Requires at least: 6.4
  * Author:      Postelio
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'POSTELIO_JOBSOURCES_VERSION', '0.1.0' );
+define( 'POSTELIO_JOBSOURCES_VERSION', '0.2.0' );
 define( 'POSTELIO_JOBSOURCES_FILE', __FILE__ );
 define( 'POSTELIO_JOBSOURCES_DIR', plugin_dir_path( __FILE__ ) );
 

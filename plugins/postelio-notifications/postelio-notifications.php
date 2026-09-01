@@ -3,7 +3,7 @@
  * Plugin Name: Postelio Notifications
  * Plugin URI:  https://github.com/jonathan-lanationduweb/Postelio
  * Description: Notifications in-app (cloche/centre) et e-mails transactionnels, pilotés par les événements des autres plugins. File d'envoi, préférences, rappels d'entretien. Dépend de core, users, companies, jobs, applications, messaging, interviews.
- * Version:     0.1.0
+ * Version:     0.2.0
  * Requires PHP: 8.1
  * Requires at least: 6.4
  * Author:      Postelio
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'POSTELIO_NOTIFICATIONS_VERSION', '0.1.0' );
+define( 'POSTELIO_NOTIFICATIONS_VERSION', '0.2.0' );
 define( 'POSTELIO_NOTIFICATIONS_FILE', __FILE__ );
 define( 'POSTELIO_NOTIFICATIONS_DIR', plugin_dir_path( __FILE__ ) );
 

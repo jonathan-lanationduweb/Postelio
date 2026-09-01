@@ -458,3 +458,18 @@ Doc complète : [admin-backoffice.md](admin-backoffice.md).
   « plus bas » : jobs→companies, applications→jobs) sont autorisées en appel de service
   en lecture. Graphe garanti acyclique — voir
   [implementation-plan.md](implementation-plan.md#dépendances).
+
+## Lot 14 — `postelio-alerts`
+
+- **Responsabilité** : favoris d'offres, recherches sauvegardées, alertes emploi (candidat).
+- **Dépendances** : `core`, `users`, `jobs` (requis) ; `job-sources` et `notifications` **optionnels**
+  (dégradation propre). Ne s'appelle jamais en dur : recherche via `Jobs\Api\JobSearchDirectory`,
+  offres via `JobDirectory`, notifications via l'événement `job_alert.matches_found` + filtres de
+  catégorie/template.
+- **Données possédées** : `postelio_job_favorites`, `postelio_saved_searches`,
+  `postelio_alert_deliveries`.
+- **Extensions transverses** (WordPress-idiomatiques, pas de couplage) : filtres
+  `postelio/notifications/categories`, `postelio/notifications/email_templates`,
+  `postelio/users/export` ; événement `user.deleted` (purge RGPD).
+- **Planification** : Scheduler du core uniquement (ancre 07h30 Europe/Paris auto-replanifiée).
+- Détail : [favorites-alerts.md](favorites-alerts.md).

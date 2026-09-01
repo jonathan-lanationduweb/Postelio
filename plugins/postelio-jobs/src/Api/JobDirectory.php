@@ -55,6 +55,56 @@ final class JobDirectory {
 		return ( is_array( $ext ) && ! empty( $ext['found'] ) ) ? $ext : null;
 	}
 
+	/**
+	 * Provenance canonique d'une offre par UUID public : 'native', 'external', ou null si
+	 * l'offre est inconnue (jamais importée / supprimée). Sert à namespacer les favoris/alertes
+	 * — un UUID natif et une référence externe n'appartiennent PAS au même espace de noms.
+	 */
+	public static function resolve_source( string $job_uuid ): ?string {
+		if ( self::id_from_uuid( $job_uuid ) > 0 ) {
+			return 'native';
+		}
+		return null !== self::external( $job_uuid ) ? 'external' : null;
+	}
+
+	/**
+	 * Carte publique minimale d'une offre (favoris/alertes) : titre, ville, entreprise, provenance
+	 * et disponibilité — résolue via le CONTRAT (natif ou externe), jamais par SQL direct. Retourne
+	 * null si l'offre n'a jamais existé. Une offre existante mais non candidatable (expirée,
+	 * masquée, source désactivée, retirée) est renvoyée avec `available => false` : le favori est
+	 * conservé (§12), l'UI signale l'indisponibilité.
+	 *
+	 * @return array{uuid:string, titre:string, ville:?string, company:string, source:string, available:bool}|null
+	 */
+	public static function public_card( string $job_uuid ): ?array {
+		$j = self::repo()->get_by_uuid( $job_uuid );
+		if ( null !== $j ) {
+			return array(
+				'uuid'      => (string) $j['uuid'],
+				'titre'     => (string) $j['titre'],
+				'ville'     => isset( $j['ville'] ) ? ( null !== $j['ville'] ? (string) $j['ville'] : null ) : null,
+				'company'   => (string) ( $j['company']['nom'] ?? '' ),
+				'source'    => 'native',
+				'available' => JobStateMachine::is_public( (string) $j['status'] ),
+			);
+		}
+		$ext = self::external( $job_uuid );
+		if ( null !== $ext ) {
+			$pv        = is_array( $ext['public_view'] ?? null ) ? $ext['public_view'] : array();
+			$company   = is_array( $pv['company'] ?? null ) ? (string) ( $pv['company']['nom'] ?? '' ) : '';
+			$available = ! empty( $ext['source_available'] ) && 'visible' === ( $ext['local_visibility'] ?? '' ) && 'removed' !== ( $ext['sync_status'] ?? '' );
+			return array(
+				'uuid'      => (string) ( $pv['uuid'] ?? $job_uuid ),
+				'titre'     => (string) ( $pv['titre'] ?? '' ),
+				'ville'     => isset( $pv['ville'] ) ? ( null !== $pv['ville'] ? (string) $pv['ville'] : null ) : null,
+				'company'   => $company,
+				'source'    => 'external',
+				'available' => $available,
+			);
+		}
+		return null;
+	}
+
 	/** Mode de candidature : `postelio` (natif), `external_redirect` (externe), ou null. */
 	public static function application_mode( string $job_uuid ): ?string {
 		if ( self::id_from_uuid( $job_uuid ) > 0 ) {

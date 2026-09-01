@@ -406,3 +406,21 @@ ensuite, l'Application **conserve** le snapshot d'origine (ce que le recruteur a
 réellement reçu). Le téléchargement recruteur pointe vers le **snapshot**, pas le CV
 vivant. Voir [data-model.md](data-model.md#cv--cvsnapshot) et
 [security.md](security.md#fichiers).
+
+## Lot 14 — Cycle d'une alerte emploi
+
+1. Ancre quotidienne (Scheduler du core, 07h30 Europe/Paris, auto-replanifiée, DST-correct) →
+   drain des recherches échues (`alert_frequency ∈ {daily, weekly}` et `next_run_at <= now`), par
+   lots bornés qui se replanifient.
+2. Pour chaque recherche d'un candidat **actif** : filtres validés + `published_after` (curseur) →
+   recherche via le contrat Jobs (natif + externe) → pagination jusqu'à épuisement / limite de
+   sécurité (anomalie loguée).
+3. Réservation atomique de chaque delivery (UNIQUE) **avant** notification → seules les nouvelles.
+4. ≥1 nouvelle → **un** digest → événement `job_alert.matches_found` (Notifications : 1 in-app +
+   au plus 1 e-mail) → deliveries `sent`.
+5. `next_run_at`/`last_run_at`/`cursor_ts` recalculés. Candidat suspendu : pas de run, planification
+   avancée, données conservées.
+
+`run-now` (API) exécute la même logique (rate-limité, ownership, compte actif) et respecte
+curseur + deliveries → ne peut pas renvoyer deux fois la même offre ni spammer. Détail :
+[favorites-alerts.md](favorites-alerts.md).

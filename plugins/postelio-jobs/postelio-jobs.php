@@ -3,7 +3,7 @@
  * Plugin Name: Postelio Jobs
  * Plugin URI:  https://github.com/jonathan-lanationduweb/Postelio
  * Description: Offres d'emploi (brouillons, publication conditionnée à une entreprise vérifiée — D1, cycle de vie, expiration, archivage, duplication). Dépend de postelio-core, postelio-users et postelio-companies.
- * Version:     0.1.0
+ * Version:     0.2.0
  * Requires PHP: 8.1
  * Requires at least: 6.4
  * Author:      Postelio
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'POSTELIO_JOBS_VERSION', '0.1.0' );
+define( 'POSTELIO_JOBS_VERSION', '0.2.0' );
 define( 'POSTELIO_JOBS_FILE', __FILE__ );
 define( 'POSTELIO_JOBS_DIR', plugin_dir_path( __FILE__ ) );
 

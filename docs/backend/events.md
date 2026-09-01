@@ -124,3 +124,19 @@ Canaux : **in-app** (cloche), **email** (transactionnel), *push Tauri* (plus tar
 > Les préférences de notification (candidat : nouvelles offres, changement de statut,
 > nouveau message, proposition d'entretien, rappel, conseils) existent déjà côté front
 > et pilotent l'activation par canal.
+
+## Lot 14 — Favoris & Alertes (`postelio-alerts`)
+
+- `favorite.created` / `favorite.removed` — **audit uniquement**, aucune notification utilisateur.
+  Payload : `{ candidate_user_id, job_source, job_reference, resource_type: 'job_favorite' }`.
+- `saved_search.created` / `saved_search.updated` / `saved_search.deleted` — audit. Payload :
+  `{ candidate_user_id, saved_search_uuid, alert_frequency?, resource_type: 'saved_search' }`.
+- `job_alert.matches_found` — **digest** (nouvelles offres d'une alerte). Consommé par Notifications
+  (1 in-app + au plus 1 e-mail/cycle). Payload : `{ candidate_user_id, saved_search_uuid,
+  saved_search_name, match_count, sample:[{job_uuid,titre,company,ville,source}…] }`.
+- `job_alert.run_failed` — anomalie de matching (ex. `reason=result_cap` : limite de sécurité de
+  pagination atteinte). Loguée/auditée ; jamais d'avancement silencieux perdant des offres.
+
+> Notifications reste **découplé** : la catégorie `job_alert` et le template `job_alert_digest`
+> sont enregistrés par `postelio-alerts` via les filtres `postelio/notifications/categories` et
+> `postelio/notifications/email_templates` (module absent ⇒ catégorie/template absents).

@@ -10,6 +10,7 @@
 
 namespace Postelio\Admin;
 
+use Postelio\Admin\Pages\AlertsPage;
 use Postelio\Admin\Pages\ApplicationsPage;
 use Postelio\Admin\Pages\BillingPage;
 use Postelio\Admin\Pages\CompaniesPage;
@@ -21,7 +22,6 @@ use Postelio\Admin\Pages\JobsPage;
 use Postelio\Admin\Pages\MessagingPage;
 use Postelio\Admin\Pages\ModerationPage;
 use Postelio\Admin\Pages\NotificationsPage;
-use Postelio\Admin\Pages\PlaceholderPage;
 use Postelio\Admin\Pages\SettingsPage;
 use Postelio\Admin\Pages\SkillsPage;
 use Postelio\Admin\Pages\SourcesPage;
@@ -91,7 +91,7 @@ final class Menu {
 			array( 'Notifications', 'postelio-notifications', self::CAP_ADMIN, new NotificationsPage() ),
 			array( 'CV & fichiers', 'postelio-files', self::CAP_ADMIN, new FilesPage() ),
 			array( 'Santé du système', 'postelio-health', self::CAP_ADMIN, new HealthPage() ),
-			array( 'Favoris & Alertes', 'postelio-alerts', self::CAP_ADMIN, new PlaceholderPage( 'Favoris & Alertes', 'Préparé pour le Lot 14. Non implémenté.', self::CAP_ADMIN ) ),
+			array( 'Favoris & Alertes', 'postelio-alerts', self::CAP_ADMIN, new AlertsPage() ),
 		);
 		foreach ( self::hidden_editor_pages() as $page ) {
 			$hidden[] = array( SiteEditorPage::label( $page ), SiteMenu::slug_for( $page ), $site, new SiteEditorPage( $page ) );
