@@ -145,6 +145,24 @@ final class SiteConfigService {
 			case 'repeater':
 				return $this->clean_repeater( (array) ( $f['fields'] ?? array() ), $raw );
 
+			case 'collection':
+				// Liste de références stables (UUID ou ID numérique), jamais de contenu métier.
+				if ( ! is_array( $raw ) ) {
+					return array();
+				}
+				$refs = array();
+				foreach ( array_values( $raw ) as $ref ) {
+					if ( count( $refs ) >= 50 ) {
+						break;
+					}
+					$id = is_scalar( $ref ) ? sanitize_text_field( (string) $ref ) : '';
+					// UUID (avec tirets) ou ID numérique uniquement.
+					if ( '' !== $id && preg_match( '/^[A-Za-z0-9\-]{1,64}$/', $id ) && ! in_array( $id, $refs, true ) ) {
+						$refs[] = $id;
+					}
+				}
+				return $refs;
+
 			case 'text':
 			default:
 				return sanitize_text_field( is_string( $raw ) ? $raw : '' );

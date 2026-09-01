@@ -15,6 +15,7 @@ namespace Postelio\Site\Http;
 
 use Postelio\Core\Rest\Controller;
 use Postelio\Site\Api\SiteConfigDirectory;
+use Postelio\Site\Config\ContentReferences;
 use Postelio\Site\Config\SiteConfigService;
 use Postelio\Site\Permissions\SiteCapability;
 
@@ -38,6 +39,16 @@ final class SiteAdminController extends Controller {
 			return current_user_can( SiteCapability::CAP );
 		};
 
+		register_rest_route( $ns, '/site/admin/search', array(
+			'methods'             => 'GET',
+			'permission_callback' => $auth,
+			'callback'            => $this->guarded( array( $this, 'search' ) ),
+		) );
+		register_rest_route( $ns, '/site/admin/resolve', array(
+			'methods'             => 'GET',
+			'permission_callback' => $auth,
+			'callback'            => $this->guarded( array( $this, 'resolve' ) ),
+		) );
 		register_rest_route( $ns, '/site/admin/' . self::PAGE, array(
 			array(
 				'methods'             => 'GET',
@@ -50,6 +61,20 @@ final class SiteAdminController extends Controller {
 				'callback'            => $this->guarded( array( $this, 'save' ) ),
 			),
 		) );
+	}
+
+	/** Recherche de contenu métier pour les sélecteurs (via façades propriétaires, lecture seule). */
+	public function search( \WP_REST_Request $r ): \WP_REST_Response {
+		$type = (string) $r->get_param( 'type' );
+		$q    = (string) $r->get_param( 'q' );
+		return $this->ok( array( 'items' => ContentReferences::search( $type, $q, 20 ) ) );
+	}
+
+	/** Résout des références stockées → libellé + état (missing:true si le contenu n'existe plus). */
+	public function resolve( \WP_REST_Request $r ): \WP_REST_Response {
+		$type = (string) $r->get_param( 'type' );
+		$ids  = array_filter( array_map( 'trim', explode( ',', (string) $r->get_param( 'ids' ) ) ) );
+		return $this->ok( array( 'items' => ContentReferences::resolve( $type, $ids ) ) );
 	}
 
 	public function get( \WP_REST_Request $r ): \WP_REST_Response {

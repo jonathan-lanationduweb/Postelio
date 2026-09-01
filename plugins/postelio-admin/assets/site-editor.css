@@ -120,9 +120,10 @@
 /* ---- Save bar --------------------------------------------------------- */
 .pst-ed-savebar {
 	position: sticky; bottom: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-	padding: 12px 24px; background: var(--ed-primary); color: #fff; transform: translateY(120%); transition: transform .25s ease;
+	padding: 12px 24px; background: var(--ed-primary); color: #fff;
+	transform: translateY(220%); opacity: 0; pointer-events: none; transition: transform .25s ease, opacity .2s ease;
 }
-.pst-ed-savebar.is-visible { transform: translateY(0); }
+.pst-ed-savebar.is-visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
 .pst-ed-savebar__msg { font-size: 13px; font-weight: 600; }
 .pst-ed-savebar__msg small { display: block; font-weight: 400; opacity: .8; font-size: 11.5px; }
 .pst-ed-savebar .pst-ed-btn { }
@@ -200,6 +201,48 @@
 .pst-pv__swatch-c { height: 64px; }
 .pst-pv__swatch-l { padding: 8px 10px; font-size: .75em; background: #fff; }
 .pst-pv__swatch-l b { display: block; color: var(--pv-primary); }
+
+/* ---- Compteur de caractères (SEO) ------------------------------------ */
+.pst-ed-count { text-align: right; font-size: 11px; color: var(--ed-muted); margin-top: 3px; }
+.pst-ed-count.is-over { color: #d33; font-weight: 700; }
+
+/* ---- Réinitialiser ---------------------------------------------------- */
+.pst-ed-reset { margin-bottom: 14px; }
+
+/* ---- Sélecteur de contenu (collection) -------------------------------- */
+.pst-ed-coll__list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.pst-ed-coll__item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--ed-line); border-radius: 9px; padding: 7px 9px; background: #fff; }
+.pst-ed-coll__item.is-missing { border-color: #f3b4b4; background: #fff6f6; }
+.pst-ed-coll__main { flex: 1; min-width: 0; }
+.pst-ed-coll__label { font-weight: 600; font-size: 12.5px; color: var(--ed-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pst-ed-coll__sub { font-size: 11px; color: var(--ed-muted); }
+.pst-ed-coll__state { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; padding: 2px 6px; border-radius: 999px; background: #eef1f6; color: var(--ed-muted); }
+.pst-ed-coll__tools { display: flex; gap: 3px; }
+.pst-ed-coll__tools button { border: 0; background: #f0f3f8; color: var(--ed-muted); border-radius: 6px; cursor: pointer; width: 24px; height: 24px; font-size: 12px; }
+.pst-ed-coll__tools button:hover { background: #e2e8f1; color: var(--ed-primary); }
+.pst-ed-coll__search { position: relative; }
+.pst-ed-coll__results { position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid var(--ed-line); border-radius: 10px; box-shadow: 0 12px 30px rgba(23,50,77,.14); max-height: 240px; overflow: auto; display: none; }
+.pst-ed-coll__results.is-open { display: block; }
+.pst-ed-coll__result { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #f0f3f8; }
+.pst-ed-coll__result:hover, .pst-ed-coll__result.is-active { background: #f5f8fc; }
+.pst-ed-coll__result b { display: block; font-size: 12.5px; color: var(--ed-primary); }
+.pst-ed-coll__result span { font-size: 11px; color: var(--ed-muted); }
+.pst-ed-coll__empty { padding: 10px; font-size: 12px; color: var(--ed-muted); }
+
+/* ---- Aperçu SEO (SERP + Open Graph) ----------------------------------- */
+.pst-pv__seo { padding: 24px; background: #f1f3f7; }
+.pst-pv__serp { background: #fff; border-radius: 12px; padding: 18px 20px; max-width: 600px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); font-family: arial, sans-serif; }
+.pst-pv__serp-url { color: #202124; font-size: 13px; }
+.pst-pv__serp-url small { color: #5f6368; }
+.pst-pv__serp-title { color: #1a0dab; font-size: 20px; line-height: 1.3; margin: 3px 0; }
+.pst-pv__serp-desc { color: #4d5156; font-size: 13px; line-height: 1.5; }
+.pst-pv__og { background: #fff; border: 1px solid #dadde1; border-radius: 12px; overflow: hidden; max-width: 520px; }
+.pst-pv__og-img { height: 200px; background: #e4e9f0 center/cover no-repeat; display: flex; align-items: center; justify-content: center; color: #93a1b5; font-size: 12px; }
+.pst-pv__og-body { padding: 10px 14px; }
+.pst-pv__og-site { font-size: 11px; text-transform: uppercase; color: #8a96a5; }
+.pst-pv__og-title { font-size: 15px; font-weight: 700; color: #1d2129; margin: 2px 0; }
+.pst-pv__og-desc { font-size: 12.5px; color: #606770; }
+.pst-pv__seo-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6b7a8d; font-weight: 700; margin: 0 0 8px; }
 
 /* ---- Responsive admin ------------------------------------------------- */
 @media (max-width: 1100px) {

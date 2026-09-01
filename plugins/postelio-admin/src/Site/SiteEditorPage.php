@@ -32,7 +32,7 @@ final class SiteEditorPage {
 		'jobs'       => 'Configuration de la page publique des offres.',
 		'companies'  => 'Configuration de la page publique des entreprises.',
 		'skills'     => 'Configuration de la page Savoir-faire.',
-		'blog'       => 'Configuration de la page Conseils / Blog.',
+		'advice'     => 'Configuration de la page Conseils.',
 		'contact'    => 'Configuration de la page Contact.',
 		'seo'        => 'Réglages SEO globaux et par page.',
 	);
@@ -93,7 +93,7 @@ final class SiteEditorPage {
 	public static function label( string $page ): string {
 		$labels = array(
 			'home' => 'Accueil', 'navigation' => 'Navigation', 'footer' => 'Footer', 'appearance' => 'Apparence',
-			'jobs' => 'Offres', 'companies' => 'Entreprises', 'skills' => 'Savoir-faire', 'blog' => 'Conseils / Blog',
+			'jobs' => 'Offres', 'companies' => 'Entreprises', 'skills' => 'Savoir-faire', 'advice' => 'Conseils',
 			'contact' => 'Contact', 'seo' => 'SEO',
 		);
 		return $labels[ $page ] ?? ucfirst( $page );

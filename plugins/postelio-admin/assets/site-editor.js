@@ -1,8 +1,8 @@
 /**
- * Éditeur visuel du site Postelio (« Site Builder »).
- * Piloté par le schéma injecté (window.PST_SITE). Rendu de l'éditeur à gauche, aperçu fidèle et
- * responsive à droite, save bar. Aucune dépendance externe (vanilla JS). Les chaînes utilisateur
- * sont insérées via textContent (jamais innerHTML) → pas d'injection dans l'aperçu.
+ * Éditeur visuel du site Postelio (« Site Builder ») — Phase 2.
+ * Piloté par le schéma injecté (window.PST_SITE). Éditeur à gauche, aperçu fidèle et responsive à
+ * droite, save bar. Vanilla JS. Chaînes utilisateur insérées via textContent (jamais innerHTML)
+ * dans l'aperçu → pas d'injection.
  */
 ( function () {
 	'use strict';
@@ -14,6 +14,11 @@
 	var dirty = false;
 	var device = 'desktop';
 	var previewTimer = null;
+	var activeSeo = 'home';
+	var resolveCache = {}; // { type: { id: {label,sub,state,missing} } }
+
+	// SEO : chemins front par page (aperçu SERP).
+	var SEO_PATHS = { home: '/', jobs: '/offres', companies: '/entreprises', skills: '/savoir-faire', advice: '/conseils', contact: '/contact' };
 
 	// ------------------------------------------------------------- utilitaires
 	function deepClone( o ) { return JSON.parse( JSON.stringify( o == null ? {} : o ) ); }
@@ -22,7 +27,6 @@
 		if ( attrs ) { Object.keys( attrs ).forEach( function ( k ) {
 			if ( k === 'class' ) { n.className = attrs[ k ]; }
 			else if ( k === 'text' ) { n.textContent = attrs[ k ]; }
-			else if ( k === 'html' ) { n.innerHTML = attrs[ k ]; }
 			else if ( k.indexOf( 'on' ) === 0 && typeof attrs[ k ] === 'function' ) { n.addEventListener( k.slice( 2 ), attrs[ k ] ); }
 			else if ( attrs[ k ] != null ) { n.setAttribute( k, attrs[ k ] ); }
 		} ); }
@@ -33,43 +37,70 @@
 	function schedulePreview() { clearTimeout( previewTimer ); previewTimer = setTimeout( renderPreview, 120 ); }
 	function appearance() { return CFG.page === 'appearance' ? state : ( CFG.appearance || {} ); }
 
+	// ------------------------------------------------------------- state path
+	function getPath( path ) { var o = state; for ( var i = 0; i < path.length; i++ ) { if ( o == null ) { return undefined; } o = o[ path[ i ] ]; } return o; }
+	function setPath( path, val ) { var o = state; for ( var i = 0; i < path.length - 1; i++ ) { if ( o[ path[ i ] ] == null ) { o[ path[ i ] ] = ( typeof path[ i + 1 ] === 'number' ) ? [] : {}; } o = o[ path[ i ] ]; } o[ path[ path.length - 1 ] ] = val; }
+
+	// ------------------------------------------------------------- defaults (reset)
+	function fieldDefault( f ) {
+		if ( f.default !== undefined ) { return deepClone( f.default ); }
+		if ( f.type === 'toggle' ) { return false; }
+		if ( f.type === 'number' ) { return 0; }
+		if ( f.type === 'repeater' || f.type === 'collection' ) { return []; }
+		return '';
+	}
+	function schemaDefaults( schema ) {
+		if ( schema.type === 'sections' ) {
+			var out = { _order: Object.keys( schema.sections ) };
+			Object.keys( schema.sections ).forEach( function ( sk ) {
+				var sec = {}; var fs = schema.sections[ sk ].fields || {};
+				Object.keys( fs ).forEach( function ( fk ) { sec[ fk ] = fieldDefault( fs[ fk ] ); } );
+				sec._enabled = schema.sections[ sk ].enabled_default !== false;
+				out[ sk ] = sec;
+			} );
+			return out;
+		}
+		var o = {}; Object.keys( schema.fields ).forEach( function ( fk ) { o[ fk ] = fieldDefault( schema.fields[ fk ] ); } );
+		return o;
+	}
+
 	// ============================================================ ÉDITEUR
 	function renderEditor() {
 		var panel = document.getElementById( 'pst-ed-panel' );
 		panel.innerHTML = '';
 		var schema = CFG.schema;
 
+		if ( schema.backend_note ) { panel.appendChild( el( 'div', { class: 'pst-ed-note', text: schema.backend_note } ) ); }
+		if ( schema.source_note ) { panel.appendChild( el( 'div', { class: 'pst-ed-note', text: schema.source_note } ) ); }
+		if ( schema.resettable ) { panel.appendChild( resetControl() ); }
+
 		if ( schema.type === 'sections' ) {
-			if ( schema.prepared ) { panel.appendChild( preparedNote() ); }
 			var order = ( state._order && state._order.length ) ? state._order : Object.keys( schema.sections );
-			order.forEach( function ( skey, idx ) {
-				var sdef = schema.sections[ skey ];
-				if ( ! sdef ) { return; }
-				panel.appendChild( sectionCard( skey, sdef, idx, order.length ) );
+			// N'afficher que les sections connues, puis compléter par celles manquantes.
+			order = order.filter( function ( k ) { return schema.sections[ k ]; } );
+			Object.keys( schema.sections ).forEach( function ( k ) { if ( order.indexOf( k ) < 0 ) { order.push( k ); } } );
+			order.forEach( function ( skey ) { panel.appendChild( sectionCard( skey, schema.sections[ skey ] ) ); } );
+		} else if ( schema.groups ) {
+			schema.groups.forEach( function ( g ) {
+				panel.appendChild( plainCard( g.label, function ( body ) {
+					g.fields.forEach( function ( fk ) { if ( schema.fields[ fk ] ) { body.appendChild( fieldRow( fk, schema.fields[ fk ], [ fk ] ) ); } } );
+				} ) );
 			} );
 		} else {
-			if ( schema.prepared ) { panel.appendChild( preparedNote() ); }
-			// Page « single » : une carte réglages + une carte par repeater.
-			var scalarFields = {}, repeaters = {};
-			Object.keys( schema.fields ).forEach( function ( fk ) {
-				if ( schema.fields[ fk ].type === 'repeater' ) { repeaters[ fk ] = schema.fields[ fk ]; }
-				else { scalarFields[ fk ] = schema.fields[ fk ]; }
-			} );
-			if ( Object.keys( scalarFields ).length ) {
-				panel.appendChild( plainCard( schema.icon ? schema.icon + ' Réglages' : 'Réglages', function ( body ) {
-					Object.keys( scalarFields ).forEach( function ( fk ) { body.appendChild( fieldRow( fk, scalarFields[ fk ], [ fk ] ) ); } );
-				} ) );
-			}
-			Object.keys( repeaters ).forEach( function ( fk ) {
-				panel.appendChild( plainCard( repeaters[ fk ].label || fk, function ( body ) {
-					body.appendChild( repeaterField( fk, repeaters[ fk ], [ fk ] ) );
-				} ) );
-			} );
+			panel.appendChild( plainCard( 'Réglages', function ( body ) {
+				Object.keys( schema.fields ).forEach( function ( fk ) { body.appendChild( fieldRow( fk, schema.fields[ fk ], [ fk ] ) ); } );
+			} ) );
 		}
 	}
 
-	function preparedNote() {
-		return el( 'div', { class: 'pst-ed-note', text: 'Page préparée (Phase 1) : la structure est disponible et enregistrable ; le branchement au front se fera ultérieurement.' } );
+	function resetControl() {
+		return el( 'div', { class: 'pst-ed-reset' }, [
+			el( 'button', { type: 'button', class: 'pst-ed-btn pst-ed-btn--sm', text: '↺ Réinitialiser aux valeurs Postelio', onclick: function () {
+				if ( window.confirm( 'Réinitialiser cette page aux valeurs Postelio par défaut ? Vos modifications non enregistrées seront perdues.' ) ) {
+					state = schemaDefaults( CFG.schema ); markDirty(); renderEditor(); renderPreview();
+				}
+			} } )
+		] );
 	}
 
 	function plainCard( title, fill ) {
@@ -85,66 +116,66 @@
 		return card;
 	}
 
-	function sectionCard( skey, sdef, idx, total ) {
+	function sectionCard( skey, sdef ) {
 		var sval = state[ skey ] = state[ skey ] || {};
-		var enabled = sval._enabled !== false;
+		var noToggle = !! sdef.no_toggle;
+		var enabled = noToggle || sval._enabled !== false;
 
 		var body = el( 'div', { class: 'pst-ed-card__body' } );
-		Object.keys( sdef.fields || {} ).forEach( function ( fk ) {
-			body.appendChild( fieldRow( fk, sdef.fields[ fk ], [ skey, fk ] ) );
-		} );
+		Object.keys( sdef.fields || {} ).forEach( function ( fk ) { body.appendChild( fieldRow( fk, sdef.fields[ fk ], [ skey, fk ] ) ); } );
 
-		var toggle = switchEl( enabled, function ( on ) {
-			sval._enabled = on; card.classList.toggle( 'is-off', ! on ); markDirty();
-		} );
-
-		var reorder = null;
-		if ( CFG.schema.type === 'sections' && sdef.reorderable !== false ) {
-			reorder = el( 'div', { class: 'pst-ed-card__reorder' }, [
-				el( 'button', { title: 'Monter', text: '▲', onclick: function ( e ) { e.stopPropagation(); moveSection( skey, -1 ); } } ),
-				el( 'button', { title: 'Descendre', text: '▼', onclick: function ( e ) { e.stopPropagation(); moveSection( skey, 1 ); } } )
-			] );
+		var headKids = [];
+		if ( CFG.schema.type === 'sections' && sdef.reorderable !== false && ! CFG.schema.seo ) {
+			headKids.push( el( 'div', { class: 'pst-ed-card__reorder' }, [
+				el( 'button', { title: 'Monter', text: '▲', 'aria-label': 'Monter la section', onclick: function ( e ) { e.stopPropagation(); moveSection( skey, -1 ); } } ),
+				el( 'button', { title: 'Descendre', text: '▼', 'aria-label': 'Descendre la section', onclick: function ( e ) { e.stopPropagation(); moveSection( skey, 1 ); } } )
+			] ) );
+		} else {
+			headKids.push( el( 'span', { class: 'pst-ed-card__grip', text: CFG.schema.seo ? '' : '⋮⋮' } ) );
 		}
+		headKids.push( el( 'span', { class: 'pst-ed-card__title', text: sdef.label || skey } ) );
+		if ( ! noToggle ) {
+			headKids.push( labelWrap( switchEl( enabled, function ( on ) { sval._enabled = on; card.classList.toggle( 'is-off', ! on ); markDirty(); } ) ) );
+		}
+		headKids.push( el( 'span', { class: 'pst-ed-card__chevron', text: '▸' } ) );
 
-		var head = el( 'div', { class: 'pst-ed-card__head', onclick: function () { card.classList.toggle( 'is-open' ); } }, [
-			reorder || el( 'span', { class: 'pst-ed-card__grip', text: '⋮⋮' } ),
-			el( 'span', { class: 'pst-ed-card__title', text: sdef.label || skey } ),
-			labelWrap( toggle ),
-			el( 'span', { class: 'pst-ed-card__chevron', text: '▸' } )
-		] );
+		var head = el( 'div', { class: 'pst-ed-card__head', onclick: function () {
+			card.classList.toggle( 'is-open' );
+			if ( CFG.schema.seo && card.classList.contains( 'is-open' ) && skey !== 'global' ) { activeSeo = skey; schedulePreview(); }
+		} }, headKids );
 
 		var card = el( 'div', { class: 'pst-ed-card' + ( enabled ? '' : ' is-off' ) }, [ head, body ] );
 		return card;
 	}
 
-	function labelWrap( node ) {
-		// évite que le clic sur le switch ne replie la carte
-		var w = el( 'span', {}, [ node ] );
-		w.addEventListener( 'click', function ( e ) { e.stopPropagation(); } );
-		return w;
-	}
+	function labelWrap( node ) { var w = el( 'span', {}, [ node ] ); w.addEventListener( 'click', function ( e ) { e.stopPropagation(); } ); return w; }
 
 	function moveSection( skey, dir ) {
-		var order = ( state._order && state._order.length ) ? state._order.slice() : Object.keys( CFG.schema.sections );
-		var i = order.indexOf( skey );
-		var j = i + dir;
+		var schema = CFG.schema;
+		var order = ( state._order && state._order.length ) ? state._order.slice() : Object.keys( schema.sections );
+		order = order.filter( function ( k ) { return schema.sections[ k ]; } );
+		Object.keys( schema.sections ).forEach( function ( k ) { if ( order.indexOf( k ) < 0 ) { order.push( k ); } } );
+		var i = order.indexOf( skey ), j = i + dir;
 		if ( i < 0 || j < 0 || j >= order.length ) { return; }
 		order.splice( j, 0, order.splice( i, 1 )[ 0 ] );
-		state._order = order;
-		markDirty(); renderEditor(); renderPreview();
+		state._order = order; markDirty(); renderEditor(); renderPreview();
 	}
 
 	// ------------------------------------------------------------- champs
 	function fieldRow( fk, fdef, path ) {
 		var type = fdef.type || 'text';
 		if ( type === 'repeater' ) { return wrapField( fdef, repeaterField( fk, fdef, path ) ); }
+		if ( type === 'collection' ) { return wrapField( fdef, collectionField( fk, fdef, path ) ); }
 		if ( type === 'toggle' ) { return toggleField( fk, fdef, path ); }
+		if ( type === 'color' ) { return colorField( fk, fdef, path ); }
+		if ( type === 'media' ) { return mediaField( fk, fdef, path ); }
 
 		var value = getPath( path );
-		var control;
+		var control, counter = null;
 		if ( type === 'textarea' ) {
 			control = el( 'textarea', { class: 'pst-ed-textarea', placeholder: fdef.placeholder || '' } );
-			control.value = value || ''; control.addEventListener( 'input', function () { setPath( path, control.value ); markDirty(); } );
+			control.value = value || '';
+			control.addEventListener( 'input', function () { setPath( path, control.value ); if ( counter ) { updateCounter( counter, control.value, fdef.counter ); } markDirty(); } );
 		} else if ( type === 'select' ) {
 			control = el( 'select', { class: 'pst-ed-select' } );
 			var opts = fdef.options || {};
@@ -153,16 +184,17 @@
 		} else if ( type === 'number' ) {
 			control = el( 'input', { class: 'pst-ed-input', type: 'number', min: fdef.min, max: fdef.max } );
 			control.value = value; control.addEventListener( 'input', function () { setPath( path, parseInt( control.value, 10 ) || 0 ); markDirty(); } );
-		} else if ( type === 'color' ) {
-			return colorField( fk, fdef, path );
-		} else if ( type === 'media' ) {
-			return mediaField( fk, fdef, path );
 		} else {
 			control = el( 'input', { class: 'pst-ed-input', type: 'text', placeholder: fdef.placeholder || '' } );
-			control.value = value || ''; control.addEventListener( 'input', function () { setPath( path, control.value ); markDirty(); } );
+			control.value = value || '';
+			control.addEventListener( 'input', function () { setPath( path, control.value ); if ( counter ) { updateCounter( counter, control.value, fdef.counter ); } markDirty(); } );
 		}
-		return wrapField( fdef, control );
+		var wrap = wrapField( fdef, control );
+		if ( fdef.counter ) { counter = el( 'div', { class: 'pst-ed-count' } ); updateCounter( counter, value || '', fdef.counter ); wrap.appendChild( counter ); }
+		return wrap;
 	}
+
+	function updateCounter( node, val, max ) { var n = ( val || '' ).length; node.textContent = n + ' / ' + max; node.classList.toggle( 'is-over', n > max ); }
 
 	function wrapField( fdef, control ) {
 		var kids = [ el( 'label', { text: fdef.label || '' } ), control ];
@@ -211,10 +243,7 @@
 	function openMedia( path, paint, chooseBtn ) {
 		if ( ! window.wp || ! window.wp.media ) { window.alert( 'Médiathèque WordPress indisponible.' ); return; }
 		var frame = window.wp.media( { title: 'Choisir un média', multiple: false } );
-		frame.on( 'select', function () {
-			var att = frame.state().get( 'selection' ).first().toJSON();
-			setPath( path, att.url ); paint(); chooseBtn.textContent = 'Remplacer'; markDirty();
-		} );
+		frame.on( 'select', function () { var att = frame.state().get( 'selection' ).first().toJSON(); setPath( path, att.url ); paint(); chooseBtn.textContent = 'Remplacer'; markDirty(); } );
 		frame.open();
 	}
 
@@ -225,20 +254,20 @@
 		var wrap = el( 'div', { class: 'pst-ed-rep' } );
 		function rebuild() {
 			wrap.innerHTML = '';
-			rows.forEach( function ( row, i ) { wrap.appendChild( repRow( fk, fdef, path, i, rows ) ); } );
+			rows.forEach( function ( row, i ) { wrap.appendChild( repRow( i ) ); } );
 			wrap.appendChild( el( 'button', { class: 'pst-ed-rep__add', type: 'button', text: '+ Ajouter', onclick: function () {
 				var blank = {}; Object.keys( fdef.fields ).forEach( function ( sk ) { blank[ sk ] = ''; } );
 				rows.push( blank ); markDirty(); rebuild(); schedulePreview();
 			} } ) );
 		}
-		function repRow( fk, fdef, path, i, rows ) {
+		function repRow( i ) {
 			var body = el( 'div', { class: 'pst-ed-rep__row' } );
 			body.appendChild( el( 'div', { class: 'pst-ed-rep__row-head' }, [
 				el( 'span', { class: 'pst-ed-rep__row-title', text: ( fdef.label || 'Élément' ) + ' ' + ( i + 1 ) } ),
 				el( 'div', { class: 'pst-ed-rep__row-tools' }, [
-					el( 'button', { type: 'button', title: 'Monter', text: '▲', onclick: function () { if ( i > 0 ) { rows.splice( i - 1, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); schedulePreview(); } } } ),
-					el( 'button', { type: 'button', title: 'Descendre', text: '▼', onclick: function () { if ( i < rows.length - 1 ) { rows.splice( i + 1, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); schedulePreview(); } } } ),
-					el( 'button', { type: 'button', title: 'Supprimer', text: '✕', onclick: function () { rows.splice( i, 1 ); markDirty(); rebuild(); schedulePreview(); } } )
+					el( 'button', { type: 'button', title: 'Monter', 'aria-label': 'Monter', text: '▲', onclick: function () { if ( i > 0 ) { rows.splice( i - 1, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); schedulePreview(); } } } ),
+					el( 'button', { type: 'button', title: 'Descendre', 'aria-label': 'Descendre', text: '▼', onclick: function () { if ( i < rows.length - 1 ) { rows.splice( i + 1, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); schedulePreview(); } } } ),
+					el( 'button', { type: 'button', title: 'Supprimer', 'aria-label': 'Supprimer', text: '✕', onclick: function () { rows.splice( i, 1 ); markDirty(); rebuild(); schedulePreview(); } } )
 				] )
 			] ) );
 			Object.keys( fdef.fields ).forEach( function ( sk ) { body.appendChild( fieldRow( sk, fdef.fields[ sk ], path.concat( [ i, sk ] ) ) ); } );
@@ -248,9 +277,89 @@
 		return wrap;
 	}
 
-	// ------------------------------------------------------------- state path
-	function getPath( path ) { var o = state; for ( var i = 0; i < path.length; i++ ) { if ( o == null ) { return undefined; } o = o[ path[ i ] ]; } return o; }
-	function setPath( path, val ) { var o = state; for ( var i = 0; i < path.length - 1; i++ ) { if ( o[ path[ i ] ] == null ) { o[ path[ i ] ] = ( typeof path[ i + 1 ] === 'number' ) ? [] : {}; } o = o[ path[ i ] ]; } o[ path[ path.length - 1 ] ] = val; }
+	// ------------------------------------------------------------- collection (sélecteur de contenu)
+	function collectionField( fk, fdef, path ) {
+		var type = fdef.ref_type || 'job';
+		var ids = getPath( path );
+		if ( ! Array.isArray( ids ) ) { ids = []; setPath( path, ids ); }
+		resolveCache[ type ] = resolveCache[ type ] || {};
+
+		var list = el( 'div', { class: 'pst-ed-coll__list' } );
+		var wrap = el( 'div', { class: 'pst-ed-coll' }, [ list, searchBox() ] );
+
+		function render() {
+			list.innerHTML = '';
+			if ( ! ids.length ) { list.appendChild( el( 'p', { class: 'pst-ed-coll__empty', text: 'Aucune sélection. Recherchez du contenu ci-dessous.' } ) ); return; }
+			ids.forEach( function ( id, i ) {
+				var item = resolveCache[ type ][ id ];
+				var missing = item && item.missing;
+				var row = el( 'div', { class: 'pst-ed-coll__item' + ( missing ? ' is-missing' : '' ) }, [
+					el( 'div', { class: 'pst-ed-coll__main' }, [
+						el( 'div', { class: 'pst-ed-coll__label', text: item ? ( missing ? 'Contenu indisponible' : ( item.label || id ) ) : 'Chargement…' } ),
+						el( 'div', { class: 'pst-ed-coll__sub', text: item && ! missing ? ( item.sub || '' ) : ( 'réf. ' + id ) } )
+					] ),
+					( item && ! missing && item.state ) ? el( 'span', { class: 'pst-ed-coll__state', text: item.state } ) : null,
+					el( 'div', { class: 'pst-ed-coll__tools' }, [
+						el( 'button', { type: 'button', title: 'Monter', 'aria-label': 'Monter', text: '▲', onclick: function () { if ( i > 0 ) { ids.splice( i - 1, 0, ids.splice( i, 1 )[ 0 ] ); markDirty(); render(); } } } ),
+						el( 'button', { type: 'button', title: 'Descendre', 'aria-label': 'Descendre', text: '▼', onclick: function () { if ( i < ids.length - 1 ) { ids.splice( i + 1, 0, ids.splice( i, 1 )[ 0 ] ); markDirty(); render(); } } } ),
+						el( 'button', { type: 'button', title: 'Retirer', 'aria-label': 'Retirer', text: '✕', onclick: function () { ids.splice( i, 1 ); markDirty(); render(); schedulePreview(); } } )
+					] )
+				] );
+				list.appendChild( row );
+			} );
+		}
+
+		function searchBox() {
+			var input = el( 'input', { class: 'pst-ed-input', type: 'search', placeholder: 'Rechercher à ajouter…' } );
+			var results = el( 'div', { class: 'pst-ed-coll__results' } );
+			var box = el( 'div', { class: 'pst-ed-coll__search' }, [ input, results ] );
+			var t = null;
+			input.addEventListener( 'input', function () {
+				clearTimeout( t );
+				var q = input.value.trim();
+				if ( q.length < 2 ) { results.classList.remove( 'is-open' ); return; }
+				t = setTimeout( function () { doSearch( q, results, input ); }, 250 );
+			} );
+			input.addEventListener( 'blur', function () { setTimeout( function () { results.classList.remove( 'is-open' ); }, 180 ); } );
+			return box;
+		}
+
+		function doSearch( q, results, input ) {
+			fetch( CFG.searchUrl + '?type=' + encodeURIComponent( type ) + '&q=' + encodeURIComponent( q ), { headers: { 'X-WP-Nonce': CFG.restNonce }, credentials: 'same-origin' } )
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( j ) {
+				var items = ( j && j.data && j.data.items ) || [];
+				results.innerHTML = '';
+				if ( ! items.length ) { results.appendChild( el( 'div', { class: 'pst-ed-coll__empty', text: 'Aucun résultat.' } ) ); results.classList.add( 'is-open' ); return; }
+				items.forEach( function ( it ) {
+					var already = ids.indexOf( it.id ) >= 0;
+					var r = el( 'div', { class: 'pst-ed-coll__result', onclick: function () {
+						if ( ! already && it.id ) {
+							resolveCache[ type ][ it.id ] = { label: it.label, sub: it.sub, state: it.state, missing: false };
+							ids.push( it.id ); markDirty(); render(); schedulePreview();
+							input.value = ''; results.classList.remove( 'is-open' );
+						}
+					} }, [
+						el( 'b', { text: it.label + ( already ? '  ✓' : '' ) } ),
+						el( 'span', { text: [ it.sub, it.state ].filter( Boolean ).join( ' · ' ) } )
+					] );
+					results.appendChild( r );
+				} );
+				results.classList.add( 'is-open' );
+			} ).catch( function () { results.innerHTML = ''; results.appendChild( el( 'div', { class: 'pst-ed-coll__empty', text: 'Recherche indisponible.' } ) ); results.classList.add( 'is-open' ); } );
+		}
+
+		render();
+		// Résout les ids inconnus.
+		var unknown = ids.filter( function ( id ) { return ! resolveCache[ type ][ id ]; } );
+		if ( unknown.length ) {
+			fetch( CFG.resolveUrl + '?type=' + encodeURIComponent( type ) + '&ids=' + encodeURIComponent( unknown.join( ',' ) ), { headers: { 'X-WP-Nonce': CFG.restNonce }, credentials: 'same-origin' } )
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( j ) { var items = ( j && j.data && j.data.items ) || []; items.forEach( function ( it ) { resolveCache[ type ][ it.id ] = it; } ); render(); } )
+			.catch( function () {} );
+		}
+		return wrap;
+	}
 
 	// ============================================================ APERÇU
 	function renderPreview() {
@@ -260,10 +369,11 @@
 		var pv = el( 'div', { class: 'pst-pv' } );
 		applyTheme( pv, appearance() );
 		var page = CFG.page;
-		if ( page === 'home' ) { buildHome( pv ); }
-		else if ( page === 'navigation' ) { buildNav( pv ); }
+		if ( page === 'navigation' ) { buildNav( pv ); }
 		else if ( page === 'footer' ) { buildFooter( pv ); }
 		else if ( page === 'appearance' ) { buildAppearance( pv ); }
+		else if ( page === 'seo' ) { buildSEO( pv ); }
+		else if ( CFG.schema.type === 'sections' ) { buildSections( pv ); }
 		else { buildGeneric( pv ); }
 		canvas.appendChild( pv );
 	}
@@ -284,18 +394,35 @@
 	function btn( label, primary ) { return label ? el( 'a', { class: 'pst-pv__btn ' + ( primary ? 'pst-pv__btn--primary' : 'pst-pv__btn--ghost' ), text: label } ) : null; }
 	function on( skey ) { var s = state[ skey ]; return s && s._enabled !== false; }
 
-	function buildHome( pv ) {
-		var order = ( state._order && state._order.length ) ? state._order : Object.keys( CFG.schema.sections );
+	function buildSections( pv ) {
+		var schema = CFG.schema;
+		var order = ( state._order && state._order.length ) ? state._order : Object.keys( schema.sections );
+		order = order.filter( function ( k ) { return schema.sections[ k ]; } );
+		Object.keys( schema.sections ).forEach( function ( k ) { if ( order.indexOf( k ) < 0 ) { order.push( k ); } } );
 		order.forEach( function ( skey ) {
 			if ( ! on( skey ) ) { return; }
 			var v = state[ skey ] || {};
-			if ( skey === 'hero' ) { pv.appendChild( heroBlock( v ) ); }
-			else if ( skey === 'search' ) { pv.appendChild( searchBlock( v ) ); }
-			else if ( skey === 'arguments' ) { pv.appendChild( argsBlock( v ) ); }
-			else if ( skey === 'cta' ) { pv.appendChild( ctaBlock( v ) ); }
-			else { pv.appendChild( collectionBlock( v ) ); }
+			pv.appendChild( sectionPreview( skey, v ) );
 		} );
 		if ( ! pv.children.length ) { pv.appendChild( el( 'div', { class: 'pst-ed-empty', text: 'Toutes les sections sont désactivées.' } ) ); }
+	}
+
+	function sectionPreview( skey, v ) {
+		switch ( skey ) {
+			case 'hero':        return heroBlock( v );
+			case 'search':      return searchBlock( v );
+			case 'filters':     return filtersBlock( v );
+			case 'results':
+			case 'feed':        return resultsBlock( v );
+			case 'arguments':   return argsBlock( v );
+			case 'cta':         return ctaBlock( v );
+			case 'categories':  return categoriesBlock( v );
+			case 'intro':       return introBlock( v );
+			case 'coordinates': return coordinatesBlock( v );
+			case 'form':        return formBlock( v );
+			case 'extra':       return introBlock( v );
+			default:            return collectionBlock( v ); // categories(home)/jobs/companies/skills/articles/featured
+		}
 	}
 
 	function heroBlock( v ) {
@@ -306,10 +433,11 @@
 		var inner = el( 'div', { class: 'pst-pv__hero-inner' } );
 		if ( v.title ) { inner.appendChild( el( 'h1', { text: v.title } ) ); }
 		if ( v.subtitle ) { inner.appendChild( el( 'p', { text: v.subtitle } ) ); }
-		var sb = el( 'div', { class: 'pst-pv__searchbar' }, [ el( 'input', { disabled: 'disabled', placeholder: v.search_placeholder || 'Rechercher…' } ), btn( 'Rechercher', true ) ] );
-		inner.appendChild( sb );
+		if ( typeof v.search_placeholder === 'string' && v.search_placeholder !== '' ) {
+			inner.appendChild( el( 'div', { class: 'pst-pv__searchbar' }, [ el( 'input', { disabled: 'disabled', placeholder: v.search_placeholder } ), btn( 'Rechercher', true ) ] ) );
+		}
 		var ctas = el( 'div', { class: 'pst-pv__cta-row' }, [ btn( v.cta_primary_label, true ), btn( v.cta_secondary_label, false ) ] );
-		inner.appendChild( ctas );
+		if ( ctas.children.length ) { inner.appendChild( ctas ); }
 		hero.appendChild( inner );
 		return hero;
 	}
@@ -318,49 +446,83 @@
 		return el( 'section', { class: 'pst-pv__section' }, [
 			v.title ? el( 'h2', { text: v.title } ) : null,
 			el( 'div', { class: 'pst-pv__searchbar' }, [
-				el( 'input', { disabled: 'disabled', placeholder: v.placeholder_role || 'Métier' } ),
+				el( 'input', { disabled: 'disabled', placeholder: v.placeholder_role || 'Rechercher' } ),
 				el( 'input', { disabled: 'disabled', placeholder: v.placeholder_city || 'Ville' } ),
 				btn( v.button_label || 'Rechercher', true )
 			] )
 		] );
 	}
 
-	function collectionBlock( v ) {
-		var n = Math.max( 1, Math.min( 12, parseInt( v.count, 10 ) || 4 ) );
+	function filtersBlock( v ) {
+		var chips = el( 'div', { class: 'pst-pv__cta-row' } );
+		( Array.isArray( v.filters ) ? v.filters : [] ).forEach( function ( f ) { if ( f.label && f.visible !== false ) { chips.appendChild( el( 'span', { class: 'pst-pv__btn pst-pv__btn--ghost', text: f.label + ' ▾' } ) ); } } );
+		return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, chips ] );
+	}
+
+	function resultsBlock( v ) {
+		var n = Math.max( 1, Math.min( 12, parseInt( v.per_page, 10 ) || 6 ) );
 		var grid = el( 'div', { class: 'pst-pv__grid' } );
-		for ( var i = 0; i < n; i++ ) { grid.appendChild( el( 'div', { class: 'pst-pv__card' }, [ el( 'div', { class: 'pst-pv__card-ph' } ), el( 'div', { class: 'pst-pv__card-ph short' } ) ] ) ); }
+		for ( var i = 0; i < n; i++ ) { grid.appendChild( phCard() ); }
+		return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, v.text ? el( 'p', { class: 'pst-pv__section-sub', text: v.text } ) : null, grid ] );
+	}
+
+	function collectionBlock( v ) {
+		var manual = v.mode === 'manual' && Array.isArray( v.items );
+		var n = manual ? v.items.length : Math.max( 1, Math.min( 12, parseInt( v.count, 10 ) || 4 ) );
+		var body;
+		if ( n === 0 ) { body = el( 'p', { class: 'pst-pv__section-sub', text: v.empty_text || 'Aucun contenu.' } ); }
+		else { body = el( 'div', { class: 'pst-pv__grid' } ); for ( var i = 0; i < n; i++ ) { body.appendChild( phCard() ); } }
 		return el( 'section', { class: 'pst-pv__section' }, [
 			v.title ? el( 'h2', { text: v.title } ) : null,
 			v.subtitle ? el( 'p', { class: 'pst-pv__section-sub', text: v.subtitle } ) : null,
-			grid,
+			body,
 			v.cta_label ? el( 'div', { style: 'margin-top:16px' }, [ btn( v.cta_label, false ) ] ) : null
 		] );
 	}
 
+	function categoriesBlock( v ) {
+		if ( Array.isArray( v.items ) && v.items.length && v.items[ 0 ] && v.items[ 0 ].label !== undefined ) {
+			var chips = el( 'div', { class: 'pst-pv__cta-row' } );
+			v.items.forEach( function ( it ) { if ( it.label ) { chips.appendChild( el( 'span', { class: 'pst-pv__btn pst-pv__btn--ghost', text: it.label } ) ); } } );
+			return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, chips ] );
+		}
+		return collectionBlock( v );
+	}
+
+	function introBlock( v ) { return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, el( 'p', { text: v.text || '' } ) ] ); }
+
+	function coordinatesBlock( v ) {
+		var dl = el( 'div', { class: 'pst-pv__args' } );
+		[ [ '✉️', v.email ], [ '📞', v.phone ], [ '📍', v.address ] ].forEach( function ( p ) { if ( p[ 1 ] ) { dl.appendChild( el( 'div', { class: 'pst-pv__arg' }, [ el( 'div', { class: 'pst-pv__arg-ic', text: p[ 0 ] } ), el( 'p', { text: p[ 1 ] } ) ] ) ); } } );
+		return el( 'section', { class: 'pst-pv__section' }, [ dl ] );
+	}
+
+	function formBlock( v ) {
+		var box = el( 'div', { class: 'pst-pv__card', style: 'max-width:480px' } );
+		[ v.name_label || 'Nom', v.email_label || 'E-mail' ].forEach( function ( lbl ) { box.appendChild( el( 'div', { style: 'margin-bottom:8px' }, [ el( 'div', { class: 'pst-pv__card-ph short' } ), el( 'input', { disabled: 'disabled', placeholder: lbl, style: 'width:100%;padding:8px;border:1px solid #ddd;border-radius:8px' } ) ] ) ); } );
+		box.appendChild( el( 'textarea', { disabled: 'disabled', placeholder: v.message_ph || 'Message', style: 'width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;min-height:70px' } ) );
+		if ( v.consent_text ) { box.appendChild( el( 'p', { class: 'pst-pv__section-sub', style: 'font-size:.8em;margin-top:8px', text: v.consent_text } ) ); }
+		box.appendChild( el( 'div', { style: 'margin-top:8px' }, [ btn( v.button_label || 'Envoyer', true ) ] ) );
+		return el( 'section', { class: 'pst-pv__section' }, [ el( 'h2', { text: 'Formulaire' } ), box ] );
+	}
+
 	function argsBlock( v ) {
 		var grid = el( 'div', { class: 'pst-pv__args' } );
-		( Array.isArray( v.items ) ? v.items : [] ).forEach( function ( it ) {
-			grid.appendChild( el( 'div', { class: 'pst-pv__arg' }, [
-				el( 'div', { class: 'pst-pv__arg-ic', text: it.icon || '•' } ),
-				el( 'h3', { text: it.title || '' } ),
-				el( 'p', { text: it.text || '' } )
-			] ) );
-		} );
+		( Array.isArray( v.items ) ? v.items : [] ).forEach( function ( it ) { grid.appendChild( el( 'div', { class: 'pst-pv__arg' }, [ el( 'div', { class: 'pst-pv__arg-ic', text: it.icon || '•' } ), el( 'h3', { text: it.title || '' } ), el( 'p', { text: it.text || '' } ) ] ) ); } );
 		return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, v.subtitle ? el( 'p', { class: 'pst-pv__section-sub', text: v.subtitle } ) : null, grid ] );
 	}
 
 	function ctaBlock( v ) {
-		return el( 'section', { class: 'pst-pv__cta-band' }, [
-			v.title ? el( 'h2', { text: v.title } ) : null,
-			v.text ? el( 'p', { text: v.text } ) : null,
-			el( 'div', { style: 'margin-top:14px' }, [ btn( v.button_label || 'Commencer', true ) ] )
-		] );
+		return el( 'section', { class: 'pst-pv__cta-band' }, [ v.title ? el( 'h2', { text: v.title } ) : null, v.text ? el( 'p', { text: v.text } ) : null, el( 'div', { style: 'margin-top:14px' }, [ btn( v.button_label || 'Commencer', true ) ] ) ] );
 	}
+
+	function phCard() { return el( 'div', { class: 'pst-pv__card' }, [ el( 'div', { class: 'pst-pv__card-ph' } ), el( 'div', { class: 'pst-pv__card-ph short' } ) ] ); }
 
 	function buildNav( pv ) {
 		var v = state;
 		var brand = el( 'div', { class: 'pst-pv__nav-brand' } );
-		if ( v.logo && /^https?:/.test( v.logo ) ) { brand.appendChild( el( 'img', { src: v.logo, alt: '' } ) ); }
+		var logo = ( v.use_identity_logo !== false && appearance().logo ) ? appearance().logo : v.logo;
+		if ( logo && /^https?:/.test( logo ) ) { brand.appendChild( el( 'img', { src: logo, alt: '' } ) ); }
 		brand.appendChild( el( 'span', { text: v.brand_text || 'Postelio' } ) );
 		var links = el( 'div', { class: 'pst-pv__nav-links' } );
 		( Array.isArray( v.items ) ? v.items : [] ).forEach( function ( it ) { if ( it.label ) { links.appendChild( el( 'a', { text: it.label } ) ); } } );
@@ -374,8 +536,7 @@
 	function buildFooter( pv ) {
 		var v = state;
 		var cols = el( 'div', { class: 'pst-pv__footer-cols' } );
-		var brandCol = el( 'div', {}, [ el( 'div', { class: 'pst-pv__footer-brand', text: v.brand_text || 'Postelio' } ), el( 'p', { class: 'pst-pv__footer-desc', text: v.description || '' } ) ] );
-		cols.appendChild( brandCol );
+		cols.appendChild( el( 'div', {}, [ el( 'div', { class: 'pst-pv__footer-brand', text: v.brand_text || 'Postelio' } ), el( 'p', { class: 'pst-pv__footer-desc', text: v.description || '' } ) ] ) );
 		( Array.isArray( v.columns ) ? v.columns : [] ).forEach( function ( c ) {
 			var col = el( 'div', {}, [ el( 'h4', { text: c.title || '' } ) ] );
 			( c.links || '' ).split( '\n' ).forEach( function ( line ) { var lbl = line.split( '|' )[ 0 ].trim(); if ( lbl ) { col.appendChild( el( 'a', { text: lbl } ) ); } } );
@@ -395,18 +556,43 @@
 		} );
 		pv.appendChild( swatches );
 		pv.appendChild( heroBlock( { title: 'Exemple de titre', subtitle: 'Un aperçu du style appliqué à votre site.', height: 'medium', overlay: true, cta_primary_label: 'Bouton principal', cta_secondary_label: 'Bouton secondaire', search_placeholder: 'Rechercher…' } ) );
-		pv.appendChild( el( 'section', { class: 'pst-pv__section' }, [ el( 'h2', { text: 'Titre de section' } ), el( 'p', { text: 'Texte courant dans la police et la taille choisies. Les boutons ci-dessous reflètent le style sélectionné.' } ), el( 'div', { class: 'pst-pv__cta-row' }, [ btn( 'Principal', true ), btn( 'Secondaire', false ) ] ) ] ) );
+		pv.appendChild( el( 'section', { class: 'pst-pv__section' }, [ el( 'h2', { text: 'Titre de section' } ), el( 'p', { text: 'Texte courant dans la police et la taille choisies. Les boutons reflètent le style sélectionné.' } ), el( 'div', { class: 'pst-pv__cta-row' }, [ btn( 'Principal', true ), btn( 'Secondaire', false ) ] ) ] ) );
+	}
+
+	function buildSEO( pv ) {
+		var g = state.global || {};
+		var key = ( state[ activeSeo ] ? activeSeo : 'home' );
+		var s = state[ key ] || {};
+		var label = ( CFG.schema.sections[ key ] && CFG.schema.sections[ key ].label ) || 'Accueil';
+		var siteName = g.site_name || 'Postelio';
+		var title = s.seo_title || ( ( g.title_template || '%page% — Postelio' ).replace( '%page%', label ) );
+		var desc = s.meta_description || g.default_description || '';
+		var img = s.social_image || g.default_social_image || '';
+		var url = ( CFG.frontUrl || 'https://exemple.fr/' ).replace( /\/$/, '' ) + ( SEO_PATHS[ key ] || '/' );
+
+		var wrap = el( 'section', { class: 'pst-pv__seo' } );
+		wrap.appendChild( el( 'p', { class: 'pst-pv__seo-label', text: 'Aperçu Google — ' + label } ) );
+		wrap.appendChild( el( 'div', { class: 'pst-pv__serp' }, [
+			el( 'div', { class: 'pst-pv__serp-url' }, [ document.createTextNode( siteName + ' ' ), el( 'small', { text: url } ) ] ),
+			el( 'div', { class: 'pst-pv__serp-title', text: title } ),
+			el( 'div', { class: 'pst-pv__serp-desc', text: desc || 'Ajoutez une meta description pour contrôler cet extrait.' } )
+		] ) );
+		wrap.appendChild( el( 'p', { class: 'pst-pv__seo-label', text: 'Aperçu réseau social (Open Graph)' } ) );
+		var ogImg = el( 'div', { class: 'pst-pv__og-img' } );
+		if ( img && /^https?:/.test( img ) ) { ogImg.style.backgroundImage = 'url(' + img + ')'; } else { ogImg.textContent = 'Image sociale'; }
+		wrap.appendChild( el( 'div', { class: 'pst-pv__og' }, [ ogImg, el( 'div', { class: 'pst-pv__og-body' }, [
+			el( 'div', { class: 'pst-pv__og-site', text: siteName } ),
+			el( 'div', { class: 'pst-pv__og-title', text: s.social_title || title } ),
+			el( 'div', { class: 'pst-pv__og-desc', text: s.social_description || desc || '' } )
+		] ) ] ) );
+		wrap.appendChild( el( 'p', { class: 'pst-ed-preview-hint', text: 'Ouvrez une page à gauche pour voir son aperçu. Aperçu éditorial — ne reflète ni la position ni l\'indexation réelle.' } ) );
+		pv.appendChild( wrap );
 	}
 
 	function buildGeneric( pv ) {
-		var v = state, s = CFG.schema.fields;
-		var title = v.hero_title || v.title || ( CFG.schema.label ) || 'Page';
-		pv.appendChild( heroBlock( { title: title, subtitle: v.hero_subtitle || '', height: 'medium', overlay: true, search_placeholder: 'Rechercher…' } ) );
-		var body = el( 'section', { class: 'pst-pv__section' } );
-		if ( v.hero_intro || v.text ) { body.appendChild( el( 'p', { text: v.hero_intro || v.text } ) ); }
-		body.appendChild( el( 'div', { class: 'pst-pv__grid' }, [ ph(), ph(), ph() ] ) );
-		pv.appendChild( body );
-		function ph() { return el( 'div', { class: 'pst-pv__card' }, [ el( 'div', { class: 'pst-pv__card-ph' } ), el( 'div', { class: 'pst-pv__card-ph short' } ) ] ); }
+		var v = state;
+		pv.appendChild( heroBlock( { title: v.title || CFG.schema.label || 'Page', height: 'medium', overlay: true } ) );
+		pv.appendChild( el( 'section', { class: 'pst-pv__section' }, [ el( 'div', { class: 'pst-pv__grid' }, [ phCard(), phCard(), phCard() ] ) ] ) );
 	}
 
 	// ============================================================ SAVE BAR
@@ -422,9 +608,7 @@
 		var btnSave = document.getElementById( 'pst-ed-save' );
 		btnSave.setAttribute( 'disabled', 'disabled' ); btnSave.textContent = 'Enregistrement…';
 		fetch( CFG.saveUrl, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': CFG.restNonce },
-			credentials: 'same-origin',
+			method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': CFG.restNonce }, credentials: 'same-origin',
 			body: JSON.stringify( { values: state } )
 		} ).then( function ( r ) { return r.json().then( function ( j ) { return { ok: r.ok, j: j }; } ); } )
 		.then( function ( res ) {
@@ -435,17 +619,16 @@
 				renderEditor(); renderPreview();
 				setTimeout( function () { if ( ! dirty ) { savebar( false ); } }, 2200 );
 			} else {
-				savebar( true, '⚠ Échec de l\'enregistrement', ( res.j && res.j.error && res.j.error.message ) || 'Réessayez.' );
+				savebar( true, '⚠ Échec de l\'enregistrement', ( res.j && res.j.error && res.j.error.message ) || 'Vos modifications sont conservées. Réessayez.' );
 			}
 		} ).catch( function () {
 			btnSave.removeAttribute( 'disabled' ); btnSave.textContent = 'Enregistrer';
-			savebar( true, '⚠ Erreur réseau', 'Vérifiez votre connexion.' );
+			savebar( true, '⚠ Erreur réseau', 'Vos modifications sont conservées. Vérifiez votre connexion.' );
 		} );
 	}
 
 	// ============================================================ INIT
 	function init() {
-		// Sélecteur d'appareil
 		Array.prototype.forEach.call( document.querySelectorAll( '.pst-ed-devices button' ), function ( b ) {
 			b.addEventListener( 'click', function () {
 				device = b.getAttribute( 'data-device' );

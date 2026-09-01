@@ -37,7 +37,6 @@ final class Plugin {
 		$this->booted = true;
 
 		( new Menu() )->register();
-		( new SiteMenu() )->register();
 		( new Actions() )->register();
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 	}
@@ -78,6 +77,8 @@ final class Plugin {
 				'values'     => call_user_func( array( $dir, 'config' ), $site_page ),
 				'appearance' => call_user_func( array( $dir, 'config' ), 'appearance' ),
 				'saveUrl'    => esc_url_raw( rest_url( 'postelio/v1/site/admin/' . $site_page ) ),
+				'searchUrl'  => esc_url_raw( rest_url( 'postelio/v1/site/admin/search' ) ),
+				'resolveUrl' => esc_url_raw( rest_url( 'postelio/v1/site/admin/resolve' ) ),
 				'restNonce'  => wp_create_nonce( 'wp_rest' ),
 				'frontUrl'   => esc_url_raw( home_url( '/' ) ),
 			)
