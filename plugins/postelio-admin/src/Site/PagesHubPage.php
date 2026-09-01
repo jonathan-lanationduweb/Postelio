@@ -51,7 +51,24 @@ final class PagesHubPage extends Page {
 			$out .= $this->card( $page, $seo );
 		}
 		$out .= '</div>';
+
+		// Structure du site (en-tête & pied) — reléguée ici pour alléger le menu principal.
+		$out .= '<h2 class="pst-admin-section-title">Structure du site</h2>';
+		$out .= '<div class="pst-hub-grid">';
+		$out .= $this->structure_card( 'navigation', '🧭', 'En-tête & navigation', 'Logo, liens du menu, boutons Connexion / Inscription.' );
+		$out .= $this->structure_card( 'footer', '👣', 'Pied de page', 'Colonnes de liens, réseaux sociaux, mentions.' );
+		$out .= '</div>';
 		return $out;
+	}
+
+	private function structure_card( string $page, string $icon, string $title, string $desc ): string {
+		$edit = esc_url( $this->url( SiteMenu::slug_for( $page ) ) );
+		$h  = '<div class="pst-hub-card">';
+		$h .= '<div class="pst-hub-card__banner"><span class="pst-hub-card__icon">' . esc_html( $icon ) . '</span><span class="pst-hub-card__name">' . esc_html( $title ) . '</span></div>';
+		$h .= '<div class="pst-hub-card__body"><p class="pst-hub-card__desc">' . esc_html( $desc ) . '</p>';
+		$h .= '<div class="pst-hub-card__actions"><a class="pst-btn pst-btn--sm pst-btn--primary" href="' . $edit . '">Modifier</a></div>';
+		$h .= '</div></div>';
+		return $h;
 	}
 
 	/** @param array<string,mixed> $seo */

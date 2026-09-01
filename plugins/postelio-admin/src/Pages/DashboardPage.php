@@ -132,22 +132,22 @@ final class DashboardPage extends Page {
 	private function shortcuts( bool $is_admin ): string {
 		$links = array();
 		if ( $is_admin ) {
-			$links[] = array( 'Entreprises', 'postelio-companies' );
-			$links[] = array( 'Offres', 'postelio-jobs' );
-			$links[] = array( 'Candidatures', 'postelio-applications' );
+			$links[] = array( 'Gérer les offres', 'postelio-jobs' );
+			$links[] = array( 'Voir les candidatures', 'postelio-applications' );
+			$links[] = array( 'Vérifier les entreprises', 'postelio-companies' );
+		}
+		if ( current_user_can( 'pst_manage_site' ) ) {
+			$links[] = array( 'Modifier le site', 'postelio-site-pages' );
 		}
 		if ( current_user_can( \Postelio\Admin\Menu::CAP_VIEW ) ) {
 			$links[] = array( 'Modération', 'postelio-moderation' );
-		}
-		if ( current_user_can( 'pst_manage_site' ) ) {
-			$links[] = array( 'Mon site', 'postelio-site' );
 		}
 		if ( empty( $links ) ) {
 			return '';
 		}
 		$h = '<div class="pst-admin-actions" style="margin-top:18px">';
 		foreach ( $links as $l ) {
-			$h .= '<a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( $l[1] ) ) . '">' . esc_html( $l[0] ) . '</a> ';
+			$h .= '<a class="pst-btn pst-btn--sm pst-btn--primary" href="' . esc_url( $this->url( $l[1] ) ) . '">' . esc_html( $l[0] ) . '</a> ';
 		}
 		return $h . '</div>';
 	}

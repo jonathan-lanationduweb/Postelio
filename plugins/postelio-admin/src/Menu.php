@@ -44,6 +44,9 @@ final class Menu {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'build' ) );
 		add_action( 'admin_head', array( $this, 'group_styles' ) );
+		// Nettoyage des menus WordPress superflus — UNIQUEMENT pour le personnel Postelio non
+		// technique (jamais pour un administrateur `manage_options`). Priorité tardive.
+		add_action( 'admin_menu', array( $this, 'simplify_wp_menu' ), 999 );
 	}
 
 	public function build(): void {
@@ -51,15 +54,12 @@ final class Menu {
 
 		$site = SiteMenu::CAP;
 
-		// Ordre logique. Les groupes (Mon site / Activité / Contrôle / Système) sont matérialisés
-		// par des libellés CSS ancrés sur le 1er élément de chaque groupe (voir group_styles()).
-		$items = array(
+		// MENU COURT (visible). Groupes matérialisés par libellés CSS (group_styles()).
+		$visible = array(
 			array( 'Tableau de bord', self::PARENT, self::CAP_VIEW, new DashboardPage() ),
 
-			// — Mon site —
+			// — Mon site — (Navigation/Footer sont dans « Pages & contenus » → Structure)
 			array( 'Accueil', SiteMenu::slug_for( 'home' ), $site, new SiteEditorPage( 'home' ) ),
-			array( 'Navigation', SiteMenu::slug_for( 'navigation' ), $site, new SiteEditorPage( 'navigation' ) ),
-			array( 'Footer', SiteMenu::slug_for( 'footer' ), $site, new SiteEditorPage( 'footer' ) ),
 			array( 'Pages & contenus', 'postelio-site-pages', $site, new PagesHubPage() ),
 			array( 'Apparence', SiteMenu::slug_for( 'appearance' ), $site, new SiteEditorPage( 'appearance' ) ),
 			array( 'SEO', SiteMenu::slug_for( 'seo' ), $site, new SiteEditorPage( 'seo' ) ),
@@ -69,41 +69,56 @@ final class Menu {
 			array( 'Entreprises', 'postelio-companies', self::CAP_ADMIN, new CompaniesPage() ),
 			array( 'Offres', 'postelio-jobs', self::CAP_ADMIN, new JobsPage() ),
 			array( 'Candidatures', 'postelio-applications', self::CAP_ADMIN, new ApplicationsPage() ),
-			array( 'Savoir-faire', 'postelio-skills', self::CAP_ADMIN, new SkillsPage() ),
 			array( 'Messagerie', 'postelio-messaging', self::CAP_ADMIN, new MessagingPage() ),
 			array( 'Entretiens', 'postelio-interviews', self::CAP_ADMIN, new InterviewsPage() ),
+			array( 'Savoir-faire', 'postelio-skills', self::CAP_ADMIN, new SkillsPage() ),
 
-			// — Contrôle —
+			// — Gestion —
 			array( $this->moderation_label(), 'postelio-moderation', self::CAP_VIEW, new ModerationPage() ),
 			array( 'Facturation', 'postelio-billing', 'pst_manage_billing', new BillingPage() ),
 			array( 'Sources d\'offres', 'postelio-sources', self::CAP_ADMIN, new SourcesPage() ),
-			array( 'Notifications', 'postelio-notifications', self::CAP_ADMIN, new NotificationsPage() ),
-			array( 'CV & fichiers', 'postelio-files', self::CAP_ADMIN, new FilesPage() ),
 
-			// — Système —
+			// — Réglages (hub des écrans techniques) —
 			array( 'Réglages', 'postelio-settings', self::CAP_ADMIN, new SettingsPage() ),
-			array( 'Santé du système', 'postelio-health', self::CAP_ADMIN, new HealthPage() ),
-			array( 'Favoris & Alertes', 'postelio-alerts', self::CAP_ADMIN, new PlaceholderPage( 'Favoris & Alertes', 'Préparé pour le Lot 14 (favoris, recherches sauvegardées, alertes). Non implémenté.', self::CAP_ADMIN ) ),
 		);
 
-		foreach ( $items as $it ) {
+		// ROUTABLES mais MASQUÉS du menu (accès via les hubs Pages & contenus / Réglages). On NE fait
+		// PAS remove_submenu_page() (qui casserait la vérification de capability de wp-admin).
+		$hidden = array(
+			array( 'Navigation', SiteMenu::slug_for( 'navigation' ), $site, new SiteEditorPage( 'navigation' ) ),
+			array( 'Footer', SiteMenu::slug_for( 'footer' ), $site, new SiteEditorPage( 'footer' ) ),
+			array( 'Notifications', 'postelio-notifications', self::CAP_ADMIN, new NotificationsPage() ),
+			array( 'CV & fichiers', 'postelio-files', self::CAP_ADMIN, new FilesPage() ),
+			array( 'Santé du système', 'postelio-health', self::CAP_ADMIN, new HealthPage() ),
+			array( 'Favoris & Alertes', 'postelio-alerts', self::CAP_ADMIN, new PlaceholderPage( 'Favoris & Alertes', 'Préparé pour le Lot 14. Non implémenté.', self::CAP_ADMIN ) ),
+		);
+		foreach ( self::hidden_editor_pages() as $page ) {
+			$hidden[] = array( SiteEditorPage::label( $page ), SiteMenu::slug_for( $page ), $site, new SiteEditorPage( $page ) );
+		}
+
+		foreach ( array_merge( $visible, $hidden ) as $it ) {
 			list( $label, $slug, $cap, $page ) = $it;
 			add_submenu_page( self::PARENT, 'Postelio — ' . wp_strip_all_tags( $label ), $label, $cap, $slug, array( $page, 'render' ) );
 		}
-
-		// Éditeurs des pages de contenu : enregistrés (routables + permissions), mais MASQUÉS du menu
-		// via CSS (accès par le hub « Pages & contenus »). On NE fait PAS remove_submenu_page() qui
-		// casserait la vérification de capability de wp-admin sur ces écrans.
-		foreach ( self::hidden_editor_pages() as $page ) {
-			add_submenu_page( self::PARENT, 'Postelio Site — ' . SiteEditorPage::label( $page ), SiteEditorPage::label( $page ), $site, SiteMenu::slug_for( $page ), array( new SiteEditorPage( $page ), 'render' ) );
-		}
 	}
 
-	/** @return string[] Pages de contenu accessibles via le hub (donc masquées du menu). */
+	/** @return string[] Slugs des pages de contenu accessibles via le hub (donc masquées du menu). */
 	private static function hidden_editor_pages(): array {
 		return array_values( array_filter( SiteMenu::HUB_PAGES, static function ( $p ) {
 			return 'home' !== $p; // « Accueil » reste visible sous Mon site.
 		} ) );
+	}
+
+	/** @return string[] Tous les slugs à MASQUER du menu (mais routables). */
+	private static function hidden_menu_slugs(): array {
+		$slugs = array(
+			SiteMenu::slug_for( 'navigation' ), SiteMenu::slug_for( 'footer' ),
+			'postelio-notifications', 'postelio-files', 'postelio-health', 'postelio-alerts',
+		);
+		foreach ( self::hidden_editor_pages() as $page ) {
+			$slugs[] = SiteMenu::slug_for( $page );
+		}
+		return $slugs;
 	}
 
 	/** Libellés de groupe du sous-menu (CSS ::before, ancrés par slug — robustes, sans JS). */
@@ -111,8 +126,8 @@ final class Menu {
 		$groups = array(
 			'postelio-site'       => 'Mon site',
 			'postelio-users'      => 'Activité',
-			'postelio-moderation' => 'Contrôle',
-			'postelio-settings'   => 'Système',
+			'postelio-moderation' => 'Gestion',
+			'postelio-settings'   => 'Réglages',
 		);
 		$css = '';
 		foreach ( $groups as $slug => $label ) {
@@ -122,11 +137,28 @@ final class Menu {
 				. 'border-top:1px solid rgba(255,255,255,.14);font-size:10px;font-weight:700;'
 				. 'letter-spacing:.09em;text-transform:uppercase;color:#8f98ad;pointer-events:none;}';
 		}
-		// Masque du menu les éditeurs de pages de contenu (routables via le hub).
-		foreach ( self::hidden_editor_pages() as $page ) {
-			$css .= '#toplevel_page_' . self::PARENT . ' .wp-submenu a[href$="page=' . SiteMenu::slug_for( $page ) . '"]{display:none;}';
+		// Masque du menu les pages routables mais reléguées aux hubs.
+		foreach ( self::hidden_menu_slugs() as $slug ) {
+			$css .= '#toplevel_page_' . self::PARENT . ' .wp-submenu a[href$="page=' . $slug . '"]{display:none;}';
 		}
 		echo '<style id="pst-admin-group-styles">' . $css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput -- CSS statique, libellés échappés
+	}
+
+	/**
+	 * Masque les menus WordPress techniques SUPERFLUS pour le personnel Postelio NON technique
+	 * (ex. futur rôle « Postelio Manager »). Ne fait RIEN pour un administrateur `manage_options`
+	 * (menu WordPress complet conservé) ni pour quelqu'un qui n'est pas staff Postelio.
+	 */
+	public function simplify_wp_menu(): void {
+		if ( current_user_can( 'manage_options' ) ) {
+			return; // administrateur technique : menu complet intact.
+		}
+		if ( ! current_user_can( self::CAP_ADMIN ) && ! current_user_can( self::CAP_VIEW ) ) {
+			return; // pas de personnel Postelio → ne rien toucher.
+		}
+		foreach ( array( 'edit-comments.php', 'tools.php', 'themes.php', 'edit.php?post_type=page' ) as $slug ) {
+			remove_menu_page( $slug );
+		}
 	}
 
 	/**

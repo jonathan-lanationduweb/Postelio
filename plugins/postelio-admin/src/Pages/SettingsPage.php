@@ -30,6 +30,7 @@ final class SettingsPage extends Page {
 		'sources'       => 'Sources',
 		'billing'       => 'Facturation',
 		'security'      => 'Sécurité',
+		'system'        => 'Système',
 	);
 
 	protected function capability(): string {
@@ -58,8 +59,29 @@ final class SettingsPage extends Page {
 			case 'sources':       return $out . $this->sources();
 			case 'billing':       return $out . $this->billing();
 			case 'security':      return $out . $this->security();
+			case 'system':        return $out . $this->system();
 			default:              return $out . $this->general();
 		}
+	}
+
+	/** Onglet Système : accès aux écrans techniques reléguément regroupés ici. */
+	private function system(): string {
+		$core = Health::snapshot()['core'];
+		$out  = Ui::card_open( 'Santé du système' ) . $this->kv( array(
+			'État global' => Ui::badge( Health::label( (string) $core['status'] ), Health::badge_variant( (string) $core['status'] ), true ),
+			'Détails'     => '<a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-health' ) ) . '">Ouvrir la page Santé</a>',
+		) ) . Ui::card_close();
+
+		$out .= Ui::card_open( 'Stockage & fichiers' )
+			. '<p class="pst-help">CV et fichiers (métadonnées, quarantaine, scanner) — supervision technique.</p>'
+			. '<p><a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-files' ) ) . '">Ouvrir Stockage & fichiers</a></p>'
+			. Ui::card_close();
+
+		$out .= Ui::card_open( 'File d\'envoi des notifications' )
+			. '<p class="pst-help">Observabilité de la file d\'envoi (en attente, envoyées, échecs) — technique.</p>'
+			. '<p><a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-notifications' ) ) . '">Ouvrir les notifications</a></p>'
+			. Ui::card_close();
+		return $out;
 	}
 
 	/** Ligne clé/valeur (valeur = HTML déjà échappé, typiquement un badge). */
