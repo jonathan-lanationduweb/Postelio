@@ -94,17 +94,13 @@
             <label for="login-password">Mot de passe *</label>
             <input type="password" id="login-password" autocomplete="current-password" required>
             <p class="field-error" hidden>Veuillez indiquer votre mot de passe.</p>
+            <p class="field-hint"><a href="#" id="forgot-password-link" class="link-more">Mot de passe oublié&nbsp;?</a></p>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-block">Me connecter</button>
           </div>
         </form>
 
-        <p class="auth-demo-note">Démonstration — testez les deux espaces en un clic&nbsp;:</p>
-        <div class="auth-demo-buttons">
-          <button type="button" class="btn btn-outline btn-sm" data-demo-login="candidate">Candidat démo · Jonathan Davy</button>
-          <button type="button" class="btn btn-outline btn-sm" data-demo-login="employer">Recruteur démo · Claire Martin</button>
-        </div>
         <p class="auth-switch">Pas encore de compte&nbsp;? <a href="inscription.html">Créer un compte</a></p>
       </div>
     </div>
@@ -166,7 +162,10 @@
   </footer>
 
   <script src="assets/js/config.js"></script>
+  <script src="assets/js/api/postelio-api.js"></script>
+  <script src="assets/js/auth/postelio-auth.js"></script>
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/auth/postelio-boot.js"></script>
   <script src="assets/js/navigation.js"></script>
   <script src="assets/js/offers.js"></script>
   <script src="assets/js/auth.js"></script>
