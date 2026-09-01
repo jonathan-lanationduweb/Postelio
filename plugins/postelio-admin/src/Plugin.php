@@ -77,6 +77,7 @@ final class Plugin {
 				'values'     => call_user_func( array( $dir, 'config' ), $site_page ),
 				'appearance' => call_user_func( array( $dir, 'config' ), 'appearance' ),
 				'saveUrl'    => esc_url_raw( rest_url( 'postelio/v1/site/admin/' . $site_page ) ),
+				'configUrl'  => esc_url_raw( rest_url( 'postelio/v1/site/config' ) ),
 				'searchUrl'  => esc_url_raw( rest_url( 'postelio/v1/site/admin/search' ) ),
 				'resolveUrl' => esc_url_raw( rest_url( 'postelio/v1/site/admin/resolve' ) ),
 				'restNonce'  => wp_create_nonce( 'wp_rest' ),

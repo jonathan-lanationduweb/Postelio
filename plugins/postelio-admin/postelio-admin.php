@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'POSTELIO_ADMIN_VERSION', '0.4.0' );
+define( 'POSTELIO_ADMIN_VERSION', '0.5.0' );
 define( 'POSTELIO_ADMIN_FILE', __FILE__ );
 define( 'POSTELIO_ADMIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'POSTELIO_ADMIN_URL', plugin_dir_url( __FILE__ ) );

@@ -331,11 +331,12 @@ final class SiteSchema {
 				'logo_light'    => array( 'type' => 'media', 'label' => 'Logo clair (fonds sombres)', 'default' => '' ),
 				'favicon'       => array( 'type' => 'media', 'label' => 'Favicon', 'default' => '' ),
 				'social_image'  => array( 'type' => 'media', 'label' => 'Image sociale par défaut', 'default' => '' ),
-				// Couleurs.
-				'color_primary' => array( 'type' => 'color', 'label' => 'Couleur primaire', 'default' => '#17324D' ),
-				'color_accent'  => array( 'type' => 'color', 'label' => 'Couleur accent', 'default' => '#FF6B6B' ),
+				// Couleurs — valeurs par défaut = palette RÉELLE du front public (vert sapin & miel),
+				// pour qu'une configuration non modifiée rende le vrai site à l'identique.
+				'color_primary' => array( 'type' => 'color', 'label' => 'Couleur primaire', 'default' => '#1E4F46' ),
+				'color_accent'  => array( 'type' => 'color', 'label' => 'Couleur accent', 'default' => '#E8A33D' ),
 				'color_bg'      => array( 'type' => 'color', 'label' => 'Couleur de fond', 'default' => '#FAF7F1' ),
-				'color_text'    => array( 'type' => 'color', 'label' => 'Couleur du texte', 'default' => '#566575' ),
+				'color_text'    => array( 'type' => 'color', 'label' => 'Couleur du texte', 'default' => '#22302B' ),
 				// Typographie.
 				'font_headings' => array( 'type' => 'select', 'label' => 'Police des titres', 'default' => 'sans', 'options' => array( 'sans' => 'Sans-serif (défaut)', 'serif' => 'Serif', 'display' => 'Display' ) ),
 				'font_body'     => array( 'type' => 'select', 'label' => 'Police du texte', 'default' => 'sans', 'options' => array( 'sans' => 'Sans-serif (défaut)', 'serif' => 'Serif' ) ),
