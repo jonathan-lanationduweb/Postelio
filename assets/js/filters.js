@@ -1,109 +1,93 @@
-﻿/**
- * Page « offres.html » : filtres, tri, compteur de résultats et pagination,
- * appliqués côté client sur les données JSON locales.
+/**
+ * Page « offres.html » — recherche RÉELLE côté serveur (I2).
+ *
+ * Les filtres, la pagination et le tri sont désormais délégués au backend
+ * (`GET /jobs`, via PostelioDirectory). Aucune donnée JSON locale, aucun repli.
+ * Seuls les filtres réellement supportés par le backend sont envoyés ; les contrôles sans
+ * équivalent V1 (récence, télétravail-uniquement, tri, « enregistrées ») sont masqués proprement
+ * (cf. docs/frontend/jobs-companies-integration.md). Un sélecteur de PROVENANCE est ajouté
+ * (Toutes / Postelio / Partenaires).
  */
 (function () {
   "use strict";
 
-  var PAGE_SIZE = 6;
-  var state = { offers: [], filtered: [], page: 1, savedOnly: false };
-
-  function savedIds() {
-    return SS.store.get((window.APP_CONFIG && APP_CONFIG.storage && APP_CONFIG.storage.favorites) || "ss_candidate_favorites", []);
-  }
-
-  function updateSavedCount() {
-    var el = document.getElementById("saved-count");
-    if (el) { el.textContent = "(" + savedIds().length + ")"; }
-  }
+  var PER_PAGE = 12;
+  var state = { page: 1, seq: 0, lastResult: null };
 
   document.addEventListener("DOMContentLoaded", function () {
     var list = document.getElementById("offers-list");
     if (!list) { return; }
-
-    SS.getActiveOffers()
-      .then(SS.decorateOffers)
-      .then(function (offers) {
-        state.offers = offers;
-        prefillFromUrl();
-        bindControls();
-        applyFilters();
-      })
-      .catch(function () { SS.dataError(list); });
+    hideUnsupportedControls();
+    ensureSourceSelect();
+    bindControls();
+    readUrlToInputs();
+    runSearch(pageFromUrl());
   });
 
-  /* Reprend les critères passés par le moteur de recherche de l'accueil. */
-  function prefillFromUrl() {
-    var q = SS.param("q");
-    var lieu = SS.param("lieu");
-    var categorie = SS.param("categorie");
-    if (q) { document.getElementById("filter-keyword").value = q; }
-    if (lieu) { document.getElementById("filter-location").value = lieu; }
-    if (categorie) {
-      var select = document.getElementById("filter-category");
-      if (select.querySelector('[value="' + categorie + '"]')) {
-        select.value = categorie;
-      }
-    }
+  /* ---- Filtres non supportés par le backend V1 : masqués (jamais simulés) ---- */
+  function hideUnsupportedControls() {
+    ["filter-date", "filter-remote", "sort-select"].forEach(function (id) {
+      var el = document.getElementById(id);
+      var field = el ? (el.closest(".field") || el.closest(".results-sort") || el) : null;
+      if (field) { field.hidden = true; }
+    });
+    var saved = document.getElementById("saved-filter");
+    if (saved) { saved.hidden = true; }
+    var savedCount = document.getElementById("saved-count");
+    if (savedCount) { savedCount.hidden = true; }
+  }
+
+  /* ---- Sélecteur de provenance (ajouté) ---- */
+  function ensureSourceSelect() {
+    if (document.getElementById("filter-source")) { return; }
+    var form = document.getElementById("filters-form");
+    if (!form) { return; }
+    var wrap = document.createElement("div");
+    wrap.className = "field";
+    wrap.innerHTML =
+      '<label for="filter-source">Provenance</label>' +
+      '<select id="filter-source">' +
+      '<option value="all">Toutes les sources</option>' +
+      '<option value="postelio">Offres Postelio</option>' +
+      '<option value="partners">Offres partenaires</option>' +
+      "</select>";
+    form.insertBefore(wrap, form.firstChild);
   }
 
   function bindControls() {
     var form = document.getElementById("filters-form");
     var searchBand = document.getElementById("offers-search-band");
 
-    form.addEventListener("submit", function (event) {
-      event.preventDefault();
-      applyFilters();
-    });
-    if (searchBand) {
-      searchBand.addEventListener("submit", function (event) {
-        event.preventDefault();
-        applyFilters();
+    function submitHandler(e) { e.preventDefault(); runSearch(1); }
+    if (form) { form.addEventListener("submit", submitHandler); }
+    if (searchBand) { searchBand.addEventListener("submit", submitHandler); }
+
+    if (form) {
+      form.querySelectorAll("select, input[type='checkbox']").forEach(function (input) {
+        input.addEventListener("change", function () { runSearch(1); });
       });
     }
 
-    /* Filtrage immédiat sur les listes déroulantes et cases à cocher. */
-    form.querySelectorAll("select, input[type='checkbox']").forEach(function (input) {
-      input.addEventListener("change", applyFilters);
-    });
-
-    /* Filtrage au fil de la saisie (léger délai anti-rebond) — les champs
-       texte vivent dans la bande de recherche au-dessus de la liste. */
     var timer;
     ["filter-keyword", "filter-location"].forEach(function (id) {
       var input = document.getElementById(id);
       if (!input) { return; }
       input.addEventListener("input", function () {
         clearTimeout(timer);
-        timer = setTimeout(applyFilters, 250);
+        timer = setTimeout(function () { runSearch(1); }, 300);
       });
     });
 
-    document.getElementById("filters-reset").addEventListener("click", function () {
-      form.reset();
-      document.getElementById("filter-keyword").value = "";
-      document.getElementById("filter-location").value = "";
-      applyFilters();
-    });
-
-    document.getElementById("sort-select").addEventListener("change", applyFilters);
-
-    /* Filtre « offres enregistrées » : bascule + compteur vivant. */
-    var savedBtn = document.getElementById("saved-filter");
-    if (savedBtn) {
-      updateSavedCount();
-      savedBtn.addEventListener("click", function () {
-        state.savedOnly = !state.savedOnly;
-        savedBtn.setAttribute("aria-pressed", state.savedOnly ? "true" : "false");
-        applyFilters();
-      });
-      document.addEventListener("ss:saved-changed", function () {
-        updateSavedCount();
-        if (state.savedOnly) { applyFilters(); }
+    var reset = document.getElementById("filters-reset");
+    if (reset) {
+      reset.addEventListener("click", function () {
+        if (form) { form.reset(); }
+        setVal("filter-keyword", ""); setVal("filter-location", "");
+        var src = document.getElementById("filter-source"); if (src) { src.value = "all"; }
+        runSearch(1);
       });
     }
 
-    /* Repli des filtres sur mobile. */
     var toggle = document.getElementById("filters-toggle");
     var panel = document.getElementById("filters-panel");
     if (toggle && panel) {
@@ -114,122 +98,165 @@
     }
   }
 
-  function normalize(text) {
-    return (text || "").toString().toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  function val(id) { var el = document.getElementById(id); return el ? String(el.value || "").trim() : ""; }
+  function setVal(id, v) { var el = document.getElementById(id); if (el) { el.value = v; } }
+
+  /* ---- Filtres → paramètres API (uniquement ceux réellement supportés) ---- */
+  function currentFilters() {
+    var f = {};
+    var q = val("filter-keyword"); if (q) { f.q = q; }
+    var ville = val("filter-location"); if (ville) { f.ville = ville; }
+    var contrat = val("filter-contract"); if (contrat) { f.contrat = contrat; }
+    var categorie = val("filter-category"); if (categorie) { f.categorie = categorie; }
+    var niveau = val("filter-niveau"); if (niveau) { f.niveau_etude = niveau; }
+    var exp = val("filter-experience"); if (exp) { f.experience = exp; }
+    var sal = val("filter-salary"); if (sal) { f.salaire_min = sal; }
+    var source = val("filter-source"); if (source && source !== "all") { f.source = source; }
+    return f;
   }
 
-  function applyFilters() {
-    var keyword = normalize(document.getElementById("filter-keyword").value);
-    var location = normalize(document.getElementById("filter-location").value);
-    var category = document.getElementById("filter-category").value;
-    var contract = document.getElementById("filter-contract").value;
-    var remoteOnly = document.getElementById("filter-remote").checked;
-    var salary = document.getElementById("filter-salary").value;
-    var recency = document.getElementById("filter-date").value;
-    var niveau = document.getElementById("filter-niveau").value;
-    var experience = document.getElementById("filter-experience").value;
-
-    var saved = state.savedOnly ? savedIds() : null;
-
-    state.filtered = state.offers.filter(function (o) {
-      if (saved && saved.indexOf(o.id) === -1) { return false; }
-      if (keyword) {
-        var haystack = normalize(o.titre + " " + o.entrepriseNom + " " +
-          o.categorieLabel + " " + (o.competences || []).join(" "));
-        if (haystack.indexOf(keyword) === -1) { return false; }
-      }
-      if (location) {
-        var place = normalize(o.ville + " " + o.departement);
-        if (place.indexOf(location) === -1) { return false; }
-      }
-      if (category && o.categorie !== category) { return false; }
-      if (contract && o.contrat !== contract) { return false; }
-      /* Niveau d'étude : une offre « indifférent » convient à tout niveau demandé. */
-      if (niveau && o.niveauEtude !== niveau && o.niveauEtude !== "indifferent") { return false; }
-      if (experience && o.experience !== experience) { return false; }
-      if (remoteOnly && o.teletravail === "non") { return false; }
-      if (salary) {
-        var min = Number(salary);
-        if (!o.salaireAnnuel || o.salaireAnnuel < min) { return false; }
-      }
-      if (recency) {
-        var days = Number(recency);
-        var age = (Date.now() - new Date(o.datePublication).getTime()) / 86400000;
-        if (age > days) { return false; }
-      }
-      return true;
+  /* ---- URL partageable ---- */
+  function syncUrl(filters, page) {
+    var params = new URLSearchParams();
+    Object.keys(filters).forEach(function (k) {
+      /* Conserver les noms d'URL historiques pour la recherche d'accueil. */
+      if (k === "q") { params.set("q", filters.q); }
+      else if (k === "ville") { params.set("lieu", filters.ville); }
+      else if (k === "categorie") { params.set("categorie", filters.categorie); }
+      else { params.set(k, filters[k]); }
     });
-
-    var sort = document.getElementById("sort-select").value;
-    if (sort === "date") {
-      state.filtered.sort(function (a, b) {
-        return new Date(b.datePublication) - new Date(a.datePublication);
-      });
-    } else if (sort === "salaire") {
-      state.filtered.sort(function (a, b) {
-        return (b.salaireAnnuel || 0) - (a.salaireAnnuel || 0);
-      });
-    }
-    /* « Pertinence » = ordre du fichier de données, offres à mots-clés en tête. */
-
-    state.page = 1;
-    render();
+    if (page > 1) { params.set("page", String(page)); }
+    var qs = params.toString();
+    try { history.replaceState(null, "", qs ? ("?" + qs) : location.pathname); } catch (e) { /* */ }
   }
 
-  function render() {
+  function pageFromUrl() {
+    var p = parseInt(new URLSearchParams(location.search).get("page"), 10);
+    return p > 0 ? p : 1;
+  }
+
+  function readUrlToInputs() {
+    var p = new URLSearchParams(location.search);
+    if (p.get("q")) { setVal("filter-keyword", p.get("q")); }
+    if (p.get("lieu")) { setVal("filter-location", p.get("lieu")); }
+    setIfOption("filter-category", p.get("categorie"));
+    setIfOption("filter-contract", p.get("contrat"));
+    setIfOption("filter-niveau", p.get("niveau_etude"));
+    setIfOption("filter-experience", p.get("experience"));
+    setIfOption("filter-salary", p.get("salaire_min"));
+    setIfOption("filter-source", p.get("source"));
+  }
+  function setIfOption(id, value) {
+    if (!value) { return; }
+    var el = document.getElementById(id);
+    if (el && el.querySelector('[value="' + (window.CSS && CSS.escape ? CSS.escape(value) : value) + '"]')) { el.value = value; }
+  }
+
+  /* ---- Recherche serveur ---- */
+  function runSearch(page) {
+    state.page = page || 1;
+    var filters = currentFilters();
+    syncUrl(filters, state.page);
+    var seq = ++state.seq;
+    showLoading();
+    window.PostelioDirectory.jobs.search(filters, state.page, PER_PAGE).then(function (res) {
+      if (seq !== state.seq) { return; } // réponse périmée ignorée (recherche plus récente en cours)
+      state.lastResult = res;
+      render(res);
+    }, function (err) {
+      if (seq !== state.seq) { return; }
+      showError(err);
+    });
+  }
+
+  function showLoading() {
     var list = document.getElementById("offers-list");
     var count = document.getElementById("results-count");
-    var total = state.filtered.length;
+    if (count) { count.textContent = "Chargement des offres…"; }
+    if (!list) { return; }
+    list.setAttribute("aria-busy", "true");
+    var sk = "";
+    for (var i = 0; i < 4; i++) {
+      sk += '<article class="offer-row" aria-hidden="true" style="opacity:.55">' +
+        '<span class="logo-bubble" style="background:#e7ecf2"></span>' +
+        '<div style="flex:1"><h3 class="offer-row__title" style="background:#eef2f6;height:1em;width:52%;border-radius:4px">&nbsp;</h3>' +
+        '<p class="offer-row__company" style="background:#f1f4f8;height:.8em;width:38%;border-radius:4px;margin-top:.5rem">&nbsp;</p></div>' +
+        "</article>";
+    }
+    list.innerHTML = sk;
+  }
 
-    count.textContent = total === 0 ? "Aucune offre trouvée"
-      : total + (total > 1 ? " offres trouvées" : " offre trouvée");
+  function render(res) {
+    var list = document.getElementById("offers-list");
+    var count = document.getElementById("results-count");
+    list.removeAttribute("aria-busy");
 
-    if (total === 0) {
-      list.innerHTML = state.savedOnly
-        ? '<div class="empty-state"><h3>Aucune offre enregistrée</h3>' +
-          "<p>Repérez une offre qui vous plaît et cliquez sur le marque-page " +
-          "pour la retrouver ici à votre prochaine visite.</p></div>"
-        : '<div class="empty-state"><h3>Aucun résultat</h3>' +
-          "<p>Essayez d'élargir vos critères : moins de filtres, une ville voisine " +
-          "ou un mot-clé plus général.</p></div>";
-      renderPagination(0);
+    if (count) {
+      if (res.total === 0) { count.textContent = "Aucune offre trouvée"; }
+      else if (res.totalIsExact) { count.textContent = res.total + (res.total > 1 ? " offres trouvées" : " offre trouvée"); }
+      else { count.textContent = "Plus de " + res.total + " offres"; } // §15 : total approximatif
+    }
+
+    if (res.total === 0 || !res.items.length) {
+      list.innerHTML =
+        '<div class="empty-state"><h3>Aucun résultat</h3>' +
+        "<p>Essayez d'élargir vos critères : moins de filtres, une ville voisine ou un mot-clé plus général.</p>" +
+        '<p><button type="button" class="btn btn-outline btn-sm" id="offers-reset-empty">Réinitialiser les filtres</button></p></div>';
+      var rb = document.getElementById("offers-reset-empty");
+      if (rb) { rb.addEventListener("click", function () { var r = document.getElementById("filters-reset"); if (r) { r.click(); } }); }
+      renderPagination(res);
       return;
     }
 
-    var start = (state.page - 1) * PAGE_SIZE;
-    var pageItems = state.filtered.slice(start, start + PAGE_SIZE);
-    list.innerHTML = pageItems.map(SS.offerCard).join("");
-    renderPagination(Math.ceil(total / PAGE_SIZE));
+    list.innerHTML = res.items.map(SS.offerCard).join("");
+    renderPagination(res);
   }
 
-  function renderPagination(pages) {
+  function showError(err) {
+    var list = document.getElementById("offers-list");
+    var count = document.getElementById("results-count");
+    if (count) { count.textContent = "Erreur de chargement"; }
+    if (!list) { return; }
+    list.removeAttribute("aria-busy");
+    var msg = (err && err.userMessage) ? err.userMessage() : "Impossible de charger les offres.";
+    list.innerHTML =
+      '<div class="empty-state" role="alert"><h3>Impossible de charger les offres</h3>' +
+      "<p>" + SS.escapeHtml(msg) + "</p>" +
+      '<p><button type="button" class="btn btn-primary btn-sm" id="offers-retry">Réessayer</button></p></div>';
+    var btn = document.getElementById("offers-retry");
+    if (btn) { btn.addEventListener("click", function () { runSearch(state.page); }); }
+    var nav = document.getElementById("pagination"); if (nav) { nav.innerHTML = ""; }
+  }
+
+  function renderPagination(res) {
     var nav = document.getElementById("pagination");
+    if (!nav) { return; }
+    var pages = res.totalPages || 1;
     if (pages <= 1) { nav.innerHTML = ""; return; }
 
-    var html = '<button type="button" data-page="prev" ' +
-      (state.page === 1 ? "disabled" : "") + ' aria-label="Page précédente">‹</button>';
-    for (var i = 1; i <= pages; i++) {
-      html += '<button type="button" data-page="' + i + '"' +
-        (i === state.page ? ' aria-current="page"' : "") + ">" + i + "</button>";
-    }
-    html += '<button type="button" data-page="next" ' +
-      (state.page === pages ? "disabled" : "") + ' aria-label="Page suivante">›</button>';
+    var cur = res.page || state.page;
+    var html = '<button type="button" data-page="' + (cur - 1) + '" ' + (cur <= 1 ? "disabled" : "") + ' aria-label="Page précédente">‹</button>';
+    /* Fenêtre de pages autour de la page courante pour ne pas exploser l'affichage. */
+    var from = Math.max(1, cur - 2), to = Math.min(pages, cur + 2);
+    if (from > 1) { html += pageBtn(1, cur) + (from > 2 ? '<span class="pagination__gap">…</span>' : ""); }
+    for (var i = from; i <= to; i++) { html += pageBtn(i, cur); }
+    if (to < pages) { html += (to < pages - 1 ? '<span class="pagination__gap">…</span>' : "") + pageBtn(pages, cur); }
+    html += '<button type="button" data-page="' + (cur + 1) + '" ' + (cur >= pages ? "disabled" : "") + ' aria-label="Page suivante">›</button>';
     nav.innerHTML = html;
 
-    nav.querySelectorAll("button").forEach(function (btn) {
+    nav.querySelectorAll("button[data-page]").forEach(function (btn) {
+      if (btn.disabled) { return; }
       btn.addEventListener("click", function () {
-        var target = btn.getAttribute("data-page");
-        if (target === "prev") { state.page -= 1; }
-        else if (target === "next") { state.page += 1; }
-        else { state.page = Number(target); }
-        render();
-        document.getElementById("results-count")
-          .scrollIntoView({ behavior: "smooth", block: "start" });
+        var target = parseInt(btn.getAttribute("data-page"), 10);
+        if (target >= 1) {
+          runSearch(target);
+          var rc = document.getElementById("results-count");
+          if (rc) { rc.scrollIntoView({ behavior: "smooth", block: "start" }); }
+        }
       });
     });
   }
+  function pageBtn(n, cur) {
+    return '<button type="button" data-page="' + n + '"' + (n === cur ? ' aria-current="page"' : "") + ">" + n + "</button>";
+  }
 })();
-
-
-

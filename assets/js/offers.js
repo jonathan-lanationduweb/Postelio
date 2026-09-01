@@ -28,20 +28,27 @@
     var remote = SS.teletravailLabel(offer.teletravail);
     var initials = e((offer.entrepriseNom || "??").split(/\s+/).slice(0, 2)
       .map(function (w) { return w.charAt(0); }).join("").toUpperCase());
+    /* Ligne d'infos : n'affiche que les champs réellement présents (données réelles parfois
+       partielles pour les offres partenaires). */
+    var tags = [];
+    if (offer.contrat) { tags.push(e(offer.contrat) + (offer.duree ? " " + e(offer.duree) : "")); }
+    if (offer.tempsTravail) { tags.push(e(offer.tempsTravail)); }
+    if (offer.experienceLabel) { tags.push(e(offer.experienceLabel)); }
+    var tagsHtml = tags.join(" · ");
+    if (remote) { tagsHtml += (tagsHtml ? " · " : "") + '<span class="badge badge--remote">' + e(remote) + "</span>"; }
+    if (offer.external) { tagsHtml += (tagsHtml ? " · " : "") + '<span class="badge badge--source" title="Offre partenaire">' + e(offer.sourceLabel || "Partenaire") + "</span>"; }
+    var company = offer.entrepriseNom ? ("<strong>" + e(offer.entrepriseNom) + "</strong>") : "";
+    if (offer.ville) { company += (company ? " · " : "") + e(offer.ville); }
     return '<article class="offer-row">' +
       '<span class="logo-bubble" style="background:' + e(offer.couleur || "#17324D") + '" aria-hidden="true">' + initials + "</span>" +
       "<div>" +
         '<h3 class="offer-row__title"><a href="offre-detail.html?id=' + encodeURIComponent(offer.id) + '">' + e(offer.titre) + "</a></h3>" +
-        '<p class="offer-row__company"><strong>' + e(offer.entrepriseNom) + "</strong> · " + e(offer.ville) + "</p>" +
-        '<p class="offer-row__tags">' + e(offer.contrat) + (offer.duree ? " " + e(offer.duree) : "") +
-          " · " + e(offer.tempsTravail) +
-          (offer.experienceLabel ? " · " + e(offer.experienceLabel) : "") +
-          (remote ? ' · <span class="badge badge--remote">' + e(remote) + "</span>" : "") +
-        "</p>" +
+        '<p class="offer-row__company">' + company + "</p>" +
+        '<p class="offer-row__tags">' + tagsHtml + "</p>" +
       "</div>" +
       '<div class="offer-row__side">' +
         '<span class="offer-row__salary">' + e(offer.salaire || "Salaire selon profil") + "</span>" +
-        '<span class="offer-row__date">Publiée ' + e(SS.relativeDate(offer.datePublication)) + "</span>" +
+        (offer.datePublication ? '<span class="offer-row__date">Publiée ' + e(SS.relativeDate(offer.datePublication)) + "</span>" : "") +
         '<div class="offer-row__actions">' + saveButton(offer) +
           '<a class="btn btn-outline btn-sm" href="offre-detail.html?id=' + encodeURIComponent(offer.id) + '">Voir l\'offre</a>' +
         "</div>" +
@@ -106,56 +113,92 @@
     renderOfferDetail();
   });
 
-  /* ---- Accueil : une offre vedette + une liste ---- */
+  /* ---- Accueil : une offre vedette + une liste (données réelles, offres les plus récentes) ---- */
   function renderRecentOffers() {
     var featuredBox = document.getElementById("home-offer-featured");
     var listBox = document.getElementById("home-offers-list");
     var legacy = document.getElementById("recent-offers");
     if (!featuredBox && !legacy) { return; }
-    SS.getActiveOffers()
-      .then(SS.decorateOffers)
-      .then(function (offers) {
-        var recent = offers.sort(function (a, b) {
-          return new Date(b.datePublication) - new Date(a.datePublication);
-        });
-        /* Compteur honnête dans le hero : le vrai nombre d'offres actives. */
-        var counter = document.getElementById("hero-offers-count");
-        if (counter) {
-          counter.textContent = recent.length + " offres en ligne aujourd'hui.";
-        }
-        if (featuredBox && listBox) {
-          featuredBox.innerHTML = SS.offerFeatured(recent[0]);
-          listBox.innerHTML = recent.slice(1, 5).map(SS.offerCard).join("");
-        } else if (legacy) {
-          legacy.innerHTML = recent.slice(0, 6).map(SS.offerCard).join("");
-        }
-      })
-      .catch(function () { SS.dataError(featuredBox || legacy); });
+    /* Le backend trie déjà par date de publication décroissante. */
+    window.PostelioDirectory.jobs.search({}, 1, 6).then(function (res) {
+      var recent = res.items;
+      var counter = document.getElementById("hero-offers-count");
+      if (counter) {
+        counter.textContent = res.totalIsExact
+          ? (res.total + (res.total > 1 ? " offres en ligne aujourd'hui." : " offre en ligne aujourd'hui."))
+          : ("Plus de " + res.total + " offres en ligne aujourd'hui.");
+      }
+      if (!recent.length) {
+        if (featuredBox) { featuredBox.innerHTML = '<div class="empty-state"><p>Aucune offre en ligne pour le moment.</p></div>'; }
+        if (listBox) { listBox.innerHTML = ""; }
+        if (legacy) { legacy.innerHTML = '<div class="empty-state"><p>Aucune offre en ligne pour le moment.</p></div>'; }
+        return;
+      }
+      if (featuredBox && listBox) {
+        featuredBox.innerHTML = SS.offerFeatured(recent[0]);
+        listBox.innerHTML = recent.slice(1, 5).map(SS.offerCard).join("");
+      } else if (legacy) {
+        legacy.innerHTML = recent.slice(0, 6).map(SS.offerCard).join("");
+      }
+    }, function () { SS.dataError(featuredBox || legacy); });
   }
 
-  /* ---- Fiche offre ---- */
+  /* ---- Fiche offre (données réelles) ---- */
+  function detailContainer(root) { return root; } // remplace toute la zone fiche (message plein-écran)
+
+  function showDetailMessage(root, title, text) {
+    var box = detailContainer(root);
+    box.innerHTML =
+      '<div class="empty-state" role="alert" style="margin:var(--sp-6,2rem) auto;max-width:640px;text-align:center">' +
+      "<h1>" + SS.escapeHtml(title) + "</h1><p>" + SS.escapeHtml(text) + "</p>" +
+      '<p><a class="btn btn-primary" href="offres.html">Voir les autres offres</a></p></div>';
+  }
+
   function renderOfferDetail() {
     var root = document.getElementById("offer-detail");
     if (!root) { return; }
     var id = SS.param("id");
+    if (!id) { showDetailMessage(root, "Offre introuvable", "Cette offre n'existe pas ou n'est plus disponible."); return; }
 
-    Promise.all([SS.getOffers(), SS.getCompanies()])
-      .then(function (results) {
-        var offers = results[0];
-        var companies = results[1];
-        var offer = offers.find(function (o) { return o.id === id; }) ||
-          offers.filter(function (o) { return o.statut === "active"; })[0];
-        if (!offer) { throw new Error("Aucune offre"); }
-        var company = companies.find(function (c) { return c.id === offer.entrepriseId; });
-        fillDetail(offer, company);
-        setupApplyModal(offer);
-        setupShare(offer);
-        setupDetailSave(offer);
-        setupCopyLink();
-        renderSimilar(offer, offers, companies);
-        injectJobPostingSchema(offer, company);
-      })
-      .catch(function () { SS.dataError(root.querySelector(".container") || root); });
+    window.PostelioDirectory.jobs.get(id).then(function (offer) {
+      var company = companyFromOffer(offer);
+      fillDetail(offer, company);
+      setupApplyModal(offer);
+      setupShare(offer);
+      setupDetailSave(offer);
+      setupCopyLink();
+      renderSimilar(offer);
+      if (!offer.external) { injectJobPostingSchema(offer, company); } // offre externe = noindex
+    }, function (err) {
+      if (err && err.status === 410) {
+        showDetailMessage(root, "Cette offre n'est plus disponible", "Elle a été retirée par l'employeur ou la source partenaire.");
+      } else if (err && err.status === 404) {
+        showDetailMessage(root, "Offre introuvable ou indisponible", "Cette offre n'existe pas, ou n'est plus publiée.");
+      } else {
+        var box = detailContainer(root);
+        box.innerHTML =
+          '<div class="empty-state" role="alert" style="margin:var(--sp-6,2rem) auto;max-width:640px;text-align:center">' +
+          "<h1>Impossible de charger l'offre</h1><p>" + SS.escapeHtml(err && err.userMessage ? err.userMessage() : "Réessayez plus tard.") + "</p>" +
+          '<p><button type="button" class="btn btn-primary" id="offer-detail-retry">Réessayer</button></p></div>';
+        var b = document.getElementById("offer-detail-retry");
+        if (b) { b.addEventListener("click", renderOfferDetail); }
+      }
+    });
+  }
+
+  /* Objet entreprise LÉGER dérivé de l'offre (pas de requête supplémentaire — évite un N+1). */
+  function companyFromOffer(offer) {
+    return {
+      id: offer.entrepriseId,
+      nom: offer.entrepriseNom,
+      couleur: offer.couleur,
+      initiales: offer.initiales,
+      verifie: offer.verifie,
+      verifieLabel: offer.verifie ? "Entreprise vérifiée" : "",
+      activite: "",
+      description: "",
+      siteWeb: ""
+    };
   }
 
   function fillDetail(offer, company) {
@@ -207,20 +250,33 @@
       }).join("");
     }
 
-    /* Encadré entreprise */
-    if (company) {
-      var box = document.getElementById("offer-company-card");
-      if (box) {
+    /* Encadré entreprise (natif) OU bloc d'attribution (offre partenaire externe). */
+    var box = document.getElementById("offer-company-card");
+    if (box) {
+      if (offer.external) {
+        var attr = offer.attribution || {};
+        box.innerHTML =
+          '<div class="company-card__top">' +
+            '<span class="logo-bubble" style="background:' + e(offer.couleur) + '" aria-hidden="true">' + e(offer.initiales) + "</span>" +
+            "<div><h3>" + e(offer.entrepriseNom || "Entreprise confidentielle") + "</h3>" +
+            '<p class="text-muted">' + e(attr.notice || ("Offre proposée par " + (offer.sourceLabel || "un partenaire"))) + "</p></div>" +
+          "</div>" +
+          '<p class="badge badge--source">Offre partenaire · ' + e(offer.sourceLabel || "Partenaire") + "</p>" +
+          (attr.source_updated_at ? '<p class="text-muted">Mise à jour le ' + e(SS.formatDate(attr.source_updated_at)) + "</p>" : "") +
+          (attr.licence_url ? '<p><a class="link-more" href="' + e(attr.licence_url) + '" rel="nofollow noopener" target="_blank">Licence / mentions de la source</a></p>' : "");
+      } else if (company) {
+        var link = company.id
+          ? '<p class="company-card-link"><a class="btn btn-outline btn-sm" href="entreprise-detail.html?id=' + encodeURIComponent(company.id) + '">Voir la fiche entreprise</a></p>'
+          : "";
         box.innerHTML =
           '<div class="company-card__top">' +
             '<span class="logo-bubble" style="background:' + e(company.couleur) + '" aria-hidden="true">' + e(company.initiales) + "</span>" +
             "<div><h3>" + e(company.nom) + (company.verifie ? ' <span class="verified-tick" title="' + e(company.verifieLabel || "Entreprise vérifiée") + '" aria-label="' + e(company.verifieLabel || "Entreprise vérifiée") + '">✓</span>' : "") + "</h3>" +
-            '<p class="text-muted">' + e(company.activite) + "</p></div>" +
+            (company.activite ? '<p class="text-muted">' + e(company.activite) + "</p>" : "") + "</div>" +
           "</div>" +
           (company.verifie ? '<p class="verified-note badge badge--verified">✓ ' + e(company.verifieLabel || "Entreprise vérifiée") + "</p>" : "") +
-          "<p>" + e(company.description) + "</p>" +
-          '<p class="company-card-link"><a class="btn btn-outline btn-sm" href="entreprise-detail.html?id=' +
-            encodeURIComponent(company.id) + '">Voir la fiche entreprise</a></p>';
+          (company.description ? "<p>" + e(company.description) + "</p>" : "") +
+          link;
       }
     }
   }
@@ -286,8 +342,22 @@
   }
 
   function setupApplyModal(offer) {
-    var dialog = document.getElementById("apply-modal");
     var openBtn = document.getElementById("apply-button");
+
+    /* Offre PARTENAIRE externe : jamais de candidature Postelio. Redirection via le contrat
+       backend (GET /jobs/{uuid}/apply-redirect → 302 vers le site partenaire). */
+    if (offer.external) {
+      if (openBtn) {
+        openBtn.textContent = "Postuler sur le site partenaire";
+        openBtn.setAttribute("title", "Vous allez être redirigé vers le site partenaire");
+        openBtn.addEventListener("click", function () {
+          window.location.href = window.PostelioDirectory.jobs.applyRedirectUrl(offer.id);
+        });
+      }
+      return;
+    }
+
+    var dialog = document.getElementById("apply-modal");
     if (!dialog || !openBtn) { return; }
 
     if (offer.statut !== "active") {
@@ -535,25 +605,21 @@
     });
   }
 
-  /* ---- Offres similaires (même catégorie ou même ville) ---- */
-  function renderSimilar(offer, offers, companies) {
+  /* ---- Offres similaires (même catégorie, sinon même ville) — 1 requête ---- */
+  function renderSimilar(offer) {
     var container = document.getElementById("similar-offers");
     if (!container) { return; }
-    var byId = {};
-    companies.forEach(function (c) { byId[c.id] = c; });
-    var similar = offers.filter(function (o) {
-      return o.id !== offer.id && o.statut === "active" &&
-        (o.categorie === offer.categorie || o.ville === offer.ville);
-    }).slice(0, 3);
-    similar.forEach(function (o) {
-      var c = byId[o.entrepriseId];
-      if (c) { o.couleur = c.couleur; }
-    });
-    if (!similar.length) {
-      container.closest("section").hidden = true;
-      return;
-    }
-    container.innerHTML = similar.map(similarCard).join("");
+    var section = container.closest("section");
+    var filters = {};
+    if (offer.categorie) { filters.categorie = offer.categorie; }
+    else if (offer.ville) { filters.ville = offer.ville; }
+    else { if (section) { section.hidden = true; } return; }
+
+    window.PostelioDirectory.jobs.search(filters, 1, 4).then(function (res) {
+      var similar = res.items.filter(function (o) { return o.id !== offer.id; }).slice(0, 3);
+      if (!similar.length) { if (section) { section.hidden = true; } return; }
+      container.innerHTML = similar.map(similarCard).join("");
+    }, function () { if (section) { section.hidden = true; } });
   }
 
   /* Carte compacte, distincte des rangées de la liste principale :

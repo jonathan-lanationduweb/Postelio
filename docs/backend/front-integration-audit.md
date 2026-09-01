@@ -225,3 +225,32 @@ cohérent web + future app Tauri (fournisseur de jeton abstrait `PostelioAuth.to
 - Inscription recruteur : crée le **compte** recruteur ; la création + vérification de l'**entreprise** (Lot 03) reste à brancher (lot I5).
 
 **Détails** : voir `docs/frontend/api-client.md` et `docs/frontend/auth-integration.md`.
+
+---
+
+## I2 — Offres + Entreprises publiques — ✅ LIVRÉ (branche `feature/front-public-jobs-companies`)
+
+Offres et entreprises publiques branchées sur l'API réelle (`GET /jobs`, `/jobs/{uuid}`,
+`/jobs/{uuid}/apply-redirect`, `GET /companies`, `/companies/{uuid}`) via `PostelioDirectory`
+(`assets/js/api/directory.js` — adaptateurs vers la forme historique, aucun JSON, aucun repli).
+
+- **Offres liste** : recherche + pagination CÔTÉ SERVEUR (filtres q/ville/contrat/categorie/
+  niveau_etude/experience/salaire_min + **provenance** all/postelio/partners), URL partageable,
+  états loading/empty/error/retry, `total_is_exact` → « Plus de N offres ». Filtres sans backend V1
+  (récence, télétravail-uniquement, tri, « enregistrées ») **masqués** (jamais simulés).
+- **Fiche offre** : native (schéma JobPosting, encart entreprise + lien) et **externe** (attribution
+  France Travail : source, notice, licence, date maj ; bouton « Postuler sur le site partenaire » →
+  `apply-redirect` 302 ; `noindex`). 404/410 → messages propres + CTA. Candidature native = modale
+  transitoire (localStorage) inchangée jusqu'à I4.
+- **Entreprises** : liste réelle (filtre nom/secteur/ville **côté client** — pas de recherche
+  serveur V1) ; fiche publique (badge vérifié serveur, SIREN public si vérifié, coordonnées, aucune
+  donnée privée). Cache-buster `?v=i2` ajouté aux JS d'annuaire.
+
+**Gaps backend (I2)** — documentés, non codés :
+- Pas de filtre `company` sur `GET /jobs` → **compteurs/liste d'offres par entreprise omis** (renvoi
+  vers la page Offres).
+- Pas de **recherche serveur d'entreprises** → filtrage client sur l'ensemble chargé (borné).
+- Pas de tri, ni de filtre **récence** / **télétravail-oui-non**, ni **catégorie/expérience** garanties
+  (taxonomie) côté public → contrôles masqués ou passés tels quels.
+
+Détails : `docs/frontend/jobs-companies-integration.md`.

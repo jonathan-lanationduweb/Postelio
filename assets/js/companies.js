@@ -1,12 +1,16 @@
-﻿/**
- * Annuaire des entreprises : sélection mise en avant (accueil),
- * annuaire avec recherche et filtres, fiche entreprise détaillée.
+/**
+ * Annuaire des entreprises — données RÉELLES (I2), via PostelioDirectory (GET /companies,
+ * GET /companies/{uuid}). Aucune donnée JSON locale, aucun repli.
+ *
+ * Limites V1 assumées (cf. docs) :
+ *  - le backend n'expose PAS de recherche d'entreprises : la liste réelle est chargée puis
+ *    filtrée CÔTÉ CLIENT (nom/secteur/ville) sur l'ensemble récupéré (borné) ;
+ *  - il n'existe pas d'endpoint « offres d'une entreprise » : les compteurs d'offres et la
+ *    liste d'offres par entreprise sont OMIS (renvoi vers la page Offres). Gap documenté.
  */
 (function () {
   "use strict";
 
-  /* Famille d'icônes SVG « line » (trait fin, currentColor) — voir la classe
-     .icon dans components.css. Un même concept réutilise toujours le même tracé. */
   function svgIcon(paths) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" ' +
       'stroke-linecap="round" stroke-linejoin="round">' + paths + "</svg>";
@@ -19,12 +23,6 @@
     mail: svgIcon('<rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M3 6.5l9 6 9-6"/>'),
     globe: svgIcon('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"/>'),
     building: svgIcon('<rect x="4.5" y="3" width="15" height="18" rx="1.5"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M9 15h.01M15 15h.01"/><path d="M10 21v-3.5h4V21"/>'),
-    home: svgIcon('<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/>'),
-    heart: svgIcon('<path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z"/>'),
-    cap: svgIcon('<path d="M2.5 8.5 12 4.5l9.5 4-9.5 4-9.5-4z"/><path d="M6.5 10.3V15c0 1.2 2.5 2.3 5.5 2.3s5.5-1.1 5.5-2.3v-4.7"/><path d="M21.5 8.5v5"/>'),
-    transport: svgIcon('<rect x="6" y="3.5" width="12" height="13" rx="2.5"/><path d="M6 11h12"/><path d="M9.5 16.5 7.5 20M14.5 16.5 16.5 20"/><path d="M9 13.7h.01M15 13.7h.01"/>'),
-    calendar: svgIcon('<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v4M16 3v4"/>'),
-    euro: svgIcon('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.8a4.5 4.5 0 1 0 0 6.4"/><path d="M7 11h6M7 13.4h5"/>'),
     check: svgIcon('<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.5"/>')
   };
   function iconEl(name, cls) {
@@ -37,23 +35,23 @@
     renderCompanyDetail();
   });
 
-  /* Fiche d'annuaire : monogramme à gauche, informations à droite,
-     un trait distinctif de l'entreprise, statut de recrutement. */
-  function companyCard(company, offerCount) {
+  /* Carte d'annuaire — champs manquants (données réelles parfois partielles) omis. */
+  function companyCard(company) {
     var e = SS.escapeHtml;
-    var distinct = (company.avantages && company.avantages[0]) || company.valeurs && company.valeurs[0] || "";
-    return '<article class="card company-card' + (offerCount ? " company-card--hiring" : "") + '">' +
+    var metaParts = [];
+    if (company.secteur) { metaParts.push(e(company.secteur)); }
+    if (company.ville) { metaParts.push(e(company.ville)); }
+    var distinct = (company.avantages && company.avantages[0]) || (company.valeurs && company.valeurs[0]) || "";
+    return '<article class="card company-card">' +
       '<div class="company-card__head">' +
         '<span class="logo-bubble" style="background:' + e(company.couleur) + '" aria-hidden="true">' + e(company.initiales) + "</span>" +
         "<div>" +
           "<h3>" + e(company.nom) + (company.verifie ? ' <span class="verified-tick" title="' + e(company.verifieLabel || "Entreprise vérifiée") + '" aria-label="' + e(company.verifieLabel || "Entreprise vérifiée") + '">✓</span>' : "") + "</h3>" +
-          '<p class="company-card__meta">' + e(company.secteur) + " · " + e(company.ville) + "</p>" +
+          (metaParts.length ? '<p class="company-card__meta">' + metaParts.join(" · ") + "</p>" : "") +
         "</div>" +
-        (offerCount
-          ? '<span class="hiring-flag">Recrute · ' + offerCount + (offerCount > 1 ? " offres" : " offre") + "</span>"
-          : '<span class="hiring-flag hiring-flag--off">Annuaire</span>') +
+        '<span class="hiring-flag hiring-flag--off">Annuaire</span>' +
       "</div>" +
-      '<p class="company-card__activity">' + e(company.activite) + "</p>" +
+      (company.activite ? '<p class="company-card__activity">' + e(company.activite) + "</p>" : "") +
       (distinct ? '<p class="company-card__distinct">' + e(distinct) + "</p>" : "") +
       '<div class="company-card__foot">' +
         '<span class="text-muted">' + e(company.taille) + "</span>" +
@@ -62,56 +60,55 @@
     "</article>";
   }
 
-  function withOfferCounts(callback) {
-    return Promise.all([SS.getCompanies(), SS.getActiveOffers()])
-      .then(function (results) {
-        var counts = {};
-        results[1].forEach(function (o) {
-          counts[o.entrepriseId] = (counts[o.entrepriseId] || 0) + 1;
-        });
-        return callback(results[0], counts, results[1]);
+  /* Charge TOUTES les entreprises publiques (borné) pour l'annuaire — pas de recherche serveur. */
+  var SAFETY_PAGES = 10;
+  function loadAllCompanies() {
+    var all = [];
+    function page(p) {
+      return window.PostelioDirectory.companies.list(p, 24).then(function (res) {
+        all = all.concat(res.items);
+        if (p < res.totalPages && p < SAFETY_PAGES) { return page(p + 1); }
+        return all;
       });
+    }
+    return page(1);
   }
 
   /* ---- Accueil : entreprises mises en avant ---- */
   function renderFeatured() {
     var container = document.getElementById("featured-companies");
     if (!container) { return; }
-    withOfferCounts(function (companies, counts) {
-      var featured = companies.slice()
-        .sort(function (a, b) { return (counts[b.id] || 0) - (counts[a.id] || 0); })
-        .slice(0, 4);
-      container.innerHTML = featured.map(function (c) {
-        return companyCard(c, counts[c.id] || 0);
-      }).join("");
-    }).catch(function () { SS.dataError(container); });
+    window.PostelioDirectory.companies.list(1, 4).then(function (res) {
+      if (!res.items.length) { container.innerHTML = '<div class="empty-state"><p>Aucune entreprise pour le moment.</p></div>'; return; }
+      container.innerHTML = res.items.map(companyCard).join("");
+    }, function () { SS.dataError(container); });
   }
 
   /* ---- Annuaire ---- */
   function initDirectory() {
     var grid = document.getElementById("companies-grid");
     if (!grid) { return; }
+    grid.setAttribute("aria-busy", "true");
 
-    withOfferCounts(function (companies, counts) {
-      var form = document.getElementById("directory-form");
+    loadAllCompanies().then(function (companies) {
+      grid.removeAttribute("aria-busy");
       var sectorSelect = document.getElementById("directory-sector");
+      var form = document.getElementById("directory-form");
 
-      /* Alimente la liste des secteurs à partir des données. */
-      var sectors = [];
-      companies.forEach(function (c) {
-        if (sectors.indexOf(c.secteur) === -1) { sectors.push(c.secteur); }
-      });
-      sectors.sort().forEach(function (s) {
-        var option = document.createElement("option");
-        option.value = s;
-        option.textContent = s;
-        sectorSelect.appendChild(option);
-      });
+      if (sectorSelect) {
+        var sectors = [];
+        companies.forEach(function (c) { if (c.secteur && sectors.indexOf(c.secteur) === -1) { sectors.push(c.secteur); } });
+        sectors.sort().forEach(function (s) {
+          var option = document.createElement("option");
+          option.value = s; option.textContent = s;
+          sectorSelect.appendChild(option);
+        });
+      }
 
       function apply() {
-        var name = normalize(document.getElementById("directory-name").value);
-        var sector = sectorSelect.value;
-        var city = normalize(document.getElementById("directory-city").value);
+        var name = normalize(val("directory-name"));
+        var sector = sectorSelect ? sectorSelect.value : "";
+        var city = normalize(val("directory-city"));
 
         var filtered = companies.filter(function (c) {
           if (name && normalize(c.nom + " " + c.activite).indexOf(name) === -1) { return false; }
@@ -121,25 +118,24 @@
         });
 
         var countEl = document.getElementById("directory-count");
-        countEl.textContent = filtered.length === 0 ? "Aucune entreprise trouvée"
-          : filtered.length + (filtered.length > 1 ? " entreprises référencées" : " entreprise référencée");
-
+        if (countEl) {
+          countEl.textContent = filtered.length === 0 ? "Aucune entreprise trouvée"
+            : filtered.length + (filtered.length > 1 ? " entreprises référencées" : " entreprise référencée");
+        }
         grid.innerHTML = filtered.length
-          ? filtered.map(function (c) { return companyCard(c, counts[c.id] || 0); }).join("")
+          ? filtered.map(companyCard).join("")
           : '<div class="empty-state"><h3>Aucun résultat</h3><p>Modifiez votre recherche ou effacez les filtres.</p></div>';
       }
 
-      form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        apply();
-      });
-      form.querySelectorAll("input, select").forEach(function (input) {
-        input.addEventListener("change", apply);
-        input.addEventListener("input", apply);
-      });
-
+      if (form) {
+        form.addEventListener("submit", function (e) { e.preventDefault(); apply(); });
+        form.querySelectorAll("input, select").forEach(function (input) {
+          input.addEventListener("change", apply);
+          input.addEventListener("input", apply);
+        });
+      }
       apply();
-    }).catch(function () { SS.dataError(grid); });
+    }, function () { grid.removeAttribute("aria-busy"); SS.dataError(grid); });
   }
 
   /* ---- Fiche entreprise ---- */
@@ -147,201 +143,135 @@
     var root = document.getElementById("company-detail");
     if (!root) { return; }
     var id = SS.param("id");
+    if (!id) { showCompanyMessage(root, "Entreprise introuvable", "Cette entreprise n'existe pas ou n'est plus référencée."); return; }
 
-    withOfferCounts(function (companies, counts, offers) {
-      var company = companies.find(function (c) { return c.id === id; }) || companies[0];
-      var e = SS.escapeHtml;
-      var offerCount = counts[company.id] || 0;
-
-      document.title = company.nom + " – recrutement | Postelio";
-
-      document.getElementById("company-name").textContent = company.nom;
-      document.getElementById("company-activity").textContent = company.activite;
-      document.getElementById("company-description").textContent = company.description;
-
-      var bubble = document.getElementById("company-bubble");
-      bubble.style.background = company.couleur;
-      bubble.textContent = company.initiales;
-
-      /* Badges du hero : secteur + statut de recrutement. */
-      var heroBadges = document.getElementById("company-hero-badges");
-      if (heroBadges) {
-        heroBadges.innerHTML =
-          '<span class="badge badge--accent">' + e(company.secteur) + "</span>" +
-          (offerCount
-            ? '<span class="badge badge--remote">Recrute actuellement</span>'
-            : "") +
-          (company.verifie
-            ? '<span class="badge badge--verified" title="' + e(company.verifieLabel || "Entreprise vérifiée") + '">✓ ' + e(company.verifieLabel || "Entreprise vérifiée") + "</span>"
-            : "");
+    window.PostelioDirectory.companies.get(id).then(function (company) {
+      fillCompany(company);
+    }, function (err) {
+      if (err && err.status === 404) { showCompanyMessage(root, "Entreprise introuvable", "Cette entreprise n'existe pas ou n'est plus référencée."); }
+      else {
+        var box = root.querySelector(".container") || root;
+        box.innerHTML = '<div class="empty-state" role="alert" style="margin:2rem auto;max-width:640px;text-align:center"><h1>Impossible de charger l\'entreprise</h1><p>' +
+          SS.escapeHtml(err && err.userMessage ? err.userMessage() : "Réessayez plus tard.") + '</p><p><a class="btn btn-primary" href="entreprises.html">Retour à l\'annuaire</a></p></div>';
       }
-
-      /* Ligne de méta : ville, effectif, offres. */
-      var meta = document.getElementById("company-hero-meta");
-      if (meta) {
-        var offerLabel = offerCount
-          ? offerCount + (offerCount > 1 ? " offres en ligne" : " offre en ligne")
-          : "Aucune offre en ce moment";
-        meta.innerHTML =
-          "<li>" + iconEl("pin") + e(company.ville) + " · " + e(company.departement) + "</li>" +
-          "<li>" + iconEl("users") + e(company.taille) + "</li>" +
-          "<li>" + iconEl("briefcase") + e(offerLabel) + "</li>";
-      }
-
-      /* Chiffres clés. */
-      var stats = document.getElementById("company-stats");
-      if (stats) {
-        stats.innerHTML = [
-          statTile(company.taille.replace(/\s*salariés?/i, ""), "salariés"),
-          statTile(String(offerCount), offerCount > 1 ? "offres actives" : "offre active"),
-          statTile(company.ville, "en " + company.departement.replace(/\s*\(.*\)/, "")),
-          statTile(company.secteur, "secteur d'activité")
-        ].join("");
-      }
-
-      /* Coordonnées : carte à icônes, plus aérée. */
-      var coords = document.getElementById("company-coordinates");
-      if (coords) {
-        coords.innerHTML =
-          coordRow("pin", "Adresse", e(company.adresse)) +
-          coordRow("pin", "Ville", e(company.ville) + " — " + e(company.departement)) +
-          coordRow("phone", "Téléphone", e(company.telephone)) +
-          coordRow("mail", "E-mail", e(company.email)) +
-          coordRow("globe", "Site internet",
-            '<a href="' + e(company.siteWeb) + '" rel="nofollow">' + e(company.siteWeb.replace("https://", "")) + "</a>") +
-          coordRow("building", "Secteur", e(company.secteur)) +
-          coordRow("users", "Effectif", e(company.taille));
-      }
-
-      /* Valeurs → cartes ; avantages → cartes à icône. */
-      renderValueCards("company-values", company.valeurs);
-      renderPerkCards("company-benefits", company.avantages);
-
-      var contactHref = "contact.html?entreprise=" + encodeURIComponent(company.nom);
-      ["company-contact-btn", "cta-contact-btn"].forEach(function (bid) {
-        var b = document.getElementById(bid);
-        if (b) { b.href = contactHref; }
-      });
-
-      /* Suivre l'entreprise (candidats connectés uniquement, §23). */
-      var followBtn = document.getElementById("company-follow-btn");
-      if (followBtn && window.SS && SS.auth && SS.auth.isCandidate && SS.auth.isCandidate()) {
-        var FOLLOWED_KEY = "ss_candidate_followed";
-        followBtn.hidden = false;
-        var syncFollow = function () {
-          var list = SS.store.get(FOLLOWED_KEY, []) || [];
-          var on = list.indexOf(company.id) !== -1;
-          followBtn.textContent = on ? "✓ Entreprise suivie" : "Suivre cette entreprise";
-          followBtn.setAttribute("aria-pressed", on ? "true" : "false");
-          followBtn.classList.toggle("is-following", on);
-        };
-        syncFollow();
-        followBtn.addEventListener("click", function () {
-          var list = SS.store.get(FOLLOWED_KEY, []) || [];
-          var i = list.indexOf(company.id);
-          if (i === -1) { list.push(company.id); SS.toast("Vous suivez désormais " + company.nom + "."); }
-          else { list.splice(i, 1); SS.toast("Vous ne suivez plus " + company.nom + "."); }
-          SS.store.set(FOLLOWED_KEY, list);
-          syncFollow();
-        });
-      }
-
-      /* Offres actuellement disponibles — même composant que la page Offres. */
-      var offersBox = document.getElementById("company-offers");
-      var companyOffers = offers.filter(function (o) { return o.entrepriseId === company.id; });
-      companyOffers.forEach(function (o) { o.couleur = company.couleur; });
-      offersBox.innerHTML = companyOffers.length
-        ? companyOffers.map(SS.offerCard).join("")
-        : '<div class="empty-state"><h3>Pas d\'offre en ce moment</h3>' +
-          "<p>Cette entreprise n'a pas d'offre active aujourd'hui. Revenez bientôt ou " +
-          '<a href="offres.html">consultez les autres offres</a>.</p></div>';
-
-      /* Sans offre : le CTA « Postuler » invite plutôt à contacter. */
-      if (!companyOffers.length) {
-        var ctaOffers = document.getElementById("cta-offers-btn");
-        if (ctaOffers) {
-          ctaOffers.textContent = "Voir toutes les offres";
-          ctaOffers.href = "offres.html";
-        }
-      }
-
-      /* « Ses conseils et savoir-faire » : publications de l'entreprise. */
-      renderCompanyKnowhow(company);
-    }).catch(function () { SS.dataError(root.querySelector(".container") || root); });
+    });
   }
 
-  function statTile(value, label) {
+  function showCompanyMessage(root, title, text) {
+    var box = root.querySelector(".container") || root;
+    box.innerHTML = '<div class="empty-state" style="margin:2rem auto;max-width:640px;text-align:center"><h1>' +
+      SS.escapeHtml(title) + "</h1><p>" + SS.escapeHtml(text) + '</p><p><a class="btn btn-primary" href="entreprises.html">Retour à l\'annuaire</a></p></div>';
+  }
+
+  function fillCompany(company) {
     var e = SS.escapeHtml;
-    return '<div class="stat-tile"><strong>' + e(value) + "</strong><span>" + e(label) + "</span></div>";
+    document.title = company.nom + " – recrutement | Postelio";
+    setText("company-name", company.nom);
+    setText("company-activity", company.activite);
+    setText("company-description", company.description);
+
+    var bubble = document.getElementById("company-bubble");
+    if (bubble) { bubble.style.background = company.couleur; bubble.textContent = company.initiales; }
+
+    var heroBadges = document.getElementById("company-hero-badges");
+    if (heroBadges) {
+      heroBadges.innerHTML =
+        (company.secteur ? '<span class="badge badge--accent">' + e(company.secteur) + "</span>" : "") +
+        (company.verifie ? '<span class="badge badge--verified" title="' + e(company.verifieLabel) + '">✓ ' + e(company.verifieLabel) + "</span>" : "");
+    }
+
+    var meta = document.getElementById("company-hero-meta");
+    if (meta) {
+      var rows = "";
+      if (company.ville) { rows += "<li>" + iconEl("pin") + e(company.ville) + (company.departement ? " · " + e(company.departement) : "") + "</li>"; }
+      if (company.taille) { rows += "<li>" + iconEl("users") + e(company.taille) + "</li>"; }
+      meta.innerHTML = rows;
+    }
+
+    /* Coordonnées + identité légale publique (SIREN public une fois vérifié). */
+    var coords = document.getElementById("company-coordinates");
+    if (coords) {
+      var l = company.legal || {};
+      coords.innerHTML =
+        row("pin", "Adresse", e(company.adresse)) +
+        row("pin", "Ville", company.ville ? (e(company.ville) + (company.departement ? " — " + e(company.departement) : "")) : "") +
+        row("phone", "Téléphone", e(company.telephone)) +
+        row("mail", "E-mail", e(company.email)) +
+        row("globe", "Site internet", company.siteWeb ? ('<a href="' + e(company.siteWeb) + '" rel="nofollow noopener">' + e(company.siteWeb.replace(/^https?:\/\//, "")) + "</a>") : "") +
+        row("building", "Secteur", e(company.secteur)) +
+        row("building", "Raison sociale", e(l.raison_sociale)) +
+        row("building", "SIREN", e(l.siren)) +
+        row("users", "Effectif", e(company.taille));
+      if (!coords.innerHTML) { coords.innerHTML = '<li class="text-muted">Coordonnées non communiquées.</li>'; }
+    }
+
+    renderCards("company-values", company.valeurs, "value-card", true);
+    renderCards("company-benefits", company.avantages, "perk-card", false);
+
+    var contactHref = "contact.html?entreprise=" + encodeURIComponent(company.nom);
+    ["company-contact-btn", "cta-contact-btn"].forEach(function (bid) {
+      var b = document.getElementById(bid); if (b) { b.href = contactHref; }
+    });
+
+    setupFollow(company);
+
+    /* Offres de l'entreprise : pas d'endpoint public dédié (gap V1) → renvoi vers la page Offres. */
+    var offersBox = document.getElementById("company-offers");
+    if (offersBox) {
+      offersBox.innerHTML =
+        '<div class="empty-state"><h3>Retrouvez ses offres sur Postelio</h3>' +
+        "<p>Consultez toutes les offres publiées sur la plateforme et filtrez par mot-clé ou par ville.</p>" +
+        '<p><a class="btn btn-outline btn-sm" href="offres.html?q=' + encodeURIComponent(company.nom) + '">Voir les offres</a></p></div>';
+    }
+    var ctaOffers = document.getElementById("cta-offers-btn");
+    if (ctaOffers) { ctaOffers.textContent = "Voir toutes les offres"; ctaOffers.href = "offres.html"; }
   }
 
-  function coordRow(iconName, label, valueHtml) {
+  function setupFollow(company) {
+    var followBtn = document.getElementById("company-follow-btn");
+    if (!followBtn || !(window.SS && SS.auth && SS.auth.isCandidate && SS.auth.isCandidate())) { return; }
+    var KEY = "ss_candidate_followed"; // conservé en localStorage (branchement réel prévu en lot ultérieur)
+    followBtn.hidden = false;
+    var sync = function () {
+      var list = SS.store.get(KEY, []) || [];
+      var on = list.indexOf(company.id) !== -1;
+      followBtn.textContent = on ? "✓ Entreprise suivie" : "Suivre cette entreprise";
+      followBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      followBtn.classList.toggle("is-following", on);
+    };
+    sync();
+    followBtn.addEventListener("click", function () {
+      var list = SS.store.get(KEY, []) || [];
+      var i = list.indexOf(company.id);
+      if (i === -1) { list.push(company.id); SS.toast("Vous suivez désormais " + company.nom + "."); }
+      else { list.splice(i, 1); SS.toast("Vous ne suivez plus " + company.nom + "."); }
+      SS.store.set(KEY, list);
+      sync();
+    });
+  }
+
+  /* ---- Helpers ---- */
+  function val(id) { var el = document.getElementById(id); return el ? el.value : ""; }
+  function setText(id, value) { var el = document.getElementById(id); if (el) { el.textContent = value || "—"; } }
+  function row(iconName, label, valueHtml) {
+    if (!valueHtml) { return ""; }
     return '<li class="company-coords__row">' +
       '<span class="company-coords__icon" aria-hidden="true"><span class="icon">' + (ICONS[iconName] || "") + "</span></span>" +
       '<span class="company-coords__body"><span class="company-coords__label">' + label + "</span>" +
       '<span class="company-coords__value">' + valueHtml + "</span></span></li>";
   }
-
-  function renderValueCards(id, values) {
+  function renderCards(id, items, cls, isValue) {
     var el = document.getElementById(id);
-    if (!el || !values) { return; }
+    if (!el) { return; }
+    if (!items || !items.length) { el.innerHTML = ""; return; }
     var e = SS.escapeHtml;
-    el.innerHTML = values.map(function (v) {
-      return '<div class="value-card"><span class="value-card__check" aria-hidden="true">✓</span>' +
-        "<p>" + e(v) + "</p></div>";
+    el.innerHTML = items.map(function (v) {
+      return isValue
+        ? '<div class="value-card"><span class="value-card__check" aria-hidden="true">✓</span><p>' + e(v) + "</p></div>"
+        : '<div class="perk-card"><span class="perk-card__icon icon" aria-hidden="true">' + (ICONS.check || "") + "</span><span>" + e(v) + "</span></div>";
     }).join("");
   }
-
-  /* Icône déduite du libellé de l'avantage (sobre, sans surcharge). */
-  function perkIcon(text) {
-    var t = (text || "").toLowerCase();
-    if (/t[ée]l[ée]travail|distance|remote/.test(t)) { return "home"; }
-    if (/mutuelle|sant[ée]|pr[ée]voyance/.test(t)) { return "heart"; }
-    if (/formation|mont[ée]e|comp[ée]tence/.test(t)) { return "cap"; }
-    if (/parking|v[ée]lo|transport|m[ée]tro|acc[èe]s/.test(t)) { return "transport"; }
-    if (/horaire|planning|temps|flex/.test(t)) { return "calendar"; }
-    if (/13|prime|salaire|r[ée]mun[ée]ration|ticket|repas/.test(t)) { return "euro"; }
-    if (/locaux|bureau|espace|cadre/.test(t)) { return "building"; }
-    if (/[ée]quipe|ambiance|convivial/.test(t)) { return "users"; }
-    return "check";
-  }
-
-  function renderPerkCards(id, perks) {
-    var el = document.getElementById(id);
-    if (!el || !perks) { return; }
-    var e = SS.escapeHtml;
-    el.innerHTML = perks.map(function (p) {
-      return '<div class="perk-card"><span class="perk-card__icon icon" aria-hidden="true">' +
-        (ICONS[perkIcon(p)] || "") + "</span><span>" + e(p) + "</span></div>";
-    }).join("");
-  }
-
-  function renderCompanyKnowhow(company) {
-    var section = document.getElementById("company-knowhow-section");
-    var box = document.getElementById("company-knowhow");
-    if (!section || !box || typeof SS.getKnowhow !== "function") { return; }
-    SS.getKnowhow().then(function (items) {
-      var mine = items.filter(function (p) {
-        return p.auteur && p.auteur.entrepriseId === company.id;
-      });
-      if (!mine.length) { return; }
-      section.hidden = false;
-      box.innerHTML = mine.map(SS.knowhowCard).join("");
-    }).catch(function () { /* section simplement absente en cas d'erreur */ });
-  }
-
-  function fillList(id, items) {
-    var el = document.getElementById(id);
-    if (el && items) {
-      el.innerHTML = items.map(function (item) {
-        return "<li>" + SS.escapeHtml(item) + "</li>";
-      }).join("");
-    }
-  }
-
   function normalize(text) {
-    return (text || "").toString().toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return (text || "").toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   }
 })();
-
