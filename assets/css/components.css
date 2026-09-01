@@ -86,7 +86,7 @@
 }
 
 .btn-accent:hover {
-  background: #d69127;
+  background: var(--c-accent-hover);
   color: var(--c-primary-dark);
 }
 
@@ -382,7 +382,7 @@
   transition: background var(--transition);
 }
 .notif-btn svg { width: 22px; height: 22px; }
-.notif-btn:hover { background: rgba(30, 79, 70, 0.08); }
+.notif-btn:hover { background: rgba(23, 50, 77, 0.08); }
 .notif-btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 .notif-badge {
   position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px;
@@ -444,7 +444,7 @@
 }
 .segment__opt input:checked + span { background: var(--c-primary); color: #fff; }
 .segment__opt input:focus-visible + span { box-shadow: var(--shadow-focus); }
-.segment__opt span:hover { background: rgba(30, 79, 70, 0.08); }
+.segment__opt span:hover { background: rgba(23, 50, 77, 0.08); }
 .segment__opt input:checked + span:hover { background: var(--c-primary-dark); }
 
 /* ===== Rangée d'offre — liste plutôt que carte ===== */
@@ -1037,7 +1037,7 @@
   font-family: var(--font-serif);
   font-weight: 700;
   font-size: 2.25rem;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   line-height: 1;
   min-width: 3.2rem;
 }
@@ -1161,7 +1161,7 @@
 
 .chatbot-header p {
   font-size: var(--text-xs);
-  color: #b9c9bf;
+  color: #c2ccd8;
 }
 
 .chatbot-close {
@@ -1571,7 +1571,7 @@
   font-family: var(--font-serif);
   font-size: 2.75rem;
   font-weight: 700;
-  color: var(--c-accent);
+  color: var(--c-accent-dark);
   line-height: 1;
 }
 

@@ -227,23 +227,53 @@
 	}
 
 	function mediaField( fk, fdef, path ) {
-		var value = getPath( path ) || '';
-		var preview = el( 'div', { class: 'pst-ed-media__preview' } );
+		var isVideo = fdef.media_type === 'video';
+		var preview = el( 'div', { class: 'pst-ed-media__preview' + ( isVideo ? ' is-video' : '' ) } );
+		var status = el( 'p', { class: 'pst-ed-field__help' } );
+		function basename( u ) { return String( u || '' ).split( '/' ).pop().split( '?' )[ 0 ]; }
 		function paint() {
 			var v = getPath( path );
-			if ( v && /^https?:/.test( v ) ) { preview.style.backgroundImage = 'url(' + v + ')'; preview.textContent = ''; }
-			else { preview.style.backgroundImage = 'none'; preview.textContent = v ? ( 'Média #' + v ) : 'Aucun média'; }
+			if ( isVideo ) {
+				preview.style.backgroundImage = 'none';
+				preview.textContent = v ? ( '🎬 ' + basename( v ) ) : 'Vidéo par défaut du site';
+			} else if ( v && /^https?:/.test( v ) ) {
+				preview.style.backgroundImage = 'url(' + v + ')'; preview.textContent = '';
+			} else {
+				preview.style.backgroundImage = 'none'; preview.textContent = v ? ( 'Média #' + v ) : 'Aucun média';
+			}
+			choose.textContent = v ? 'Remplacer' : ( isVideo ? 'Choisir une vidéo' : 'Choisir un média' );
 		}
+		var choose = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm', type: 'button', onclick: function () { openMedia( path, fdef, paint, status ); } } );
+		var remove = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm pst-ed-btn--ghost', type: 'button', text: 'Retirer', onclick: function () { setPath( path, '' ); status.textContent = ''; status.className = 'pst-ed-field__help'; paint(); markDirty(); } } );
+		var reset = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm pst-ed-btn--ghost', type: 'button', text: 'Défaut', onclick: function () { setPath( path, fdef.default || '' ); status.textContent = ''; status.className = 'pst-ed-field__help'; paint(); markDirty(); } } );
 		paint();
-		var choose = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm', type: 'button', text: value ? 'Remplacer' : 'Choisir un média', onclick: function () { openMedia( path, paint, choose ); } } );
-		var remove = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm pst-ed-btn--ghost', type: 'button', text: 'Retirer', onclick: function () { setPath( path, '' ); paint(); choose.textContent = 'Choisir un média'; markDirty(); } } );
-		return el( 'div', { class: 'pst-ed-field' }, [ el( 'label', { text: fdef.label || '' } ), preview, el( 'div', { class: 'pst-ed-media__actions' }, [ choose, remove ] ), fdef.help ? el( 'p', { class: 'pst-ed-field__help', text: fdef.help } ) : null ] );
+		return el( 'div', { class: 'pst-ed-field' }, [ el( 'label', { text: fdef.label || '' } ), preview, el( 'div', { class: 'pst-ed-media__actions' }, [ choose, remove, reset ] ), fdef.help ? el( 'p', { class: 'pst-ed-field__help', text: fdef.help } ) : null, status ] );
 	}
 
-	function openMedia( path, paint, chooseBtn ) {
+	function openMedia( path, fdef, paint, status ) {
 		if ( ! window.wp || ! window.wp.media ) { window.alert( 'Médiathèque WordPress indisponible.' ); return; }
-		var frame = window.wp.media( { title: 'Choisir un média', multiple: false } );
-		frame.on( 'select', function () { var att = frame.state().get( 'selection' ).first().toJSON(); setPath( path, att.url ); paint(); chooseBtn.textContent = 'Remplacer'; markDirty(); } );
+		var opts = { title: fdef.media_type === 'video' ? 'Choisir une vidéo' : 'Choisir un média', multiple: false };
+		if ( fdef.media_type ) { opts.library = { type: fdef.media_type }; }
+		var frame = window.wp.media( opts );
+		frame.on( 'select', function () {
+			var att = frame.state().get( 'selection' ).first().toJSON();
+			// Validation d'extension côté UI (le serveur revalide).
+			var ext = ( att.url || '' ).split( '.' ).pop().toLowerCase().split( '?' )[ 0 ];
+			if ( Array.isArray( fdef.accept ) && fdef.accept.indexOf( ext ) < 0 ) {
+				status.className = 'pst-ed-field__help is-warn';
+				status.textContent = 'Format non pris en charge (' + ext + '). Attendu : ' + fdef.accept.join( ', ' ) + '.';
+				return;
+			}
+			setPath( path, att.url );
+			// Poids + avertissement si lourd.
+			if ( att.filesizeHumanReadable ) {
+				var heavy = att.filesizeInBytes && att.filesizeInBytes > 15 * 1024 * 1024;
+				status.className = 'pst-ed-field__help' + ( heavy ? ' is-warn' : '' );
+				status.textContent = att.filesizeHumanReadable + ( heavy ? ' — fichier lourd : pensez à compresser pour un chargement rapide.' : '' );
+			} else { status.textContent = ''; status.className = 'pst-ed-field__help'; }
+			paint();
+			markDirty();
+		} );
 		frame.open();
 	}
 

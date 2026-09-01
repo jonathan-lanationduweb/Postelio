@@ -225,8 +225,9 @@ final class SiteSchema {
 						'cta_primary_url'     => array( 'type' => 'text', 'label' => 'CTA principal — lien', 'default' => '/offres' ),
 						'cta_secondary_label' => array( 'type' => 'text', 'label' => 'CTA secondaire — libellé', 'default' => 'Déposer mon profil' ),
 						'cta_secondary_url'   => array( 'type' => 'text', 'label' => 'CTA secondaire — lien', 'default' => '/inscription' ),
-						'video_intro'         => array( 'type' => 'toggle', 'label' => 'Activer l\'intro vidéo', 'default' => false, 'help' => 'Le comportement cinématique est géré par le front ; on n\'active ici que le paramètre.' ),
-						'poster'              => array( 'type' => 'media', 'label' => 'Poster vidéo', 'default' => '' ),
+						'video_intro'         => array( 'type' => 'toggle', 'label' => 'Activer l\'intro cinématique', 'default' => true, 'help' => 'Le comportement de défilement reste géré par le front ; on ne change ici que le média.' ),
+						'hero_video'          => array( 'type' => 'media', 'media_type' => 'video', 'accept' => array( 'mp4', 'webm' ), 'label' => 'Vidéo cinématique', 'default' => '', 'help' => 'MP4 ou WebM. Vide = vidéo par défaut du site. Compressez les vidéos lourdes pour un chargement rapide.' ),
+						'poster'              => array( 'type' => 'media', 'media_type' => 'image', 'accept' => array( 'jpg', 'jpeg', 'png', 'webp', 'avif' ), 'label' => 'Poster (image de la vidéo)', 'default' => '' ),
 					)
 				) ),
 				'search'     => self::search_section( 'Assistant(e), secrétaire…', 'Ville ou code postal' ),
@@ -331,12 +332,12 @@ final class SiteSchema {
 				'logo_light'    => array( 'type' => 'media', 'label' => 'Logo clair (fonds sombres)', 'default' => '' ),
 				'favicon'       => array( 'type' => 'media', 'label' => 'Favicon', 'default' => '' ),
 				'social_image'  => array( 'type' => 'media', 'label' => 'Image sociale par défaut', 'default' => '' ),
-				// Couleurs — valeurs par défaut = palette RÉELLE du front public (vert sapin & miel),
+				// Couleurs — valeurs par défaut = palette de marque VALIDÉE du front (bleu nuit + corail),
 				// pour qu'une configuration non modifiée rende le vrai site à l'identique.
-				'color_primary' => array( 'type' => 'color', 'label' => 'Couleur primaire', 'default' => '#1E4F46' ),
-				'color_accent'  => array( 'type' => 'color', 'label' => 'Couleur accent', 'default' => '#E8A33D' ),
+				'color_primary' => array( 'type' => 'color', 'label' => 'Couleur primaire', 'default' => '#17324D' ),
+				'color_accent'  => array( 'type' => 'color', 'label' => 'Couleur accent', 'default' => '#FF6B6B' ),
 				'color_bg'      => array( 'type' => 'color', 'label' => 'Couleur de fond', 'default' => '#FAF7F1' ),
-				'color_text'    => array( 'type' => 'color', 'label' => 'Couleur du texte', 'default' => '#22302B' ),
+				'color_text'    => array( 'type' => 'color', 'label' => 'Couleur du texte', 'default' => '#17324D' ),
 				// Typographie.
 				'font_headings' => array( 'type' => 'select', 'label' => 'Police des titres', 'default' => 'sans', 'options' => array( 'sans' => 'Sans-serif (défaut)', 'serif' => 'Serif', 'display' => 'Display' ) ),
 				'font_body'     => array( 'type' => 'select', 'label' => 'Police du texte', 'default' => 'sans', 'options' => array( 'sans' => 'Sans-serif (défaut)', 'serif' => 'Serif' ) ),

@@ -132,12 +132,28 @@ final class SiteConfigService {
 				return in_array( $v, $opts, true ) ? $v : (string) ( $f['default'] ?? ( $opts[0] ?? '' ) );
 
 			case 'media':
-				// Stocke une URL (ou un id numérique). Jamais de balise.
+				// Stocke une URL (ou un id numérique). Jamais de balise, jamais de javascript:/data:.
 				$v = is_string( $raw ) ? trim( $raw ) : '';
 				if ( '' === $v ) {
 					return '';
 				}
-				return ctype_digit( $v ) ? (string) (int) $v : esc_url_raw( $v );
+				if ( ctype_digit( $v ) ) {
+					return (string) (int) $v; // id d'attachement (validé par WordPress à l'upload)
+				}
+				$url = esc_url_raw( $v, array( 'http', 'https' ) ); // bloque javascript:, data:, file:…
+				if ( '' === $url ) {
+					return '';
+				}
+				// Validation d'extension si le champ déclare des types autorisés.
+				$accept = isset( $f['accept'] ) && is_array( $f['accept'] ) ? array_map( 'strtolower', $f['accept'] ) : array();
+				if ( ! empty( $accept ) ) {
+					$path = (string) wp_parse_url( $url, PHP_URL_PATH );
+					$ext  = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
+					if ( '' !== $ext && ! in_array( $ext, $accept, true ) ) {
+						return (string) ( $f['default'] ?? '' ); // type refusé → repli sur défaut
+					}
+				}
+				return $url;
 
 			case 'textarea':
 				return sanitize_textarea_field( is_string( $raw ) ? $raw : '' );

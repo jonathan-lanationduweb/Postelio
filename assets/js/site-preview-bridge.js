@@ -152,6 +152,10 @@
 	}
 
 	// ------------------------------------------------------------ contenu par page
+	function safeMedia( u ) {
+		u = ( typeof u === 'string' ) ? u.trim() : '';
+		return ( /^\//.test( u ) || /^https?:\/\//i.test( u ) ) ? u : '';
+	}
 	function applyHome( h ) {
 		if ( ! h ) { return; }
 		if ( h.hero ) {
@@ -159,6 +163,19 @@
 			var kw = document.querySelector( '#search-keyword' );
 			if ( kw && h.hero.search_placeholder ) { kw.setAttribute( 'placeholder', h.hero.search_placeholder ); }
 			txt( '.cine__cta-link', h.hero.cta_primary_label );
+
+			// Vidéo cinématique : on ne change QUE la source média, jamais la logique de défilement.
+			var video = document.querySelector( '#cine-video' );
+			if ( video ) {
+				var vsrc = safeMedia( h.hero.hero_video );
+				if ( vsrc ) {
+					var source = video.querySelector( 'source' );
+					if ( source ) { source.setAttribute( 'src', vsrc ); } else { video.setAttribute( 'src', vsrc ); }
+					try { video.load(); } catch ( err ) {}
+				}
+				var poster = safeMedia( h.hero.poster );
+				if ( poster ) { video.setAttribute( 'poster', poster ); }
+			}
 		}
 		mapSection( '#recent-title', h.jobs );
 		mapSection( '#companies-title', h.companies );
