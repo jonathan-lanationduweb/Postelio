@@ -59,7 +59,7 @@ final class SiteEditorPage {
 		$subtitle = self::SUBTITLES[ $this->page ] ?? '';
 		$front    = home_url( '/' );
 
-		echo '<div class="pst-ed-head"><div>'
+		echo '<div class="pst-ed-head"><div class="pst-ed-head__titles">'
 			. '<span class="pst-ed-head__eyebrow">Postelio · Site</span>'
 			. '<h1>' . esc_html( $label ) . '</h1>'
 			. '<p>' . esc_html( $subtitle ) . '</p>'

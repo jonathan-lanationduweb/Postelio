@@ -42,8 +42,8 @@ final class PagesHubPage extends Page {
 				. Ui::empty_state( 'Module Site indisponible', 'Activez le plugin Postelio Site.', '🧩' );
 		}
 
-		$out  = Ui::header( 'Pages & contenus', 'Configurez chaque page publique du site. Sélectionnez « Modifier » pour ouvrir l\'éditeur visuel.' );
-		$out .= '<div class="pst-admin-grid pst-admin-grid--2">';
+		$out  = Ui::header( 'Pages & contenus', 'Le centre de pilotage de votre site : configurez chaque page publique. « Modifier » ouvre l\'éditeur visuel.' );
+		$out .= '<div class="pst-hub-grid">';
 
 		$seo = (array) call_user_func( array( self::DIR, 'config' ), 'seo' );
 
@@ -90,15 +90,17 @@ final class PagesHubPage extends Page {
 			$view = '<a class="pst-btn pst-btn--sm" target="_blank" rel="noopener" href="' . esc_url( home_url( $path ) ) . '">Voir ↗</a>';
 		}
 
-		$h  = Ui::card_open( $icon . ' ' . $label );
-		$h .= '<p class="pst-admin-stat__sub" style="margin:0 0 10px">' . esc_html( self::DESCRIPTIONS[ $page ] ?? '' ) . '</p>';
-		$h .= '<p style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px">' . $state_badge . ' ' . $seo_badge . '</p>';
-		$h .= '<div class="pst-admin-actions">'
+		$h  = '<div class="pst-hub-card">';
+		$h .= '<div class="pst-hub-card__banner"><span class="pst-hub-card__icon">' . esc_html( $icon ) . '</span><span class="pst-hub-card__name">' . esc_html( $label ) . '</span></div>';
+		$h .= '<div class="pst-hub-card__body">';
+		$h .= '<p class="pst-hub-card__desc">' . esc_html( self::DESCRIPTIONS[ $page ] ?? '' ) . '</p>';
+		$h .= '<div class="pst-hub-card__badges">' . $state_badge . ' ' . $seo_badge . '</div>';
+		$h .= '<div class="pst-hub-card__actions">'
 			. '<a class="pst-btn pst-btn--sm pst-btn--primary" href="' . $edit_url . '">Modifier</a>'
 			. '<a class="pst-btn pst-btn--sm" href="' . $seo_url . '">SEO</a>'
 			. $view
 			. '</div>';
-		$h .= Ui::card_close();
+		$h .= '</div></div>';
 		return $h;
 	}
 }

@@ -239,3 +239,16 @@
 	.pst-admin-kv dt { margin-top: 8px; }
 	.pst-admin-stat__value { font-size: 28px; }
 }
+
+/* ==== Hub « Pages & contenus » (tuiles de page) ======================== */
+.pst-hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+.pst-hub-card { background: var(--pst-surface); border: 1px solid var(--pst-border); border-radius: var(--pst-radius); overflow: hidden; box-shadow: var(--pst-shadow-sm); transition: box-shadow .18s ease, transform .18s ease; display: flex; flex-direction: column; }
+.pst-hub-card:hover { box-shadow: var(--pst-shadow-hover); transform: translateY(-2px); }
+.pst-hub-card__banner { height: 92px; background: linear-gradient(135deg, var(--pst-primary), #2c527a); display: flex; align-items: center; gap: 12px; padding: 0 20px; position: relative; }
+.pst-hub-card__banner::after { content: ""; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,107,107,.22); }
+.pst-hub-card__icon { font-size: 30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.2)); z-index: 1; }
+.pst-hub-card__name { color: #fff; font-size: 17px; font-weight: 800; z-index: 1; letter-spacing: -.01em; }
+.pst-hub-card__body { padding: 16px 18px 18px; display: flex; flex-direction: column; flex: 1; }
+.pst-hub-card__desc { color: var(--pst-text-soft); font-size: 12.5px; line-height: 1.45; margin: 0 0 12px; flex: 1; }
+.pst-hub-card__badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.pst-hub-card__actions { display: flex; gap: 8px; flex-wrap: wrap; }

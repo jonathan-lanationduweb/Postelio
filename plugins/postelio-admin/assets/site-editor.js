@@ -293,7 +293,9 @@
 			ids.forEach( function ( id, i ) {
 				var item = resolveCache[ type ][ id ];
 				var missing = item && item.missing;
+				var thumbText = missing ? '!' : ( item && item.label ? item.label.trim().charAt( 0 ).toUpperCase() : '…' );
 				var row = el( 'div', { class: 'pst-ed-coll__item' + ( missing ? ' is-missing' : '' ) }, [
+					el( 'div', { class: 'pst-ed-coll__thumb', text: thumbText } ),
 					el( 'div', { class: 'pst-ed-coll__main' }, [
 						el( 'div', { class: 'pst-ed-coll__label', text: item ? ( missing ? 'Contenu indisponible' : ( item.label || id ) ) : 'Chargement…' } ),
 						el( 'div', { class: 'pst-ed-coll__sub', text: item && ! missing ? ( item.sub || '' ) : ( 'réf. ' + id ) } )
@@ -394,6 +396,55 @@
 	function btn( label, primary ) { return label ? el( 'a', { class: 'pst-pv__btn ' + ( primary ? 'pst-pv__btn--primary' : 'pst-pv__btn--ghost' ), text: label } ) : null; }
 	function on( skey ) { var s = state[ skey ]; return s && s._enabled !== false; }
 
+	// --- Données de PREVIEW (fixtures visuelles, jamais persistées) --------
+	var FIX = {
+		job: [ { t: 'Assistant(e) de direction', co: 'NotifCo', v: 'Paris', c: 'CDI' }, { t: 'Secrétaire médical(e)', co: 'Santé+', v: 'Lyon', c: 'CDD' }, { t: 'Office manager', co: 'TechEa', v: 'Télétravail', c: 'CDI' }, { t: 'Assistant(e) commercial(e)', co: 'VentePro', v: 'Nantes', c: 'Alternance' }, { t: 'Gestionnaire ADV', co: 'LogiFlux', v: 'Lille', c: 'CDI' }, { t: 'Chargé(e) d\'accueil', co: 'Groupe Belair', v: 'Bordeaux', c: 'Intérim' } ],
+		company: [ { t: 'NotifCo', s: 'Tech', ok: true }, { t: 'Santé+', s: 'Médical', ok: true }, { t: 'VentePro', s: 'Commerce', ok: false }, { t: 'LogiFlux', s: 'Logistique', ok: true }, { t: 'Groupe Belair', s: 'Immobilier', ok: true }, { t: 'TechEa', s: 'SaaS', ok: false }, { t: 'Cabinet Roux', s: 'Juridique', ok: true }, { t: 'EcoBat', s: 'BTP', ok: false } ],
+		skill: [ { t: 'Maîtriser Excel en 10 astuces', a: 'Camille D.', cat: 'Bureautique' }, { t: 'Gérer un agenda partagé', a: 'Yanis B.', cat: 'Organisation' }, { t: 'Rédiger un e-mail pro', a: 'Sofia L.', cat: 'Communication' }, { t: 'Classer ses documents', a: 'Inès M.', cat: 'Méthode' }, { t: 'Prendre des notes efficaces', a: 'Karim T.', cat: 'Méthode' }, { t: 'Accueil téléphonique', a: 'Léa P.', cat: 'Relation' } ],
+		article: [ { t: '5 conseils pour votre CV administratif', cat: 'Carrière', d: '12 mai' }, { t: 'Réussir son entretien à distance', cat: 'Entretien', d: '3 mai' }, { t: 'Les métiers du secrétariat en 2026', cat: 'Actualités', d: '28 avr' }, { t: 'Lettre de motivation : le guide', cat: 'Candidature', d: '20 avr' } ]
+	};
+	var CATS = [ 'Assistanat', 'Secrétariat', 'Comptabilité', 'Accueil', 'Ressources humaines', 'Juridique', 'Commercial', 'Médical' ];
+
+	function initials( s ) { s = ( s || '?' ).trim(); var p = s.split( /\s+/ ); return ( ( p[ 0 ] || '' )[ 0 ] || '' ) + ( p.length > 1 ? ( p[ p.length - 1 ][ 0 ] || '' ) : '' ) || s[ 0 ] || '?'; }
+	function chip( t, mod ) { return t ? el( 'span', { class: 'pst-pv__chip' + ( mod ? ' pst-pv__chip--' + mod : '' ), text: t } ) : null; }
+	function logoBox( name, cls ) { return el( 'div', { class: cls || 'pst-pv__logo', text: initials( name ).toUpperCase() } ); }
+
+	function collKind( skey ) { var s = CFG.schema.sections && CFG.schema.sections[ skey ]; return ( s && s.fields && s.fields.items && s.fields.items.ref_type ) || pageKind(); }
+	function pageKind() { return CFG.page === 'jobs' ? 'job' : CFG.page === 'companies' ? 'company' : CFG.page === 'advice' ? 'article' : 'skill'; }
+
+	// Données réelles (sélection manuelle résolue) sinon fixtures.
+	function cardData( v, kind, fallbackN ) {
+		if ( v && v.mode === 'manual' && Array.isArray( v.items ) && v.items.length ) {
+			var real = v.items.map( function ( id ) { return ( resolveCache[ kind ] || {} )[ id ]; } ).filter( function ( x ) { return x && ! x.missing; } );
+			if ( real.length ) { return real.map( function ( x ) { return { t: x.label, co: x.sub, s: x.sub, a: x.sub, v: '', c: '', cat: '', d: '', ok: x.state === 'verified' }; } ); }
+		}
+		var n = Math.max( 1, Math.min( 12, parseInt( ( v && v.count ) || fallbackN, 10 ) || fallbackN ) );
+		var base = FIX[ kind ] || FIX.job, out = [];
+		for ( var i = 0; i < n; i++ ) { out.push( base[ i % base.length ] ); }
+		return out;
+	}
+
+	function card( kind, d ) {
+		if ( kind === 'company' ) {
+			return el( 'div', { class: 'pst-pv__cocard' }, [ logoBox( d.t ), el( 'h3', { text: d.t } ), el( 'div', { class: 'pst-pv__byline', text: d.s || '' } ), d.ok ? chip( '✓ Vérifiée', 'ok' ) : chip( 'Entreprise' ) ] );
+		}
+		if ( kind === 'skill' || kind === 'article' ) {
+			return el( 'div', { class: 'pst-pv__mediacard' }, [
+				el( 'div', { class: 'pst-pv__thumb pst-pv__thumb--' + ( kind === 'article' ? 'art' : 'skill' ) } ),
+				el( 'div', { class: 'pst-pv__mediacard-body' }, [
+					el( 'div', { class: 'pst-pv__tag', text: d.cat || '' } ),
+					el( 'h3', { text: d.t } ),
+					el( 'div', { class: 'pst-pv__byline', text: kind === 'article' ? ( d.d || '' ) : ( d.a || '' ) } )
+				] )
+			] );
+		}
+		// job
+		return el( 'div', { class: 'pst-pv__jobcard' }, [
+			el( 'div', { class: 'pst-pv__jobcard-top' }, [ logoBox( d.co || d.t ), el( 'div', {}, [ el( 'h3', { text: d.t } ), el( 'div', { class: 'pst-pv__jobcard-co', text: d.co || '' } ) ] ) ] ),
+			el( 'div', { class: 'pst-pv__meta' }, [ chip( d.v ), chip( d.c, 'accent' ) ] )
+		] );
+	}
+
 	function buildSections( pv ) {
 		var schema = CFG.schema;
 		var order = ( state._order && state._order.length ) ? state._order : Object.keys( schema.sections );
@@ -421,7 +472,7 @@
 			case 'coordinates': return coordinatesBlock( v );
 			case 'form':        return formBlock( v );
 			case 'extra':       return introBlock( v );
-			default:            return collectionBlock( v ); // categories(home)/jobs/companies/skills/articles/featured
+			default:            return collectionBlock( skey, v );
 		}
 	}
 
@@ -454,56 +505,63 @@
 	}
 
 	function filtersBlock( v ) {
-		var chips = el( 'div', { class: 'pst-pv__cta-row' } );
-		( Array.isArray( v.filters ) ? v.filters : [] ).forEach( function ( f ) { if ( f.label && f.visible !== false ) { chips.appendChild( el( 'span', { class: 'pst-pv__btn pst-pv__btn--ghost', text: f.label + ' ▾' } ) ); } } );
+		var chips = el( 'div', { class: 'pst-pv__filters' } );
+		( Array.isArray( v.filters ) ? v.filters : [] ).forEach( function ( f ) { if ( f.label && f.visible !== false ) { chips.appendChild( el( 'span', { class: 'pst-pv__filter', text: f.label + '  ▾' } ) ); } } );
 		return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, chips ] );
 	}
 
 	function resultsBlock( v ) {
-		var n = Math.max( 1, Math.min( 12, parseInt( v.per_page, 10 ) || 6 ) );
+		var kind = pageKind();
+		var n = Math.max( 2, Math.min( 9, parseInt( v.per_page, 10 ) || 6 ) );
 		var grid = el( 'div', { class: 'pst-pv__grid' } );
-		for ( var i = 0; i < n; i++ ) { grid.appendChild( phCard() ); }
+		cardData( { count: n }, kind, n ).forEach( function ( d ) { grid.appendChild( card( kind, d ) ); } );
 		return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, v.text ? el( 'p', { class: 'pst-pv__section-sub', text: v.text } ) : null, grid ] );
 	}
 
-	function collectionBlock( v ) {
+	function collectionBlock( skey, v ) {
+		var kind = collKind( skey );
 		var manual = v.mode === 'manual' && Array.isArray( v.items );
-		var n = manual ? v.items.length : Math.max( 1, Math.min( 12, parseInt( v.count, 10 ) || 4 ) );
+		var data = cardData( v, kind, Math.max( 1, Math.min( 12, parseInt( v.count, 10 ) || 4 ) ) );
 		var body;
-		if ( n === 0 ) { body = el( 'p', { class: 'pst-pv__section-sub', text: v.empty_text || 'Aucun contenu.' } ); }
-		else { body = el( 'div', { class: 'pst-pv__grid' } ); for ( var i = 0; i < n; i++ ) { body.appendChild( phCard() ); } }
+		if ( manual && ( ! v.items || ! v.items.length ) ) { body = el( 'p', { class: 'pst-pv__section-sub', text: v.empty_text || 'Aucun contenu sélectionné.' } ); }
+		else { body = el( 'div', { class: 'pst-pv__grid' } ); data.forEach( function ( d ) { body.appendChild( card( kind, d ) ); } ); }
 		return el( 'section', { class: 'pst-pv__section' }, [
 			v.title ? el( 'h2', { text: v.title } ) : null,
 			v.subtitle ? el( 'p', { class: 'pst-pv__section-sub', text: v.subtitle } ) : null,
 			body,
-			v.cta_label ? el( 'div', { style: 'margin-top:16px' }, [ btn( v.cta_label, false ) ] ) : null
+			v.cta_label ? el( 'div', { style: 'margin-top:18px' }, [ btn( v.cta_label, false ) ] ) : null
 		] );
 	}
 
 	function categoriesBlock( v ) {
+		var chips = el( 'div', { class: 'pst-pv__cats' } );
+		var labels;
 		if ( Array.isArray( v.items ) && v.items.length && v.items[ 0 ] && v.items[ 0 ].label !== undefined ) {
-			var chips = el( 'div', { class: 'pst-pv__cta-row' } );
-			v.items.forEach( function ( it ) { if ( it.label ) { chips.appendChild( el( 'span', { class: 'pst-pv__btn pst-pv__btn--ghost', text: it.label } ) ); } } );
-			return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, chips ] );
+			labels = v.items.map( function ( it ) { return it.label; } );
+		} else {
+			var n = Array.isArray( v.items ) && v.items.length ? v.items.length : 6;
+			labels = CATS.slice( 0, Math.max( 3, Math.min( 8, n ) ) );
 		}
-		return collectionBlock( v );
+		labels.forEach( function ( l ) { if ( l ) { chips.appendChild( el( 'span', { class: 'pst-pv__cat', text: l } ) ); } } );
+		return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, chips ] );
 	}
 
 	function introBlock( v ) { return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, el( 'p', { text: v.text || '' } ) ] ); }
 
 	function coordinatesBlock( v ) {
-		var dl = el( 'div', { class: 'pst-pv__args' } );
-		[ [ '✉️', v.email ], [ '📞', v.phone ], [ '📍', v.address ] ].forEach( function ( p ) { if ( p[ 1 ] ) { dl.appendChild( el( 'div', { class: 'pst-pv__arg' }, [ el( 'div', { class: 'pst-pv__arg-ic', text: p[ 0 ] } ), el( 'p', { text: p[ 1 ] } ) ] ) ); } } );
-		return el( 'section', { class: 'pst-pv__section' }, [ dl ] );
+		var row = el( 'div', { class: 'pst-pv__coords' } );
+		[ [ '✉️', v.email ], [ '📞', v.phone ], [ '📍', v.address ] ].forEach( function ( p ) { if ( p[ 1 ] ) { row.appendChild( el( 'div', { class: 'pst-pv__coord' }, [ el( 'span', { text: p[ 0 ] } ), el( 'span', { text: p[ 1 ] } ) ] ) ); } } );
+		return el( 'section', { class: 'pst-pv__section' }, [ el( 'h2', { text: 'Nous contacter' } ), row.children.length ? row : el( 'p', { class: 'pst-pv__section-sub', text: 'Ajoutez vos coordonnées publiques.' } ) ] );
 	}
 
 	function formBlock( v ) {
-		var box = el( 'div', { class: 'pst-pv__card', style: 'max-width:480px' } );
-		[ v.name_label || 'Nom', v.email_label || 'E-mail' ].forEach( function ( lbl ) { box.appendChild( el( 'div', { style: 'margin-bottom:8px' }, [ el( 'div', { class: 'pst-pv__card-ph short' } ), el( 'input', { disabled: 'disabled', placeholder: lbl, style: 'width:100%;padding:8px;border:1px solid #ddd;border-radius:8px' } ) ] ) ); } );
-		box.appendChild( el( 'textarea', { disabled: 'disabled', placeholder: v.message_ph || 'Message', style: 'width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;min-height:70px' } ) );
-		if ( v.consent_text ) { box.appendChild( el( 'p', { class: 'pst-pv__section-sub', style: 'font-size:.8em;margin-top:8px', text: v.consent_text } ) ); }
-		box.appendChild( el( 'div', { style: 'margin-top:8px' }, [ btn( v.button_label || 'Envoyer', true ) ] ) );
-		return el( 'section', { class: 'pst-pv__section' }, [ el( 'h2', { text: 'Formulaire' } ), box ] );
+		var box = el( 'div', { class: 'pst-pv__form' } );
+		box.appendChild( el( 'input', { disabled: 'disabled', placeholder: v.name_label || 'Votre nom' } ) );
+		box.appendChild( el( 'input', { disabled: 'disabled', placeholder: v.email_label || 'Votre e-mail' } ) );
+		box.appendChild( el( 'textarea', { disabled: 'disabled', placeholder: v.message_ph || 'Votre message', style: 'min-height:82px' } ) );
+		if ( v.consent_text ) { box.appendChild( el( 'p', { class: 'pst-pv__section-sub', style: 'font-size:.78em;margin:0 0 10px', text: v.consent_text } ) ); }
+		box.appendChild( btn( v.button_label || 'Envoyer', true ) );
+		return el( 'section', { class: 'pst-pv__section' }, [ v.title ? el( 'h2', { text: v.title } ) : null, box ] );
 	}
 
 	function argsBlock( v ) {
@@ -536,7 +594,11 @@
 	function buildFooter( pv ) {
 		var v = state;
 		var cols = el( 'div', { class: 'pst-pv__footer-cols' } );
-		cols.appendChild( el( 'div', {}, [ el( 'div', { class: 'pst-pv__footer-brand', text: v.brand_text || 'Postelio' } ), el( 'p', { class: 'pst-pv__footer-desc', text: v.description || '' } ) ] ) );
+		var fbrand = el( 'div', { class: 'pst-pv__footer-brand' } );
+		var flogo = ( v.use_identity_logo !== false && appearance().logo_light ) ? appearance().logo_light : ( ( v.use_identity_logo !== false && appearance().logo ) ? appearance().logo : v.logo );
+		if ( flogo && /^https?:/.test( flogo ) ) { fbrand.appendChild( el( 'img', { src: flogo, alt: '' } ) ); }
+		fbrand.appendChild( el( 'span', { text: v.brand_text || 'Postelio' } ) );
+		cols.appendChild( el( 'div', {}, [ fbrand, el( 'p', { class: 'pst-pv__footer-desc', text: v.description || '' } ) ] ) );
 		( Array.isArray( v.columns ) ? v.columns : [] ).forEach( function ( c ) {
 			var col = el( 'div', {}, [ el( 'h4', { text: c.title || '' } ) ] );
 			( c.links || '' ).split( '\n' ).forEach( function ( line ) { var lbl = line.split( '|' )[ 0 ].trim(); if ( lbl ) { col.appendChild( el( 'a', { text: lbl } ) ); } } );
@@ -549,14 +611,41 @@
 
 	function buildAppearance( pv ) {
 		var a = state;
+		var board = el( 'div', { class: 'pst-pv__brand' } );
+
+		// Identité
+		board.appendChild( el( 'div', { class: 'pst-pv__brand-label', text: 'Identité' } ) );
+		var ident = el( 'div', { class: 'pst-pv__ident' } );
+		[ [ 'Logo', a.logo ], [ 'Logo clair', a.logo_light ], [ 'Favicon', a.favicon ], [ 'Image sociale', a.social_image ] ].forEach( function ( p ) {
+			var box = el( 'div', { class: 'pst-pv__ident-box' } );
+			if ( p[ 1 ] && /^https?:/.test( p[ 1 ] ) ) { box.style.backgroundImage = 'url(' + p[ 1 ] + ')'; box.textContent = ''; } else { box.textContent = '—'; }
+			ident.appendChild( el( 'div', { class: 'pst-pv__ident-item' }, [ box, el( 'div', { class: 'pst-pv__ident-cap', text: p[ 0 ] } ) ] ) );
+		} );
+		board.appendChild( ident );
+
+		// Palette
+		board.appendChild( el( 'div', { class: 'pst-pv__brand-label', text: 'Palette' } ) );
 		var swatches = el( 'div', { class: 'pst-pv__swatches' } );
-		[ [ 'Primaire', a.color_primary ], [ 'Accent', a.color_accent ], [ 'Fond', a.color_bg ], [ 'Texte', a.color_text ] ].forEach( function ( pair ) {
+		[ [ 'Bleu nuit', a.color_primary ], [ 'Corail', a.color_accent ], [ 'Fond', a.color_bg ], [ 'Texte', a.color_text ] ].forEach( function ( pair ) {
 			var c = el( 'div', { class: 'pst-pv__swatch-c' } ); c.style.background = pair[ 1 ] || '#ccc';
 			swatches.appendChild( el( 'div', { class: 'pst-pv__swatch' }, [ c, el( 'div', { class: 'pst-pv__swatch-l' }, [ el( 'b', { text: pair[ 0 ] } ), document.createTextNode( pair[ 1 ] || '' ) ] ) ] ) );
 		} );
-		pv.appendChild( swatches );
-		pv.appendChild( heroBlock( { title: 'Exemple de titre', subtitle: 'Un aperçu du style appliqué à votre site.', height: 'medium', overlay: true, cta_primary_label: 'Bouton principal', cta_secondary_label: 'Bouton secondaire', search_placeholder: 'Rechercher…' } ) );
-		pv.appendChild( el( 'section', { class: 'pst-pv__section' }, [ el( 'h2', { text: 'Titre de section' } ), el( 'p', { text: 'Texte courant dans la police et la taille choisies. Les boutons reflètent le style sélectionné.' } ), el( 'div', { class: 'pst-pv__cta-row' }, [ btn( 'Principal', true ), btn( 'Secondaire', false ) ] ) ] ) );
+		board.appendChild( swatches );
+
+		// Typographie
+		board.appendChild( el( 'div', { class: 'pst-pv__brand-label', text: 'Typographie' } ) );
+		board.appendChild( el( 'div', { class: 'pst-pv__type-specimen' }, [
+			el( 'h1', { text: 'Titre principal' } ),
+			el( 'h2', { text: 'Titre de section' } ),
+			el( 'p', { text: 'Texte courant : la plateforme emploi dédiée aux métiers du secrétariat et de l\'assistanat.' } )
+		] ) );
+
+		// Boutons
+		board.appendChild( el( 'div', { class: 'pst-pv__brand-label', text: 'Boutons' } ) );
+		board.appendChild( el( 'div', { class: 'pst-pv__cta-row' }, [ btn( 'Bouton principal', true ), btn( 'Bouton secondaire', false ) ] ) );
+
+		pv.appendChild( board );
+		pv.appendChild( heroBlock( { title: 'Aperçu appliqué', subtitle: 'Vos choix de marque en situation.', height: 'medium', overlay: true, cta_primary_label: 'Voir les offres', cta_secondary_label: 'Déposer mon profil', search_placeholder: 'Rechercher…' } ) );
 	}
 
 	function buildSEO( pv ) {
