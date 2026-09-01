@@ -24,9 +24,9 @@ final class NotificationsPage extends Page {
 
 	protected function body(): string {
 		if ( ! Contracts::module_active( 'notifications' ) || ! Contracts::has( '\\Postelio\\Notifications\\Api\\NotificationDirectory' ) ) {
-			return Ui::header( 'Notifications', 'Back-office Postelio' ) . Ui::empty_state( 'Module indisponible', 'Le module Notifications n\'est pas actif.', '🔔' );
+			return Ui::toolbar( 'Notifications', 'Suivi des envois d\'e-mails.' ) . Ui::empty_state( 'Module indisponible', 'Le module Notifications n\'est pas actif.', '🔔' );
 		}
-		$out = Ui::header( 'Notifications', 'Observabilité des envois (aucun contenu ni destinataire)' );
+		$out = Ui::toolbar( 'Notifications', 'Suivi des envois d\'e-mails (aucun contenu, aucun destinataire).' );
 
 		$s = \Postelio\Notifications\Api\NotificationDirectory::delivery_stats();
 
@@ -44,9 +44,9 @@ final class NotificationsPage extends Page {
 		$out .= '<dt>Dernier échec</dt><dd>' . esc_html( $s['last_failed_at'] ? mysql2date( 'd/m/Y H:i', (string) $s['last_failed_at'] ) : '—' ) . '</dd>';
 		$out .= '</dl>' . Ui::card_close();
 
-		$out .= Ui::card_open( 'Configuration' ) . '<dl class="pst-admin-kv">';
-		$out .= '<dt>Provider e-mail</dt><dd>' . esc_html( (string) apply_filters( 'postelio/notifications/provider_label', 'WpMailProvider (wp_mail)' ) ) . '</dd>';
-		$out .= '<dt>Worker</dt><dd>Scheduler Core (récurrent)</dd>';
+		$out .= Ui::card_open( 'Service e-mail' ) . '<dl class="pst-admin-kv">';
+		$out .= '<dt>Transport</dt><dd>' . esc_html( class_exists( '\\WPMailSMTP\\Core' ) ? 'Configuré par WP Mail SMTP' : 'Serveur (wp_mail)' ) . '</dd>';
+		$out .= '<dt>Traitement</dt><dd>' . Ui::badge( 'Automatique et récurrent', 'info' ) . '</dd>';
 		$out .= '</dl>';
 		if ( $s['failed'] > 0 ) {
 			$out .= Ui::alert( $s['failed'] . ' envoi(s) en échec définitif — vérifier la configuration e-mail / le provider.', 'warning' );

@@ -43,7 +43,7 @@ final class FilesPage extends Page {
 		$counts = call_user_func( array( self::DIR, 'counts' ) );
 		$bys    = is_array( $counts['by_status'] ?? null ) ? $counts['by_status'] : array();
 
-		$out  = Ui::header( 'CV & fichiers', 'Supervision technique du stockage (métadonnées uniquement)' );
+		$out  = Ui::toolbar( 'CV & fichiers', 'Supervision technique du stockage (métadonnées uniquement).' );
 
 		// KPI.
 		$out .= '<div class="pst-admin-grid">';

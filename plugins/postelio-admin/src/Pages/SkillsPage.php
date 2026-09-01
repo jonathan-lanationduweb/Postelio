@@ -46,7 +46,7 @@ final class SkillsPage extends Page {
 		}
 		$res = \Postelio\Skills\Api\SkillAdminDirectory::list( $filters, $paged, self::PER_PAGE );
 
-		$out  = Ui::header( 'Savoir-faire', 'Contenus éditoriaux publics (candidat / entreprise)' );
+		$out  = Ui::toolbar( 'Savoir-faire', 'Contenus éditoriaux publics (candidat / entreprise).' );
 		$tabs = array( array( 'label' => 'Tous', 'url' => $this->url( 'postelio-skills', array( 'tab' => 'all' ) ), 'count' => (int) ( $counts['total'] ?? 0 ), 'active' => 'all' === $tab ) );
 		foreach ( array( 'draft' => 'Brouillons', 'published' => 'Publiés', 'archived' => 'Archivés', 'hidden' => 'Masqués' ) as $st => $lbl ) {
 			$tabs[] = array( 'label' => $lbl, 'url' => $this->url( 'postelio-skills', array( 'tab' => $st ) ), 'count' => (int) ( $counts[ $st ] ?? 0 ), 'active' => $st === $tab );
@@ -62,7 +62,7 @@ final class SkillsPage extends Page {
 		foreach ( $res['items'] as $s ) {
 			$rows[] = $this->row( (array) $s );
 		}
-		$out .= Ui::table( array( 'Titre', 'Auteur', 'Type', 'Catégorie', 'Statut', 'Comm.', 'Actions' ), $rows, 'Aucun savoir-faire.' );
+		$out .= Ui::table( array( 'Contenu', 'Type', 'Catégorie', 'Statut', 'Comm.', 'Actions' ), $rows, 'Aucun savoir-faire.' );
 		$out .= Ui::pager( $this->url( 'postelio-skills', array( 'tab' => $tab ) ), $paged, self::PER_PAGE, (int) $res['total'] );
 		return $out;
 	}
@@ -72,12 +72,13 @@ final class SkillsPage extends Page {
 		$hidden = ! empty( $s['mod_hidden'] );
 		$status = $hidden ? 'hidden' : (string) $s['status'];
 		$var    = array( 'published' => 'success', 'draft' => 'neutral', 'archived' => 'neutral', 'hidden' => 'error' );
+		$lbl    = array( 'published' => 'Publié', 'draft' => 'Brouillon', 'archived' => 'Archivé', 'hidden' => 'Masqué' );
+		$author = (string) $s['author_name'];
 		return array(
-			Ui::text( (string) $s['title'], true ),
-			Ui::text( '' !== (string) $s['author_name'] ? (string) $s['author_name'] : '—', false, true ),
+			Ui::entity_cell( (string) $s['title'], '' !== $author ? $author : '—', array( 'square' => true, 'img' => (string) ( $s['image_url'] ?? '' ), 'seed' => (string) $s['title'] ) ),
 			Ui::badge( 'company' === $s['author_type'] ? 'Entreprise' : 'Personnel', 'company' === $s['author_type'] ? 'info' : 'neutral' ),
 			Ui::text( '' !== (string) $s['category'] ? (string) $s['category'] : '—', false, true ),
-			Ui::badge( ucfirst( $status ), $var[ $status ] ?? 'neutral', true ),
+			Ui::badge( $lbl[ $status ] ?? ucfirst( $status ), $var[ $status ] ?? 'neutral', true ),
 			Ui::text( (string) (int) $s['comments'], false, true ),
 			$this->actions( (string) $s['uuid'], $hidden ),
 		);

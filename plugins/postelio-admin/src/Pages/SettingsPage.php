@@ -42,7 +42,7 @@ final class SettingsPage extends Page {
 		if ( ! isset( self::TABS[ $tab ] ) ) {
 			$tab = 'general';
 		}
-		$out  = Ui::header( 'Réglages', 'États de configuration de la plateforme (lecture seule, sans secrets)' );
+		$out  = Ui::toolbar( 'Réglages', 'Configuration de la plateforme (lecture seule, sans secrets).' );
 
 		$tabs = array();
 		foreach ( self::TABS as $key => $label ) {

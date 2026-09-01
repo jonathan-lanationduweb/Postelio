@@ -41,7 +41,7 @@ final class ModerationPage extends Page {
 		}
 		$res = Contracts::rest( 'GET', '/postelio/v1/moderation/cases', $query );
 
-		$out = Ui::header( 'Modération', 'File de traitement des signalements et cases préventives' );
+		$out = Ui::toolbar( 'Modération', 'File de traitement des signalements et contenus à examiner.' );
 
 		if ( 403 === $res['status'] ) {
 			return $out . Ui::empty_state( 'Accès restreint', 'Votre profil ne permet pas d\'accéder à la file de modération.', '🔒' );

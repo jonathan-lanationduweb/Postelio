@@ -57,7 +57,7 @@ final class InterviewsPage extends Page {
 		}
 		$res = call_user_func( array( self::DIR, 'list' ), $filters, $paged, self::PER_PAGE );
 
-		$out  = Ui::header( 'Entretiens', 'Supervision des entretiens planifiés' );
+		$out  = Ui::toolbar( 'Entretiens', 'Suivi des entretiens proposés aux candidats.' );
 		$tabs = array( array( 'label' => 'Tous', 'url' => $this->url( 'postelio-interviews', array( 'tab' => 'all' ) ), 'count' => (int) ( $counts['total'] ?? 0 ), 'active' => 'all' === $tab ) );
 		foreach ( self::STATUSES as $st => $meta ) {
 			$tabs[] = array( 'label' => $meta[0], 'url' => $this->url( 'postelio-interviews', array( 'tab' => $st ) ), 'count' => (int) ( $counts[ $st ] ?? 0 ), 'active' => $st === $tab );
@@ -68,7 +68,7 @@ final class InterviewsPage extends Page {
 		foreach ( $res['items'] as $iv ) {
 			$rows[] = $this->row( (array) $iv );
 		}
-		$out .= Ui::table( array( 'Candidat', 'Entreprise', 'Offre', 'Créneau', 'Type', 'Statut', 'Actions' ), $rows, 'Aucun entretien.' );
+		$out .= Ui::table( array( 'Candidat', 'Entreprise', 'Créneau', 'Type', 'Statut', 'Actions' ), $rows, 'Aucun entretien.' );
 		$out .= Ui::pager( $this->url( 'postelio-interviews', array( 'tab' => $tab ) ), $paged, self::PER_PAGE, (int) $res['total'] );
 		return $out;
 	}
@@ -77,10 +77,10 @@ final class InterviewsPage extends Page {
 	private function row( array $iv ): array {
 		$st = (string) $iv['status'];
 		$m  = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
+		$co = (string) $iv['company'];
 		return array(
-			Ui::text( (string) $iv['candidate'], true ),
-			Ui::text( (string) $iv['company'], false, true ),
-			Ui::text( (string) $iv['job_title'], false, true ),
+			Ui::entity_cell( (string) $iv['candidate'], (string) $iv['job_title'] ),
+			Ui::entity_cell( '' !== $co ? $co : '—', '', array( 'square' => true, 'variant' => 'neutral' ) ),
 			Ui::text( $this->fmt( (string) $iv['scheduled_at'] ), false, true ),
 			Ui::badge( self::TYPES[ (string) $iv['type'] ] ?? (string) $iv['type'], 'neutral' ),
 			Ui::badge( $m[0], $m[1], true ),

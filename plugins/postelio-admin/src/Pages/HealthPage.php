@@ -35,7 +35,7 @@ final class HealthPage extends Page {
 		$global = $this->global_status( (string) $core['status'], (array) $snap['modules'] );
 		$refresh = '<a class="pst-btn pst-btn--sm" href="' . esc_url( $this->url( 'postelio-health', array( 'r' => (string) $this->paged() ) ) ) . '">Rafraîchir l\'état</a>';
 
-		$out  = Ui::header( 'Santé du système', 'État des modules Postelio (sans aucun secret)', $refresh );
+		$out  = Ui::toolbar( 'Santé du système', 'Diagnostic de la plateforme Postelio (sans aucun secret).', $refresh );
 
 		// Synthèse globale.
 		$out .= '<div class="pst-admin-grid">';
@@ -50,15 +50,23 @@ final class HealthPage extends Page {
 			$out .= Ui::alert( 'Fonctionnement dégradé sur au moins un composant.', 'warning' );
 		}
 
-		// Plateforme (Core).
-		$out .= Ui::card_open( 'Plateforme (Core)' ) . '<dl class="pst-admin-kv">';
+		// Plateforme.
+		$out .= Ui::card_open( 'Plateforme' ) . '<dl class="pst-admin-kv">';
 		$out .= '<dt>Statut</dt><dd>' . Ui::badge( Health::label( (string) $core['status'] ), Health::badge_variant( (string) $core['status'] ), true ) . '</dd>';
-		$out .= '<dt>Version</dt><dd>' . esc_html( (string) $core['version'] ) . '</dd>';
-		$out .= '<dt>Schéma</dt><dd>' . esc_html( (string) $core['schema'] ) . '</dd>';
+		$check_labels = array(
+			'database' => 'Base de données', 'audit_table' => 'Journal d\'audit', 'dependencies_met' => 'Dépendances',
+			'schema' => 'Schéma', 'scheduler' => 'Tâches planifiées',
+		);
 		foreach ( (array) $core['checks'] as $k => $v ) {
-			$out .= '<dt>' . esc_html( ucfirst( str_replace( '_', ' ', (string) $k ) ) ) . '</dt><dd>' . Ui::badge( $v ? 'OK' : 'KO', $v ? 'success' : 'error' ) . '</dd>';
+			$label = $check_labels[ (string) $k ] ?? ucfirst( str_replace( '_', ' ', (string) $k ) );
+			$out  .= '<dt>' . esc_html( $label ) . '</dt><dd>' . Ui::badge( $v ? 'OK' : 'KO', $v ? 'success' : 'error' ) . '</dd>';
 		}
-		$out .= '</dl>' . Ui::card_close();
+		$out .= '</dl>';
+		$out .= '<details class="pst-admin-details"><summary>Détails techniques</summary><dl class="pst-admin-kv">'
+			. '<dt>Version core</dt><dd>' . esc_html( (string) $core['version'] ) . '</dd>'
+			. '<dt>Schéma DB</dt><dd>' . esc_html( (string) $core['schema'] ) . '</dd>'
+			. '</dl></details>';
+		$out .= Ui::card_close();
 
 		// Répartition Données / Providers.
 		$data = array();
@@ -71,11 +79,11 @@ final class HealthPage extends Page {
 			}
 		}
 
-		$out .= Ui::card_open( 'Données' ) . Ui::table( array( 'Module', 'État', 'Détails' ), $this->rows( $data ), 'Aucun module de données.' ) . Ui::card_close();
-		$out .= Ui::card_open( 'Providers & intégrations' ) . Ui::table( array( 'Service', 'État', 'Détails' ), $this->rows( $prov ), 'Aucun provider.' ) . Ui::card_close();
+		$out .= Ui::card_open( 'Données' ) . Ui::table( array( 'Élément', 'État', 'Détails' ), $this->rows( $data ), 'Aucun module de données.' ) . Ui::card_close();
+		$out .= Ui::card_open( 'Intégrations' ) . Ui::table( array( 'Service', 'État', 'Détails' ), $this->rows( $prov ), 'Aucune intégration.' ) . Ui::card_close();
 
-		// Workers.
-		$out .= Ui::card_open( 'Workers & files d\'attente' ) . $this->workers() . Ui::card_close();
+		// Tâches automatiques.
+		$out .= Ui::card_open( 'Tâches automatiques' ) . $this->workers() . Ui::card_close();
 
 		// Sécurité (indicateurs synthétiques).
 		$out .= Ui::card_open( 'Sécurité' ) . '<dl class="pst-admin-kv">';
@@ -101,19 +109,19 @@ final class HealthPage extends Page {
 	}
 
 	private function workers(): string {
-		$cron = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ? 'WP-Cron désactivé (cron système attendu)' : 'WP-Cron actif';
-		$h    = '<dl class="pst-admin-kv"><dt>Planificateur</dt><dd>' . Ui::badge( $cron, 'info' ) . '</dd>';
+		$active = ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON );
+		$h      = '<dl class="pst-admin-kv"><dt>Tâches planifiées</dt><dd>' . Ui::badge( $active ? 'Actives' : 'Cron système attendu', $active ? 'success' : 'info', true ) . '</dd>';
 		if ( Contracts::has( '\\Postelio\\Notifications\\Api\\NotificationDirectory' ) && method_exists( '\\Postelio\\Notifications\\Api\\NotificationDirectory', 'delivery_stats' ) ) {
 			$st = (array) call_user_func( array( '\\Postelio\\Notifications\\Api\\NotificationDirectory', 'delivery_stats' ) );
 			$failed = (int) ( $st['failed'] ?? 0 );
-			$h .= '<dt>Notifications — en attente</dt><dd>' . esc_html( (string) (int) ( $st['pending'] ?? 0 ) ) . '</dd>';
-			$h .= '<dt>Notifications — envoyées</dt><dd>' . esc_html( (string) (int) ( $st['sent'] ?? 0 ) ) . '</dd>';
-			$h .= '<dt>Notifications — échecs</dt><dd>' . Ui::badge( (string) $failed, $failed > 0 ? 'warning' : 'success' ) . '</dd>';
+			$h .= '<dt>Envois e-mail en attente</dt><dd>' . esc_html( (string) (int) ( $st['pending'] ?? 0 ) ) . '</dd>';
+			$h .= '<dt>Envois e-mail réussis</dt><dd>' . esc_html( (string) (int) ( $st['sent'] ?? 0 ) ) . '</dd>';
+			$h .= '<dt>Envois e-mail en échec</dt><dd>' . Ui::badge( (string) $failed, $failed > 0 ? 'warning' : 'success' ) . '</dd>';
 			if ( ! empty( $st['next_retry_at'] ) ) {
-				$h .= '<dt>Prochaine relance</dt><dd>' . esc_html( mysql2date( 'd/m/Y H:i', (string) $st['next_retry_at'] ) ) . '</dd>';
+				$h .= '<dt>Prochaine tentative</dt><dd>' . esc_html( mysql2date( 'd/m/Y H:i', (string) $st['next_retry_at'] ) ) . '</dd>';
 			}
 		} else {
-			$h .= '<dt>Notifications</dt><dd>' . Ui::badge( 'Statistiques indisponibles', 'neutral' ) . '</dd>';
+			$h .= '<dt>Service e-mail</dt><dd>' . Ui::badge( 'Statistiques indisponibles', 'neutral' ) . '</dd>';
 		}
 		return $h . '</dl>';
 	}

@@ -24,7 +24,7 @@ final class BillingPage extends Page {
 
 	protected function body(): string {
 		if ( ! Contracts::module_active( 'billing' ) ) {
-			return Ui::header( 'Facturation', 'Back-office Postelio' ) . Ui::empty_state( 'Module indisponible', 'Le module Facturation n\'est pas actif.', '💳' );
+			return Ui::toolbar( 'Facturation', 'Commandes et paiements Postelio.' ) . Ui::empty_state( 'Module indisponible', 'Le module Facturation n\'est pas actif.', '💳' );
 		}
 		$view = $this->current( 'view' );
 		if ( '' !== $view ) {
@@ -33,13 +33,13 @@ final class BillingPage extends Page {
 		$tab   = $this->current( 'tab', 'all' );
 		$paged = $this->paged();
 
-		$out  = Ui::header( 'Facturation', 'Commandes, paiements et fulfillment (Stripe)' );
+		$out  = Ui::toolbar( 'Facturation', 'Commandes et paiements Postelio.' );
 
-		// KPI
+		// KPI (compacts, libellés métier)
 		$health = Contracts::rest( 'GET', '/postelio/v1/billing/health' );
 		$hd     = is_array( $health['data'] ) ? ( $health['data']['data'] ?? array() ) : array();
-		$grid   = '<div class="pst-admin-grid">';
-		foreach ( array( 'fulfilled' => 'Honorées', 'awaiting_payment' => 'En attente paiement', 'fulfillment_pending' => 'Fulfillment en cours', 'fulfillment_failed' => 'Fulfillment échoué', 'manual_review' => 'Revue manuelle', 'refunded' => 'Remboursées' ) as $st => $lbl ) {
+		$grid   = '<div class="pst-admin-grid pst-admin-grid--6">';
+		foreach ( array( 'fulfilled' => 'Payées', 'awaiting_payment' => 'En attente', 'fulfillment_pending' => 'Traitement en cours', 'fulfillment_failed' => 'En échec', 'manual_review' => 'À vérifier', 'refunded' => 'Remboursées' ) as $st => $lbl ) {
 			$n = Contracts::rest_total( '/postelio/v1/billing/admin/orders', array( 'status' => $st ) );
 			$grid .= Ui::stat( $lbl, null === $n ? '—' : (string) $n, '', 'fulfillment_failed' === $st, null === $n );
 		}
@@ -47,12 +47,12 @@ final class BillingPage extends Page {
 		$out  .= $grid;
 
 		if ( ! empty( $hd ) && empty( $hd['invoice_legal_ready'] ) ) {
-			$out .= Ui::alert( 'Facture légale NON disponible — identité vendeur (SellerConfig) incomplète.', 'warning' );
+			$out .= Ui::alert( 'Configuration incomplète — les informations légales du vendeur doivent être renseignées avant l\'émission de factures. Voir Réglages → Facturation.', 'warning' );
 		}
 
 		// Tabs par statut
 		$tabs = array( array( 'label' => 'Toutes', 'url' => $this->url( 'postelio-billing', array( 'tab' => 'all' ) ), 'active' => 'all' === $tab ) );
-		foreach ( array( 'fulfilled' => 'Honorées', 'awaiting_payment' => 'En attente', 'fulfillment_failed' => 'Échec', 'manual_review' => 'Revue', 'refunded' => 'Remboursées' ) as $st => $lbl ) {
+		foreach ( array( 'fulfilled' => 'Payées', 'awaiting_payment' => 'En attente', 'fulfillment_failed' => 'En échec', 'manual_review' => 'À vérifier', 'refunded' => 'Remboursées' ) as $st => $lbl ) {
 			$tabs[] = array( 'label' => $lbl, 'url' => $this->url( 'postelio-billing', array( 'tab' => $st ) ), 'active' => $st === $tab );
 		}
 		$out .= Ui::tabs( $tabs );

@@ -24,9 +24,9 @@ final class SourcesPage extends Page {
 
 	protected function body(): string {
 		if ( ! Contracts::module_active( 'job-sources' ) && ! Contracts::module_active( 'job_sources' ) ) {
-			return Ui::header( 'Sources d\'offres', 'Back-office Postelio' ) . Ui::empty_state( 'Module indisponible', 'Le module Sources d\'offres n\'est pas actif.', '🔌' );
+			return Ui::toolbar( 'Sources d\'offres', 'Import automatique d\'offres partenaires.' ) . Ui::empty_state( 'Module indisponible', 'Le module Sources d\'offres n\'est pas actif.', '🔌' );
 		}
-		$out = Ui::header( 'Sources d\'offres', 'Connecteurs d\'agrégation d\'offres externes' );
+		$out = Ui::toolbar( 'Sources d\'offres', 'Import automatique d\'offres partenaires sur Postelio.' );
 
 		$res = Contracts::rest( 'GET', '/postelio/v1/job-sources/health' );
 		if ( 200 !== $res['status'] || ! is_array( $res['data'] ) ) {
@@ -39,25 +39,27 @@ final class SourcesPage extends Page {
 
 		$out .= '<div class="pst-admin-grid pst-admin-grid--2">';
 		foreach ( $providers as $p ) {
-			$p     = (array) $p;
-			$avail = ! empty( $p['available'] );
-			$out  .= Ui::card_open( (string) ( $p['label'] ?? $p['key'] ?? 'Provider' ), $avail ? '' : '(non configuré)' );
-			$out  .= '<p>' . Ui::badge( $avail ? 'Configuré' : 'Non configuré', $avail ? 'success' : 'info', true ) . '</p>';
+			$p      = (array) $p;
+			$avail  = ! empty( $p['available'] );
+			$errored = ! $avail ? false : ( ! empty( $p['last_run_status'] ) && 'success' !== $p['last_run_status'] );
+			$state   = $errored ? array( 'Erreur', 'error' ) : ( $avail ? array( 'Connecté', 'success' ) : array( 'Non connecté', 'neutral' ) );
+
+			$out  .= Ui::card_open( (string) ( $p['label'] ?? $p['key'] ?? 'Connecteur' ) );
+			$out  .= '<p>' . Ui::badge( $state[0], $state[1], true ) . '</p>';
 			$out  .= '<dl class="pst-admin-kv">';
-			$out  .= '<dt>Offres actives</dt><dd>' . esc_html( (string) ( $p['active_offers'] ?? 0 ) ) . '</dd>';
-			$out  .= '<dt>Dernier run</dt><dd>' . esc_html( $this->fmt( $p['last_run_at'] ?? null ) ) . ' ' . ( ! empty( $p['last_run_status'] ) ? Ui::badge( (string) $p['last_run_status'], 'success' === $p['last_run_status'] ? 'success' : 'warning' ) : '' ) . '</dd>';
+			$out  .= '<dt>Offres importées</dt><dd>' . esc_html( (string) ( $p['active_offers'] ?? 0 ) ) . '</dd>';
+			$out  .= '<dt>Dernière synchronisation</dt><dd>' . esc_html( $this->fmt( $p['last_run_at'] ?? null ) ) . '</dd>';
 			$out  .= '<dt>Dernière réussite</dt><dd>' . esc_html( $this->fmt( $p['last_success_at'] ?? null ) ) . '</dd>';
-			if ( ! empty( $p['last_error'] ) ) {
-				$out .= '<dt>Dernière erreur</dt><dd>' . esc_html( mb_substr( (string) $p['last_error'], 0, 160 ) ) . '</dd>';
-			}
 			$out  .= '</dl>';
 			if ( ! $avail ) {
-				$out .= '<p class="pst-admin-stat__sub">Secrets requis en environnement (POSTELIO_FT_CLIENT_ID / _SECRET). Jamais saisis ici.</p>';
+				$out .= '<p class="pst-help">Connectez France&nbsp;Travail pour importer automatiquement des offres partenaires. La connexion (clés d\'API) se configure côté serveur — jamais saisie ici.</p>';
+			} elseif ( $errored ) {
+				$out .= Ui::alert( 'La dernière synchronisation a échoué. Vérifiez la configuration du connecteur.', 'warning' );
 			}
 			$out  .= Ui::card_close();
 		}
 		$out .= '</div>';
-		$out .= Ui::alert( 'La synchronisation s\'exécute via le planificateur du domaine (worker récurrent). Le déclenchement manuel n\'est pas exposé par un contrat — aucun second moteur de sync n\'est ajouté ici.', 'info' );
+		$out .= Ui::alert( 'La synchronisation des offres partenaires est automatique et récurrente.', 'info' );
 		return $out;
 	}
 

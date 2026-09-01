@@ -205,10 +205,10 @@
 .pst-health-row__meta { color: var(--pst-text-soft); font-size: 12.5px; }
 
 /* ---------- EMPTY ---------- */
-.pst-admin-empty { text-align: center; padding: 56px 24px; color: var(--pst-text-soft); background: var(--pst-surface); border: 1px dashed var(--pst-border); border-radius: var(--pst-radius); }
-.pst-admin-empty__icon { font-size: 38px; margin-bottom: 12px; opacity: .55; }
-.pst-admin-empty h3 { margin: 0 0 4px; color: var(--pst-primary); font-size: 17px; }
-.pst-admin-empty p { margin: 0; max-width: 460px; margin-inline: auto; }
+.pst-admin-empty { text-align: center; padding: 30px 24px; color: var(--pst-text-soft); background: var(--pst-surface); border: 1px dashed var(--pst-border); border-radius: 12px; }
+.pst-admin-empty__icon { font-size: 28px; margin-bottom: 8px; opacity: .5; }
+.pst-admin-empty h3 { margin: 0 0 3px; color: var(--pst-primary); font-size: 15px; }
+.pst-admin-empty p { margin: 0; max-width: 460px; margin-inline: auto; font-size: 13px; }
 
 /* ---------- ALERTS ---------- */
 .pst-admin-alert { display: flex; gap: 10px; padding: 14px 17px; border-radius: 12px; font-size: 13.5px; margin-bottom: 20px; border: 1px solid; font-weight: 600; }
@@ -330,3 +330,11 @@
 .pst-todo__ok { padding: 12px 16px; border-radius: 12px; }
 .pst-todo__ok b { font-size: 17px; }
 .pst-health-line { padding: 11px 16px; }
+
+/* ==== Détails techniques repliables (Santé, etc.) ==================== */
+.pst-admin-details { margin-top: 10px; }
+.pst-admin-details summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--pst-text-soft); list-style: none; padding: 4px 0; }
+.pst-admin-details summary::-webkit-details-marker { display: none; }
+.pst-admin-details summary::before { content: "▸ "; color: var(--pst-accent); }
+.pst-admin-details[open] summary::before { content: "▾ "; }
+.pst-admin-details .pst-admin-kv { margin-top: 8px; }
