@@ -33,13 +33,22 @@ final class AlertScheduler {
 		add_action( 'init', array( $this, 'ensure' ), 20 );
 	}
 
-	/** Arme l'ancre quotidienne si absente (idempotent). */
+	/** Arme l'ancre quotidienne si absente (idempotent) — appelée à chaque boot (init). */
 	public function ensure(): void {
+		self::arm( $this->scheduler );
+	}
+
+	/**
+	 * Programme l'ancre quotidienne (prochain 07h30 Europe/Paris) si elle n'est pas déjà planifiée.
+	 * Idempotent. Appelée au boot (ensure) ET à l'activation (réarmement déterministe après une
+	 * désactivation/réactivation, sans attendre le prochain `init`).
+	 */
+	public static function arm( Scheduler $scheduler ): void {
 		$hook = Scheduler::HOOK_PREFIX . AlertDispatcher::HOOK_DISPATCH;
 		if ( function_exists( 'wp_next_scheduled' ) && ! wp_next_scheduled( $hook ) ) {
 			$ts = strtotime( ParisSchedule::next_daily( time() ) . ' UTC' );
 			if ( $ts ) {
-				$this->scheduler->schedule( AlertDispatcher::HOOK_DISPATCH, (int) $ts );
+				$scheduler->schedule( AlertDispatcher::HOOK_DISPATCH, (int) $ts );
 			}
 		}
 	}

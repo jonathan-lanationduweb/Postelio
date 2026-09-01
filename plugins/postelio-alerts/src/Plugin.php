@@ -128,6 +128,8 @@ final class Plugin {
 		$m = Core::instance()->migrator();
 		$m->register( self::MODULE, self::SCHEMA_OPTION, self::migrations() );
 		$m->migrate( self::MODULE );
+		// Réarme l'ancre quotidienne immédiatement (déterministe après réactivation).
+		AlertScheduler::arm( Core::instance()->scheduler() );
 	}
 
 	public static function deactivate(): void {

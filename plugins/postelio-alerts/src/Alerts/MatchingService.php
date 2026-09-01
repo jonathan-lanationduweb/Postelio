@@ -135,6 +135,18 @@ final class MatchingService {
 		$max      = $this->max_pages();
 		$out      = array();
 		$page     = 1;
+
+		// Le moteur composite (Lot 10) borne la fusion natif+externe à `merge_cap` (défaut 100)
+		// pour la NAVIGATION publique. Une alerte doit être EXHAUSTIVE dans sa fenêtre : on relève
+		// ce plafond à la borne de sécurité de l'alerte (per_page × max_pages) le temps de la
+		// collecte, puis on le restaure. Au-delà de cette borne, la limite de sécurité ci-dessous
+		// logue/émet une anomalie — jamais de perte silencieuse (§10).
+		$safety = $per * $max;
+		$raise  = static function ( $cap ) use ( $safety ) {
+			return max( (int) $cap, $safety );
+		};
+		add_filter( 'postelio/job_sources/merge_cap', $raise, 999 );
+		try {
 		do {
 			$res   = JobSearchDirectory::search( $filters, $page, $per );
 			$items = (array) $res['items'];
@@ -163,6 +175,9 @@ final class MatchingService {
 				break;
 			}
 		} while ( ! $exhausted );
+		} finally {
+			remove_filter( 'postelio/job_sources/merge_cap', $raise, 999 );
+		}
 
 		// Filtre les références vides (robustesse) et déduplique dans le cycle.
 		$seen  = array();
