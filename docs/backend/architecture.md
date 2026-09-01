@@ -325,3 +325,12 @@ Voir [admin-backoffice.md](admin-backoffice.md).
 - Intégrations réelles : Stripe, e-mail transactionnel, Sirene/RNE, modération, anti-bot.
 - Toute modification du front (HTML/CSS/JS).
 - Le Lot 01 (Core) — **ne pas démarrer** avant validation de cette architecture.
+
+## Lot 14 — `postelio-alerts`
+
+Module candidat (favoris, recherches sauvegardées, alertes). S'appuie exclusivement sur les
+contrats existants : `Jobs\Api\JobSearchDirectory` (moteur de matching **unique**, natif +
+externe), `JobDirectory` (cartes d'offre), Scheduler du core (planification), Notifications
+(digest via événement + filtres de catégorie/template, **découplé**), Users (RGPD via `user.deleted`
+et filtre d'export). Aucun SQL direct sur les offres, aucun e-mail direct. Détail :
+[favorites-alerts.md](favorites-alerts.md).

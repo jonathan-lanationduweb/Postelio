@@ -218,3 +218,17 @@ Minimums : `core` (perms, events, migrations), `applications` & `interviews`
 
 ## Arrêt
 Fin du Lot 00. **Ne pas démarrer le Lot 01** avant validation de cette architecture.
+
+## Lot 14 — Favoris & Alertes ✅
+
+`postelio-alerts` : favoris, recherches sauvegardées, alertes (daily/weekly, 07h30 Europe/Paris).
+Matching unique via `Jobs\Api\JobSearchDirectory` (+ `published_after` interne, natif + externe) ;
+anti-doublon par table `alert_deliveries` (UNIQUE) ; digest via `job_alert.matches_found`
+(Notifications découplé) ; RGPD (purge + export) ; admin agrégé privacy-first. Extensions minimales
+et rétro-compatibles de `postelio-jobs` (FilterValidator/JobSearchDirectory/`published_after`,
+`JobDirectory::public_card`), `postelio-job-sources` (`published_after` externe),
+`postelio-notifications` (catalogue de catégories + templates **filtrables**), `postelio-users`
+(filtre d'export). Détail : [favorites-alerts.md](favorites-alerts.md).
+
+### Dépendances
+`alerts → core, users, jobs` (job-sources & notifications optionnels). Graphe toujours acyclique.

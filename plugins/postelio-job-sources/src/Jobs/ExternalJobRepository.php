@@ -240,6 +240,12 @@ final class ExternalJobRepository {
 			$args[]  = $like;
 			$args[]  = $like;
 		}
+		// Filtre INTERNE (alertes) : offres dont la date de publication à la source est
+		// postérieure/égale au curseur. Cohérent avec le natif (même clé `published_after`).
+		if ( ! empty( $filters['published_after'] ) ) {
+			$where .= ' AND source_published_at >= %s';
+			$args[] = (string) $filters['published_after'];
+		}
 		$count_sql = 'SELECT COUNT(*) FROM ' . self::table() . " WHERE {$where}";
 		$total     = $args
 			? (int) $wpdb->get_var( $wpdb->prepare( $count_sql, $args ) )

@@ -89,29 +89,16 @@ final class JobController extends Controller {
 	 * @return array<string, mixed>
 	 */
 	private function sanitize_filters( \WP_REST_Request $r ): array {
-		$out = array();
-		foreach ( array( 'q', 'ville', 'contrat', 'categorie', 'teletravail', 'niveau_etude', 'experience' ) as $k ) {
+		// Whitelist stricte déléguée à la source de vérité unique (partagée avec les alertes).
+		// Mode permissif : une clé inconnue est simplement ignorée (jamais d'erreur serveur).
+		$raw = array();
+		foreach ( \Postelio\Jobs\Search\FilterValidator::public_keys() as $k ) {
 			$v = $r->get_param( $k );
 			if ( null !== $v && '' !== $v ) {
-				$out[ $k ] = sanitize_text_field( (string) $v );
+				$raw[ $k ] = $v;
 			}
 		}
-		$sal = $r->get_param( 'salaire_min' );
-		if ( null !== $sal && '' !== $sal && is_numeric( $sal ) ) {
-			$out['salaire_min'] = max( 0, (int) $sal );
-		}
-		foreach ( array( 'alternance', 'stage', 'debutant' ) as $flag ) {
-			$v = $r->get_param( $flag );
-			if ( in_array( $v, array( '1', 1, true, 'true' ), true ) ) {
-				$out[ $flag ] = true;
-			}
-		}
-		// Filtre de provenance (Lot 10). Défaut = toutes les sources autorisées.
-		$source = (string) ( $r->get_param( 'source' ) ?? '' );
-		if ( in_array( $source, array( 'all', 'postelio', 'partners' ), true ) ) {
-			$out['source'] = $source;
-		}
-		return $out;
+		return \Postelio\Jobs\Search\FilterValidator::validate( $raw, false );
 	}
 
 	public function get_public( \WP_REST_Request $r ): \WP_REST_Response {

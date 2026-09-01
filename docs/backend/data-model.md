@@ -474,3 +474,23 @@ Company 1─n BillingOrder ; BillingOrder 1─n BillingPayment ; BillingOrder(jo
 BillingEvent (webhook Stripe) n─1 BillingOrder
 ```
 Détail des relations métier : [workflows.md](workflows.md) §7.
+
+## Lot 14 — Favoris & Alertes (`postelio-alerts`)
+
+- **JobFavorite** (`postelio_job_favorites`) : `id, public_uuid, candidate_user_id, job_source
+  (native|external), job_reference (public_uuid d'offre), created_at`.
+  `UNIQUE(candidate_user_id, job_source, job_reference)` — 1 favori par offre, idempotent. Aucun
+  snapshot (carte résolue via `JobDirectory::public_card`).
+- **SavedSearch** (`postelio_saved_searches`) : `id, public_uuid, candidate_user_id, name,
+  filters (JSON, whitelist Jobs), filters_hash, alert_frequency (disabled|daily|weekly), timezone,
+  cursor_ts, last_run_at, next_run_at, created_at, updated_at`.
+  `UNIQUE(candidate_user_id, filters_hash)` (dédup §14) ; `KEY(alert_frequency, next_run_at)`.
+  Modèle de vérité **unique** : `alert_frequency` (pas de flag `enabled` redondant).
+- **AlertDelivery** (`postelio_alert_deliveries`) : `id, saved_search_id, job_source, job_reference,
+  status (reserved|sent|skipped), reserved_at, sent_at, created_at`.
+  `UNIQUE(saved_search_id, job_source, job_reference)` — **garantie anti-doublon** (réservation
+  atomique avant notification). Rétention ≈13 mois.
+
+Relations : `User(candidate) 1─n JobFavorite` ; `User(candidate) 1─n SavedSearch 1─n AlertDelivery`.
+Identité d'offre canonique = `(job_source, job_reference)` — natif et externe = espaces de noms
+distincts. Détail : [favorites-alerts.md](favorites-alerts.md).

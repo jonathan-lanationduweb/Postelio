@@ -87,6 +87,9 @@ final class NotificationRouter {
 		$events->on( 'job.expiring', array( $this, 'on_job_expiring' ) );
 		$events->on( 'job.expired', array( $this, 'on_job_expired' ) );
 		$events->on( 'job.suspended', array( $this, 'on_job_suspended' ) );
+		// Alertes emploi (Lot 14) : digest emis par postelio-alerts. Reference SOUPLE (nom
+		// d'evenement) : inoffensive si le module alerts est absent. Aucune dependance en dur.
+		$events->on( 'job_alert.matches_found', array( $this, 'on_job_alert_matches' ) );
 		$events->on( 'job.renewed', array( $this, 'on_job_renewed' ) ); // Lot 12 : après renouvellement payé
 
 		// Worker file e-mail + rappels d'entretien (Scheduler unique du core).
@@ -503,6 +506,69 @@ final class NotificationRouter {
 	 *
 	 * @param array<string,mixed> $spec
 	 */
+	/**
+	 * Digest d'alerte emploi (Lot 14) : UNE notification in-app + AU PLUS un e-mail par cycle
+	 * (jamais un e-mail par offre). L'e-mail n'est proposé que si l'adresse est vérifiée (§17) et
+	 * reste soumis aux préférences de canal de la catégorie `job_alert`. Payload = contrat de
+	 * l'événement `job_alert.matches_found` (aucune lecture des tables d'alertes).
+	 *
+	 * @param array<string,mixed> $p
+	 */
+	public function on_job_alert_matches( $p ): void {
+		$candidate = (int) ( $p['candidate_user_id'] ?? 0 );
+		$uuid      = (string) ( $p['saved_search_uuid'] ?? '' );
+		$count     = (int) ( $p['match_count'] ?? 0 );
+		$sample    = isset( $p['sample'] ) && is_array( $p['sample'] ) ? $p['sample'] : array();
+		if ( $candidate <= 0 || $count <= 0 ) {
+			return;
+		}
+		$name  = sanitize_text_field( (string) ( $p['saved_search_name'] ?? '' ) );
+		$label = '' !== $name ? $name : 'votre alerte';
+		$plural = $count > 1 ? 's' : '';
+		$title = $count . ' nouvelle' . $plural . ' offre' . $plural . ' — ' . $label;
+
+		// L'e-mail suppose une adresse vérifiée ; le canal reste soumis aux préférences.
+		$email_ok = UserDirectory::email_verified( $candidate );
+
+		$this->notify( $candidate, array(
+			'category' => 'job_alert', 'type' => 'job_alert_digest', 'event_name' => 'job_alert.matches_found', 'priority' => 'normal',
+			'title' => $title, 'body' => 'De nouvelles offres correspondent à votre alerte « ' . $label . ' ».',
+			'resource_type' => 'saved_search', 'resource_uuid' => $uuid, 'action_type' => 'open_saved_search',
+			'group_key' => 'saved_search:' . $uuid,
+			'dedup_variant' => 'cycle_' . gmdate( 'YmdHis' ),
+			'email' => $email_ok,
+			'email_template' => 'job_alert_digest',
+			'email_vars' => array(
+				'saved_search_name' => $label,
+				'match_count'       => (string) $count,
+				'offers_block'      => $this->alert_offers_block( $sample ),
+			),
+			'email_dedup' => 'e:job_alert:' . $uuid . ':' . gmdate( 'Ymd' ),
+		) );
+	}
+
+	/** Construit le bloc texte des offres du digest (échantillon), neutralisé contre le HTML. */
+	private function alert_offers_block( array $sample ): string {
+		$lines = array();
+		foreach ( $sample as $o ) {
+			if ( ! is_array( $o ) ) {
+				continue;
+			}
+			$titre   = sanitize_text_field( (string) ( $o['titre'] ?? '' ) );
+			$company = sanitize_text_field( (string) ( $o['company'] ?? '' ) );
+			$ville   = sanitize_text_field( (string) ( $o['ville'] ?? '' ) );
+			$line    = '• ' . ( '' !== $titre ? $titre : 'Offre' );
+			if ( '' !== $company ) {
+				$line .= ' — ' . $company;
+			}
+			if ( '' !== $ville ) {
+				$line .= ' (' . $ville . ')';
+			}
+			$lines[] = $line;
+		}
+		return implode( "\n", $lines );
+	}
+
 	private function notify( int $user_id, array $spec ): void {
 		if ( $user_id <= 0 || ! UserDirectory::exists( $user_id ) || ! UserDirectory::is_active( $user_id ) ) {
 			return; // §59

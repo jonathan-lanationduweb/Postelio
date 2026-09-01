@@ -25,7 +25,7 @@ final class TemplateRegistry {
 	 * @return array<string, array{subject:string, preheader:string, body:string, cta:string}>
 	 */
 	public static function templates(): array {
-		return array(
+		$templates = array(
 			'application_received' => array(
 				'subject'   => 'Votre candidature à « {job_title} » est bien reçue',
 				'preheader' => 'Confirmation de candidature',
@@ -135,6 +135,43 @@ final class TemplateRegistry {
 				'cta'       => 'Voir mon entreprise',
 			),
 		);
+		// Extensible : les modules métier (ex. postelio-alerts) enregistrent leurs templates via
+		// ce filtre — pas de dépendance en dur. Les entrées mal formées sont ignorées ; les
+		// templates de base ne peuvent pas être écrasés par un tiers.
+		if ( function_exists( 'apply_filters' ) ) {
+			$extended = apply_filters( 'postelio/notifications/email_templates', $templates );
+			if ( is_array( $extended ) ) {
+				$templates = self::sanitize_templates( $extended, $templates );
+			}
+		}
+		return $templates;
+	}
+
+	/**
+	 * @param array<string, mixed> $extended
+	 * @param array<string, array<string, string>> $base
+	 * @return array<string, array{subject:string, preheader:string, body:string, cta:string}>
+	 */
+	private static function sanitize_templates( array $extended, array $base ): array {
+		$out = array();
+		foreach ( $extended as $key => $tpl ) {
+			if ( ! is_string( $key ) || '' === $key || ! is_array( $tpl ) ) {
+				continue;
+			}
+			if ( ! isset( $tpl['subject'], $tpl['body'] ) ) {
+				continue;
+			}
+			$out[ $key ] = array(
+				'subject'   => (string) $tpl['subject'],
+				'preheader' => (string) ( $tpl['preheader'] ?? '' ),
+				'body'      => (string) $tpl['body'],
+				'cta'       => (string) ( $tpl['cta'] ?? '' ),
+			);
+		}
+		foreach ( $base as $key => $tpl ) {
+			$out[ $key ] = $tpl; // les templates de base priment toujours
+		}
+		return $out;
 	}
 
 	public static function exists( string $template ): bool {

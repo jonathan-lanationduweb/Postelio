@@ -28,7 +28,7 @@ final class PreferenceService {
 	 * @return array<string, array{roles:string[], marketing:bool, in_app:bool, email:bool, label:string}>
 	 */
 	public static function catalog(): array {
-		return array(
+		$catalog = array(
 			'messages'           => array( 'roles' => array( 'candidate', 'recruiter' ), 'marketing' => false, 'in_app' => true, 'email' => true, 'label' => 'Nouveaux messages' ),
 			'application_status' => array( 'roles' => array( 'candidate' ), 'marketing' => false, 'in_app' => true, 'email' => true, 'label' => 'Suivi de mes candidatures' ),
 			'interviews'         => array( 'roles' => array( 'candidate', 'recruiter' ), 'marketing' => false, 'in_app' => true, 'email' => true, 'label' => 'Entretiens' ),
@@ -39,6 +39,52 @@ final class PreferenceService {
 			'news'               => array( 'roles' => array( 'candidate' ), 'marketing' => true, 'in_app' => true, 'email' => false, 'label' => 'Conseils Postelio' ),
 			'newsletter'         => array( 'roles' => array( 'recruiter' ), 'marketing' => true, 'in_app' => false, 'email' => false, 'label' => 'Lettre d\'information recruteurs' ),
 		);
+		// Extensible : les modules métier (ex. postelio-alerts) ajoutent leurs catégories via ce
+		// filtre — Notifications n'a AUCUNE dépendance en dur envers eux. Le serveur reste
+		// autoritaire : seules les entrées bien formées (roles/in_app/email/label) sont conservées.
+		if ( function_exists( 'apply_filters' ) ) {
+			$extended = apply_filters( 'postelio/notifications/categories', $catalog );
+			if ( is_array( $extended ) ) {
+				$catalog = self::sanitize_catalog( $extended, $catalog );
+			}
+		}
+		return $catalog;
+	}
+
+	/**
+	 * Neutralise un catalogue étendu : garde les entrées bien formées, force les types, empêche
+	 * un module tiers de casser la structure attendue par le reste du système.
+	 *
+	 * @param array<string, mixed> $extended
+	 * @param array<string, array<string, mixed>> $base
+	 * @return array<string, array{roles:string[], marketing:bool, in_app:bool, email:bool, label:string}>
+	 */
+	private static function sanitize_catalog( array $extended, array $base ): array {
+		$out = array();
+		foreach ( $extended as $key => $c ) {
+			if ( ! is_string( $key ) || '' === $key || ! is_array( $c ) ) {
+				continue;
+			}
+			if ( ! isset( $c['roles'] ) || ! is_array( $c['roles'] ) || ! isset( $c['label'] ) ) {
+				continue;
+			}
+			$roles = array_values( array_intersect( array_map( 'strval', $c['roles'] ), array( 'candidate', 'recruiter' ) ) );
+			if ( empty( $roles ) ) {
+				continue;
+			}
+			$out[ $key ] = array(
+				'roles'     => $roles,
+				'marketing' => (bool) ( $c['marketing'] ?? false ),
+				'in_app'    => (bool) ( $c['in_app'] ?? true ),
+				'email'     => (bool) ( $c['email'] ?? false ),
+				'label'     => (string) $c['label'],
+			);
+		}
+		// Les catégories de base ne peuvent jamais être supprimées/écrasées par un tiers.
+		foreach ( $base as $key => $c ) {
+			$out[ $key ] = $c;
+		}
+		return $out;
 	}
 
 	private function role( int $user_id ): string {

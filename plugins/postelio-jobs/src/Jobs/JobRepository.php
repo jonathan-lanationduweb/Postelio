@@ -140,6 +140,12 @@ final class JobRepository {
 		if ( ! empty( $filters['salaire_min'] ) ) {
 			$meta[] = array( 'key' => 'pst_salaire_annuel', 'value' => (int) $filters['salaire_min'], 'compare' => '>=', 'type' => 'NUMERIC' );
 		}
+		// Filtre INTERNE (alertes) : offres publiées à partir d'une date (inclusif). La date de
+		// publication est stockée au grain jour (Y-m-d, UTC) ; la comparaison DATE borne la
+		// requête sans être la garantie de déduplication (assurée par la table de deliveries).
+		if ( ! empty( $filters['published_after'] ) ) {
+			$meta[] = array( 'key' => self::META_DATE_PUB, 'value' => substr( (string) $filters['published_after'], 0, 10 ), 'compare' => '>=', 'type' => 'DATE' );
+		}
 
 		$args = array(
 			'post_type'      => JobPostType::TYPE,

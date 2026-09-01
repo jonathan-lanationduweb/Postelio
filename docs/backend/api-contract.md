@@ -312,3 +312,18 @@ Erreur :
 - Mutations exigent nonce (web) ou Bearer (app). Webhooks : signature + idempotence.
 - Toute mutation de statut passe par le moteur de transitions ([workflows.md](workflows.md)).
 - Détails sécurité : [security.md](security.md).
+
+## Lot 14 — Favoris & Alertes
+
+### Favoris (cap `pst_manage_own_favorites`)
+- `GET /me/favorites/jobs` (paginé) · `POST /me/favorites/jobs/{job_reference}` (idempotent) ·
+  `DELETE /me/favorites/jobs/{job_reference}`.
+
+### Recherches sauvegardées + alertes (cap `pst_manage_own_alerts`)
+- `GET|POST /me/saved-searches` · `GET|PUT|DELETE /me/saved-searches/{uuid}` ·
+  `POST /me/saved-searches/{uuid}/preview` · `POST /me/saved-searches/{uuid}/run-now`.
+
+Filtres = whitelist Jobs (clé inconnue → **422**). Quota/doublon → **409**. Rate-limit → **429**.
+Compte suspendu (mutations, run-now) → **403**. Non-propriétaire / inconnu → **404**. `run-now`
+respecte curseur + deliveries (ne peut pas spammer). Détail :
+[favorites-alerts.md](favorites-alerts.md).

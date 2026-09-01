@@ -149,3 +149,17 @@ capability. Le front n'accorde aucun droit.
   toujours visibles du recruteur qui consulte le CV ([data-model.md](data-model.md#candidateprofile)).
 - **Notes recruteur** : jamais renvoyées par un endpoint accessible au candidat.
 - **Transitions de statut** : autorisées par rôle selon [workflows.md](workflows.md).
+
+## Lot 14 — Favoris & Alertes
+
+- **Favoris** : `pst_manage_own_favorites` (candidat). Compte actif requis ; e-mail vérifié **non**
+  requis.
+- **Recherches sauvegardées + alertes** : `pst_manage_own_alerts` (candidat). Les recherches
+  sauvegardées sont le **véhicule** des alertes → une seule capability (§16 : ne pas multiplier).
+  Canal **e-mail** d'une alerte ⇒ `pst_email_verified` (adresse vérifiée) requis, en plus des
+  préférences de canal.
+- Les deux capabilities étaient **déjà déclarées** dans `Capabilities::candidate()` — aucune
+  nouvelle capability créée.
+- **Ownership** strict : une ressource d'un autre candidat renvoie **404** (non-divulgation).
+- **Admin** : la page « Favoris & Alertes » n'expose que des **compteurs agrégés** — jamais le
+  contenu des recherches ni les favoris individuels.

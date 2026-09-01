@@ -205,3 +205,17 @@ l'utilisateur humain, pas pour un flux d'app).
 une table dédiée pourra suivre si le volume l'exige) ; pas de rotation automatique de
 secret ; révocation d'un jeton précis nécessite son `tid` (l'utilisateur peut toujours
 tout révoquer via `/auth/logout-all`).
+
+## Lot 14 — Favoris & Alertes
+
+- **Ownership** : le candidat est toujours celui de la session (jamais un paramètre) ;
+  non-propriétaire → 404. Aucune donnée personnelle d'autrui accessible.
+- **Suspension** : aucune mutation, aucun run d'alerte, aucune notification ; données conservées ;
+  reprise à la réactivation. **Suppression de compte** (`user.deleted`) : purge favoris +
+  recherches + deliveries. **Export RGPD** : favoris + recherches ajoutés via `postelio/users/export`.
+- **Entrées** : filtres = whitelist stricte (clé inconnue → 422, `published_after` interne jamais
+  accepté d'un corps utilisateur) ; noms de recherche sanitizés ; rate-limits (transient) sur
+  create/update, preview, run-now.
+- **Offres externes** : aucun accès SQL direct ; résolution via `JobDirectory` (états source
+  désactivée / masquée / retirée respectés). Le digest ne transporte aucune donnée sensible.
+- **Admin** : supervision **agrégée** (privacy-first) — pas de contenu personnel.
