@@ -1,3 +1,7 @@
+> **OBSOLÈTE (septembre 2026).** Le plugin `postelio-admin` décrit ici a été **supprimé** : toute
+> l'interface wp-admin est désormais fournie par `postelio-backoffice`. Voir `docs/backend/backoffice.md`.
+> Ce document reste la référence historique de la Phase 1-3 du back-office et du diagnostic e-mail (§11).
+
 # Postelio — Back-office WordPress (`postelio-admin`)
 
 > Phase 1 livrée sur `feature/postelio-admin`. Le back-office est un **centre de contrôle
@@ -196,3 +200,59 @@ utilisateurs finaux. `postelio-admin` est l'espace **d'administration de la plat
 Le Lot 14 (Favoris/Recherches/Alertes) suit son propre cycle. Le back-office **prépare** son
 emplacement de menu mais **n'implémente aucune logique** en avance et ne modifie aucune décision
 du Lot 14.
+
+
+## 11. Service e-mail — diagnostic et écran (septembre 2026)
+
+### 11.1 Diagnostic des 2 échecs définitifs (local `postelio.local`)
+| | Échec 1 | Échec 2 |
+|---|---|---|
+| Notification | `company_verified` (e-mail « Entreprise vérifiée » au propriétaire) | idem |
+| Destinataire (masqué) | `a***@postelio.test` (recruteur de test, user 1094) | `a***@postelio.test` (user 1099) |
+| Créé (UTC) | 2026-09-01 12:11:54 | 2026-09-01 12:12:24 |
+| Tentatives | 5 / 5 (backoff 2, 4, 8, 16, 32 min) | 5 / 5 |
+| Échec définitif (UTC) | 2026-09-01 13:02:47 | 2026-09-01 13:02:49 |
+| Dernière erreur | `wp_mail_returned_false` | `wp_mail_returned_false` |
+| Classement | **CONFIGURATION LOCALE / PROVIDER ABSENT** | idem |
+
+Les deux utilisateurs et leurs entreprises (posts 877/878) ont été créés à la même seconde que la
+livraison : ce sont des **fixtures d'un test** (smoke companies/admin) exécuté le 01/09 avec le
+provider par défaut `WpMailProvider` (les 24 envois `sent` de la base portent l'id `fake:*` du
+provider factice du smoke notifications ; ces 2 lignes sont les seules à avoir touché `wp_mail()`).
+
+**Cause réelle, vérifiée** : `wp_mail()` renvoie `false` sur ce poste avec l'erreur PHPMailer
+« Impossible d'instancier la fonction mail » (code 2). PHP est configuré en `SMTP = localhost`,
+`smtp_port = 25`, `sendmail_path` vide (php.ini WAMP) et **rien n'écoute sur le port 25** (connexion
+refusée). Aucun WP Mail SMTP, aucun hook `phpmailer_init`, aucun provider Postelio branché
+(`postelio/notifications/email_provider` non filtré). Ce n'est **pas un bug de code** : la file a
+fait exactement son travail (5 tentatives espacées, puis `failed`), et un `wp_mail() === true`
+n'aurait de toute façon été qu'une remise au transport, pas une preuve de livraison.
+
+### 11.2 Corrections
+- `WpMailProvider` capture désormais `wp_mail_failed` : `last_error` devient
+  `wp_mail_failed: Impossible d'instancier la fonction mail. (code 2)` au lieu d'un booléen muet.
+  Expose `transport()` (WP Mail SMTP / SMTP via `phpmailer_init` / PHP `mail()` sendmail ou SMTP
+  php.ini — aucun secret).
+- `EmailDispatcher::transport()`, `send_test($user_id)` (même provider, **hors file**, destinataire
+  = adresse courante de l'utilisateur, résultat conservé dans l'option
+  `postelio_notifications_email_test` sans contenu), `last_test()`, `mask_email()`.
+- Contrat `NotificationDirectory` : `transport()`, `delivery_failures($limit)` (destinataires
+  masqués `j***@exemple.fr`, jamais de contenu), `send_test()`, `last_test()`.
+- Écran **Notifications** : carte « Service e-mail » = **Transport** (valeur réellement active +
+  détail), **Traitement** (Automatique ; prochain passage du worker dans « File d'envoi »), **État**
+  (Opérationnel / Configuration requise / Incident / Non vérifié — le dernier test prime),
+  **Dernier test**, « N e-mails n'ont pas pu être envoyés. » + bouton **Voir les échecs**
+  (`&view=failures` : Date · Type · Destinataire masqué · Tentatives · Erreur · État), bouton
+  **Envoyer un e-mail de test** (admin-post `pst_admin_email_test`, nonce + `pst_manage_platform`).
+  Réglages : « Transport e-mail » lit le même contrat.
+- **Relance** : le module Notifications n'expose **aucune** opération de relance sûre ; l'admin
+  n'écrit pas en base et ne remet rien en file (gap documenté, aucune boucle). Un provider
+  transactionnel (Brevo est la cible prévue) n'a **pas** été intégré : ce n'est pas ce qui a causé
+  les échecs, et le choix reste À VALIDER (README notifications).
+
+### 11.3 État réel du transport local
+`postelio.local` **ne peut pas envoyer d'e-mail** aujourd'hui : aucun SMTP/provider configuré.
+Options : SMTP local de dev (MailHog/Mailpit sur :1025 + WP Mail SMTP ou hook `phpmailer_init`),
+ou provider transactionnel branché via `postelio/notifications/email_provider`. Après
+configuration, « Envoyer un e-mail de test » doit passer à « Remis au transport » et l'État à
+« Opérationnel ».

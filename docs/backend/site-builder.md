@@ -174,3 +174,79 @@ modifications locales sont **conservées**. Audit `site.<page>.updated` étendu 
 
 ### 11.11 Hors périmètre (Phase 2)
 Front public toujours **non branché**, backend métier et Lot 14 **non touchés**.
+
+
+---
+
+## 12. Corrections ciblées — Footer, Identité, Favicon (septembre 2026)
+
+### 12.1 Footer : aperçu = le VRAI footer, en mobile
+- Le schéma du Footer déclare `preview_target = footer` et `preview_device = mobile`
+  (`SiteSchema::footer()`). L'éditeur lit ces indications : le sélecteur Desktop / Tablette / Mobile
+  est **masqué** sur cet écran (libellé « Aperçu mobile » + « Ouvrir »), le canvas est forcé en
+  largeur mobile, et **toutes les autres pages** conservent leurs trois modes. Reload = même état
+  (source de vérité = schéma, pas de préférence locale).
+- L'iframe charge toujours le vrai front (`/index.html?postelio_preview=1`). Chaque message
+  `postelio-site-preview` porte désormais `target`. Le bridge (`assets/js/site-preview-bridge.js`)
+  applique la config puis appelle `scrollIntoView` sur `footer.site-footer` (liste blanche
+  `footer|header`, jamais de sélecteur venu du message), immédiatement puis après stabilisation du
+  rendu (350 ms). Pas de `setTimeout` de découverte : le premier envoi part sur l'événement
+  `postelio-preview-ready` existant. Après une modification live, le footer est **recalé**, jamais
+  le hero.
+- Panneau gauche réorganisé : **Marque** (logo global / override, nom de marque override,
+  description) · **Colonnes de liens** · **Réseaux sociaux** · **Mentions / bas de page**
+  (liens légaux, copyright) · **Réglages** (afficher newsletter, afficher réseaux). Les réglages
+  agissent sur les blocs réels du footer (`.footer-news`, `.footer-social`) ; les liens légaux sont
+  rendus dans `.footer-bottom` (liste `pst-footer-legal`, preview uniquement).
+
+### 12.2 Identité globale = source de vérité (Apparence → Identité)
+- Champs : **Nom de marque** (`brand_name`, défaut « Postelio »), **Logo principal**, **Logo
+  clair**, **Favicon du site**, **Image sociale**. Logos : `svg|png|webp|jpg|jpeg` ; favicon :
+  `svg|png|ico` (validés côté UI ET côté service, extension refusée → repli sur le défaut).
+- Champ média : Choisir / **Remplacer** / **Retirer** / **Restaurer la valeur par défaut** +
+  prévisualisation réelle (logo en `contain` sur damier ; favicon rendu **16 px et 32 px** comme dans
+  un onglet). Les chemins racine (`/assets/...`) sont acceptés et résolus sur l'origine du front.
+- **Navigation / Footer** : `use_identity_logo` (défaut ON) → logo global ; le champ « Logo
+  (override) » est **masqué** tant que le toggle est actif (`show_if`) et réapparaît sinon. Un rappel
+  « Identité globale : <nom> · <logo> — Modifier dans Apparence → Identité » est affiché dans la carte
+  Marque. `brand_text` devient un **override vide par défaut** (repli sur `brand_name` global) ; la
+  **description** reste propre au footer. Une valeur `brand_text` déjà stockée reste honorée
+  (ajouts rétro-compatibles, `VERSION` inchangée = 2).
+- Le bridge applique l'identité au vrai DOM : `.site-header .logo-mark` reçoit une `<img>` (ou
+  retrouve sa pastille « P » si vide), une `<img class="pst-footer-logo">` est insérée dans
+  `.footer-brand`, `.logo-text` (header + footer) = override ou nom global, `<link rel="icon">` =
+  favicon configuré (défaut : favicon Postelio).
+- `SiteConfigDirectory::identity()` renvoie l'identité résolue en URLs absolues
+  (`brand_name`, `logo_url`, `logo_light_url`, `favicon_url`, `favicon_is_default`) ; exposée dans
+  `GET /site/config` (clé `identity`) pour le futur front.
+
+### 12.3 Favicon : UNE source de vérité, et ce qui est réellement branché
+- **Référence validée** : `assets/icons/favicon.svg` (pastille corail `#FF6B6B`, « P » bleu nuit
+  `#17324D`). Le fichier du front a été aligné sur cette version (il portait encore l'ancienne
+  palette verte/miel). `SiteSchema::DEFAULT_FAVICON = /assets/icons/favicon.svg` : le champ
+  Apparence → Favicon vaut ce fichier par défaut, « Restaurer la valeur par défaut » y revient.
+- **Branché réellement** : (1) l'aperçu Site Builder (bridge) ; (2) **tout ce que WordPress rend
+  lui-même** — wp-admin, écran de connexion, éventuel front WP — via le filtre `get_site_icon_url`
+  (`Postelio\Site\Plugin::site_icon_url`) : WordPress émet ses balises `<link rel="icon">` avec le
+  favicon Postelio configuré, sans réglage Customizer parallèle. Vérifié : `wp_site_icon()` sort
+  `http://postelio.local/assets/icons/favicon.svg`.
+- **NON branché (gap documenté, pas simulé)** : les **29 pages HTML statiques du front** portent en
+  dur `<link rel="icon" href="assets/icons/favicon.svg">` (+ `manifest.webmanifest`, `icon-192/512`,
+  et `404.html` qui pointe l'URL absolue GitHub Pages du même fichier). Elles affichent donc le
+  favicon **par défaut** (= la référence validée), pas un favicon remplacé dans l'admin. Un favicon
+  ou un logo personnalisé ne s'appliquera au front public que lorsque le chantier **I12 — Site
+  Builder public** consommera `GET /site/config` (clé `identity`) au chargement, ou lorsque les HTML
+  seront générés côté serveur. Ce chantier est distinct et n'a pas été démarré ici. Le manifest PWA
+  (`theme_color` encore `#1e4f46`) relève du même chantier.
+- Note : WordPress n'autorise pas l'upload de SVG par défaut (`upload_mimes`). Pour téléverser un
+  logo SVG via la médiathèque, un plugin d'assainissement SVG (ex. Safe SVG) est nécessaire ; PNG /
+  WebP / JPG fonctionnent sans rien. Postelio n'active pas le SVG lui-même (risque XSS).
+
+### 12.4 Tests
+`php plugins/postelio-site/tests/run-unit.php` (schéma : cible/appareil footer, groupes, identité,
+défauts, formats). Vérifications WordPress (script de session) : sanitization (`javascript:` refusé
+→ défaut, `.gif` refusé pour un logo), `identity()`, `get_site_icon_url()`, rendu des pages admin.
+Navigateur : front `?postelio_preview=1` en 390 px → message avec `target:footer` → footer visible
+immédiatement, logo header/footer, nom de marque, favicon, newsletter masquée, colonnes, liens
+légaux ; aucune erreur console. wp-admin : écran Footer en « Aperçu mobile » sans sélecteur
+d'appareil, iframe positionnée sur le footer, override logo masqué/affiché selon le toggle.

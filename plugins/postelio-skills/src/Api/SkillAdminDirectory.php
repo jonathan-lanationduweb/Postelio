@@ -1,6 +1,6 @@
 <?php
 /**
- * Contrat de LECTURE ADMIN des savoir-faire (consommé par postelio-admin). Compteurs par statut
+ * Contrat de LECTURE ADMIN des savoir-faire (consommé par postelio-backoffice). Compteurs par statut
  * (+ masqués modération), liste filtrée, détail. Lecture seule ; les actions (hide/unhide)
  * passent par SkillModeration.
  *

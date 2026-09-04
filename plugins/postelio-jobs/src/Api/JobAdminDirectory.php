@@ -1,6 +1,6 @@
 <?php
 /**
- * Contrat de LECTURE ADMIN des offres (consommé par postelio-admin). Fournit des compteurs et
+ * Contrat de LECTURE ADMIN des offres (consommé par postelio-backoffice). Fournit des compteurs et
  * une liste filtrée par statut métier, sans que le back-office ne lise directement le CPT/meta.
  * Lecture seule ; aucune écriture (les actions passent par JobService/JobModeration).
  *

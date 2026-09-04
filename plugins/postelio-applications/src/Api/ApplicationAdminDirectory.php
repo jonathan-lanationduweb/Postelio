@@ -1,6 +1,6 @@
 <?php
 /**
- * Contrat de LECTURE ADMIN des candidatures (consommé par postelio-admin). Compteurs par statut,
+ * Contrat de LECTURE ADMIN des candidatures (consommé par postelio-backoffice). Compteurs par statut,
  * liste paginée avec libellés synthétiques (candidat/offre/entreprise résolus une fois par ligne
  * — max 50/page, pas de N+1 non borné) et détail. Lecture seule. N'expose JAMAIS les NOTES
  * RECRUTEUR (privées) ni d'ID SQL.

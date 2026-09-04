@@ -1,6 +1,6 @@
 <?php
 /**
- * Contrat de LECTURE ADMIN des fichiers (consommé par postelio-admin). KPI globaux (par statut /
+ * Contrat de LECTURE ADMIN des fichiers (consommé par postelio-backoffice). KPI globaux (par statut /
  * type / provider, volume de stockage) et liste TECHNIQUE minimale, MÉTADONNÉES uniquement.
  * N'expose JAMAIS : storage_key, chemin disque, nom de fichier original, contenu, ni identité du
  * propriétaire. Aucune mutation. Ce n'est PAS une bibliothèque de CV navigable.

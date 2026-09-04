@@ -1,6 +1,6 @@
 <?php
 /**
- * Contrat de LECTURE ADMIN des entretiens (consommé par postelio-admin). Compteurs par statut,
+ * Contrat de LECTURE ADMIN des entretiens (consommé par postelio-backoffice). Compteurs par statut,
  * liste paginée SANS coordonnées sensibles (adresse / téléphone / lien visio JAMAIS en liste), et
  * détail avec chronologie. Les coordonnées ne sont renvoyées par detail() que si l'appelant est
  * explicitement autorisé ($include_coordinates), charge à la page d'exiger la capacité. Lecture seule.
@@ -122,27 +122,64 @@ final class InterviewAdminDirectory {
 		);
 	}
 
-	/** @param array<string,mixed> $row */
+	/** Colonnes de coordonnées, telles que nommées en base. */
+	private const COORD_COLS = array( 'location_data', 'video_data', 'phone_data' );
+
+	/**
+	 * Normalise un groupe de coordonnées en TABLEAU, sans jamais le convertir en chaîne.
+	 *
+	 * `InterviewRepository::decode()` renvoie déjà ces colonnes décodées (tableau associatif, ou
+	 * `null` si la colonne est vide) : le JSON brut n'arrive donc pas jusqu'ici. Une chaîne JSON
+	 * reste acceptée au cas où la ligne proviendrait d'une lecture ne passant pas par le repository.
+	 * La structure est PRÉSERVÉE : aucune concaténation dans le domaine, la mise en forme appartient
+	 * à la couche de présentation.
+	 *
+	 * @param mixed $value
+	 * @return array<string,mixed>
+	 */
+	private static function coord_group( $value ): array {
+		if ( is_array( $value ) ) {
+			return $value;
+		}
+		if ( is_string( $value ) && '' !== $value ) {
+			$decoded = json_decode( $value, true );
+			return is_array( $decoded ) ? $decoded : array();
+		}
+		return array();
+	}
+
+	/**
+	 * Des coordonnées sont-elles réellement renseignées ? Information non sensible (elle indique
+	 * l'existence, jamais le contenu) : elle est donc renvoyée même sans autorisation.
+	 *
+	 * @param array<string,mixed> $row
+	 */
 	private static function has_coords( array $row ): bool {
-		foreach ( array( 'location_data', 'video_data', 'phone_data' ) as $k ) {
-			$raw = (string) ( $row[ $k ] ?? '' );
-			if ( '' !== $raw && '[]' !== $raw && 'null' !== $raw ) {
-				return true;
+		foreach ( self::COORD_COLS as $col ) {
+			foreach ( self::coord_group( $row[ $col ] ?? null ) as $value ) {
+				$filled = is_array( $value ) ? ! empty( $value ) : ( null !== $value && '' !== (string) $value );
+				if ( $filled ) {
+					return true;
+				}
 			}
 		}
 		return false;
 	}
 
-	/** @param array<string,mixed> $row @return array<string,mixed> */
+	/**
+	 * Coordonnées structurées par canal. Formes réelles produites par `InterviewService` :
+	 *   location : address, address_complement, postal_code, city, contact, access_instructions
+	 *   video    : meeting_url, provider
+	 *   phone    : phone_number, who_calls (recruiter_calls | candidate_calls)
+	 *
+	 * @param array<string,mixed> $row
+	 * @return array<string,array<string,mixed>>
+	 */
 	private static function coords( array $row ): array {
-		$decode = static function ( $raw ): array {
-			$d = ( is_string( $raw ) && '' !== $raw ) ? json_decode( $raw, true ) : null;
-			return is_array( $d ) ? $d : array();
-		};
 		return array(
-			'location' => $decode( $row['location_data'] ?? '' ),
-			'video'    => $decode( $row['video_data'] ?? '' ),
-			'phone'    => $decode( $row['phone_data'] ?? '' ),
+			'location' => self::coord_group( $row['location_data'] ?? null ),
+			'video'    => self::coord_group( $row['video_data'] ?? null ),
+			'phone'    => self::coord_group( $row['phone_data'] ?? null ),
 		);
 	}
 }

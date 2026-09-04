@@ -33,6 +33,19 @@ final class SiteSchema {
 	/** Version du schéma de configuration. */
 	public const VERSION = 2;
 
+	/**
+	 * Favicon Postelio VALIDÉ (pastille corail #FF6B6B, « P » bleu nuit #17324D) : fichier statique du
+	 * front, servi à la racine de l'origine. C'est la valeur par défaut du champ Apparence → Identité →
+	 * Favicon = l'UNIQUE source de vérité (les 29 HTML du front référencent ce même fichier).
+	 */
+	public const DEFAULT_FAVICON = '/assets/icons/favicon.svg';
+
+	/** Formats acceptés pour les logos (identité + overrides). */
+	public const LOGO_FORMATS = array( 'svg', 'png', 'webp', 'jpg', 'jpeg' );
+
+	/** Formats acceptés pour le favicon. */
+	public const FAVICON_FORMATS = array( 'svg', 'png', 'ico' );
+
 	/** @return array<string,mixed> Schéma complet { page => définition }. */
 	public static function all(): array {
 		return array(
@@ -247,10 +260,12 @@ final class SiteSchema {
 	private static function navigation(): array {
 		return array(
 			'label' => 'Navigation', 'icon' => '🧭', 'type' => 'single',
+			// Aperçu : le VRAI front, positionné sur l'en-tête réel (Desktop / Tablette / Mobile libres).
+			'preview_target' => 'header',
 			'fields' => array(
 				'use_identity_logo' => array( 'type' => 'toggle', 'label' => 'Utiliser le logo global (Apparence → Identité)', 'default' => true ),
-				'logo'        => array( 'type' => 'media', 'label' => 'Logo (override)', 'default' => '' ),
-				'brand_text'  => array( 'type' => 'text', 'label' => 'Nom de marque', 'default' => 'Postelio' ),
+				'logo'        => array( 'type' => 'media', 'media_type' => 'image', 'accept' => self::LOGO_FORMATS, 'preview' => 'contain', 'label' => 'Logo (override en-tête)', 'default' => '', 'show_if' => array( 'field' => 'use_identity_logo', 'equals' => false ) ),
+				'brand_text'  => array( 'type' => 'text', 'label' => 'Nom de marque (override en-tête)', 'default' => '', 'placeholder' => 'Vide = nom de marque global', 'help' => 'Laissez vide pour reprendre le nom de marque global (Apparence → Identité).' ),
 				'items'       => array(
 					'type'   => 'repeater', 'label' => 'Liens du menu',
 					'fields' => array(
@@ -273,7 +288,7 @@ final class SiteSchema {
 				'signup_url'  => array( 'type' => 'text', 'label' => 'Lien Inscription', 'default' => '/inscription', 'col' => 'half' ),
 			),
 			'groups' => array(
-				array( 'label' => 'Marque', 'fields' => array( 'use_identity_logo', 'logo', 'brand_text' ) ),
+				array( 'label' => 'Marque', 'fields' => array( 'use_identity_logo', 'logo', 'brand_text' ), 'identity_hint' => true ),
 				array( 'label' => 'Liens', 'fields' => array( 'items' ) ),
 				array( 'label' => 'Boutons', 'fields' => array( 'show_login', 'login_label', 'login_url', 'show_signup', 'signup_label', 'signup_url' ) ),
 			),
@@ -285,11 +300,15 @@ final class SiteSchema {
 	private static function footer(): array {
 		return array(
 			'label' => 'Footer', 'icon' => '👣', 'type' => 'single',
+			// Aperçu : le VRAI front, positionné sur le footer réel, en largeur mobile uniquement.
+			// L'éditeur lit ces indications ; les autres pages gardent Desktop / Tablette / Mobile.
+			'preview_target' => 'footer',
+			'preview_device' => 'mobile',
 			'fields' => array(
-				'use_identity_logo' => array( 'type' => 'toggle', 'label' => 'Utiliser le logo global (Apparence → Identité)', 'default' => true ),
-				'logo'        => array( 'type' => 'media', 'label' => 'Logo (override)', 'default' => '' ),
-				'brand_text'  => array( 'type' => 'text', 'label' => 'Nom de marque', 'default' => 'Postelio' ),
-				'description' => array( 'type' => 'textarea', 'label' => 'Description', 'default' => 'La plateforme emploi des métiers administratifs.' ),
+				'use_identity_logo' => array( 'type' => 'toggle', 'label' => 'Utiliser le logo global (Apparence → Identité)', 'default' => true, 'help' => 'Désactivez pour définir un logo propre au footer.' ),
+				'logo'        => array( 'type' => 'media', 'media_type' => 'image', 'accept' => self::LOGO_FORMATS, 'preview' => 'contain', 'label' => 'Logo (override footer)', 'default' => '', 'show_if' => array( 'field' => 'use_identity_logo', 'equals' => false ) ),
+				'brand_text'  => array( 'type' => 'text', 'label' => 'Nom de marque (override footer)', 'default' => '', 'placeholder' => 'Vide = nom de marque global', 'help' => 'Laissez vide pour reprendre le nom de marque global (Apparence → Identité).' ),
+				'description' => array( 'type' => 'textarea', 'label' => 'Description (propre au footer)', 'default' => 'La plateforme emploi des métiers administratifs.' ),
 				'columns'     => array(
 					'type'   => 'repeater', 'label' => 'Colonnes de liens',
 					'fields' => array(
@@ -312,11 +331,16 @@ final class SiteSchema {
 				),
 				'legal_links' => array( 'type' => 'textarea', 'label' => 'Liens légaux (un par ligne : Libellé|/url)', 'default' => "Mentions légales|/mentions-legales\nConfidentialité|/confidentialite" ),
 				'copyright'   => array( 'type' => 'text', 'label' => 'Copyright', 'default' => '© Postelio. Tous droits réservés.' ),
+				// Réglages d'affichage (blocs réels du footer du front).
+				'show_newsletter' => array( 'type' => 'toggle', 'label' => 'Afficher le bloc newsletter', 'default' => true, 'col' => 'half' ),
+				'show_socials'    => array( 'type' => 'toggle', 'label' => 'Afficher les réseaux sociaux', 'default' => true, 'col' => 'half' ),
 			),
 			'groups' => array(
-				array( 'label' => 'Marque', 'fields' => array( 'use_identity_logo', 'logo', 'brand_text', 'description' ) ),
+				array( 'label' => 'Marque', 'fields' => array( 'use_identity_logo', 'logo', 'brand_text', 'description' ), 'identity_hint' => true ),
 				array( 'label' => 'Colonnes de liens', 'fields' => array( 'columns' ) ),
-				array( 'label' => 'Réseaux & mentions', 'fields' => array( 'socials', 'legal_links', 'copyright' ) ),
+				array( 'label' => 'Réseaux sociaux', 'fields' => array( 'socials' ) ),
+				array( 'label' => 'Mentions / bas de page', 'fields' => array( 'legal_links', 'copyright' ) ),
+				array( 'label' => 'Réglages', 'fields' => array( 'show_newsletter', 'show_socials' ) ),
 			),
 		);
 	}
@@ -327,11 +351,12 @@ final class SiteSchema {
 		return array(
 			'label' => 'Apparence', 'icon' => '🎨', 'type' => 'single', 'resettable' => true,
 			'fields' => array(
-				// Identité (ressources globales).
-				'logo'          => array( 'type' => 'media', 'label' => 'Logo principal', 'default' => '' ),
-				'logo_light'    => array( 'type' => 'media', 'label' => 'Logo clair (fonds sombres)', 'default' => '' ),
-				'favicon'       => array( 'type' => 'media', 'label' => 'Favicon', 'default' => '' ),
-				'social_image'  => array( 'type' => 'media', 'label' => 'Image sociale par défaut', 'default' => '' ),
+				// Identité (ressources GLOBALES = source de vérité : Navigation et Footer les réutilisent).
+				'brand_name'    => array( 'type' => 'text', 'label' => 'Nom de marque', 'default' => 'Postelio', 'help' => 'Affiché dans l\'en-tête et le footer (sauf override local).' ),
+				'logo'          => array( 'type' => 'media', 'media_type' => 'image', 'accept' => self::LOGO_FORMATS, 'preview' => 'contain', 'label' => 'Logo principal', 'default' => '', 'help' => 'SVG, PNG, WebP ou JPG. Vide = pastille « P » par défaut du site.' ),
+				'logo_light'    => array( 'type' => 'media', 'media_type' => 'image', 'accept' => self::LOGO_FORMATS, 'preview' => 'contain', 'label' => 'Logo clair (fonds sombres)', 'default' => '' ),
+				'favicon'       => array( 'type' => 'media', 'media_type' => 'image', 'accept' => self::FAVICON_FORMATS, 'preview' => 'icon', 'label' => 'Favicon du site', 'default' => self::DEFAULT_FAVICON, 'help' => 'SVG (recommandé), PNG ou ICO, carré. « Défaut » restaure le favicon Postelio validé.' ),
+				'social_image'  => array( 'type' => 'media', 'media_type' => 'image', 'accept' => array( 'jpg', 'jpeg', 'png', 'webp' ), 'label' => 'Image sociale par défaut', 'default' => '' ),
 				// Couleurs — valeurs par défaut = palette de marque VALIDÉE du front (bleu nuit + corail),
 				// pour qu'une configuration non modifiée rende le vrai site à l'identique.
 				'color_primary' => array( 'type' => 'color', 'label' => 'Couleur primaire', 'default' => '#17324D', 'col' => 'half' ),
@@ -347,7 +372,7 @@ final class SiteSchema {
 				'button_style'  => array( 'type' => 'select', 'label' => 'Style des boutons', 'default' => 'solid', 'options' => array( 'solid' => 'Plein', 'outline' => 'Contour' ), 'col' => 'half' ),
 			),
 			'groups' => array(
-				array( 'label' => 'Identité', 'fields' => array( 'logo', 'logo_light', 'favicon', 'social_image' ) ),
+				array( 'label' => 'Identité', 'fields' => array( 'brand_name', 'logo', 'logo_light', 'favicon', 'social_image' ) ),
 				array( 'label' => 'Couleurs', 'fields' => array( 'color_primary', 'color_accent', 'color_bg', 'color_text' ) ),
 				array( 'label' => 'Typographie', 'fields' => array( 'font_headings', 'font_body', 'base_size' ) ),
 				array( 'label' => 'Boutons', 'fields' => array( 'button_radius', 'button_style' ) ),

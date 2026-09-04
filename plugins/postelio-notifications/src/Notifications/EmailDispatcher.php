@@ -15,6 +15,8 @@ namespace Postelio\Notifications\Notifications;
 
 use Postelio\Core\Jobs\Scheduler;
 use Postelio\Messaging\Api\MessagingDirectory;
+use Postelio\Notifications\Email\DeliveryResult;
+use Postelio\Notifications\Email\EmailMessage;
 use Postelio\Notifications\Email\EmailProvider;
 use Postelio\Notifications\Email\TemplateRegistry;
 use Postelio\Notifications\Email\WpMailProvider;
@@ -45,6 +47,80 @@ final class EmailDispatcher {
 	private function provider(): EmailProvider {
 		$provider = apply_filters( 'postelio/notifications/email_provider', null );
 		return $provider instanceof EmailProvider ? $provider : new WpMailProvider();
+	}
+
+	/** Option où est conservé le résultat du DERNIER e-mail de test (diagnostic admin, sans contenu). */
+	public const TEST_OPTION = 'postelio_notifications_email_test';
+
+	/**
+	 * Transport réellement actif (diagnostic admin, aucun secret) : nom du provider + détail du
+	 * transport sous-jacent quand il s'agit de wp_mail().
+	 *
+	 * @return array{provider:string, label:string, detail:string, smtp_configured:bool, is_wp_mail:bool}
+	 */
+	public function transport(): array {
+		$p = $this->provider();
+		if ( $p instanceof WpMailProvider ) {
+			$t = WpMailProvider::transport();
+			return array( 'provider' => $p->name(), 'label' => $t['label'], 'detail' => $t['detail'], 'smtp_configured' => $t['smtp_configured'], 'is_wp_mail' => true );
+		}
+		return array( 'provider' => $p->name(), 'label' => $p->name(), 'detail' => 'Provider transactionnel branché via postelio/notifications/email_provider.', 'smtp_configured' => true, 'is_wp_mail' => false );
+	}
+
+	/**
+	 * E-mail de TEST envoyé par le MÊME provider que les notifications (pas de chemin parallèle),
+	 * SANS passer par la file (aucune ligne créée, aucun retry) — c'est un contrôle ponctuel. Le
+	 * destinataire est TOUJOURS l'adresse courante de l'utilisateur donné (jamais une adresse
+	 * arbitraire). Le résultat (succès/motif, sans contenu) est conservé pour l'écran admin.
+	 */
+	public function send_test( int $user_id ): DeliveryResult {
+		$email = $this->resolve_email( $user_id );
+		if ( '' === $email ) {
+			$res = DeliveryResult::failure( 'no_email' );
+			$this->remember_test( $res, '', $user_id );
+			return $res;
+		}
+		$transport = $this->transport();
+		$body      = "Bonjour,\n\nCet e-mail confirme que le service e-mail de Postelio (" . get_bloginfo( 'name' ) . ") est capable d'envoyer des messages depuis ce serveur.\n\n"
+			. 'Transport : ' . $transport['label'] . "\nDate (UTC) : " . gmdate( 'Y-m-d H:i:s' ) . "\n\nAucune action n'est nécessaire.";
+		$message   = new \Postelio\Notifications\Email\EmailMessage( $email, 'Test du service e-mail Postelio', $body, '', 'Vérification du transport e-mail', '', '', array( 'kind' => 'admin_test' ) );
+		$res       = $this->provider()->send( $message );
+		$this->remember_test( $res, $email, $user_id );
+		return $res;
+	}
+
+	/**
+	 * Dernier test enregistré (ou null). Destinataire MASQUÉ (j***@exemple.fr), jamais de contenu.
+	 *
+	 * @return array{ok:bool, error:string, at:string, provider:string, recipient_masked:string, by:int}|null
+	 */
+	public function last_test(): ?array {
+		$v = get_option( self::TEST_OPTION, null );
+		return is_array( $v ) && isset( $v['at'] ) ? $v : null;
+	}
+
+	private function remember_test( DeliveryResult $res, string $email, int $user_id ): void {
+		update_option(
+			self::TEST_OPTION,
+			array(
+				'ok'               => $res->ok,
+				'error'            => $res->ok ? '' : substr( $res->error, 0, 250 ),
+				'at'               => current_time( 'mysql', true ),
+				'provider'         => $this->provider()->name(),
+				'recipient_masked' => self::mask_email( $email ),
+				'by'               => $user_id,
+			),
+			false
+		);
+	}
+
+	/** j***@exemple.fr — jamais l'adresse complète dans le back-office. */
+	public static function mask_email( string $email ): string {
+		$at = strpos( $email, '@' );
+		if ( false === $at || $at < 1 ) {
+			return '' === $email ? '—' : '***';
+		}
+		return substr( $email, 0, 1 ) . '***' . substr( $email, $at );
 	}
 
 	/**

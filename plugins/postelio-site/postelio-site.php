@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Postelio Site
  * Plugin URI:  https://github.com/jonathan-lanationduweb/Postelio
- * Description: Configuration du SITE public Postelio (source de vérité éditoriale : accueil, navigation, footer, apparence, SEO…). Stockée en options WordPress, exposée en REST public pour le front, éditée visuellement depuis le back-office (postelio-admin). Aucune logique métier, aucune table.
+ * Description: Configuration du SITE public Postelio (source de vérité éditoriale : accueil, navigation, footer, apparence, SEO…). Stockée en options WordPress, exposée en REST public pour le front, éditée visuellement depuis le back-office (postelio-backoffice). Aucune logique métier, aucune table.
  * Version:     0.1.0
  * Requires PHP: 8.1
  * Requires at least: 6.4
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'POSTELIO_SITE_VERSION', '0.1.0' );
+define( 'POSTELIO_SITE_VERSION', '0.1.1' );
 define( 'POSTELIO_SITE_FILE', __FILE__ );
 define( 'POSTELIO_SITE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'POSTELIO_SITE_URL', plugin_dir_url( __FILE__ ) );
