@@ -36,13 +36,27 @@ final class Plugin {
 		}
 		$this->booted = true;
 
-		( new Menu() )->register();
+		/*
+		 * Compatibilité avec le back-office unifié (postelio-backoffice) : quand il est actif, il
+		 * devient propriétaire du menu « Postelio » (`postelio/admin/legacy_menu` → false) et rend
+		 * lui-même les écrans migrés ; les pages legacy restent rendues par ce plugin pour les écrans
+		 * non migrés, avec leurs assets (`postelio/admin/legacy_assets`). Les actions admin-post
+		 * restent toujours enregistrées (les écrans legacy en dépendent).
+		 */
+		if ( apply_filters( 'postelio/admin/legacy_menu', true ) ) {
+			( new Menu() )->register();
+		}
 		( new Actions() )->register();
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 	}
 
 	public function enqueue( string $hook ): void {
 		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		// Écran repris par le back-office unifié → aucun asset legacy (évite le double design system).
+		if ( ! apply_filters( 'postelio/admin/legacy_assets', true, $page ) ) {
+			return;
+		}
 
 		// Écrans « Site Builder » : assets dédiés + configuration injectée.
 		$site_page = SiteMenu::page_for_slug( $page );
