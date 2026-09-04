@@ -1,6 +1,6 @@
 <?php
 /**
- * Contrat de LECTURE ADMIN des entreprises (consommé par postelio-admin). Compteurs par statut
+ * Contrat de LECTURE ADMIN des entreprises (consommé par postelio-backoffice). Compteurs par statut
  * de vérification + liste filtrée, sans lecture directe du CPT/meta par le back-office. Lecture
  * seule ; les actions (vérifier/suspendre…) passent par VerificationService/CompanyModeration.
  *

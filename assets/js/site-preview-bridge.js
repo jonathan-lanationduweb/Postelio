@@ -50,6 +50,23 @@
 		// Dérivés simples pour rester cohérent.
 		if ( /^#[0-9a-fA-F]{6}$/.test( a.color_primary || '' ) ) { root.setProperty( '--c-primary-dark', shade( a.color_primary, -18 ) ); }
 		if ( /^#[0-9a-fA-F]{6}$/.test( a.color_accent || '' ) ) { root.setProperty( '--c-accent-dark', shade( a.color_accent, -22 ) ); }
+		applyTypographyAndButtons( a );
+	}
+	// Typographie + boutons (Apparence) : règles d'aperçu injectées dans UNE feuille dédiée, à partir
+	// de valeurs FERMÉES (listes du schéma) — jamais de CSS libre venu du message.
+	function applyTypographyAndButtons( a ) {
+		var css = '';
+		var fonts = { sans: 'var(--font-sans)', serif: 'var(--font-serif)', display: 'var(--font-serif)' };
+		if ( fonts[ a.font_headings ] && a.font_headings !== 'sans' ) { css += 'h1,h2,h3,h4,.logo-text{font-family:' + fonts[ a.font_headings ] + '}'; }
+		if ( fonts[ a.font_body ] && a.font_body !== 'sans' ) { css += 'body{font-family:' + fonts[ a.font_body ] + '}'; }
+		var sizes = { sm: '15px', md: '', lg: '17px' };
+		if ( sizes[ a.base_size ] ) { css += 'html{font-size:' + sizes[ a.base_size ] + '}'; }
+		var radii = { sm: '4px', md: '10px', pill: '999px' };
+		if ( radii[ a.button_radius ] && a.button_radius !== 'pill' ) { css += '.btn{border-radius:' + radii[ a.button_radius ] + '}'; }
+		if ( a.button_style === 'outline' ) { css += '.btn-primary,.btn-accent{background:transparent!important;color:var(--c-primary-dark)!important;border:2px solid currentColor!important}'; }
+		var s = document.getElementById( 'pst-preview-appearance' );
+		if ( ! s ) { s = document.createElement( 'style' ); s.id = 'pst-preview-appearance'; document.head.appendChild( s ); }
+		s.textContent = css;
 	}
 	function shade( hex, pct ) {
 		var n = parseInt( hex.slice( 1 ), 16 ), r = ( n >> 16 ) & 255, g = ( n >> 8 ) & 255, b = n & 255;
@@ -345,12 +362,19 @@
 		var y = ( r.height + hh > window.innerHeight )
 			? r.top + window.scrollY - hh
 			: r.bottom + window.scrollY - window.innerHeight;
+		// INSTANTANÉ : le front déclare `scroll-behavior: smooth` ; un défilement animé ne se termine
+		// jamais dans un onglet en arrière-plan et retarde l'aperçu. On neutralise le temps du saut.
+		var html = document.documentElement, prev = html.style.scrollBehavior;
+		html.style.scrollBehavior = 'auto';
 		window.scrollTo( 0, Math.max( 0, Math.round( y ) ) );
+		html.style.scrollBehavior = prev;
 	}
 	function keepTarget( name ) {
 		if ( ! TARGETS[ name ] ) { return; }
-		// Après application de la config : recaler tout de suite, puis une fois le rendu stabilisé
-		// (polices, images, colonnes ajoutées, widgets tardifs). Le hero n'est jamais remontré.
+		// Après application de la config : recaler tout de suite (synchrone : fonctionne même dans un
+		// onglet en arrière-plan où rAF/timers sont gelés), puis une fois le rendu stabilisé (polices,
+		// images, colonnes ajoutées, widgets tardifs). Le hero n'est jamais remontré.
+		scrollToTarget( name );
 		window.requestAnimationFrame( function () { scrollToTarget( name ); } );
 		clearTimeout( targetTimer );
 		targetTimer = setTimeout( function () {

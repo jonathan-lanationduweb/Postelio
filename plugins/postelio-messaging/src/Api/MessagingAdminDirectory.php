@@ -1,6 +1,6 @@
 <?php
 /**
- * Contrat de LECTURE ADMIN de la messagerie (consommé par postelio-admin). PRIVACY-FIRST :
+ * Contrat de LECTURE ADMIN de la messagerie (consommé par postelio-backoffice). PRIVACY-FIRST :
  * métriques globales + liste de CONVERSATIONS (contexte, participants, état, dernière activité).
  * N'expose JAMAIS le CONTENU des messages (ni en liste, ni en détail). La modération éventuelle
  * passe par les contrats de modération/messagerie, pas par une lecture directe des messages ici.

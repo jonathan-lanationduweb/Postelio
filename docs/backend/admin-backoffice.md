@@ -1,3 +1,7 @@
+> **OBSOLÈTE (septembre 2026).** Le plugin `postelio-admin` décrit ici a été **supprimé** : toute
+> l'interface wp-admin est désormais fournie par `postelio-backoffice`. Voir `docs/backend/backoffice.md`.
+> Ce document reste la référence historique de la Phase 1-3 du back-office et du diagnostic e-mail (§11).
+
 # Postelio — Back-office WordPress (`postelio-admin`)
 
 > Phase 1 livrée sur `feature/postelio-admin`. Le back-office est un **centre de contrôle

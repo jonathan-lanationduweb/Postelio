@@ -260,6 +260,8 @@ final class SiteSchema {
 	private static function navigation(): array {
 		return array(
 			'label' => 'Navigation', 'icon' => '🧭', 'type' => 'single',
+			// Aperçu : le VRAI front, positionné sur l'en-tête réel (Desktop / Tablette / Mobile libres).
+			'preview_target' => 'header',
 			'fields' => array(
 				'use_identity_logo' => array( 'type' => 'toggle', 'label' => 'Utiliser le logo global (Apparence → Identité)', 'default' => true ),
 				'logo'        => array( 'type' => 'media', 'media_type' => 'image', 'accept' => self::LOGO_FORMATS, 'preview' => 'contain', 'label' => 'Logo (override en-tête)', 'default' => '', 'show_if' => array( 'field' => 'use_identity_logo', 'equals' => false ) ),
