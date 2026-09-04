@@ -51,10 +51,25 @@ final class Menu {
 	public const SITE_HUB_PAGES = array( 'home', 'jobs', 'companies', 'skills', 'advice', 'contact' );
 
 	/**
-	 * ÉCRANS MIGRÉS (Phase 1). Tout autre slug est délégué au legacy. Étendre cette liste = migrer
-	 * un écran (le rendu ET les assets basculent ensemble).
+	 * ÉCRANS MIGRÉS. Tout autre slug est délégué au legacy. Étendre cette liste = migrer un écran
+	 * (le rendu ET les assets basculent ensemble).
+	 * Phase 1 : Tableau de bord, Mon site (Vue d'ensemble, Accueil). Phase 2 : toute la zone Mon site
+	 * (Navigation, Footer, Apparence, SEO, Offres, Entreprises, Savoir-faire, Conseils, Contact).
 	 */
-	public const MIGRATED = array( 'postelio-admin', 'postelio-site-pages', 'postelio-site' );
+	public const MIGRATED = array(
+		'postelio-admin',
+		'postelio-site-pages',
+		'postelio-site',
+		'postelio-site-navigation',
+		'postelio-site-footer',
+		'postelio-site-appearance',
+		'postelio-site-seo',
+		'postelio-site-jobs',
+		'postelio-site-companies',
+		'postelio-site-skills',
+		'postelio-site-advice',
+		'postelio-site-contact',
+	);
 
 	public static function is_migrated( string $slug ): bool {
 		return in_array( $slug, self::MIGRATED, true );

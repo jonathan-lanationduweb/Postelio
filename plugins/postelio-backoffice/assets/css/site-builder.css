@@ -137,6 +137,7 @@
 .sb-frame { width: 100%; height: calc(100vh - 190px); min-height: 440px; border: 0; display: block; background: #fff; }
 .sb-frame__state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(255,255,255,.95); color: var(--bo-muted); font-size: 13px; z-index: 2; text-align: center; padding: 20px; }
 .sb-frame__state.is-error { color: var(--bo-error); }
+.sb-frame__state[hidden] { display: none; }
 .sb-spin { width: 26px; height: 26px; border: 3px solid #DCE3EE; border-top-color: var(--bo-accent); border-radius: 50%; animation: sb-spin .8s linear infinite; }
 @keyframes sb-spin { to { transform: rotate(360deg); } }
 .sb-preview__hint { text-align: center; color: var(--bo-muted); font-size: 11px; opacity: .8; margin: 8px 0 0; }

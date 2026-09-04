@@ -395,8 +395,17 @@
 		}
 		function repRow( i ) {
 			var row = rows[ i ] || {};
+			// Ligne fermée : 1er champ = titre ; champs suivants = résumé « /offres · Tout le monde »
+			// (les selects affichent leur libellé, les toggles « Oui / Non », une zone → 1re ligne).
 			var title = ( keys[ 0 ] && row[ keys[ 0 ] ] ) ? String( row[ keys[ 0 ] ] ) : ( ( fdef.label || 'Élément' ) + ' ' + ( i + 1 ) );
-			var sub = ( keys[ 1 ] && row[ keys[ 1 ] ] ) ? String( row[ keys[ 1 ] ] ).split( '\n' )[ 0 ] : '';
+			var sub = keys.slice( 1 ).map( function ( sk ) {
+				var def = fdef.fields[ sk ] || {}, v = row[ sk ];
+				if ( v === '' || v == null ) { return ''; }
+				if ( def.type === 'select' ) { return ( def.options && def.options[ v ] ) || String( v ); }
+				if ( def.type === 'toggle' ) { return ( def.label || sk ) + ' : ' + ( v ? 'Oui' : 'Non' ); }
+				if ( def.type === 'media' ) { return basename( v ); }
+				return String( v ).split( '\n' )[ 0 ];
+			} ).filter( Boolean ).join( ' · ' );
 			var fieldsWrap = el( 'div', { class: 'sb-fields' } );
 			keys.forEach( function ( sk ) { fieldsWrap.appendChild( fieldRow( sk, fdef.fields[ sk ], path.concat( [ i, sk ] ) ) ); } );
 			function move( to ) { rows.splice( to, 0, rows.splice( i, 1 )[ 0 ] ); markDirty(); rebuild(); }

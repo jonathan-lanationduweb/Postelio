@@ -3,7 +3,7 @@
  * Plugin Name: Postelio Backoffice
  * Plugin URI:  https://github.com/jonathan-lanationduweb/Postelio
  * Description: Couche UNIQUE d'administration wp-admin de Postelio (menu, design system, tableau de bord, Mon site / Site Builder, écrans métier). Orchestration pure : consomme les contrats des plugins métier, aucune table, aucune logique métier. Prend la main progressivement sur les écrans de Postelio Admin (legacy).
- * Version:     0.1.0
+ * Version:     0.2.2
  * Requires PHP: 8.1
  * Requires at least: 6.4
  * Author:      Postelio
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'POSTELIO_BACKOFFICE_VERSION', '0.1.0' );
+define( 'POSTELIO_BACKOFFICE_VERSION', '0.2.2' );
 define( 'POSTELIO_BACKOFFICE_FILE', __FILE__ );
 define( 'POSTELIO_BACKOFFICE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'POSTELIO_BACKOFFICE_URL', plugin_dir_url( __FILE__ ) );

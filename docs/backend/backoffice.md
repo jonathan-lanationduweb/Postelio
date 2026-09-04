@@ -6,9 +6,10 @@ actions, assets, aperçus. Les plugins métier restent propriétaires de leurs d
 de l'identité (logo / favicon) et de la configuration du front. Le back-office **ne duplique rien** :
 il lit et écrit via les contrats publics et le REST.
 
-**Phase 1 (livrée, à valider visuellement)** : squelette, architecture UI, menu, design system,
-Tableau de bord, Mon site / Vue d'ensemble, Mon site / Accueil (éditeur avec vrai front en aperçu),
-mécanisme de compatibilité avec `postelio-admin` (legacy). **Rien d'autre n'est migré.**
+**Phase 1 (validée)** : squelette, architecture UI, menu, design system, Tableau de bord, Mon site /
+Vue d'ensemble, Mon site / Accueil (éditeur avec vrai front en aperçu), mécanisme de compatibilité
+avec `postelio-admin` (legacy). **Phase 2 (livrée, §7)** : toute la zone Mon site. Les écrans métier
+et système restent rendus par le legacy.
 
 ---
 
@@ -97,3 +98,46 @@ Navigation, Footer, Apparence, SEO, éditeurs Offres / Entreprises / Savoir-fair
 Candidatures, Messagerie, Entretiens, Savoir-faire, Modération, Facturation, Sources, Réglages,
 Notifications, CV & fichiers, Santé, Favoris & Alertes, et le rapatriement des Actions / Metrics /
 Health / Contracts. Ensuite seulement : retrait de `postelio-admin`.
+
+
+---
+
+## 7. Phase 2 — zone « Mon site » complète (septembre 2026)
+
+`Menu::MIGRATED` couvre désormais toute la zone Mon site : Vue d'ensemble, Accueil, Navigation,
+Footer, Apparence, SEO, Offres, Entreprises, Savoir-faire, Conseils, Contact. Ces écrans passent
+tous par `SiteEditorScreen` + `site-builder.js` (UN moteur, pas dix implémentations) ; leurs assets
+legacy (`admin.css`, `site-editor.css`, `site-editor.js`) ne sont plus chargés (filtre
+`postelio/admin/legacy_assets`). Slugs inchangés (favoris intacts) ; back-office désactivé = retour
+au legacy.
+
+- **Navigation** : Marque (logo global / override conditionnel / nom de marque override, rappel
+  d'identité), Liens (repeater compact : « Offres · /offres · Tout le monde », clic → édition inline
+  libellé / URL / visibilité), Boutons (toggle + libellé + URL). Schéma : `preview_target = header`
+  → le bridge cale l'aperçu sur l'en-tête réel ; Desktop / Tablette / Mobile libres.
+- **Footer** : exactement le comportement de cfc5e98 (`preview_target = footer`,
+  `preview_device = mobile`, sections Marque / Colonnes / Réseaux / Mentions / Réglages, logo
+  global avec override conditionnel, `brand_text` override vide → nom global, description propre).
+- **Apparence** : Identité (nom, logo, logo clair, favicon 16/32 px + nom + Choisir / Remplacer /
+  Retirer / Défaut, image sociale), Couleurs (picker + hex, palette par défaut #17324D / #FF6B6B /
+  #FAF7F1 / #17324D), Typographie (selects du schéma), Boutons (arrondi, style). L'aperçu est le vrai
+  front : le bridge applique couleurs, typographie (feuille d'aperçu injectée à partir de valeurs
+  fermées) et boutons. Pas de « brand board ». Upload SVG non activé (Safe SVG requis).
+- **SEO** : Global (nom du site, template de titre, meta description, image sociale) + une carte par
+  page (titre SEO, meta description, titre / description sociaux, image, noindex), une seule carte
+  ouverte à la fois, compteurs indicatifs 60 / 155, aperçu SERP + Open Graph = composant éditorial
+  (« ne reflète ni la position ni l'indexation réelle »), sélecteur d'appareil masqué.
+- **Offres / Entreprises / Savoir-faire / Conseils / Contact** : sections du `SiteSchema` (rien
+  d'inventé), aperçu = vraie page correspondante (`offres.html`, `entreprises.html`,
+  `savoir-faire.html`, `blog.html`, `contact.html` + `?postelio_preview=1`), collections auto /
+  manuel via `/site/admin/search` et `/site/admin/resolve` (« Contenu indisponible » si la référence
+  a disparu), note « Posts WordPress » (Conseils) et note « aucun backend d'envoi » (Contact)
+  affichées.
+- **Composants mutualisés** : un seul champ média (vignette / nom / poids / warning > 15 Mo /
+  actions), un seul repeater, un seul sélecteur de contenu, une seule save bar, un seul état d'erreur
+  d'aperçu (« Chargement… » / « Impossible de charger l'aperçu » + Réessayer).
+
+Reste pour la Phase 3 : les écrans métier et système (Utilisateurs, Entreprises, Offres,
+Candidatures, Messagerie, Entretiens, Savoir-faire, Modération, Facturation, Sources, Réglages,
+Notifications, CV & fichiers, Santé, Favoris & Alertes), le rapatriement des Actions / Metrics /
+Health / Contracts, puis le retrait de `postelio-admin` et de ses assets.

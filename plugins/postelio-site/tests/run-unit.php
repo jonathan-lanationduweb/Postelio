@@ -31,6 +31,7 @@ foreach ( array( 'home', 'navigation', 'appearance', 'jobs', 'companies', 'skill
 	$def = SiteSchema::page( $p );
 	$check( "page {$p} garde Desktop/Tablette/Mobile (aucun preview_device)", ! isset( $def['preview_device'] ) );
 }
+$check( 'navigation cible l\'en-tête réel (preview_target=header)', 'header' === ( SiteSchema::page( 'navigation' )['preview_target'] ?? '' ) );
 
 echo "== Footer : structure de l'éditeur ==\n";
 $labels = array_map( static fn( $g ) => $g['label'], $footer['groups'] );
