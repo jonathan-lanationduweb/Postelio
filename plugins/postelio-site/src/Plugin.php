@@ -2,7 +2,7 @@
 /**
  * Amorçage du module postelio-site : SOURCE DE CONFIGURATION du site public Postelio (schéma,
  * stockage en options, API REST publique + admin, capacité `pst_manage_site`, audit via le bus
- * d'événements du core). L'INTERFACE d'édition vit dans postelio-admin ; ici on ne fournit que la
+ * d'événements du core). L'INTERFACE d'édition vit dans postelio-backoffice ; ici on ne fournit que la
  * configuration et ses contrats. Ne modifie aucun module métier.
  *
  * @package Postelio\Site

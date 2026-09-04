@@ -1,6 +1,6 @@
 <?php
 /**
- * Contrat de LECTURE ADMIN des entretiens (consommé par postelio-admin). Compteurs par statut,
+ * Contrat de LECTURE ADMIN des entretiens (consommé par postelio-backoffice). Compteurs par statut,
  * liste paginée SANS coordonnées sensibles (adresse / téléphone / lien visio JAMAIS en liste), et
  * détail avec chronologie. Les coordonnées ne sont renvoyées par detail() que si l'appelant est
  * explicitement autorisé ($include_coordinates), charge à la page d'exiger la capacité. Lecture seule.
