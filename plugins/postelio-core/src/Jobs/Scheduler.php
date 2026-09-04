@@ -21,6 +21,13 @@ final class Scheduler {
 	/** Préfixe des hooks cron Postelio. */
 	public const HOOK_PREFIX = 'postelio_job_';
 
+	/**
+	 * IDENTIFIANT TECHNIQUE de la fréquence Postelio (clé de `cron_schedules`). Jamais traduit :
+	 * c'est une clé stable, persistée dans la table des tâches planifiées. Le libellé humain est
+	 * fourni séparément par `recurrence_label()`.
+	 */
+	public const RECURRENCE_15MIN = 'postelio_15min';
+
 	private Events $events;
 
 	public function __construct( Events $events ) {
@@ -35,13 +42,31 @@ final class Scheduler {
 	 * @return array<string, array{interval:int, display:string}>
 	 */
 	public static function register_schedules( array $schedules ): array {
-		if ( ! isset( $schedules['postelio_15min'] ) ) {
-			$schedules['postelio_15min'] = array(
+		if ( ! isset( $schedules[ self::RECURRENCE_15MIN ] ) ) {
+			$schedules[ self::RECURRENCE_15MIN ] = array(
 				'interval' => 15 * MINUTE_IN_SECONDS,
-				'display'  => __( 'Toutes les 15 minutes (Postelio)', 'postelio-core' ),
+				'display'  => self::recurrence_label(),
 			);
 		}
 		return $schedules;
+	}
+
+	/**
+	 * Libellé HUMAIN de la fréquence, traduit seulement à partir de `init`.
+	 *
+	 * `cron_schedules` peut être déclenché dès `plugins_loaded` : la première planification d'une
+	 * tâche récurrente appelle `wp_schedule_event()`, qui valide la fréquence via
+	 * `wp_get_schedules()`. Appeler `__()` à cet instant forcerait le chargement du domaine de
+	 * traduction avant `init`, ce que WordPress signale par « Translation loading for the
+	 * postelio-core domain was triggered too early ». On renvoie donc la chaîne source avant `init`
+	 * et la traduction ensuite : ce libellé n'apparaît que dans des écrans d'administration, rendus
+	 * bien après `init`, où l'appel suivant à `wp_get_schedules()` fournit la version traduite.
+	 */
+	private static function recurrence_label(): string {
+		if ( ! did_action( 'init' ) ) {
+			return 'Toutes les 15 minutes (Postelio)';
+		}
+		return __( 'Toutes les 15 minutes (Postelio)', 'postelio-core' );
 	}
 
 	private static function hook( string $name ): string {

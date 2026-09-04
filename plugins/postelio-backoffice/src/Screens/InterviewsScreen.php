@@ -35,6 +35,9 @@ final class InterviewsScreen extends ListScreen {
 
 	private const TYPES = array( 'video' => 'Visioconférence', 'onsite' => 'Sur place', 'phone' => 'Téléphone' );
 
+	/** Type d'entretien => canal de coordonnées correspondant (contrat du module Entretiens). */
+	private const CHANNELS = array( 'onsite' => 'location', 'video' => 'video', 'phone' => 'phone' );
+
 	protected function capability(): string {
 		return Menu::CAP_ADMIN;
 	}
@@ -141,27 +144,51 @@ final class InterviewsScreen extends ListScreen {
 		return $out;
 	}
 
-	/** @param array<string,mixed> $coords @return array<string,string> */
+	/**
+	 * Coordonnées du SEUL canal correspondant au type d'entretien. Clés conformes au contrat du
+	 * module Entretiens (`InterviewService`) : location = address / address_complement /
+	 * postal_code / city / contact / access_instructions ; video = meeting_url / provider ;
+	 * phone = phone_number / who_calls.
+	 *
+	 * @param array<string,mixed> $coords
+	 * @return array<string,string>
+	 */
 	private function coords( array $coords, string $type ): array {
-		$location = is_array( $coords['location'] ?? null ) ? $coords['location'] : array();
-		$video    = is_array( $coords['video'] ?? null ) ? $coords['video'] : array();
-		$phone    = is_array( $coords['phone'] ?? null ) ? $coords['phone'] : array();
-
-		if ( 'onsite' === $type && ! empty( $location ) ) {
-			$address = (string) ( $location['address'] ?? ( $location['adresse'] ?? implode( ', ', array_filter( array_map( 'strval', $location ) ) ) ) );
-			return array( 'Adresse' => Ui::text( Fmt::or_dash( $address ) ) );
+		$group = is_array( $coords[ self::CHANNELS[ $type ] ?? '' ] ?? null ) ? $coords[ self::CHANNELS[ $type ] ] : array();
+		if ( empty( array_filter( $group, static fn( $v ) => is_array( $v ) ? ! empty( $v ) : ( null !== $v && '' !== (string) $v ) ) ) ) {
+			return array( 'Détails' => Ui::text( '—', false, true ) );
 		}
-		if ( 'video' === $type && ! empty( $video ) ) {
-			$pairs = array( 'Lien de connexion' => Ui::text( Fmt::or_dash( $video['url'] ?? ( $video['link'] ?? '' ) ) ) );
-			if ( ! empty( $video['provider'] ) ) {
-				$pairs['Outil'] = Ui::text( (string) $video['provider'] );
+
+		if ( 'onsite' === $type ) {
+			$street = trim( (string) ( $group['address'] ?? '' ) . ' ' . (string) ( $group['address_complement'] ?? '' ) );
+			$city   = trim( (string) ( $group['postal_code'] ?? '' ) . ' ' . (string) ( $group['city'] ?? '' ) );
+			$pairs  = array(
+				'Adresse' => Ui::text( Fmt::or_dash( $street ) ),
+				'Ville'   => Ui::text( Fmt::or_dash( $city ) ),
+			);
+			if ( ! empty( $group['contact'] ) ) {
+				$pairs['Contact sur place'] = Ui::text( (string) $group['contact'] );
+			}
+			if ( ! empty( $group['access_instructions'] ) ) {
+				$pairs['Accès'] = Ui::text( (string) $group['access_instructions'] );
 			}
 			return $pairs;
 		}
-		if ( 'phone' === $type && ! empty( $phone ) ) {
-			return array( 'Téléphone' => Ui::text( Fmt::or_dash( $phone['number'] ?? ( $phone['phone'] ?? '' ) ) ) );
+
+		if ( 'video' === $type ) {
+			$pairs = array( 'Lien de connexion' => Ui::text( Fmt::or_dash( $group['meeting_url'] ?? '' ) ) );
+			if ( ! empty( $group['provider'] ) ) {
+				$pairs['Outil'] = Ui::text( (string) $group['provider'] );
+			}
+			return $pairs;
 		}
-		return array( 'Détails' => Ui::text( '—', false, true ) );
+
+		$who   = (string) ( $group['who_calls'] ?? '' );
+		$pairs = array( 'Numéro' => Ui::text( Fmt::or_dash( $group['phone_number'] ?? '' ) ) );
+		if ( '' !== $who ) {
+			$pairs['Qui appelle'] = Ui::text( 'candidate_calls' === $who ? 'Le candidat appelle' : 'L\'entreprise appelle' );
+		}
+		return $pairs;
 	}
 
 	/** @param array<int,array<string,mixed>> $hist @return array<int,array<string,mixed>> */
