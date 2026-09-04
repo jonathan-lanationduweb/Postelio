@@ -36,16 +36,6 @@ function postelio_backoffice_register_autoloader(): bool {
 }
 postelio_backoffice_register_autoloader();
 
-/*
- * Neutralisation COMPLÈTE de l'ancienne interface (`postelio-admin`), déclarée À L'INCLUSION — donc
- * avant son amorçage (`plugins_loaded:60`), qui lit ces filtres. Tous les écrans étant désormais
- * rendus ici, le plugin historique ne fournit plus ni menu, ni assets, ni actions : sans cela, ses
- * gestionnaires `admin_post_*` répondraient avant les nôtres. Il peut être désactivé sans effet.
- */
-add_filter( 'postelio/admin/legacy_menu', '__return_false' );
-add_filter( 'postelio/admin/legacy_actions', '__return_false' );
-add_filter( 'postelio/admin/legacy_assets', '__return_false' );
-
 add_action(
 	'plugins_loaded',
 	static function () {
