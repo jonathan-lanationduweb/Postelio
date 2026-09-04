@@ -226,6 +226,27 @@
 	.pst-ed-panel, .pst-ed-preview-wrap { padding-left: 16px; padding-right: 16px; }
 }
 
+/* ---- Champs conditionnels + identité globale ------------------------- */
+.pst-ed-field[hidden], .pst-ed-devices[hidden], .pst-ed-media__actions button[hidden] { display: none !important; }
+.pst-ed-identity { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px dashed #c9d4e3; border-radius: 12px; background: #f6f8fb; margin-top: 14px; }
+.pst-ed-identity__thumb { width: 44px; height: 44px; border-radius: 10px; background: #fff; border: 1px solid var(--ed-line); display: flex; align-items: center; justify-content: center; flex: none; overflow: hidden; }
+.pst-ed-identity__thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.pst-ed-identity__thumb.is-empty { background: var(--ed-accent); color: var(--ed-primary); font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 20px; }
+.pst-ed-identity__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pst-ed-identity__label { font-weight: 700; font-size: 12.5px; color: var(--ed-primary); }
+.pst-ed-identity__sub { font-size: 11.5px; color: var(--ed-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pst-ed-identity a { font-size: 12px; font-weight: 700; color: var(--ed-accent); text-decoration: none; white-space: nowrap; }
+.pst-ed-identity a:hover { text-decoration: underline; }
+
+/* ---- Média : logo (contain) et favicon (icône réelle) ---------------- */
+.pst-ed-media__preview.is-contain, .pst-ed-media__preview.is-icon { flex-direction: column; gap: 8px; background-color: #f2f5f9; background-image: linear-gradient(45deg, #e6ebf2 25%, transparent 25%, transparent 75%, #e6ebf2 75%), linear-gradient(45deg, #e6ebf2 25%, transparent 25%, transparent 75%, #e6ebf2 75%) !important; background-size: 16px 16px; background-position: 0 0, 8px 8px; }
+.pst-ed-media__img { max-width: 70%; max-height: 84px; object-fit: contain; display: block; }
+.pst-ed-media__iconrow { display: flex; align-items: flex-end; gap: 14px; }
+.pst-ed-media__icon { display: block; image-rendering: auto; }
+.pst-ed-media__icon--16 { width: 16px; height: 16px; }
+.pst-ed-media__icon--32 { width: 32px; height: 32px; }
+.pst-ed-media__name { font-size: 11.5px; color: var(--ed-muted); background: rgba(255,255,255,.85); padding: 2px 8px; border-radius: 999px; }
+
 /* ---- Média vidéo + avertissements ------------------------------------ */
 .pst-ed-media__preview.is-video { height: 64px; background: #14263a; color: #cdd8e6; font-size: 12.5px; font-weight: 600; }
 .pst-ed-field__help.is-warn { color: #b23a00; font-weight: 600; }

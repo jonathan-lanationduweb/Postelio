@@ -179,3 +179,17 @@ Architecture multi-canal prête pour un futur `PushProvider` (Tauri).
 - Digest marketing (offres/reco) — conçu, non implémenté V1.
 - Notifier plusieurs recruteurs au-delà de créateur+owner (assignation) — futur.
 - Bounces/complaints provider — hors V1.
+
+## Diagnostic du service e-mail (admin)
+- `WpMailProvider` capture `wp_mail_failed` : `last_error` porte la cause PHPMailer
+  (`wp_mail_failed: <message> (code N)`) au lieu d'un booléen ; `WpMailProvider::transport()`
+  décrit le transport réellement actif (WP Mail SMTP, SMTP via `phpmailer_init`, PHP `mail()`
+  sendmail ou SMTP php.ini) — jamais de secret.
+- `EmailDispatcher::transport()`, `send_test($user_id)` (même provider, **hors file**, destinataire =
+  adresse courante de l'utilisateur, résultat conservé dans l'option
+  `postelio_notifications_email_test` sans contenu), `last_test()`, `mask_email()`.
+- Contrat `NotificationDirectory` : `transport()`, `delivery_failures($limit)` (destinataires
+  masqués), `send_test()`, `last_test()`. Consommé par l'écran Postelio → Notifications.
+- **Pas de relance** d'une livraison `failed` : aucune opération sûre n'existe (gap documenté dans
+  `docs/backend/admin-backoffice.md` §11) ; corriger le transport puis vérifier par un e-mail de test.
+- `wp_mail() === true` = remise au transport, pas une preuve de livraison.

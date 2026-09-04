@@ -42,6 +42,7 @@ final class Actions {
 		'pst_admin_skill_unhide'      => array( 'cap' => 'pst_moderate_content', 'handler' => 'skill_unhide', 'redirect' => 'postelio-skills' ),
 		'pst_admin_extjob_hide'       => array( 'cap' => 'pst_moderate_content', 'handler' => 'extjob_hide', 'redirect' => 'postelio-jobs' ),
 		'pst_admin_extjob_unhide'     => array( 'cap' => 'pst_moderate_content', 'handler' => 'extjob_unhide', 'redirect' => 'postelio-jobs' ),
+		'pst_admin_email_test'        => array( 'cap' => 'pst_manage_platform', 'handler' => 'email_test', 'redirect' => 'postelio-notifications' ),
 	);
 
 	public function register(): void {
@@ -238,6 +239,20 @@ final class Actions {
 			return array( 'pst_err' => 'module_absent' );
 		}
 		return \Postelio\JobSources\Api\JobSourcesModeration::unhide( $uuid ) ? array( 'pst_msg' => 'reactivated' ) : array( 'pst_err' => 'failed' );
+	}
+
+	/**
+	 * E-mail de test : MÊME provider que les notifications, destinataire = adresse de l'admin
+	 * courant (jamais une adresse arbitraire), hors file (aucun retry). Le détail est affiché dans
+	 * « Service e-mail » (résultat conservé par le module Notifications).
+	 */
+	private function email_test( string $uuid ): array {
+		unset( $uuid );
+		if ( ! class_exists( '\\Postelio\\Notifications\\Api\\NotificationDirectory' ) || ! method_exists( '\\Postelio\\Notifications\\Api\\NotificationDirectory', 'send_test' ) ) {
+			return array( 'pst_err' => 'module_absent' );
+		}
+		$res = \Postelio\Notifications\Api\NotificationDirectory::send_test( get_current_user_id() );
+		return $res->ok ? array( 'pst_msg' => 'email_test_ok' ) : array( 'pst_err' => 'email_test_failed' );
 	}
 
 	/** @param array<string,string> $args */

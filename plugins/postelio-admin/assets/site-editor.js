@@ -12,7 +12,12 @@
 
 	var state = deepClone( CFG.values || {} );
 	var dirty = false;
-	var device = 'desktop';
+	// Certaines pages imposent un appareil et une cible d'aperçu (ex. Footer : mobile + footer réel).
+	// Ces indications viennent du SCHÉMA (source de vérité), donc survivent au rechargement.
+	var FORCED_DEVICE  = ( CFG.schema.preview_device === 'mobile' || CFG.schema.preview_device === 'tablet' || CFG.schema.preview_device === 'desktop' ) ? CFG.schema.preview_device : null;
+	var PREVIEW_TARGET = ( CFG.schema.preview_target === 'footer' || CFG.schema.preview_target === 'header' ) ? CFG.schema.preview_target : null;
+	var device = FORCED_DEVICE || 'desktop';
+	var deps = []; // champs conditionnels (show_if) : { node, path, equals }
 	var previewTimer = null;
 	var activeSeo = 'home';
 	var resolveCache = {}; // { type: { id: {label,sub,state,missing} } }
@@ -68,6 +73,7 @@
 	function renderEditor() {
 		var panel = document.getElementById( 'pst-ed-panel' );
 		panel.innerHTML = '';
+		deps = [];
 		var schema = CFG.schema;
 
 		if ( schema.backend_note ) { panel.appendChild( el( 'div', { class: 'pst-ed-note', text: schema.backend_note } ) ); }
@@ -83,6 +89,7 @@
 		} else if ( schema.groups ) {
 			schema.groups.forEach( function ( g ) {
 				panel.appendChild( plainCard( g.label, function ( body ) {
+					if ( g.identity_hint ) { body.appendChild( identityHint() ); }
 					g.fields.forEach( function ( fk ) { if ( schema.fields[ fk ] ) { body.appendChild( fieldRow( fk, schema.fields[ fk ], [ fk ] ) ); } } );
 				} ) );
 			} );
@@ -91,6 +98,42 @@
 				Object.keys( schema.fields ).forEach( function ( fk ) { body.appendChild( fieldRow( fk, schema.fields[ fk ], [ fk ] ) ); } );
 			} ) );
 		}
+		refreshDeps();
+	}
+
+	// Champs conditionnels (`show_if: { field, equals }`, relatif au même niveau que le champ).
+	function refreshDeps() {
+		deps.forEach( function ( d ) {
+			var v = getPath( d.path );
+			d.node.hidden = ! ( ( v == null ? false : v ) === d.equals );
+		} );
+	}
+
+	// Rappel de l'identité GLOBALE (Apparence → Identité) dans les cartes « Marque » de Navigation /
+	// Footer : le logo global réellement utilisé quand « Utiliser le logo global » est activé.
+	function identityHint() {
+		var a = appearance();
+		var logo = a.logo ? mediaUrl( a.logo ) : '';
+		var thumb = el( 'span', { class: 'pst-ed-identity__thumb' + ( logo ? '' : ' is-empty' ), text: logo ? '' : 'P' } );
+		if ( logo ) { var img = el( 'img', { alt: '' } ); img.src = logo; thumb.appendChild( img ); }
+		var link = el( 'a', { href: adminPageUrl( 'postelio-site-appearance' ), text: 'Modifier dans Apparence → Identité' } );
+		return el( 'div', { class: 'pst-ed-identity' }, [
+			thumb,
+			el( 'div', { class: 'pst-ed-identity__main' }, [
+				el( 'span', { class: 'pst-ed-identity__label', text: 'Identité globale : ' + ( a.brand_name || 'Postelio' ) } ),
+				el( 'span', { class: 'pst-ed-identity__sub', text: logo ? basename( logo ) : 'Aucun logo global — pastille « P » par défaut' } )
+			] ),
+			link
+		] );
+	}
+	function adminPageUrl( slug ) { return window.location.pathname + '?page=' + encodeURIComponent( slug ); }
+	function basename( u ) { return String( u || '' ).split( '/' ).pop().split( '?' )[ 0 ]; }
+	// URL affichable d'une valeur média : absolue, ou chemin racine du front (même origine que wp-admin).
+	function mediaUrl( v ) {
+		v = String( v || '' ).trim();
+		if ( /^https?:\/\//i.test( v ) ) { return v; }
+		if ( /^\//.test( v ) ) { return window.location.origin + v; }
+		return '';
 	}
 
 	function resetControl() {
@@ -195,6 +238,9 @@
 	function fieldRow( fk, fdef, path ) {
 		var e = fieldRowBuild( fk, fdef, path );
 		if ( e && e.classList && fdef.col === 'half' ) { e.classList.add( 'pst-ed-field--half' ); }
+		if ( e && fdef.show_if && fdef.show_if.field ) {
+			deps.push( { node: e, path: path.slice( 0, -1 ).concat( [ fdef.show_if.field ] ), equals: fdef.show_if.equals } );
+		}
 		return e;
 	}
 	function fieldRowBuild( fk, fdef, path ) {
@@ -239,7 +285,7 @@
 
 	function toggleField( fk, fdef, path ) {
 		var value = !! getPath( path );
-		var sw = switchEl( value, function ( on ) { setPath( path, on ); markDirty(); } );
+		var sw = switchEl( value, function ( on ) { setPath( path, on ); refreshDeps(); markDirty(); } );
 		return el( 'div', { class: 'pst-ed-field' }, [
 			el( 'div', { class: 'pst-ed-toggle' }, [ el( 'label', { text: fdef.label || '', style: 'margin:0' } ), sw ] ),
 			fdef.help ? el( 'p', { class: 'pst-ed-field__help', text: fdef.help } ) : null
@@ -263,24 +309,39 @@
 
 	function mediaField( fk, fdef, path ) {
 		var isVideo = fdef.media_type === 'video';
-		var preview = el( 'div', { class: 'pst-ed-media__preview' + ( isVideo ? ' is-video' : '' ) } );
+		var kind = fdef.preview === 'icon' ? 'icon' : ( fdef.preview === 'contain' ? 'contain' : 'cover' );
+		var preview = el( 'div', { class: 'pst-ed-media__preview' + ( isVideo ? ' is-video' : '' ) + ( kind !== 'cover' ? ' is-' + kind : '' ) } );
 		var status = el( 'p', { class: 'pst-ed-field__help' } );
-		function basename( u ) { return String( u || '' ).split( '/' ).pop().split( '?' )[ 0 ]; }
+		var hasDefault = !! fdef.default;
 		function paint() {
 			var v = getPath( path );
+			var url = mediaUrl( v );
+			preview.style.backgroundImage = 'none';
+			preview.textContent = '';
 			if ( isVideo ) {
-				preview.style.backgroundImage = 'none';
 				preview.textContent = v ? ( '🎬 ' + basename( v ) ) : 'Vidéo par défaut du site';
-			} else if ( v && /^https?:/.test( v ) ) {
-				preview.style.backgroundImage = 'url(' + v + ')'; preview.textContent = '';
+			} else if ( url && kind === 'icon' ) {
+				// Vraie prévisualisation du favicon (taille réelle d'onglet + agrandie) + nom du fichier.
+				var small = el( 'img', { class: 'pst-ed-media__icon pst-ed-media__icon--16', alt: '' } ); small.src = url;
+				var big = el( 'img', { class: 'pst-ed-media__icon pst-ed-media__icon--32', alt: '' } ); big.src = url;
+				preview.appendChild( el( 'span', { class: 'pst-ed-media__iconrow' }, [ small, big ] ) );
+				preview.appendChild( el( 'span', { class: 'pst-ed-media__name', text: basename( url ) + ( hasDefault && v === fdef.default ? ' · favicon Postelio par défaut' : '' ) } ) );
+			} else if ( url && kind === 'contain' ) {
+				var img = el( 'img', { class: 'pst-ed-media__img', alt: '' } ); img.src = url;
+				preview.appendChild( img );
+				preview.appendChild( el( 'span', { class: 'pst-ed-media__name', text: basename( url ) } ) );
+			} else if ( url ) {
+				preview.style.backgroundImage = 'url(' + url + ')';
 			} else {
-				preview.style.backgroundImage = 'none'; preview.textContent = v ? ( 'Média #' + v ) : 'Aucun média';
+				preview.textContent = v ? ( 'Média #' + v ) : ( hasDefault ? 'Aucun média (défaut du site retiré)' : 'Aucun média' );
 			}
 			choose.textContent = v ? 'Remplacer' : ( isVideo ? 'Choisir une vidéo' : 'Choisir un média' );
+			reset.hidden = ! hasDefault || v === fdef.default;
+			remove.hidden = ! v;
 		}
 		var choose = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm', type: 'button', onclick: function () { openMedia( path, fdef, paint, status ); } } );
 		var remove = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm pst-ed-btn--ghost', type: 'button', text: 'Retirer', onclick: function () { setPath( path, '' ); status.textContent = ''; status.className = 'pst-ed-field__help'; paint(); markDirty(); } } );
-		var reset = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm pst-ed-btn--ghost', type: 'button', text: 'Défaut', onclick: function () { setPath( path, fdef.default || '' ); status.textContent = ''; status.className = 'pst-ed-field__help'; paint(); markDirty(); } } );
+		var reset = el( 'button', { class: 'pst-ed-btn pst-ed-btn--sm pst-ed-btn--ghost', type: 'button', text: 'Restaurer la valeur par défaut', onclick: function () { setPath( path, fdef.default || '' ); status.textContent = ''; status.className = 'pst-ed-field__help'; paint(); markDirty(); } } );
 		paint();
 		return el( 'div', { class: 'pst-ed-field' }, [ el( 'label', { text: fdef.label || '' } ), preview, el( 'div', { class: 'pst-ed-media__actions' }, [ choose, remove, reset ] ), fdef.help ? el( 'p', { class: 'pst-ed-field__help', text: fdef.help } ) : null, status ] );
 	}
@@ -453,7 +514,9 @@
 
 	// Routes réelles du front public (servi à la racine de l'origine).
 	var FRONT_ROUTES = { home: '/index.html', navigation: '/index.html', footer: '/index.html', appearance: '/index.html', jobs: '/offres.html', companies: '/entreprises.html', skills: '/savoir-faire.html', advice: '/blog.html', contact: '/contact.html' };
-	function frontUrl( page ) { return window.location.origin + ( FRONT_ROUTES[ page ] || '/index.html' ) + '?postelio_preview=1'; }
+	// `v` = version de l'admin : force un document d'aperçu frais à chaque mise à jour (le bridge du
+	// front ignore ce paramètre ; sans lui, un index.html en cache navigateur garderait un vieux bridge).
+	function frontUrl( page ) { return window.location.origin + ( FRONT_ROUTES[ page ] || '/index.html' ) + '?postelio_preview=1&v=' + encodeURIComponent( CFG.version || '1' ); }
 
 	function renderPreview() {
 		var canvas = document.getElementById( 'pst-ed-canvas' );
@@ -511,7 +574,9 @@
 		if ( savedAll && typeof savedAll === 'object' ) { Object.keys( savedAll ).forEach( function ( k ) { merged[ k ] = savedAll[ k ]; } ); }
 		merged[ CFG.page ] = state; // les modifications NON ENREGISTRÉES priment
 		try {
-			iframeEl.contentWindow.postMessage( { type: 'postelio-site-preview', page: CFG.page, config: merged }, window.location.origin );
+			// `target` : le bridge du front positionne l'aperçu sur l'élément RÉEL (ex. footer) et
+			// l'y maintient après chaque modification live (jamais de retour au hero).
+			iframeEl.contentWindow.postMessage( { type: 'postelio-site-preview', page: CFG.page, config: merged, target: PREVIEW_TARGET }, window.location.origin );
 		} catch ( e ) {}
 	}
 
@@ -599,13 +664,20 @@
 
 	// ============================================================ INIT
 	function init() {
-		Array.prototype.forEach.call( document.querySelectorAll( '.pst-ed-devices button' ), function ( b ) {
-			b.addEventListener( 'click', function () {
-				device = b.getAttribute( 'data-device' );
-				Array.prototype.forEach.call( document.querySelectorAll( '.pst-ed-devices button' ), function ( x ) { x.classList.toggle( 'is-active', x === b ); } );
-				renderPreview();
+		if ( FORCED_DEVICE ) {
+			// Page à appareil imposé (Footer = mobile) : pas de sélecteur Desktop / Tablette / Mobile.
+			var devs = document.getElementById( 'pst-ed-devices' ); if ( devs ) { devs.hidden = true; }
+			var lbl = document.getElementById( 'pst-ed-pvlabel' );
+			if ( lbl ) { lbl.textContent = FORCED_DEVICE === 'mobile' ? 'Aperçu mobile' : ( FORCED_DEVICE === 'tablet' ? 'Aperçu tablette' : 'Aperçu desktop' ); }
+		} else {
+			Array.prototype.forEach.call( document.querySelectorAll( '.pst-ed-devices button' ), function ( b ) {
+				b.addEventListener( 'click', function () {
+					device = b.getAttribute( 'data-device' );
+					Array.prototype.forEach.call( document.querySelectorAll( '.pst-ed-devices button' ), function ( x ) { x.classList.toggle( 'is-active', x === b ); } );
+					renderPreview();
+				} );
 			} );
-		} );
+		}
 		var s = document.getElementById( 'pst-ed-save' ); if ( s ) { s.addEventListener( 'click', save ); }
 		var s2 = document.getElementById( 'pst-ed-savebar-save' ); if ( s2 ) { s2.addEventListener( 'click', save ); }
 		var c = document.getElementById( 'pst-ed-savebar-cancel' ); if ( c ) { c.addEventListener( 'click', function () { state = deepClone( CFG.values || {} ); dirty = false; savebar( false ); renderEditor(); renderPreview(); } ); }

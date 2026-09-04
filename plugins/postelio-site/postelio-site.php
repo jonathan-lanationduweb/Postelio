@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'POSTELIO_SITE_VERSION', '0.1.0' );
+define( 'POSTELIO_SITE_VERSION', '0.1.1' );
 define( 'POSTELIO_SITE_FILE', __FILE__ );
 define( 'POSTELIO_SITE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'POSTELIO_SITE_URL', plugin_dir_url( __FILE__ ) );
