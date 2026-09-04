@@ -81,7 +81,11 @@
     };
   }
 
-  /* ---- Adaptateur ENTREPRISE (vue publique → forme historique) ---- */
+  /* ---- Adaptateur ENTREPRISE (vue publique → forme historique) ----
+     Clés éditoriales RÉELLES du contrat (cf. CompanyService) : secteur, activite, ville, effectif,
+     adresse, telephone, email, site, avantages, valeurs, logo_url. L'API n'expose ni `departement`,
+     ni `taille`, ni `site_web` : on lit donc `effectif` et `site`, en tolérant les anciens noms au
+     cas où le backend viendrait à les exposer. */
   function adaptCompany(c) {
     c = c || {};
     var ed = c.editorial || {};
@@ -91,14 +95,14 @@
       nom: c.nom || "",
       description: c.description || "",
       ville: ed.ville || "",
-      departement: ed.departement || "",
+      departement: "",
       secteur: ed.secteur || "",
       activite: ed.activite || ed.secteur || "",
-      taille: ed.taille || "",
+      taille: ed.effectif || ed.taille || "",
       adresse: ed.adresse || "",
       telephone: ed.telephone || "",
       email: ed.email || "",
-      siteWeb: ed.site_web || ed.siteWeb || "",
+      siteWeb: ed.site || ed.site_web || "",
       logoUrl: ed.logo_url || null,
       couleur: b.couleur,
       initiales: b.initiales,

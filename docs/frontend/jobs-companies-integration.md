@@ -76,3 +76,47 @@ taxonomie catégorie/expérience non garantie · apply-redirect 302 nécessite u
 - Vérification navigateur réelle sur `postelio.local` : liste (recherche serveur, provenance, URL,
   états), fiche native (JobPosting), fiche externe (attribution + 302 via provider de test),
   404/410, annuaire (données réelles + filtre nom), fiche entreprise (badge/SIREN, pas de fuite).
+
+---
+
+## Reprise après le back-office unifié (septembre 2026)
+
+Le nouveau `develop` (back-office unifié + correctifs de stabilité) a été fusionné dans cette
+branche. Aucun conflit : les blocs de scripts I2 et le bridge Site Builder de `develop` (`?v=sb5`)
+cohabitent dans les six pages concernées, et les deux mécanismes ont été revérifiés ensemble.
+
+### Audit du code I2 existant — défauts corrigés
+Le code livré n'a pas été repris tel quel : il a été confronté au contrat backend actuel.
+
+- **`adaptCompany` lisait des clés inexistantes.** Le contrat éditorial réel (`CompanyService`) est
+  `secteur, activite, ville, effectif, adresse, telephone, email, site, avantages, valeurs,
+  logo_url`. L'adaptateur lisait `taille` (→ `effectif`) et `site_web` / `siteWeb` (→ `site`) :
+  la taille et le site web des entreprises étaient donc systématiquement vides. Corrigé, avec
+  tolérance des anciens noms. `departement`, absent du contrat, est explicitement neutralisé.
+- **`SS.decorateOffers` supprimé** (`assets/js/offers.js`) : helper mort — plus appelé nulle part —
+  qui restait le dernier point d'entrée vers `data/companies.json` dans l'affichage public. La
+  couleur de bulle vient de `PostelioDirectory.bubble()`.
+
+Vérifié par ailleurs : aucun repli JSON dans les chemins I2, aucun `fetch` dispersé, client I1
+unique (`PostelioAPI` via `PostelioDirectory`). Les `data/*.json` restants ne servent plus qu'aux
+écrans hors périmètre I2 (recherche guidée, espaces candidat/recruteur, publication, paiement).
+
+### Contrat backend revérifié en conditions réelles
+- `GET /jobs` : pagination serveur complète (`page`, `per_page`, `total`, `total_pages`,
+  `total_is_exact`) ; filtres `q`, `ville`, `contrat`, `categorie`, `niveau_etude`, `experience`,
+  `salaire_min`, `source`, `teletravail` **réellement appliqués** (un filtre absurde renvoie 0).
+- `GET /jobs/{uuid}` natif : 200, vue complète ; UUID inconnu : 404. Offres similaires : **une seule
+  requête** (`?ville=…&per_page=4`), pas de N+1.
+- `GET /companies` + `/companies/{uuid}` : 200 ; `verified` fourni par le backend (badge non
+  recalculé). `q` / `ville` / `secteur` **ignorés** côté serveur (gap V1 confirmé : filtrage client).
+- Filtre `company` sur `/jobs` : **toujours ignoré** (un UUID d'entreprise inexistant renvoie
+  l'intégralité des offres). La fiche entreprise continue donc, à raison, de renvoyer vers la page
+  Offres au lieu d'afficher une liste fausse.
+
+### Blocage identifié (offres externes) — voir rapport
+Une offre externe issue d'une source **non disponible** reste listée par `GET /jobs`, alors que son
+détail et son `apply-redirect` répondent 404 (comportement correct de leur côté). Le parcours public
+« liste → fiche » est donc incohérent pour ces offres. La cause est côté `postelio-job-sources`
+(défaut préexistant « source désactivée => 0 offre externe (recherche) »), **pas** côté front : le
+front affiche un état « Offre introuvable ou indisponible » propre, et aucun contournement n'a été
+ajouté.

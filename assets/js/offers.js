@@ -95,18 +95,9 @@
       : "Offre retirée de vos enregistrements.");
   });
 
-  /* Associe la couleur du logo de l'entreprise à chaque offre. */
-  SS.decorateOffers = function (offers) {
-    return SS.getCompanies().then(function (companies) {
-      var byId = {};
-      companies.forEach(function (c) { byId[c.id] = c; });
-      offers.forEach(function (o) {
-        var c = byId[o.entrepriseId];
-        if (c) { o.couleur = c.couleur; }
-      });
-      return offers;
-    });
-  };
+  /* `SS.decorateOffers` (colorisation depuis data/companies.json) est RETIRÉ : il n'était plus
+     appelé nulle part et restait le dernier point d'entrée vers une donnée locale dans l'affichage
+     public. La couleur de bulle est dérivée du nom de l'entreprise par PostelioDirectory.bubble(). */
 
   document.addEventListener("DOMContentLoaded", function () {
     renderRecentOffers();

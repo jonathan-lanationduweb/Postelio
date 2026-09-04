@@ -73,6 +73,19 @@ check("verifie + label", co.verifie === true && co.verifieLabel === "Entreprise 
 check("ville/secteur editorial", co.ville === "Nantes" && co.secteur === "Tech");
 check("legal.siren conservé", co.legal.siren === "123456789");
 
+/* Clés éditoriales RÉELLES du contrat backend (CompanyService) : `effectif` et `site`.
+   L'audit de reprise a montré que l'adaptateur lisait `taille` et `site_web`, absents de l'API. */
+const coReal = D.adaptCompany({ uuid: "c-10", nom: "Initech", verified: false,
+  editorial: { effectif: "50-99", site: "https://initech.test", activite: "Services", adresse: "1 rue A",
+    telephone: "0102030405", email: "contact@initech.test", valeurs: ["Rigueur"], avantages: ["Télétravail"] } });
+check("taille lue depuis editorial.effectif", coReal.taille === "50-99");
+check("siteWeb lu depuis editorial.site", coReal.siteWeb === "https://initech.test");
+check("activite/adresse/telephone/email transmis", coReal.activite === "Services" && coReal.adresse === "1 rue A"
+  && coReal.telephone === "0102030405" && coReal.email === "contact@initech.test");
+check("valeurs/avantages en tableaux", coReal.valeurs[0] === "Rigueur" && coReal.avantages[0] === "Télétravail");
+check("departement neutralisé (absent du contrat)", coReal.departement === "");
+check("non vérifiée → pas de label", coReal.verifie === false && coReal.verifieLabel === "");
+
 /* ---- 4. Bulle déterministe ---- */
 console.log("== bubble ==");
 check("même nom → même couleur", D.bubble("ACME").couleur === D.bubble("ACME").couleur);
