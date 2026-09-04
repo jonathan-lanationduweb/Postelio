@@ -40,13 +40,16 @@ final class Plugin {
 		 * Compatibilité avec le back-office unifié (postelio-backoffice) : quand il est actif, il
 		 * devient propriétaire du menu « Postelio » (`postelio/admin/legacy_menu` → false) et rend
 		 * lui-même les écrans migrés ; les pages legacy restent rendues par ce plugin pour les écrans
-		 * non migrés, avec leurs assets (`postelio/admin/legacy_assets`). Les actions admin-post
-		 * restent toujours enregistrées (les écrans legacy en dépendent).
+		 * non migrés, avec leurs assets (`postelio/admin/legacy_assets`). Les actions admin-post ont
+		 * été rapatriées : quand le back-office est actif, il les déclare lui-même et
+		 * `postelio/admin/legacy_actions` évite un double gestionnaire sur le même hook.
 		 */
 		if ( apply_filters( 'postelio/admin/legacy_menu', true ) ) {
 			( new Menu() )->register();
 		}
-		( new Actions() )->register();
+		if ( apply_filters( 'postelio/admin/legacy_actions', true ) ) {
+			( new Actions() )->register();
+		}
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 	}
 

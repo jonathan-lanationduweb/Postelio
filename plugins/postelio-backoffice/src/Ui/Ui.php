@@ -169,6 +169,122 @@ final class Ui {
 	}
 
 	/**
+	 * Barre de filtres (GET). $hidden = paramètres conservés ; $fields = HTML des contrôles construits
+	 * via ::search_input / ::select.
+	 *
+	 * @param array<string,string> $hidden
+	 */
+	public static function filters( array $hidden, string $fields_html, string $submit = 'Filtrer' ): string {
+		$h = '<form method="get" class="bo-filters">';
+		foreach ( $hidden as $k => $v ) {
+			$h .= '<input type="hidden" name="' . esc_attr( (string) $k ) . '" value="' . esc_attr( (string) $v ) . '">';
+		}
+		return $h . $fields_html . '<button type="submit" class="bo-btn bo-btn--sm bo-btn--primary">' . esc_html( $submit ) . '</button></form>';
+	}
+
+	public static function search_input( string $name, string $value, string $placeholder ): string {
+		return '<input class="bo-input" type="search" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '" placeholder="' . esc_attr( $placeholder ) . '">';
+	}
+
+	/** @param array<string,string> $options valeur => libellé */
+	public static function select( string $name, array $options, string $current ): string {
+		$h = '<select class="bo-select" name="' . esc_attr( $name ) . '">';
+		foreach ( $options as $v => $label ) {
+			$h .= '<option value="' . esc_attr( (string) $v ) . '"' . selected( $current, (string) $v, false ) . '>' . esc_html( $label ) . '</option>';
+		}
+		return $h . '</select>';
+	}
+
+	/** Pagination (base_url sans le paramètre `paged`). */
+	public static function pager( string $base_url, int $page, int $per_page, int $total ): string {
+		$pages = (int) ceil( $total / max( 1, $per_page ) );
+		if ( $pages <= 1 ) {
+			return '';
+		}
+		$sep = ( false === strpos( $base_url, '?' ) ) ? '?' : '&';
+		$h   = '<nav class="bo-pager" aria-label="Pagination">';
+		for ( $p = 1; $p <= min( $pages, 12 ); $p++ ) {
+			$h .= $p === $page
+				? '<span class="bo-pager__current" aria-current="page">' . (int) $p . '</span>'
+				: '<a class="bo-pager__link" href="' . esc_url( $base_url . $sep . 'paged=' . $p ) . '">' . (int) $p . '</a>';
+		}
+		return $h . '</nav>';
+	}
+
+	/**
+	 * Chronologie verticale. $items = [ ['label'=>, 'time'=>, 'done'=>bool], … ].
+	 *
+	 * @param array<int,array<string,mixed>> $items
+	 */
+	public static function timeline( array $items ): string {
+		if ( empty( $items ) ) {
+			return '<p class="bo-muted">Aucun événement.</p>';
+		}
+		$h = '<ol class="bo-timeline">';
+		foreach ( $items as $it ) {
+			$h .= '<li class="bo-timeline__item' . ( ! empty( $it['done'] ) ? ' is-done' : '' ) . '">'
+				. '<span class="bo-timeline__label">' . esc_html( (string) $it['label'] ) . '</span>'
+				. ( ! empty( $it['time'] ) ? '<span class="bo-timeline__time">' . esc_html( (string) $it['time'] ) . '</span>' : '' )
+				. '</li>';
+		}
+		return $h . '</ol>';
+	}
+
+	/**
+	 * Formulaire admin-post avec une zone de texte (note interne). Nonce + capability vérifiés côté
+	 * serveur par le gestionnaire d'actions.
+	 *
+	 * @param array<string,string|int> $fields
+	 */
+	public static function note_form( string $action, array $fields, string $textarea_name, string $placeholder, string $submit ): string {
+		$h = '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="bo-noteform">';
+		$h .= '<input type="hidden" name="action" value="' . esc_attr( $action ) . '">';
+		$h .= wp_nonce_field( $action, '_pstnonce', true, false );
+		foreach ( $fields as $k => $v ) {
+			$h .= '<input type="hidden" name="' . esc_attr( (string) $k ) . '" value="' . esc_attr( (string) $v ) . '">';
+		}
+		$h .= '<textarea class="bo-textarea" name="' . esc_attr( $textarea_name ) . '" rows="2" placeholder="' . esc_attr( $placeholder ) . '"></textarea>';
+		return $h . '<button type="submit" class="bo-btn bo-btn--sm">' . esc_html( $submit ) . '</button></form>';
+	}
+
+	/** Colonnes de détail : contenu principal à gauche, colonne latérale à droite. */
+	public static function cols_open(): string {
+		return '<div class="bo-cols">';
+	}
+
+	public static function col_open(): string {
+		return '<div class="bo-col">';
+	}
+
+	public static function col_close(): string {
+		return '</div>';
+	}
+
+	public static function cols_close(): string {
+		return '</div>';
+	}
+
+	/** Groupe d'actions (boutons/formulaires) empilé verticalement (colonne latérale de détail). */
+	public static function action_stack( string $inner_html ): string {
+		return '<div class="bo-actions bo-actions--stack">' . $inner_html . '</div>';
+	}
+
+	/** Paragraphe d'aide (texte secondaire). */
+	public static function help( string $text ): string {
+		return '<p class="bo-help">' . esc_html( $text ) . '</p>';
+	}
+
+	/** Bloc « donnée protégée » : explique pourquoi l'information n'est pas affichée. */
+	public static function protected_notice( string $text ): string {
+		return '<p class="bo-protected">' . self::badge( 'Protégé', 'neutral', true ) . '<span>' . esc_html( $text ) . '</span></p>';
+	}
+
+	/** Extrait de contenu (message, description) rendu en texte simple. */
+	public static function excerpt( string $text ): string {
+		return '<p class="bo-excerpt">' . esc_html( $text ) . '</p>';
+	}
+
+	/**
 	 * Clé / valeur. $pairs = [ 'Libellé' => 'HTML déjà échappé' ].
 	 *
 	 * @param array<string,string> $pairs

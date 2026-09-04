@@ -46,6 +46,11 @@ abstract class Screen {
 		return isset( $_GET[ $key ] ) ? sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) ) : $default; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	}
 
+	/** Page courante d'une liste paginée (au minimum 1). */
+	protected function paged(): int {
+		return max( 1, (int) $this->current( 'paged', '1' ) );
+	}
+
 	/** Notice flash (?pst_msg= / ?pst_err=) — mêmes codes que les actions legacy. */
 	private function flash(): string {
 		$err = $this->current( 'pst_err' );

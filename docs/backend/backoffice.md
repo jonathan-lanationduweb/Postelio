@@ -6,10 +6,11 @@ actions, assets, aperçus. Les plugins métier restent propriétaires de leurs d
 de l'identité (logo / favicon) et de la configuration du front. Le back-office **ne duplique rien** :
 il lit et écrit via les contrats publics et le REST.
 
-**Phase 1 (validée)** : squelette, architecture UI, menu, design system, Tableau de bord, Mon site /
-Vue d'ensemble, Mon site / Accueil (éditeur avec vrai front en aperçu), mécanisme de compatibilité
-avec `postelio-admin` (legacy). **Phase 2 (livrée, §7)** : toute la zone Mon site. Les écrans métier
-et système restent rendus par le legacy.
+**État : migration terminée.** Phase 1 (§1-6) fondation, tableau de bord et « Mon site » ; Phase 2
+(§7) toute la zone Mon site ; **Phase 3 (§8) écrans métier et système, puis retrait du plugin
+historique `postelio-admin`, supprimé du dépôt**. Les sections 1 à 3 décrivent l'audit et la
+stratégie de transition, conservés comme historique : le mécanisme de compatibilité (`Legacy.php`,
+filtres `postelio/admin/legacy_*`) n'existe plus.
 
 ---
 
@@ -33,18 +34,26 @@ et système restent rendus par le legacy.
 
 ## 2. Architecture
 
+Structure finale (après Phase 3) :
+
 ```
 plugins/postelio-backoffice/
-  postelio-backoffice.php      bootstrap, constantes, autoloader core, filtres de compat (à l'inclusion)
-  src/Plugin.php               boot (admin uniquement) : Menu + Assets + Legacy
-  src/Menu.php                 menu unique, slugs conservés, MIGRATED, routage migré → Screen / sinon Legacy
-  src/Legacy.php               pont vers postelio-admin : rendu des écrans non migrés, état « en migration »
-  src/Assets.php               CSS/JS uniquement sur les écrans migrés ; PST_BO_SITE ; body class
+  postelio-backoffice.php      bootstrap, constantes, autoloader du core
+  src/Plugin.php               boot : Actions (toujours) + Menu et Assets (écrans d'admin)
+  src/Menu.php                 menu unique, slugs conservés, table SCREENS = routage de tous les écrans
+  src/Assets.php               CSS/JS uniquement sur les écrans Postelio ; PST_BO_SITE ; body class
+  src/Actions/Actions.php      admin-post : nonce → capacité → validation → délégation au domaine
   src/Ui/Ui.php                design system serveur (composants bo-*)
-  src/Screens/Screen.php       base (capability, enveloppe, flash)
-  src/Screens/DashboardScreen.php
-  src/Screens/Site/SiteNav.php, SiteHubScreen.php, SiteEditorScreen.php
-  src/Support/Data.php         façade données (contrats métier ; legacy Metrics/Health réutilisés, transitoire)
+  src/Screens/Screen.php       base (capacité, enveloppe, notices flash, pagination)
+  src/Screens/ListScreen.php   squelette commun des écrans de liste (onglets, pagination, détail)
+  src/Screens/*.php            Dashboard, Users, Companies, Jobs, Applications, Interviews,
+                               Messaging, Skills, Moderation, Billing, Sources, Settings,
+                               Notifications, Files, Health, Alerts
+  src/Screens/Site/*.php       SiteNav, SiteHubScreen, SiteEditorScreen
+  src/Support/Rest.php         appel REST interne (rest_do_request) au nom de l'utilisateur courant
+  src/Support/Health.php       agrégation santé socle + /health des modules
+  src/Support/Data.php         façade de lecture (compteurs, modules, santé) via les *AdminDirectory
+  src/Support/Fmt.php          formatage (dates UTC → site, tailles, montants, références, extraits)
   assets/css/backoffice.css    base unique (tokens, page, header, tabs, cards, stats, rows, badges…)
   assets/css/site-builder.css  éditeur (cartes de section, champs, média, repeater, aperçu, save bar)
   assets/js/backoffice.js      confirmations
@@ -59,9 +68,12 @@ plugins/postelio-backoffice/
   RÉGLAGES (Réglages). Notifications / Fichiers / Santé / Alertes / éditeurs de pages : routables,
   masqués du menu (accès via Réglages, Mon site et URL directe).
 
-## 3. Stratégie legacy (aucun fichier supprimé)
+## 3. Stratégie legacy (historique — dispositif retiré en Phase 3)
 
-- `postelio-backoffice.php` déclare **à l'inclusion** : `postelio/admin/legacy_menu` → false et
+> Ce mécanisme de transition n'existe plus : `postelio-admin` est supprimé et les filtres
+> `postelio/admin/legacy_*` ont disparu du bootstrap. Conservé ici pour mémoire.
+
+- `postelio-backoffice.php` déclarait **à l'inclusion** : `postelio/admin/legacy_menu` → false et
   `postelio/admin/legacy_assets` → false pour les slugs migrés. `postelio-admin` (boot à
   `plugins_loaded:60`) lit ces filtres : il **ne construit plus le menu** mais garde ses **actions
   admin-post** et son **enqueue** pour les écrans non migrés.
@@ -141,3 +153,94 @@ Reste pour la Phase 3 : les écrans métier et système (Utilisateurs, Entrepris
 Candidatures, Messagerie, Entretiens, Savoir-faire, Modération, Facturation, Sources, Réglages,
 Notifications, CV & fichiers, Santé, Favoris & Alertes), le rapatriement des Actions / Metrics /
 Health / Contracts, puis le retrait de `postelio-admin` et de ses assets.
+
+
+---
+
+## 8. Phase 3 — migration métier + système, retrait du legacy (septembre 2026)
+
+Tous les écrans wp-admin de Postelio sont désormais rendus par `postelio-backoffice`. Le plugin
+historique `postelio-admin` a été **supprimé** du dépôt : plus aucune dépendance runtime.
+
+### 8.1 Matrice de migration (14 écrans)
+
+| Écran | Données lues (façade / API) | Actions | Capacité | Données sensibles |
+|---|---|---|---|---|
+| Utilisateurs | `WP_User_Query` + `Users\Api\UserDirectory`, `Users\Users\AccountService`, `CandidateProfileRepository`, `CompanyDirectory`, `InterviewDirectory`, `NotificationDirectory`, `SkillDirectory` | suspendre / réactiver (`UserModeration`) | `pst_manage_platform`, `pst_suspend_account` | e-mail affiché à l'admin uniquement |
+| Entreprises | `Companies\Api\CompanyAdminDirectory` | vérifier / rejeter (`VerificationService`), suspendre / réactiver (`CompanyModeration`) | `pst_manage_platform`, `pst_verify_company`, `pst_suspend_company` | motif interne réservé à `pst_verify_company` |
+| Offres | `Jobs\Api\JobAdminDirectory`, `Jobs\Api\JobDirectory::external` | suspendre / réactiver (`JobModeration`), masquer / restaurer externe (`JobSourcesModeration`) | `pst_manage_all_jobs`, `pst_moderate_content` | — |
+| Candidatures | `Applications\Api\ApplicationAdminDirectory` | aucune (workflow = entreprise) | `pst_manage_platform` | **notes recruteur jamais exposées**, CV = référence seule |
+| Entretiens | `Interviews\Api\InterviewAdminDirectory` | aucune | `pst_manage_platform` | **coordonnées demandées au contrat seulement si capacité**, jamais en liste |
+| Messagerie | `Messaging\Api\MessagingAdminDirectory` | aucune | `pst_manage_platform` | **corps des messages jamais affiché** |
+| Savoir-faire | `Skills\Api\SkillAdminDirectory` | masquer / restaurer (`SkillModeration`) | `pst_moderate_content` | — |
+| Modération | REST `/moderation/cases` | assigner, traiter, classer, escalader, avertir, masquer, fermer, suspendre, note | `pst_view_moderation_queue`, `pst_decide_report`, `pst_moderate_content` | — |
+| Facturation | REST `/billing/health`, `/billing/admin/orders` | relancer le traitement | `pst_manage_billing` | **aucun secret Stripe** |
+| Sources d'offres | REST `/job-sources/health` | aucune (aucun contrat de synchronisation manuelle) | `pst_manage_platform` | **aucune clé ni variable d'environnement** |
+| Réglages | options WP, Registry, REST `/health` | aucune | `pst_manage_platform` | **aucun secret** |
+| Service e-mail | `Notifications\Api\NotificationDirectory` | e-mail de test | `pst_manage_platform` | **destinataires masqués**, aucun contenu |
+| CV & fichiers | `Files\Api\FileAdminDirectory` + `ApplicationAdminDirectory::referenced_cv` | aucune | `pst_manage_platform` | **ni chemin, ni clé de stockage, ni contenu, ni téléchargement** |
+| Santé | `Core\Health\Status` + REST `/health` des modules | aucune | `pst_manage_platform` | — |
+
+### 8.2 Couche support autonome (fin de la dépendance transitoire)
+
+`Support\Metrics` / `Health` / `Contracts` du plugin historique ne sont plus utilisés. Le back-office
+embarque désormais :
+
+- `Support\Rest` — appel REST interne (`rest_do_request`) au nom de l'utilisateur courant : les
+  `permission_callback` et présenteurs des domaines s'appliquent. Seul moyen de lire les domaines
+  sans façade PHP (modération, facturation, sources).
+- `Support\Health` — agrégation du snapshot du socle + des `/health` de modules, avec cache de
+  requête ; libellés et variantes d'affichage.
+- `Support\Data` — façade de lecture (compteurs, santé, disponibilité des modules) appelant les
+  `*AdminDirectory` derrière `class_exists` ; `facade()` neutralise toute absence de module.
+- `Support\Fmt` — dates UTC → fuseau du site, tailles, montants, références courtes, extraits.
+
+Les façades `*AdminDirectory` **restent dans les plugins métier** : c'est volontaire, le back-office
+les consomme sans les centraliser.
+
+### 8.3 Actions rapatriées
+
+`Backoffice\Actions\Actions` reprend les **mêmes slugs** `pst_admin_*` (26 actions). Chaque
+gestionnaire : nonce → capacité → validation du paramètre (`uuid` borné à `[A-Za-z0-9-]{1,64}`) →
+**délégation** au service propriétaire ou à l'endpoint du domaine → notice flash → redirection.
+Aucune logique métier, aucune écriture directe.
+
+### 8.4 Structure commune des écrans
+
+`Screens\ListScreen` impose le même squelette à toutes les listes : en-tête → indicateurs éventuels
+→ onglets de statut → filtres compacts → table → pagination → état vide. Cellule d'entité homogène
+(avatar rond pour les personnes, carré pour entreprises / offres / contenus, initiales en repli) ;
+un identifiant technique n'est jamais l'information principale (replié dans « Détails techniques »).
+
+### 8.5 Menu final
+
+Tableau de bord · Mon site · **Activité** (Utilisateurs, Entreprises, Offres, Candidatures,
+Messagerie, Entretiens, Savoir-faire) · **Gestion** (Modération avec pastille de dossiers ouverts,
+Facturation, Sources d'offres) · **Réglages**. Service e-mail, CV & fichiers, Santé et Favoris &
+Alertes restent **routables** (accès depuis Réglages → Système et par URL directe) mais masqués du
+menu par CSS — jamais par `remove_submenu_page()`, qui casserait la vérification de capacité.
+
+### 8.6 Retrait de `postelio-admin`
+
+Vérifications avant suppression : aucune référence à `Postelio\Admin\` hors du plugin lui-même ;
+aucun écran ne charge `admin.css`, `admin.js`, `site-editor.css` ou `site-editor.js` ; les
+gestionnaires `admin_post_*` proviennent bien de `Backoffice\Actions`. Le plugin a été désactivé,
+les 27 écrans revérifiés, puis le dossier supprimé (dépôt + jonction locale + entrée
+`active_plugins`). Les filtres de compatibilité `postelio/admin/legacy_*`, devenus sans objet, ont
+été retirés du bootstrap.
+
+### 8.7 Tests
+
+- 15 suites unitaires vertes ; 14 suites smoke exécutées.
+- **Non-régression prouvée** sur les deux suites non vertes : `postelio-job-sources` présente
+  exactement les **mêmes 6 échecs** avec et sans le plugin historique (vérifié en restaurant
+  `postelio-admin` depuis `develop` dans un worktree) — ils sont **préexistants** et sans rapport
+  avec le back-office. `postelio-files` passe (42 vérifications) : son échec initial venait du
+  harnais de test local, qui ne chargeait pas `wp-admin/includes/file.php`.
+- 27 écrans rendus sans fatal, avec et sans le plugin historique, et avec les modules billing /
+  skills / notifications / job-sources désactivés (états « Module indisponible » propres).
+- Vues de détail sur ressource inexistante : « Introuvable » sur les 9 écrans concernés.
+- Navigateur réel : menu unique (1 entrée, 27 sous-menus, 0 doublon), 9 onglets de Réglages, sweep
+  des 11 écrans restants, aucun asset legacy, zéro style inline.
+- Responsive 1440 / 1024 / 782 / 390 px : indicateurs 4 → 2 → 1 colonne, tables à défilement
+  horizontal, aucun débordement de page.

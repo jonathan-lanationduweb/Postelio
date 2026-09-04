@@ -305,7 +305,8 @@ actor_user_id sur `interview.*`, `JobDirectory::created_by/uuid_of/title_of`,
   filtres (`postelio/files/authorize_download`, `postelio/files/file_is_referenced`).
   Le CV étant immuable, référencer son UUID depuis une candidature garantit le snapshot.
 
-`postelio-admin` (Phase 1) est le **back-office wp-admin** : une **couche d'orchestration**
+`postelio-backoffice` (qui remplace `postelio-admin`, supprimé) est le **back-office wp-admin** :
+une **couche d'orchestration**
 au-dessus des plugins de domaine, **sans logique métier, sans table, sans SQL/meta direct**.
 Il **lit** via les contrats publics (`Api\*Directory`) et le **REST interne**
 (`rest_do_request` exécuté **comme l'admin courant** — capabilities et presenters

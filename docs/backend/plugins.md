@@ -408,7 +408,16 @@ neutralisé (`wp_kses`, liens dangereux retirés) ; rate-limit des commentaires 
 
 ---
 
-## postelio-admin (implémenté — Phase 1 back-office)
+## postelio-backoffice (implémenté — remplace `postelio-admin`, supprimé)
+
+> **Septembre 2026** : le plugin `postelio-admin` décrit ci-dessous a été **supprimé du dépôt**. La
+> totalité de l'interface wp-admin (menu unique, tableau de bord, Mon site / Site Builder, écrans
+> métier et système, actions admin-post) est fournie par **`postelio-backoffice`**, avec les mêmes
+> principes : couche d'administration pure, aucune table, aucun SQL direct, lecture par les contrats
+> et écriture par délégation aux services propriétaires. Voir `docs/backend/backoffice.md`. La
+> description qui suit reste valable pour comprendre les responsabilités de cette couche.
+
+## postelio-admin (historique — Phase 1 back-office, plugin retiré)
 
 **Responsabilité.** **Back-office wp-admin** (centre de contrôle) : une **couche
 d'administration/orchestration pure**, **sans logique métier, sans table, sans SQL/meta

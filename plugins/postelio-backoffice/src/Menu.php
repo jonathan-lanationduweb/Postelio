@@ -1,22 +1,39 @@
 <?php
 /**
- * Menu WordPress « Postelio » : UNE seule entrée, propriété du back-office unifié.
+ * Menu WordPress « Postelio » : UNE seule entrée, propriété du back-office unifié, et routage de
+ * TOUS les écrans (plus aucune délégation au plugin historique).
  *
- * Slugs CONSERVÉS à l'identique du legacy (les favoris wp-admin ne cassent pas). Groupes
- * matérialisés par des libellés CSS (::before ancrés par slug, robustes, sans JS). Les écrans
- * secondaires (Notifications, Fichiers, Santé, Alertes, éditeurs de pages de site) restent
- * ROUTABLES mais masqués du menu — on n'utilise pas remove_submenu_page() (casserait la capability).
- *
- * Routage : slug migré → Screen du back-office ; sinon → rendu legacy (Legacy::render).
+ * Slugs CONSERVÉS à l'identique de l'ancien back-office (les favoris wp-admin ne cassent pas).
+ * Groupes matérialisés par des libellés CSS (`::before` ancrés par slug — robustes, sans JS). Les
+ * écrans techniques (Service e-mail, CV & fichiers, Santé, Favoris & Alertes) restent ROUTABLES
+ * mais masqués du menu : on n'utilise pas `remove_submenu_page()`, qui casserait la vérification de
+ * capability de wp-admin. Chaque écran revérifie sa capability côté serveur.
  *
  * @package Postelio\Backoffice
  */
 
 namespace Postelio\Backoffice;
 
+use Postelio\Backoffice\Screens\AlertsScreen;
+use Postelio\Backoffice\Screens\ApplicationsScreen;
+use Postelio\Backoffice\Screens\BillingScreen;
+use Postelio\Backoffice\Screens\CompaniesScreen;
 use Postelio\Backoffice\Screens\DashboardScreen;
+use Postelio\Backoffice\Screens\FilesScreen;
+use Postelio\Backoffice\Screens\HealthScreen;
+use Postelio\Backoffice\Screens\InterviewsScreen;
+use Postelio\Backoffice\Screens\JobsScreen;
+use Postelio\Backoffice\Screens\MessagingScreen;
+use Postelio\Backoffice\Screens\ModerationScreen;
+use Postelio\Backoffice\Screens\NotificationsScreen;
+use Postelio\Backoffice\Screens\Screen;
+use Postelio\Backoffice\Screens\SettingsScreen;
 use Postelio\Backoffice\Screens\Site\SiteEditorScreen;
 use Postelio\Backoffice\Screens\Site\SiteHubScreen;
+use Postelio\Backoffice\Screens\SkillsScreen;
+use Postelio\Backoffice\Screens\SourcesScreen;
+use Postelio\Backoffice\Screens\UsersScreen;
+use Postelio\Backoffice\Support\Data;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -24,10 +41,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Menu {
 
-	public const PARENT     = 'postelio-admin';
-	public const CAP_VIEW   = 'pst_view_moderation_queue'; // admin + modérateur
-	public const CAP_ADMIN  = 'pst_manage_platform';       // admin uniquement
-	public const CAP_SITE   = 'pst_manage_site';
+	public const PARENT      = 'postelio-admin';
+	public const CAP_VIEW    = 'pst_view_moderation_queue'; // admin + modérateur
+	public const CAP_ADMIN   = 'pst_manage_platform';       // admin uniquement
+	public const CAP_SITE    = 'pst_manage_site';
 	public const CAP_BILLING = 'pst_manage_billing';
 
 	/** Slug de l'écran d'entrée du site (Accueil) et préfixe des éditeurs. */
@@ -50,29 +67,30 @@ final class Menu {
 	/** Pages publiques listées dans la Vue d'ensemble de « Mon site ». */
 	public const SITE_HUB_PAGES = array( 'home', 'jobs', 'companies', 'skills', 'advice', 'contact' );
 
-	/**
-	 * ÉCRANS MIGRÉS. Tout autre slug est délégué au legacy. Étendre cette liste = migrer un écran
-	 * (le rendu ET les assets basculent ensemble).
-	 * Phase 1 : Tableau de bord, Mon site (Vue d'ensemble, Accueil). Phase 2 : toute la zone Mon site
-	 * (Navigation, Footer, Apparence, SEO, Offres, Entreprises, Savoir-faire, Conseils, Contact).
-	 */
-	public const MIGRATED = array(
-		'postelio-admin',
-		'postelio-site-pages',
-		'postelio-site',
-		'postelio-site-navigation',
-		'postelio-site-footer',
-		'postelio-site-appearance',
-		'postelio-site-seo',
-		'postelio-site-jobs',
-		'postelio-site-companies',
-		'postelio-site-skills',
-		'postelio-site-advice',
-		'postelio-site-contact',
+	/** @var array<string,class-string<Screen>> slug => écran (source unique du routage). */
+	private const SCREENS = array(
+		self::PARENT             => DashboardScreen::class,
+		'postelio-site-pages'    => SiteHubScreen::class,
+		'postelio-users'         => UsersScreen::class,
+		'postelio-companies'     => CompaniesScreen::class,
+		'postelio-jobs'          => JobsScreen::class,
+		'postelio-applications'  => ApplicationsScreen::class,
+		'postelio-messaging'     => MessagingScreen::class,
+		'postelio-interviews'    => InterviewsScreen::class,
+		'postelio-skills'        => SkillsScreen::class,
+		'postelio-moderation'    => ModerationScreen::class,
+		'postelio-billing'       => BillingScreen::class,
+		'postelio-sources'       => SourcesScreen::class,
+		'postelio-settings'      => SettingsScreen::class,
+		'postelio-notifications' => NotificationsScreen::class,
+		'postelio-files'         => FilesScreen::class,
+		'postelio-health'        => HealthScreen::class,
+		'postelio-alerts'        => AlertsScreen::class,
 	);
 
+	/** Tous les écrans Postelio sont désormais rendus par ce plugin (aucun écran legacy). */
 	public static function is_migrated( string $slug ): bool {
-		return in_array( $slug, self::MIGRATED, true );
+		return isset( self::SCREENS[ $slug ] ) || null !== self::site_page_for_slug( $slug );
 	}
 
 	public static function site_slug( string $page ): string {
@@ -98,7 +116,7 @@ final class Menu {
 		add_action( 'admin_menu', array( $this, 'simplify_wp_menu' ), 999 );
 	}
 
-	/** @return array<int, array{0:string,1:string,2:string}> Entrées visibles (libellé, slug, cap) dans l'ordre. */
+	/** @return array<int, array{0:string,1:string,2:string}> Entrées visibles (libellé, slug, capacité). */
 	public static function visible_items(): array {
 		return array(
 			array( 'Tableau de bord', self::PARENT, self::CAP_VIEW ),
@@ -123,7 +141,7 @@ final class Menu {
 	/** @return array<int, array{0:string,1:string,2:string}> Entrées routables mais masquées du menu. */
 	public static function hidden_items(): array {
 		$items = array(
-			array( 'Notifications', 'postelio-notifications', self::CAP_ADMIN ),
+			array( 'Service e-mail', 'postelio-notifications', self::CAP_ADMIN ),
 			array( 'CV & fichiers', 'postelio-files', self::CAP_ADMIN ),
 			array( 'Santé du système', 'postelio-health', self::CAP_ADMIN ),
 			array( 'Favoris & Alertes', 'postelio-alerts', self::CAP_ADMIN ),
@@ -143,8 +161,10 @@ final class Menu {
 			// MÊME callable (dédupliqué par add_action) — sinon l'écran serait rendu deux fois.
 			$callback = ( self::PARENT === $slug )
 				? array( $this, 'route_parent' )
-				: function () use ( $slug, $label ) { $this->route( $slug, $label ); };
-			add_submenu_page( self::PARENT, 'Postelio — ' . $label, $label, $cap, $slug, $callback );
+				: function () use ( $slug, $label ) {
+					$this->route( $slug, $label );
+				};
+			add_submenu_page( self::PARENT, 'Postelio — ' . wp_strip_all_tags( $label ), $this->menu_label( $slug, $label ), $cap, $slug, $callback );
 		}
 	}
 
@@ -152,29 +172,37 @@ final class Menu {
 		$this->route( self::PARENT, 'Tableau de bord' );
 	}
 
-	/** Point d'entrée unique de rendu : écran migré → Screen ; sinon legacy ; sinon état « en migration ». */
+	/** Point d'entrée unique de rendu. Un slug inconnu retombe sur le tableau de bord. */
 	public function route( string $slug, string $label ): void {
-		if ( self::is_migrated( $slug ) ) {
-			$this->screen_for( $slug )->render();
-			return;
-		}
-		if ( ! Legacy::render( $slug ) ) {
-			Legacy::render_missing( $label );
-		}
+		unset( $label );
+		$this->screen_for( $slug )->render();
 	}
 
-	private function screen_for( string $slug ): Screens\Screen {
-		if ( 'postelio-site-pages' === $slug ) {
-			return new SiteHubScreen();
-		}
+	private function screen_for( string $slug ): Screen {
 		$site_page = self::site_page_for_slug( $slug );
 		if ( null !== $site_page ) {
 			return new SiteEditorScreen( $site_page );
 		}
-		return new DashboardScreen();
+		$class = self::SCREENS[ $slug ] ?? DashboardScreen::class;
+		return new $class();
 	}
 
-	/** Libellés de groupe + masquage des écrans secondaires (CSS ancré par slug — exact via href$=). */
+	/**
+	 * Libellé de menu : ajoute la pastille du nombre de dossiers de modération ouverts (convention
+	 * WordPress `awaiting-mod`, rendue côté serveur — aucun appel JS).
+	 */
+	private function menu_label( string $slug, string $label ): string {
+		if ( 'postelio-moderation' !== $slug ) {
+			return $label;
+		}
+		$open = Data::moderation_open();
+		if ( null === $open || $open <= 0 ) {
+			return $label;
+		}
+		return $label . ' <span class="awaiting-mod"><span class="pending-count">' . (int) $open . '</span></span>';
+	}
+
+	/** Libellés de groupe + masquage des écrans techniques (CSS ancré par slug, match exact). */
 	public function menu_styles(): void {
 		$groups = array(
 			'postelio-users'      => 'Activité',
@@ -196,7 +224,8 @@ final class Menu {
 
 	/**
 	 * Masque les menus WordPress techniques superflus pour le personnel Postelio NON technique.
-	 * Ne fait rien pour un administrateur `manage_options` ni pour un non-staff.
+	 * Ne fait RIEN pour un administrateur `manage_options` (menu WordPress complet conservé), ni
+	 * pour un utilisateur qui n'est pas staff Postelio.
 	 */
 	public function simplify_wp_menu(): void {
 		if ( current_user_can( 'manage_options' ) ) {
