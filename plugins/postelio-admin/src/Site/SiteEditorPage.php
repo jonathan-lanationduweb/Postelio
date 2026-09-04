@@ -27,8 +27,8 @@ final class SiteEditorPage {
 	private const SUBTITLES = array(
 		'home'       => 'Construisez votre page d\'accueil, section par section.',
 		'navigation' => 'Logo, liens du menu et boutons d\'action.',
-		'footer'     => 'Colonnes de liens, réseaux et mentions.',
-		'appearance' => 'Couleurs, typographie et style des boutons.',
+		'footer'     => 'Marque, colonnes de liens, réseaux et mentions — aperçu mobile centré sur le vrai footer.',
+		'appearance' => 'Identité (nom, logo, favicon), couleurs, typographie et boutons.',
 		'jobs'       => 'Configuration de la page publique des offres.',
 		'companies'  => 'Configuration de la page publique des entreprises.',
 		'skills'     => 'Configuration de la page Savoir-faire.',
@@ -75,8 +75,8 @@ final class SiteEditorPage {
 			. '<div class="pst-ed-panel" id="pst-ed-panel"></div>'
 			. '<div class="pst-ed-preview-wrap">'
 			. '<div class="pst-ed-pvbar">'
-			. '<span class="pst-ed-pvbar__label">Aperçu</span>'
-			. '<div class="pst-ed-devices">'
+			. '<span class="pst-ed-pvbar__label" id="pst-ed-pvlabel">Aperçu</span>'
+			. '<div class="pst-ed-devices" id="pst-ed-devices">'
 			. '<button type="button" data-device="desktop" class="is-active">Desktop</button>'
 			. '<button type="button" data-device="tablet">Tablette</button>'
 			. '<button type="button" data-device="mobile">Mobile</button>'

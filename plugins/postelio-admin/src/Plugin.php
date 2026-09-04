@@ -82,6 +82,7 @@ final class Plugin {
 				'resolveUrl' => esc_url_raw( rest_url( 'postelio/v1/site/admin/resolve' ) ),
 				'restNonce'  => wp_create_nonce( 'wp_rest' ),
 				'frontUrl'   => esc_url_raw( home_url( '/' ) ),
+				'version'    => POSTELIO_ADMIN_VERSION,
 			)
 		);
 	}

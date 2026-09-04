@@ -74,6 +74,8 @@ abstract class Page {
 			'failed'        => 'L\'action a échoué. Réessayez.',
 			'invalid'       => 'Requête invalide (jeton de sécurité).',
 			'module_absent' => 'Le module concerné est indisponible.',
+			'email_test_ok'     => 'E-mail de test remis au transport. Vérifiez votre boîte de réception (le détail est dans « Service e-mail »).',
+			'email_test_failed' => 'L\'e-mail de test n\'a pas pu être envoyé. Le motif est affiché dans « Service e-mail ».',
 		);
 		return $map[ $code ] ?? 'Action traitée.';
 	}

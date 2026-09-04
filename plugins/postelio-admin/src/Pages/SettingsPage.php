@@ -141,11 +141,17 @@ final class SettingsPage extends Page {
 
 	private function notifications(): string {
 		$active   = Contracts::module_active( 'notifications' );
-		$wpmailsmtp = class_exists( '\\WPMailSMTP\\Core' );
-		$transport = $wpmailsmtp ? 'Configuré par WP Mail SMTP' : 'wp_mail (transport serveur / SMTP système)';
+		// Transport RÉELLEMENT actif (contrat Notifications), pas une supposition.
+		$transport = 'wp_mail (transport serveur)';
+		$configured = class_exists( '\\WPMailSMTP\\Core' );
+		if ( Contracts::has( '\\Postelio\\Notifications\\Api\\NotificationDirectory' ) && method_exists( '\\Postelio\\Notifications\\Api\\NotificationDirectory', 'transport' ) ) {
+			$t          = (array) call_user_func( array( '\\Postelio\\Notifications\\Api\\NotificationDirectory', 'transport' ) );
+			$transport  = (string) ( $t['label'] ?? $transport );
+			$configured = ! empty( $t['smtp_configured'] );
+		}
 		$pairs = array(
 			'Module Notifications' => $this->state( $active ),
-			'Transport e-mail'     => Ui::badge( $transport, $wpmailsmtp ? 'success' : 'info' ),
+			'Transport e-mail'     => Ui::badge( $transport, $configured ? 'success' : 'warning' ),
 			'Planificateur'        => Ui::badge( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ? 'WP-Cron désactivé (cron système attendu)' : 'WP-Cron actif', 'info' ),
 		);
 		// Statistiques de livraison si le contrat est présent.
