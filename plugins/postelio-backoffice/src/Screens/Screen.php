@@ -26,6 +26,16 @@ abstract class Screen {
 		return '';
 	}
 
+	/** Surtitre de l'en-tête (famille fonctionnelle de l'écran : Activité · Gestion · Système…). */
+	protected function eyebrow(): string {
+		return 'Postelio';
+	}
+
+	/** En-tête compact de l'écran (surtitre de la famille + titre + description + actions). */
+	protected function header( string $title, string $subtitle = '', string $actions_html = '', string $eyebrow = '' ): string {
+		return Ui::page_header( $title, $subtitle, $actions_html, '' !== $eyebrow ? $eyebrow : $this->eyebrow() );
+	}
+
 	public function render(): void {
 		if ( ! current_user_can( $this->capability() ) ) {
 			wp_die( esc_html__( 'Accès non autorisé.', 'postelio-backoffice' ), 403 );

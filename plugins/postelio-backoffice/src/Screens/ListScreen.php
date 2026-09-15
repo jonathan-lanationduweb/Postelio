@@ -1,7 +1,7 @@
 <?php
 /**
- * Base des écrans de type LISTE : impose le même squelette partout (toolbar → indicateurs
- * éventuels → onglets/filtres compacts → table → pagination → état vide compact). Les écrans
+ * Base des écrans de type LISTE : impose le même squelette partout (en-tête compact → barre
+ * d'outils onglets + recherche → contenu propre à l'écran → pagination → état vide compact). Les écrans
  * concrets fournissent le contenu ; ils ne réinventent pas la structure.
  *
  * @package Postelio\Backoffice\Screens
@@ -73,17 +73,27 @@ abstract class ListScreen extends Screen {
 	}
 
 	/** Bouton de retour à la liste (en-tête de détail). */
-	protected function back_link( string $label = '← Liste' ): string {
+	protected function back_link( string $label = 'Retour à la liste' ): string {
 		return Ui::button( $label, $this->url( $this->slug() ), 'ghost', true );
+	}
+
+	/** Barre d'outils de liste : onglets à gauche, contrôles (recherche / filtres) à droite. */
+	protected function toolbar( string $tabs_html, string $right_html = '' ): string {
+		return Ui::toolbar( $tabs_html, $right_html );
+	}
+
+	/** Recherche compacte (dans la toolbar) conservant l'onglet courant. @param array<string,string|int> $keep */
+	protected function search( string $value, string $placeholder, array $keep = array() ): string {
+		return Ui::filters( array_merge( array( 'page' => $this->slug() ), $keep ), Ui::search_input( 's', $value, $placeholder ), 'Rechercher' );
 	}
 
 	/** État « module absent » homogène. */
 	protected function module_missing( string $title, string $module_label ): string {
-		return Ui::page_header( $title ) . Ui::empty_state( 'Module indisponible', 'Le module ' . $module_label . ' n\'est pas actif. Cet écran redeviendra disponible dès sa réactivation.' );
+		return $this->header( $title ) . Ui::empty_state( 'Module indisponible', 'Le module ' . $module_label . ' n\'est pas actif. Cet écran redeviendra disponible dès sa réactivation.' );
 	}
 
 	/** État « ressource introuvable » homogène. */
 	protected function not_found( string $title, string $what ): string {
-		return Ui::page_header( $title, '', $this->back_link() ) . Ui::empty_state( 'Introuvable', $what );
+		return $this->header( $title, '', $this->back_link() ) . Ui::empty_state( 'Introuvable', $what );
 	}
 }
