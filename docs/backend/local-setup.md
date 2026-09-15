@@ -105,7 +105,7 @@ e-mails sont **capturés** par [Mailpit](https://mailpit.axllent.org/) — jamai
 
 1. Installer Mailpit : `winget install --id axllent.mailpit --exact` (binaire seul, réversible :
    `winget uninstall axllent.mailpit`).
-2. Le lancer : `mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --database %LOCALAPPDATA%mailpitmailpit.db`
+2. Le lancer : `mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --database "%LOCALAPPDATA%/mailpit/mailpit.db"`
    → UI `http://127.0.0.1:8025` (sans `--database`, les messages sont perdus à chaque redémarrage).
 3. Copier `tools/local-mail/postelio-local-mail.php` dans `wordpress/wp-content/mu-plugins/`
    (dossier non versionné).
