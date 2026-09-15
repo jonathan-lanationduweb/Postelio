@@ -50,13 +50,11 @@ final class ApplyRedirectController extends Controller {
 		if ( null === $row ) {
 			return new \WP_REST_Response( array( 'error' => array( 'code' => 'not_found', 'message' => 'Offre introuvable.' ) ), 404 );
 		}
-		// Retirée à la source → 410 (définitif) ; source désactivée / masquée → 404 (indispo).
+		// Retirée à la source → 410 (définitif) ; source inconnue / désactivée / masquée → 404 (indispo).
 		if ( 'removed' === $row['sync_status'] ) {
 			return new \WP_REST_Response( array( 'error' => array( 'code' => 'gone', 'message' => 'Cette offre a été retirée.' ) ), 410 );
 		}
-		$provider = $this->registry->get( (string) $row['source_key'] );
-		$available = null !== $provider && $provider->is_available();
-		if ( ! $available || 'hidden' === $row['local_visibility'] ) {
+		if ( ! $this->registry->is_source_available( (string) $row['source_key'] ) || 'hidden' === $row['local_visibility'] ) {
 			return new \WP_REST_Response( array( 'error' => array( 'code' => 'not_found', 'message' => 'Offre indisponible.' ) ), 404 );
 		}
 		if ( 'external_redirect' !== $row['application_mode'] ) {

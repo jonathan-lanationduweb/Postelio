@@ -59,9 +59,22 @@ $repo  = new ExternalJobRepository();
 $fake  = new FakeJobSourceProvider();
 $users = array(); $companies = array(); $jobs = array();
 
-// Injecte le Fake provider + un slice de test (aucun appel réseau).
-add_filter( 'postelio/job_sources/providers', static function () use ( $fake ) { return array( $fake ); } );
+// Injecte le Fake provider + un slice de test (aucun appel réseau). `$extraProviders` permet
+// d'enregistrer/désenregistrer dynamiquement une source supplémentaire (test source orpheline).
+$extraProviders = array();
+add_filter( 'postelio/job_sources/providers', static function () use ( $fake, &$extraProviders ) { return array_merge( array( $fake ), $extraProviders ); } );
 add_filter( 'postelio/job_sources/slices', static function () { return array( array( 'key' => 'test', 'criteria' => array() ) ); } );
+
+// ISOLATION : purge préalable des fixtures d'un run précédent (france_travail = clé du Fake,
+// orphan_provider = fixture orpheline) et nettoyage garanti même en cas d'échec/fatal.
+$ej_cleanup = static function () use ( $wpdb, $EJ ): void {
+	$wpdb->query( "DELETE FROM {$EJ} WHERE source_key IN ('france_travail','orphan_provider')" ); // phpcs:ignore WordPress.DB
+	$wpdb->query( "DELETE FROM {$wpdb->prefix}postelio_job_source_sync_runs WHERE provider_key IN ('france_travail','orphan_provider')" ); // phpcs:ignore WordPress.DB
+};
+$ej_cleanup();
+register_shutdown_function( $ej_cleanup );
+// Compte administrateur (health admin) : postelio_admin ou administrateur WordPress.
+$admin = (int) ( get_users( array( 'role__in' => array( 'postelio_admin', 'administrator' ), 'number' => 1, 'fields' => 'ID', 'orderby' => 'ID' ) )[0] ?? 1 );
 
 $run = static function () { return JS::instance()->orchestrator()->run_provider( 'france_travail' ); };
 $appCount = static function () use ( $wpdb, $AP ) { return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$AP}" ); };
@@ -78,34 +91,34 @@ echo "== Sync : create / unchanged / update (UUID stable) ==\n";
 $fake->offers = array( $ftOffer( 'A1', 'Développeur' ), $ftOffer( 'A2', 'Assistant' ) );
 $r1 = $run();
 $t( 'création de 2 offres', 2 === (int) $r1['created'] );
-$uuidA1 = (string) $wpdb->get_var( $wpdb->prepare( "SELECT public_uuid FROM {$EJ} WHERE source_key='france_travail' AND external_id='A1'" ) );
+$uuidA1 = (string) $wpdb->get_var( "SELECT public_uuid FROM {$EJ} WHERE source_key='france_travail' AND external_id='A1'" );
 $t( 'A1 a un UUID public', preg_match( '/^[0-9a-f-]{36}$/i', $uuidA1 ) === 1 );
 $r2 = $run();
 $t( 're-sync identique => unchanged', 2 === (int) $r2['unchanged'] && 0 === (int) $r2['created'] );
 $fake->offers[0]['intitule'] = 'Développeur senior';
 $r3 = $run();
 $t( 'contenu changé => updated', 1 === (int) $r3['updated'] );
-$uuidA1b = (string) $wpdb->get_var( $wpdb->prepare( "SELECT public_uuid FROM {$EJ} WHERE external_id='A1'" ) );
+$uuidA1b = (string) $wpdb->get_var( "SELECT public_uuid FROM {$EJ} WHERE external_id='A1'" );
 $t( 'UUID stable après update', $uuidA1 === $uuidA1b );
 
 echo "== Panne provider ≠ disparition ==\n";
 $fake->throw_on_fetch = true;
 $rf = $run();
 $t( 'run en échec', 'failed' === ( $rf['status'] ?? ( $rf['errors'] > 0 ? 'failed' : '' ) ) || (int) $rf['errors'] >= 1 );
-$t( 'aucune offre retirée sur panne', 2 === (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$EJ} WHERE sync_status='active'" ) );
+$t( 'aucune offre retirée sur panne', 2 === (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$EJ} WHERE sync_status='active' AND source_key='france_travail'" ) );
 $fake->throw_on_fetch = false;
 
 echo "== Masquage admin préservé à la resync ==\n";
 $repo->set_visibility( $uuidA1, 'hidden' );
 $run();
-$t( 'offre masquée reste hidden après resync', 'hidden' === (string) $wpdb->get_var( $wpdb->prepare( "SELECT local_visibility FROM {$EJ} WHERE external_id='A1'" ) ) );
+$t( 'offre masquée reste hidden après resync', 'hidden' === (string) $wpdb->get_var( "SELECT local_visibility FROM {$EJ} WHERE external_id='A1'" ) );
 $repo->set_visibility( $uuidA1, 'visible' );
 
 echo "== Disparition confirmée => removed + anonymisation ==\n";
 $fake->offers = array( $ftOffer( 'A1', 'Développeur senior' ) ); // A2 disparaît
 $rr = $run();
 $t( 'A2 retirée (refresh complet)', 1 === (int) $rr['removed'] );
-$a2 = $wpdb->get_row( $wpdb->prepare( "SELECT sync_status, company_name, description, external_url FROM {$EJ} WHERE external_id='A2'" ), ARRAY_A );
+$a2 = $wpdb->get_row( "SELECT sync_status, company_name, description, external_url FROM {$EJ} WHERE external_id='A2'", ARRAY_A );
 $t( 'A2 sync_status=removed', 'removed' === ( $a2['sync_status'] ?? '' ) );
 $t( 'A2 anonymisée (company/desc/url vidés)', null === $a2['company_name'] && null === $a2['description'] && null === $a2['external_url'] );
 
@@ -151,7 +164,7 @@ $t( 'offre removed absente de la recherche', ! in_array( 'A2', array_map( static
 echo "== Détail offre externe + 410 ==\n";
 $det = $req( 'GET', '/postelio/v1/jobs/' . $uuidA1, null, 0 );
 $t( 'détail externe => 200 + source externe', 200 === $det->get_status() && 'external' === ( $det->get_data()['data']['source']['type'] ?? '' ) );
-$uuidA2 = (string) $wpdb->get_var( $wpdb->prepare( "SELECT public_uuid FROM {$EJ} WHERE external_id='A2'" ) );
+$uuidA2 = (string) $wpdb->get_var( "SELECT public_uuid FROM {$EJ} WHERE external_id='A2'" );
 $t( 'détail offre removed => 410', 410 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA2, null, 0 )->get_status() );
 
 echo "== apply-redirect ==\n";
@@ -181,17 +194,65 @@ $rDis = new WP_REST_Request( 'GET', '/postelio/v1/jobs' ); $rDis->set_query_para
 $t( 'source désactivée => 0 offre externe (recherche)', 0 === count( (array) $dDis['data'] ) );
 $t( 'source désactivée => détail public 404', 404 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA1, null, 0 )->get_status() );
 $t( 'source désactivée => apply-redirect 404', 404 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA1 . '/apply-redirect', null, $cand )->get_status() );
-$t( 'source désactivée : ligne conservée en base (health)', 1 <= (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$EJ} WHERE external_id='A1'" ) ) );
+$t( 'source désactivée : ligne conservée en base (health)', 1 <= (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$EJ} WHERE external_id='A1'" ) );
 $fake->available = true;
 $t( 'réactivation => offre de nouveau visible (détail 200)', 200 === $req( 'GET', '/postelio/v1/jobs/' . $uuidA1, null, 0 )->get_status() );
-$t( 'réactivation : hidden resté visible ici (non masqué)', 'visible' === (string) $wpdb->get_var( $wpdb->prepare( "SELECT local_visibility FROM {$EJ} WHERE external_id='A1'" ) ) );
+$t( 'réactivation : hidden resté visible ici (non masqué)', 'visible' === (string) $wpdb->get_var( "SELECT local_visibility FROM {$EJ} WHERE external_id='A1'" ) );
 
 echo "== Conformité licence France Travail (points vérifiés) ==\n";
 $attr = $ext['source']['attribution'] ?? array();
 $t( 'attribution: notice source présente', ! empty( $attr['notice'] ) );
 $t( 'attribution: lien licence présent', ! empty( $attr['licence_url'] ) );
 $t( 'attribution: date de mise à jour source présente', ! empty( $attr['source_updated_at'] ) );
-$t( 'licence: offre removed anonymisée (déjà vérifié A2)', null === $wpdb->get_var( $wpdb->prepare( "SELECT company_name FROM {$EJ} WHERE external_id='A2'" ) ) );
+$t( 'licence: offre removed anonymisée (déjà vérifié A2)', null === $wpdb->get_var( "SELECT company_name FROM {$EJ} WHERE external_id='A2'" ) );
+
+echo "== Source ORPHELINE (ligne en base sans provider enregistré) => jamais publique ==\n";
+// Règle V1 : provider inconnu = indisponible. La ligne est CONSERVÉE (jamais de hard-delete),
+// signalée par le health admin, invisible partout (liste, ?source=partners, détail, redirect,
+// recherche interne consommée par les alertes). Réversible : enregistrer le provider la rend publique.
+$listUuids = static function ( string $source ) use ( $req ) {
+	$r = new WP_REST_Request( 'GET', '/postelio/v1/jobs' ); $r->set_query_params( array( 'source' => $source, 'per_page' => 100 ) );
+	$d = rest_do_request( $r )->get_data();
+	return array( 'uuids' => array_map( static fn( $i ) => (string) ( $i['uuid'] ?? '' ), (array) ( $d['data'] ?? array() ) ), 'total' => (int) ( $d['meta']['pagination']['total'] ?? -1 ) );
+};
+$beforeP = $listUuids( 'partners' ); $beforeA = $listUuids( 'all' );
+$orphanUuid = wp_generate_uuid4(); $nowUtc = current_time( 'mysql', true );
+$wpdb->insert( $EJ, array(
+	'public_uuid' => $orphanUuid, 'source_key' => 'orphan_provider', 'external_id' => 'ORPH-1', 'sync_status' => 'active', 'local_visibility' => 'visible',
+	'title' => 'Offre orpheline', 'company_name' => 'Orphan SA', 'ville' => 'Lyon', 'application_mode' => 'external_redirect',
+	'external_url' => 'https://www.partenaire.fr/o/ORPH-1', 'external_apply_url' => 'https://www.partenaire.fr/apply/ORPH-1',
+	'alternance' => 0, 'mapping_version' => 1, 'source_published_at' => $nowUtc, 'created_at' => $nowUtc, 'updated_at' => $nowUtc,
+) );
+$t( 'fixture orpheline insérée', (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$EJ} WHERE public_uuid=%s", $orphanUuid ) ) === 1 );
+$afterP = $listUuids( 'partners' ); $afterA = $listUuids( 'all' );
+$t( 'orpheline absente de GET /jobs', ! in_array( $orphanUuid, $afterA['uuids'], true ) );
+$t( 'orpheline absente de GET /jobs?source=partners', ! in_array( $orphanUuid, $afterP['uuids'], true ) );
+$t( 'orpheline non comptée dans total (partners)', $afterP['total'] === $beforeP['total'] );
+$t( 'orpheline non comptée dans total (all)', $afterA['total'] === $beforeA['total'] );
+$t( 'orpheline : détail public 404', 404 === $req( 'GET', '/postelio/v1/jobs/' . $orphanUuid, null, 0 )->get_status() );
+$t( 'orpheline : apply-redirect 404', 404 === $req( 'GET', '/postelio/v1/jobs/' . $orphanUuid . '/apply-redirect', null, $cand )->get_status() );
+$intern = \Postelio\Jobs\Api\JobSearchDirectory::search( array( 'ville' => 'Lyon' ), 1, 100 );
+$t( 'orpheline absente de la recherche interne (alertes)', ! in_array( $orphanUuid, array_map( static fn( $i ) => (string) ( $i['uuid'] ?? '' ), $intern['items'] ), true ) );
+$health = $req( 'GET', '/postelio/v1/job-sources/health', null, $admin )->get_data()['data'] ?? array();
+$orphKeys = array_map( static fn( $o ) => (string) ( $o['source_key'] ?? '' ), (array) ( $health['orphaned_sources'] ?? array() ) );
+$t( 'health admin : orphaned_sources_count >= 1 et clé signalée', (int) ( $health['orphaned_sources_count'] ?? 0 ) >= 1 && in_array( 'orphan_provider', $orphKeys, true ) );
+$t( 'health admin : providers[] inchangé (france_travail disponible)', true === ( ( $health['providers'][0]['available'] ?? null ) ) );
+$t( 'orpheline : ligne CONSERVÉE en base (pas de hard-delete)', 'active' === (string) $wpdb->get_var( $wpdb->prepare( "SELECT sync_status FROM {$EJ} WHERE public_uuid=%s", $orphanUuid ) ) );
+// Réversibilité : on enregistre un provider pour cette clé → l'offre (active + visible) redevient publique.
+$orphanProvider = new FakeJobSourceProvider( 'orphan_provider' ); $extraProviders[] = $orphanProvider;
+$t( 'provider enregistré => orpheline listée (partners)', in_array( $orphanUuid, $listUuids( 'partners' )['uuids'], true ) );
+$t( 'provider enregistré => détail 200', 200 === $req( 'GET', '/postelio/v1/jobs/' . $orphanUuid, null, 0 )->get_status() );
+$t( 'provider enregistré => apply-redirect 302', 302 === $req( 'GET', '/postelio/v1/jobs/' . $orphanUuid . '/apply-redirect', null, $cand )->get_status() );
+$health2 = $req( 'GET', '/postelio/v1/job-sources/health', null, $admin )->get_data()['data'] ?? array();
+$t( 'health admin : plus orpheline une fois enregistrée', ! in_array( 'orphan_provider', array_map( static fn( $o ) => (string) ( $o['source_key'] ?? '' ), (array) ( $health2['orphaned_sources'] ?? array() ) ), true ) );
+$orphanProvider->available = false;
+$t( 'provider enregistré mais désactivé => absente + détail 404', ! in_array( $orphanUuid, $listUuids( 'partners' )['uuids'], true ) && 404 === $req( 'GET', '/postelio/v1/jobs/' . $orphanUuid, null, 0 )->get_status() );
+$orphanProvider->available = true;
+$repo->set_visibility( $orphanUuid, 'hidden' );
+$t( 'provider disponible mais hidden => absente + détail 404 (hidden prime)', ! in_array( $orphanUuid, $listUuids( 'partners' )['uuids'], true ) && 404 === $req( 'GET', '/postelio/v1/jobs/' . $orphanUuid, null, 0 )->get_status() );
+$extraProviders = array(); // désenregistrement → redevient orpheline
+$t( 'provider désenregistré => ligne toujours en base, de nouveau indisponible', 404 === $req( 'GET', '/postelio/v1/jobs/' . $orphanUuid, null, 0 )->get_status() && 1 === (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$EJ} WHERE public_uuid=%s", $orphanUuid ) ) );
+$wpdb->delete( $EJ, array( 'public_uuid' => $orphanUuid ) );
 
 echo "== Nettoyage ==\n";
 $wpdb->query( "DELETE FROM {$EJ} WHERE source_key='france_travail'" );

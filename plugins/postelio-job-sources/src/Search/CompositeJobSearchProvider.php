@@ -55,7 +55,7 @@ if ( interface_exists( '\\Postelio\\Jobs\\Search\\JobSearchProvider' ) ) {
 			$need = min( $cap, $page * $per );
 
 			$nat = $this->native->search( $filters, 1, $need );
-			$ext = $this->external->search_public( $filters, $need, $this->registry->disabled_source_keys() );
+			$ext = $this->external->search_public( $filters, $need, $this->registry->available_source_keys() );
 
 			$merged = array();
 			foreach ( (array) $nat['items'] as $it ) {
@@ -83,7 +83,7 @@ if ( interface_exists( '\\Postelio\\Jobs\\Search\\JobSearchProvider' ) ) {
 		private function external_only( array $filters, int $page, int $per ): array {
 			$cap   = (int) apply_filters( 'postelio/job_sources/merge_cap', 100 );
 			$need  = min( $cap, $page * $per );
-			$ext   = $this->external->search_public( $filters, $need, $this->registry->disabled_source_keys() );
+			$ext   = $this->external->search_public( $filters, $need, $this->registry->available_source_keys() );
 			$items = array_slice( (array) $ext['items'], ( $page - 1 ) * $per, $per );
 			return array( 'items' => array_values( $items ), 'total' => (int) $ext['total'], 'total_is_exact' => ( (int) $ext['total'] <= $cap ) );
 		}

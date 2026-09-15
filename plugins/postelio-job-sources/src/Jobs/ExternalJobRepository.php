@@ -208,20 +208,24 @@ final class ExternalJobRepository {
 	}
 
 	/**
-	 * Recherche publique : offres visibles + actives, filtres best-effort, tri date desc.
+	 * Recherche publique : offres actives + visibles DONT LA SOURCE FIGURE DANS L'ALLOWLIST des
+	 * sources disponibles (`JobSourceRegistry::available_source_keys()`), filtres best-effort,
+	 * tri date desc. Allowlist vide → aucune offre externe, sans requête. Une ligne dont la
+	 * `source_key` est inconnue (orpheline) n'est donc jamais listée ni comptée dans `total`.
 	 *
 	 * @param array<string, mixed> $filters
-	 * @param string[]             $disabled_sources
+	 * @param string[]             $available_sources Clés de sources publiquement disponibles.
 	 * @return array{items: array<int, array<string,mixed>>, total:int}
 	 */
-	public function search_public( array $filters, int $limit, array $disabled_sources = array() ): array {
+	public function search_public( array $filters, int $limit, array $available_sources ): array {
 		global $wpdb;
-		$where = "sync_status = 'active' AND local_visibility = 'visible'";
-		$args  = array();
-		if ( $disabled_sources ) {
-			$where .= ' AND source_key NOT IN (' . implode( ',', array_fill( 0, count( $disabled_sources ), '%s' ) ) . ')';
-			$args   = array_merge( $args, $disabled_sources );
+		$available_sources = array_values( array_unique( array_filter( array_map( 'strval', $available_sources ), static fn( string $k ): bool => '' !== $k ) ) );
+		if ( ! $available_sources ) {
+			return array( 'items' => array(), 'total' => 0 );
 		}
+		$where = "sync_status = 'active' AND local_visibility = 'visible'"
+			. ' AND source_key IN (' . implode( ',', array_fill( 0, count( $available_sources ), '%s' ) ) . ')';
+		$args  = $available_sources;
 		if ( ! empty( $filters['ville'] ) ) {
 			$where .= ' AND ville LIKE %s';
 			$args[] = '%' . $wpdb->esc_like( (string) $filters['ville'] ) . '%';
@@ -246,14 +250,28 @@ final class ExternalJobRepository {
 			$where .= ' AND source_published_at >= %s';
 			$args[] = (string) $filters['published_after'];
 		}
+		// `$args` porte toujours au moins l'allowlist → prepare valide.
 		$count_sql = 'SELECT COUNT(*) FROM ' . self::table() . " WHERE {$where}";
-		$total     = $args
-			? (int) $wpdb->get_var( $wpdb->prepare( $count_sql, $args ) )
-			: (int) $wpdb->get_var( $count_sql );
+		$total     = (int) $wpdb->get_var( $wpdb->prepare( $count_sql, $args ) );
 		// La requête SELECT porte TOUJOURS un placeholder (%d du LIMIT) → prepare valide.
 		$sql  = 'SELECT * FROM ' . self::table() . " WHERE {$where} ORDER BY source_published_at DESC, id DESC LIMIT %d";
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, array_merge( $args, array( max( 1, $limit ) ) ) ), ARRAY_A );
 		return array( 'items' => array_map( array( $this, 'decode' ), $rows ?: array() ), 'total' => $total );
+	}
+
+	/**
+	 * Offres ACTIVES par clé de source (observabilité admin : détection des sources orphelines,
+	 * c'est-à-dire présentes en base sans provider enregistré). Lecture seule, aucune suppression.
+	 *
+	 * @return array<string, int> source_key => nombre d'offres actives
+	 */
+	public function count_active_by_source(): array {
+		global $wpdb;
+		$out = array();
+		foreach ( (array) $wpdb->get_results( 'SELECT source_key, COUNT(*) AS n FROM ' . self::table() . " WHERE sync_status = 'active' GROUP BY source_key", ARRAY_A ) as $r ) {
+			$out[ (string) $r['source_key'] ] = (int) $r['n'];
+		}
+		return $out;
 	}
 
 	public function delete_all(): void {

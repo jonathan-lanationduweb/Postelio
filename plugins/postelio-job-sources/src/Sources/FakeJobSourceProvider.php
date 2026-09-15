@@ -24,15 +24,18 @@ final class FakeJobSourceProvider implements JobSourceProvider {
 	public bool $available = true;
 	public bool $throw_on_fetch = false;
 	public string $throw_message = 'simulated_error';
+	/** Clé de source servie (défaut : celle de France Travail, pour un test réaliste). */
+	public string $key = FranceTravailProvider::KEY;
 
 	private FranceTravailProvider $mapper;
 
-	public function __construct() {
+	public function __construct( string $key = FranceTravailProvider::KEY ) {
 		$this->mapper = new FranceTravailProvider();
+		$this->key    = $key;
 	}
 
 	public function get_key(): string {
-		return FranceTravailProvider::KEY; // s'insère sous la même source pour un test réaliste
+		return $this->key;
 	}
 	public function get_name(): string {
 		return 'France Travail (fake)';
