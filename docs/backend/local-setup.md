@@ -97,6 +97,33 @@ wp core install --path=wordpress --url=http://localhost/Postelio/wordpress \
 Puis activer les plugins Postelio au fur et à mesure des lots
 (`wp plugin activate postelio-core` d'abord).
 
+### 6. E-mail local (Mailpit)
+
+WordPress n'a aucun transport e-mail par défaut sous WAMP (`mail()` → `localhost:25`, rien
+n'écoute) : les livraisons de `postelio-notifications` finissent `failed`. En développement, les
+e-mails sont **capturés** par [Mailpit](https://mailpit.axllent.org/) — jamais envoyés.
+
+1. Installer Mailpit : `winget install --id axllent.mailpit --exact` (binaire seul, réversible :
+   `winget uninstall axllent.mailpit`).
+2. Le lancer : `mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --database %LOCALAPPDATA%mailpitmailpit.db`
+   → UI `http://127.0.0.1:8025` (sans `--database`, les messages sont perdus à chaque redémarrage).
+3. Copier `tools/local-mail/postelio-local-mail.php` dans `wordpress/wp-content/mu-plugins/`
+   (dossier non versionné).
+4. Dans `wordpress/wp-config.php` (non versionné), avant « That's all » :
+   ```php
+   define( 'POSTELIO_LOCAL_SMTP_HOST', '127.0.0.1' );
+   define( 'POSTELIO_LOCAL_SMTP_PORT', 1025 );
+   define( 'POSTELIO_LOCAL_MAIL_FROM', 'noreply@postelio.test' );
+   define( 'POSTELIO_LOCAL_MAIL_FROM_NAME', 'Postelio (local)' );
+   ```
+5. Vérifier dans wp-admin → Postelio → Service e-mail : « Envoyer un e-mail de test » puis lire le
+   message dans Mailpit.
+
+Le mu-plugin ne fait que configurer le transport PHPMailer via `phpmailer_init` ; la logique métier
+continue d'appeler `wp_mail()` à travers `WpMailProvider`. Sans constante définie, il est inerte.
+Les adresses de test utilisent le domaine `@postelio.test`. Rien de tout cela ne concerne la
+production (provider transactionnel à décider).
+
 ## Vérifications finales (checklist)
 - [ ] WampServer vert (Apache + MySQL démarrés).
 - [ ] `http://localhost/Postelio/` affiche le **front**.
