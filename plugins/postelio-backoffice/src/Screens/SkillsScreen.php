@@ -34,6 +34,10 @@ final class SkillsScreen extends ListScreen {
 		return Menu::CAP_ADMIN;
 	}
 
+	protected function eyebrow(): string {
+		return 'Postelio · Gestion';
+	}
+
 	protected function slug(): string {
 		return 'postelio-skills';
 	}
@@ -58,33 +62,36 @@ final class SkillsScreen extends ListScreen {
 
 		$keep = array( 'tab' => $tab, 's' => $q, 'category' => $cat, 'author_type' => $author );
 
-		$out  = Ui::page_header( 'Savoir-faire', 'Contenus éditoriaux publiés par les candidats et les entreprises.' );
-		$out .= $this->status_tabs( array_map( static fn( $m ) => $m[0], self::STATUSES ), $counts, $tab, 'Tous' );
-		$out .= Ui::filters(
-			array( 'page' => $this->slug(), 'tab' => $tab ),
-			Ui::search_input( 's', $q, 'Titre…' )
-				. Ui::search_input( 'category', $cat, 'Catégorie…' )
-				. Ui::select( 'author_type', array( '' => 'Tout auteur', 'candidate' => 'Candidat', 'company' => 'Entreprise' ), $author ),
-			'Filtrer'
+		$out  = $this->header( 'Savoir-faire', 'Contenus éditoriaux publiés par les candidats et les entreprises.' );
+		$out .= $this->toolbar(
+			$this->status_tabs( array_map( static fn( $m ) => $m[0], self::STATUSES ), $counts, $tab, 'Tous' ),
+			Ui::filters(
+				array( 'page' => $this->slug(), 'tab' => $tab ),
+				Ui::search_input( 's', $q, 'Titre…' )
+					. Ui::select( 'author_type', array( '' => 'Tout auteur', 'candidate' => 'Candidat', 'company' => 'Entreprise' ), $author )
+					. Ui::search_input( 'category', $cat, 'Catégorie…' ),
+				'Filtrer'
+			)
 		);
 
 		$rows = array();
 		foreach ( (array) $res['items'] as $s ) {
 			$rows[] = $this->row( (array) $s );
 		}
-		$out .= Ui::table( array( 'Contenu', 'Auteur', 'Catégorie', 'Statut', 'Commentaires', 'Actions' ), $rows, 'Aucun contenu ne correspond.' );
+		$out .= Ui::table( array( 'Contenu', 'Auteur', 'Catégorie', 'Statut', 'Commentaires', '' ), $rows, 'Aucun contenu ne correspond', '' !== $q || '' !== $cat ? 'Modifiez les filtres pour élargir la liste.' : '' );
 		$out .= $this->pagination( (int) $res['total'], $keep );
 		return $out;
 	}
 
 	/** @param array<string,mixed> $s @return array<int,string> */
 	private function row( array $s ): array {
-		$hidden = ! empty( $s['mod_hidden'] );
-		$status = $hidden ? 'hidden' : (string) $s['status'];
-		$meta   = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
+		$hidden  = ! empty( $s['mod_hidden'] );
+		$status  = $hidden ? 'hidden' : (string) $s['status'];
+		$meta    = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
+		$company = 'company' === ( $s['author_type'] ?? '' );
 		return array(
-			Ui::entity( (string) $s['title'], Fmt::or_dash( $s['author_name'] ?? '' ), (string) ( $s['image_url'] ?? '' ), true ),
-			Ui::badge( 'company' === ( $s['author_type'] ?? '' ) ? 'Entreprise' : 'Candidat', 'company' === ( $s['author_type'] ?? '' ) ? 'info' : 'neutral' ),
+			Ui::entity( (string) $s['title'], Fmt::or_dash( $s['summary'] ?? '' ), (string) ( $s['image_url'] ?? '' ), true ),
+			Ui::meta( Fmt::or_dash( $s['author_name'] ?? '' ), $company ? 'Entreprise' : 'Candidat' ),
 			Ui::text( Fmt::or_dash( $s['category'] ?? '' ), false, true ),
 			Ui::badge( $meta[0], $meta[1], true ),
 			Ui::text( (string) (int) ( $s['comments'] ?? 0 ), false, true ),
@@ -92,17 +99,17 @@ final class SkillsScreen extends ListScreen {
 		);
 	}
 
-	private function actions( string $uuid, bool $hidden, bool $with_view ): string {
-		$h = '<div class="bo-actions">';
-		if ( $with_view ) {
-			$h .= $this->view_link( $uuid );
-		}
+	private function actions( string $uuid, bool $hidden, bool $in_list ): string {
+		$items = array();
 		if ( current_user_can( 'pst_moderate_content' ) && Data::has( '\\Postelio\\Skills\\Api\\SkillModeration' ) ) {
-			$h .= $hidden
-				? Ui::action_button( 'pst_admin_skill_unhide', array( 'uuid' => $uuid ), 'Restaurer', 'primary' )
-				: Ui::action_button( 'pst_admin_skill_hide', array( 'uuid' => $uuid ), 'Masquer', 'danger', 'Masquer ce contenu du public ?' );
+			$items[] = $hidden
+				? Ui::action_button( 'pst_admin_skill_unhide', array( 'uuid' => $uuid ), 'Restaurer', $in_list ? '' : 'primary' )
+				: Ui::action_button( 'pst_admin_skill_hide', array( 'uuid' => $uuid ), 'Masquer du public', 'danger', 'Masquer ce contenu du public ?' );
 		}
-		return $h . '</div>';
+		if ( $in_list ) {
+			return '<div class="bo-actions">' . $this->view_link( $uuid ) . Ui::menu( $items ) . '</div>';
+		}
+		return implode( '', $items );
 	}
 
 	protected function detail( string $uuid ): string {
@@ -118,38 +125,40 @@ final class SkillsScreen extends ListScreen {
 		$meta   = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
 		$seo    = is_array( $s['seo'] ?? null ) ? $s['seo'] : array();
 
-		$out  = Ui::page_header( (string) $s['title'], Fmt::or_dash( $s['author_name'] ?? '' ), Ui::badge( $meta[0], $meta[1], true ) . $this->back_link() . $this->actions( $uuid, $hidden, false ), 'Postelio · Savoir-faire' );
+		$out  = $this->header( (string) $s['title'], Fmt::or_dash( $s['author_name'] ?? '' ) . ( 'company' === ( $s['author_type'] ?? '' ) ? ' (entreprise)' : ' (candidat)' ), $this->back_link() . $this->actions( $uuid, $hidden, false ), 'Postelio · Savoir-faire' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
-		$out .= Ui::card_open( 'Contenu' ) . Ui::kv( array(
-			'Résumé'        => Ui::text( Fmt::or_dash( $s['summary'] ?? '' ) ),
-			'Catégorie'     => Ui::text( Fmt::or_dash( $s['category'] ?? '' ) ),
-			'Mots-clés'     => Ui::text( Fmt::or_dash( implode( ', ', (array) ( $s['tags'] ?? array() ) ) ) ),
-			'Auteur'        => Ui::text( Fmt::or_dash( $s['author_name'] ?? '' ) . ( 'company' === ( $s['author_type'] ?? '' ) ? ' (entreprise)' : ' (candidat)' ) ),
-			'Commentaires'  => Ui::text( (string) (int) ( $s['comments'] ?? 0 ) ),
-		) );
+		$out .= Ui::card_open( 'Contenu', '', Ui::badge( $meta[0], $meta[1], true ) );
 		if ( $hidden ) {
 			$out .= Ui::alert( 'Ce contenu est actuellement masqué du public par la modération.', 'warning' );
 		}
+		$out .= Ui::excerpt( Fmt::excerpt( (string) ( $s['content'] ?? '' ), 1200 ) );
+		$out .= '<div class="bo-section">' . Ui::kv( array(
+			'Résumé'        => Ui::text( Fmt::or_dash( $s['summary'] ?? '' ) ),
+			'Catégorie'     => Ui::text( Fmt::or_dash( $s['category'] ?? '' ) ),
+			'Mots-clés'     => Ui::text( Fmt::or_dash( implode( ', ', (array) ( $s['tags'] ?? array() ) ) ) ),
+			'Commentaires'  => Ui::text( (string) (int) ( $s['comments'] ?? 0 ) ),
+		) ) . '</div>';
 		$out .= Ui::details( 'Détails techniques', Ui::kv( array(
 			'Révision'           => Ui::text( (string) (int) ( $s['revision'] ?? 0 ) ),
 			'Référence publique' => Ui::text( $uuid, false, true ),
-		) ) ) . Ui::card_close();
-
-		$out .= Ui::card_open( 'Référencement' ) . Ui::kv( array(
-			'Adresse publique' => Ui::text( Fmt::or_dash( $seo['slug'] ?? '' ) ),
-			'Indexation'       => Ui::badge( ! empty( $seo['noindex'] ) ? 'Exclu des moteurs' : 'Indexable', ! empty( $seo['noindex'] ) ? 'warning' : 'success' ),
-		) ) . Ui::card_close();
+		), true ) ) . Ui::card_close();
 
 		$out .= Ui::col_close() . Ui::col_open();
-		$out .= Ui::card_open( 'Aperçu public' );
+		$out .= Ui::card_open( 'Aperçu public', '', '', 'bo-card--aside' );
 		$out .= '<div class="bo-cardpreview">';
 		if ( ! empty( $s['image_url'] ) ) {
 			$out .= '<img class="bo-cardpreview__img" src="' . esc_url( (string) $s['image_url'] ) . '" alt="">';
 		}
 		$out .= '<h3 class="bo-cardpreview__title">' . esc_html( (string) $s['title'] ) . '</h3>';
-		$out .= Ui::excerpt( Fmt::excerpt( (string) ( $s['content'] ?? '' ), 300 ) );
+		$out .= '<p class="bo-cardpreview__meta">' . esc_html( Fmt::or_dash( $s['author_name'] ?? '' ) ) . '</p>';
+		$out .= Ui::excerpt( Fmt::excerpt( (string) ( $s['summary'] ?? ( $s['content'] ?? '' ) ), 200 ) );
 		$out .= '</div>' . Ui::card_close();
+
+		$out .= Ui::card_open( 'Référencement', '', '', 'bo-card--aside' ) . Ui::kv( array(
+			'Adresse publique' => Ui::text( Fmt::or_dash( $seo['slug'] ?? '' ) ),
+			'Indexation'       => Ui::badge( ! empty( $seo['noindex'] ) ? 'Exclu des moteurs' : 'Indexable', ! empty( $seo['noindex'] ) ? 'warning' : 'success' ),
+		), true ) . Ui::card_close();
 		$out .= Ui::col_close() . Ui::cols_close();
 		return $out;
 	}

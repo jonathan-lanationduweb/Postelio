@@ -26,26 +26,30 @@ final class AlertsScreen extends Screen {
 		return Menu::CAP_ADMIN;
 	}
 
+	protected function eyebrow(): string {
+		return 'Postelio · Système';
+	}
+
 	protected function body(): string {
 		if ( ! Data::module_active( 'alerts' ) || ! Data::has( self::DIR ) ) {
-			return Ui::page_header( 'Favoris & Alertes', 'Supervision des favoris et alertes emploi.' )
+			return $this->header( 'Favoris & Alertes', 'Supervision des favoris et alertes emploi.' )
 				. Ui::empty_state( 'Module indisponible', 'Le module Favoris & Alertes n\'est pas actif.' );
 		}
 		$s   = (array) call_user_func( array( self::DIR, 'stats' ) );
 		$sch = is_array( $s['scheduler'] ?? null ) ? $s['scheduler'] : array();
 
-		$out  = Ui::page_header( 'Favoris & Alertes', 'Compteurs agrégés : aucune donnée personnelle.' );
-		$out .= '<div class="bo-stats bo-stats--4">';
-		$out .= Ui::stat( 'Favoris enregistrés', (int) ( $s['favorites_total'] ?? 0 ) );
-		$out .= Ui::stat( 'Recherches sauvegardées', (int) ( $s['saved_searches_total'] ?? 0 ) );
-		$out .= Ui::stat( 'Alertes actives', (int) ( $s['active_alerts_total'] ?? 0 ) );
-		$out .= Ui::stat( 'Envois (24 h)', (int) ( $s['digests_sent_24h'] ?? 0 ) );
-		$out .= '</div>';
+		$out  = $this->header( 'Favoris & Alertes', 'Compteurs agrégés : aucune donnée personnelle n\'est affichée.' );
+		$out .= Ui::kpis_open( 4 );
+		$out .= Ui::kpi( 'Favoris enregistrés', (int) ( $s['favorites_total'] ?? 0 ) );
+		$out .= Ui::kpi( 'Recherches sauvegardées', (int) ( $s['saved_searches_total'] ?? 0 ) );
+		$out .= Ui::kpi( 'Alertes actives', (int) ( $s['active_alerts_total'] ?? 0 ) );
+		$out .= Ui::kpi( 'Envois (24 h)', (int) ( $s['digests_sent_24h'] ?? 0 ) );
+		$out .= Ui::kpis_close();
 
 		$armed = ! empty( $sch['dispatch_armed'] );
-		$out  .= Ui::card_open( 'Envoi quotidien des alertes' ) . Ui::kv( array(
-			'Programmation'        => Ui::badge( $armed ? 'Programmé (07h30, Europe/Paris)' : 'Non programmé', $armed ? 'success' : 'warning', true ),
-			'Prochaine exécution'  => Ui::text( Fmt::datetime( $sch['next_dispatch_at'] ?? '' ) ),
+		$out  .= Ui::card_open( 'Envoi quotidien des alertes', 'Planificateur des alertes emploi.' ) . Ui::checks( array(
+			array( 'Programmation', Ui::badge( $armed ? 'Programmé' : 'Non programmé', $armed ? 'success' : 'warning', true ), $armed ? '07h30, Europe/Paris' : '' ),
+			array( 'Prochaine exécution', Ui::text( Fmt::datetime( $sch['next_dispatch_at'] ?? '' ) ), '' ),
 		) );
 		if ( ! $armed ) {
 			$out .= Ui::alert( 'L\'envoi des alertes n\'est pas programmé. Il se réarme au prochain chargement ; si le problème persiste, vérifiez les tâches planifiées.', 'warning' );

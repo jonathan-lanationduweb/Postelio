@@ -38,6 +38,10 @@ final class FilesScreen extends ListScreen {
 		return Menu::CAP_ADMIN;
 	}
 
+	protected function eyebrow(): string {
+		return 'Postelio · Système';
+	}
+
 	protected function slug(): string {
 		return 'postelio-files';
 	}
@@ -50,18 +54,16 @@ final class FilesScreen extends ListScreen {
 		$by_status = is_array( $counts['by_status'] ?? null ) ? $counts['by_status'] : array();
 		$quarant   = (int) ( $counts['quarantined'] ?? 0 );
 
-		$out  = Ui::page_header( 'CV & fichiers', 'Stockage privé : compteurs et métadonnées uniquement.' );
-		$out .= '<div class="bo-stats">';
-		$out .= Ui::stat( 'Fichiers', (int) ( $counts['total'] ?? 0 ) );
-		$out .= Ui::stat( 'Actifs', (int) ( $by_status['ready'] ?? 0 ) );
-		$out .= Ui::stat( 'Archivés', (int) ( $by_status['archived'] ?? 0 ) );
-		$out .= Ui::stat( 'En quarantaine', $quarant, '', $quarant > 0 );
-		$out .= Ui::stat( 'Supprimés', (int) ( $by_status['deleted'] ?? 0 ) );
-		$out .= Ui::stat( 'Volume conservé', Fmt::bytes( (int) ( $counts['live_bytes'] ?? 0 ) ) );
-		$out .= '</div>';
+		$out  = $this->header( 'CV & fichiers', 'Stockage privé : compteurs et métadonnées uniquement, jamais de contenu.', Ui::badge( Fmt::bytes( (int) ( $counts['live_bytes'] ?? 0 ) ) . ' conservés', 'neutral' ) );
+		$out .= Ui::kpis_open( 4 );
+		$out .= Ui::kpi( 'Fichiers', (int) ( $counts['total'] ?? 0 ), (int) ( $by_status['ready'] ?? 0 ) . ' actifs' );
+		$out .= Ui::kpi( 'Archivés', (int) ( $by_status['archived'] ?? 0 ) );
+		$out .= Ui::kpi( 'En quarantaine', $quarant, $quarant > 0 ? 'jugés suspects à l\'analyse' : '', $quarant > 0, $quarant > 0 ? $this->url( $this->slug(), array( 'tab' => 'quarantined' ) ) : '' );
+		$out .= Ui::kpi( 'Supprimés', (int) ( $by_status['deleted'] ?? 0 ) );
+		$out .= Ui::kpis_close();
 
 		if ( $quarant > 0 ) {
-			$out .= Ui::alert( 'Des fichiers sont en quarantaine : jugés suspects à l\'analyse. Leur traitement relève du module Fichiers ; le back-office n\'agit jamais sur les fichiers.', 'warning' );
+			$out .= Ui::alert( 'Des fichiers sont en quarantaine. Leur traitement relève du module Fichiers ; le back-office n\'agit jamais sur les fichiers.', 'warning' );
 		}
 
 		$tab     = $this->current( 'tab', 'all' );
@@ -71,11 +73,11 @@ final class FilesScreen extends ListScreen {
 		}
 		$res = (array) call_user_func( array( self::DIR, 'list' ), $filters, $this->paged(), static::PER_PAGE );
 
-		$out .= $this->status_tabs(
+		$out .= $this->toolbar( $this->status_tabs(
 			array_map( static fn( $m ) => $m[0], self::STATUSES ),
 			array_merge( array( 'total' => (int) ( $counts['total'] ?? 0 ) ), $by_status ),
 			$tab
-		);
+		) );
 
 		// Référencement par une candidature : résolu en LOT (aucune requête par ligne).
 		$refs  = array();
@@ -93,16 +95,16 @@ final class FilesScreen extends ListScreen {
 			$f      = (array) $f;
 			$rows[] = $this->row( $f, ! empty( $refs[ (string) $f['uuid'] ] ) );
 		}
-		$out .= Ui::table( array( 'Référence', 'Type', 'Statut', 'Taille', 'Ajouté', 'Rattaché à une candidature' ), $rows, 'Aucun fichier.' );
+		$out .= Ui::table( array( 'Fichier', 'Statut', 'Taille', 'Ajouté', 'Candidature' ), $rows, 'Aucun fichier.' );
 		$out .= $this->pagination( (int) $res['total'], array( 'tab' => $tab ) );
 
 		$providers = is_array( $counts['by_provider'] ?? null ) ? $counts['by_provider'] : array();
 		if ( ! empty( $providers ) ) {
 			$chips = '';
 			foreach ( $providers as $k => $n ) {
-				$chips .= Ui::badge( (string) $k . ' · ' . (int) $n, 'neutral' ) . ' ';
+				$chips .= Ui::badge( (string) $k . ' · ' . (int) $n, 'neutral' );
 			}
-			$out .= Ui::details( 'Détails techniques', Ui::kv( array( 'Répartition par stockage' => '<span class="bo-chips">' . $chips . '</span>' ) ) );
+			$out .= Ui::details( 'Détails techniques', Ui::kv( array( 'Répartition par stockage' => '<span class="bo-chips">' . $chips . '</span>' ), true ) );
 		}
 		$out .= Ui::help( 'Aucun chemin de stockage, nom de fichier d\'origine ni contenu n\'est affiché, et aucun téléchargement n\'est proposé : les fichiers restent privés à leur propriétaire et à l\'entreprise destinataire.' );
 		return $out;
@@ -114,12 +116,11 @@ final class FilesScreen extends ListScreen {
 		$meta = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
 		$type = 'cv' === (string) $f['type'] ? 'CV' : (string) $f['type'];
 		return array(
-			Ui::text( Fmt::ref( (string) $f['uuid'] ), true ),
-			Ui::badge( $type, 'neutral' ) . ( ! empty( $f['is_primary'] ) ? ' ' . Ui::badge( 'Principal', 'info' ) : '' ),
+			Ui::entity( $type . ( ! empty( $f['is_primary'] ) ? ' · principal' : '' ), 'Réf. ' . Fmt::ref( (string) $f['uuid'] ), '', true ),
 			Ui::badge( $meta[0], $meta[1], true ),
 			Ui::text( Fmt::bytes( (int) $f['size_bytes'] ), false, true ),
 			Ui::text( Fmt::date( (string) $f['created_at'] ), false, true ),
-			$referenced ? Ui::badge( 'Oui', 'success', true ) : Ui::text( 'Non', false, true ),
+			$referenced ? Ui::badge( 'Rattaché', 'success', true ) : Ui::text( '—', false, true ),
 		);
 	}
 }

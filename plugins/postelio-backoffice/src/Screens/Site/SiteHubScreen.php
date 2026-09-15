@@ -35,8 +35,12 @@ final class SiteHubScreen extends Screen {
 		return Menu::CAP_SITE;
 	}
 
+	protected function eyebrow(): string {
+		return 'Postelio · Mon site';
+	}
+
 	protected function body(): string {
-		$out = Ui::page_header( 'Mon site', 'Pages, structure et identité du site public Postelio.', Ui::button( 'Voir le site', $this->front_origin() . '/', '', false, true ), 'Postelio · Mon site' );
+		$out  = $this->header( 'Mon site', 'Pages, structure et identité du site public.', Ui::button( 'Voir le site', $this->front_origin() . '/', '', false, true ) );
 		$out .= SiteNav::render( 'postelio-site-pages' );
 
 		if ( ! class_exists( self::DIR ) ) {
@@ -45,21 +49,23 @@ final class SiteHubScreen extends Screen {
 
 		$seo = (array) call_user_func( array( self::DIR, 'config' ), 'seo' );
 
+		$out .= Ui::grid_open( 2 );
+		$out .= '<div class="bo-col">';
 		// --- Pages -----------------------------------------------------------
-		$out .= Ui::card_open( 'Pages du site', 'Chaque page est composée de sections activables et réordonnables.' ) . Ui::rows_open();
+		$out .= Ui::card_open( 'Pages du site', 'Chaque page est composée de sections activables et réordonnables.', '', '', 'Contenu' ) . Ui::rows_open();
 		foreach ( Menu::SITE_HUB_PAGES as $page ) {
 			$out .= $this->page_row( $page, $seo );
 		}
 		$out .= Ui::rows_close() . Ui::card_close();
+		$out .= '</div><div class="bo-col">';
 
-		// --- Structure + identité (2 colonnes) ---------------------------------
-		$out .= '<div class="bo-grid bo-grid--2">';
-		$out .= Ui::card_open( 'Structure', 'En-tête et pied de page, communs à toutes les pages.' ) . Ui::rows_open();
-		$out .= Ui::row( esc_html( 'Navigation' ), 'Logo, liens du menu, boutons Connexion / Inscription.', '', Ui::button( 'Modifier', $this->url( Menu::site_slug( 'navigation' ) ), 'primary', true ) );
-		$out .= Ui::row( esc_html( 'Footer' ), 'Marque, colonnes de liens, réseaux sociaux, mentions.', '', Ui::button( 'Modifier', $this->url( Menu::site_slug( 'footer' ) ), 'primary', true ) );
+		// --- Structure + identité ---------------------------------------------
+		$out .= Ui::card_open( 'Structure', 'En-tête et pied de page, communs à toutes les pages.', '', '', 'Global' ) . Ui::rows_open();
+		$out .= Ui::row( esc_html( 'Navigation' ), 'Logo, liens du menu, boutons Connexion / Inscription.', '', Ui::button( 'Modifier', $this->url( Menu::site_slug( 'navigation' ) ), '', true ) );
+		$out .= Ui::row( esc_html( 'Footer' ), 'Marque, colonnes de liens, réseaux sociaux, mentions.', '', Ui::button( 'Modifier', $this->url( Menu::site_slug( 'footer' ) ), '', true ) );
 		$out .= Ui::rows_close() . Ui::card_close();
 		$out .= $this->identity_card();
-		$out .= '</div>';
+		$out .= '</div>' . Ui::grid_close();
 
 		return $out;
 	}
@@ -87,13 +93,13 @@ final class SiteHubScreen extends Screen {
 		$has_seo  = '' !== trim( (string) ( $page_seo['seo_title'] ?? '' ) ) || '' !== trim( (string) ( $page_seo['meta_description'] ?? '' ) );
 		$seo_b    = Ui::badge( $has_seo ? 'SEO renseigné' : 'SEO à compléter', $has_seo ? 'success' : 'warning' );
 
-		$actions = Ui::button( 'Modifier', $this->url( Menu::site_slug( $page ) ), 'primary', true )
-			. Ui::button( 'SEO', $this->url( Menu::site_slug( 'seo' ) ), '', true );
-		$path    = (string) ( $schema['front_path'] ?? ( 'home' === $page ? '/' : '' ) );
+		$menu = array( Ui::button( 'Réglages SEO', $this->url( Menu::site_slug( 'seo' ) ), '', true ) );
+		$path = (string) ( $schema['front_path'] ?? ( 'home' === $page ? '/' : '' ) );
 		if ( '' !== $path ) {
-			$actions .= Ui::button( 'Voir', $this->front_origin() . $this->front_path( $path ), 'ghost', true, true );
+			$menu[] = Ui::button( 'Voir la page', $this->front_origin() . $this->front_path( $path ), '', true, true );
 		}
-		return Ui::row( esc_html( SiteNav::label( $page ) ), self::SUMMARIES[ $page ] ?? '', $state . ' ' . $seo_b, $actions );
+		$actions = Ui::button( 'Modifier', $this->url( Menu::site_slug( $page ) ), 'primary', true ) . Ui::menu( $menu );
+		return Ui::row( esc_html( SiteNav::label( $page ) ), self::SUMMARIES[ $page ] ?? '', $state . $seo_b, $actions, '', Ui::avatar( SiteNav::label( $page ), '', true ) );
 	}
 
 	/** Le front statique est servi en `.html` à la racine de l'origine. */
@@ -107,15 +113,15 @@ final class SiteHubScreen extends Screen {
 	}
 
 	private function identity_card(): string {
-		$id = method_exists( self::DIR, 'identity' ) ? (array) call_user_func( array( self::DIR, 'identity' ) ) : array();
+		$id      = method_exists( self::DIR, 'identity' ) ? (array) call_user_func( array( self::DIR, 'identity' ) ) : array();
 		$logo    = (string) ( $id['logo_url'] ?? '' );
 		$favicon = (string) ( $id['favicon_url'] ?? '' );
 		$pairs   = array(
 			'Nom de marque' => Ui::text( (string) ( $id['brand_name'] ?? 'Postelio' ), true ),
-			'Logo'          => '' !== $logo ? Ui::avatar( 'logo', $logo, true ) . ' ' . Ui::text( basename( (string) wp_parse_url( $logo, PHP_URL_PATH ) ), false, true ) : Ui::text( 'Pastille « P » par défaut', false, true ),
-			'Favicon'       => '' !== $favicon ? Ui::avatar( 'favicon', $favicon, true ) . ' ' . Ui::text( ! empty( $id['favicon_is_default'] ) ? 'Favicon Postelio par défaut' : basename( (string) wp_parse_url( $favicon, PHP_URL_PATH ) ), false, true ) : Ui::text( '—', false, true ),
+			'Logo'          => '' !== $logo ? Ui::avatar( 'logo', $logo, true ) . Ui::text( basename( (string) wp_parse_url( $logo, PHP_URL_PATH ) ), false, true ) : Ui::text( 'Pastille « P » par défaut', false, true ),
+			'Favicon'       => '' !== $favicon ? Ui::avatar( 'favicon', $favicon, true ) . Ui::text( ! empty( $id['favicon_is_default'] ) ? 'Favicon Postelio par défaut' : basename( (string) wp_parse_url( $favicon, PHP_URL_PATH ) ), false, true ) : Ui::text( '—', false, true ),
 		);
-		return Ui::card_open( 'Identité', 'Source de vérité du nom, du logo et du favicon.', Ui::button( 'Modifier', $this->url( Menu::site_slug( 'appearance' ) ), '', true ) )
+		return Ui::card_open( 'Identité', 'Source de vérité du nom, du logo et du favicon.', Ui::button( 'Modifier', $this->url( Menu::site_slug( 'appearance' ) ), '', true ), '', 'Global' )
 			. Ui::kv( $pairs ) . Ui::card_close();
 	}
 }

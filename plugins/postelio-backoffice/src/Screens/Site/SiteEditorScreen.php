@@ -52,18 +52,22 @@ final class SiteEditorScreen extends Screen {
 		return 'pst-bo--editor';
 	}
 
+	protected function eyebrow(): string {
+		return 'Postelio · Mon site';
+	}
+
 	protected function body(): string {
 		$label = SiteNav::label( $this->page );
 		$front = $this->front_origin() . '/';
 
 		if ( ! class_exists( self::DIR ) ) {
-			return Ui::page_header( $label, '', '', 'Postelio · Mon site' ) . Ui::empty_state( 'Module Site indisponible', 'Activez le plugin Postelio Site pour éditer le site.' );
+			return $this->header( $label ) . Ui::empty_state( 'Module Site indisponible', 'Activez le plugin Postelio Site pour éditer le site.' );
 		}
 
 		$actions = Ui::button( 'Voir le site', $front, '', false, true )
 			. '<button type="button" id="pst-bo-save" class="bo-btn bo-btn--primary">Enregistrer</button>';
 
-		$out  = Ui::page_header( $label, self::SUBTITLES[ $this->page ] ?? '', $actions, 'Postelio · Mon site' );
+		$out  = $this->header( $label, self::SUBTITLES[ $this->page ] ?? '', $actions );
 		$out .= SiteNav::render( Menu::site_slug( $this->page ) );
 
 		$out .= '<div class="sb-workspace" id="pst-bo-workspace">'
@@ -76,7 +80,7 @@ final class SiteEditorScreen extends Screen {
 			. '<button type="button" data-device="tablet">Tablette</button>'
 			. '<button type="button" data-device="mobile">Mobile</button>'
 			. '</div>'
-			. '<a class="sb-preview__open" id="pst-bo-pvopen" target="_blank" rel="noopener" href="' . esc_url( $front ) . '">Ouvrir ↗</a>'
+			. '<a class="sb-preview__open" id="pst-bo-pvopen" target="_blank" rel="noopener" href="' . esc_url( $front ) . '">Ouvrir dans un onglet</a>'
 			. '</div>'
 			. '<div class="sb-canvas" id="pst-bo-canvas"></div>'
 			. '<p class="sb-preview__hint">Le vrai site — reflète vos modifications non enregistrées.</p>'
