@@ -1,9 +1,10 @@
 <?php
 /**
- * Modération : file de traitement et dossier détaillé, consommant l'API du module Modération
- * (`/moderation/cases`) — donc sans dupliquer la logique ni lire les tables. Toutes les décisions
- * (assigner, résoudre, ignorer, escalader, avertir, masquer, fermer, suspendre) sont DÉLÉGUÉES aux
- * endpoints du domaine, qui appliquent eux-mêmes leurs gardes de capability.
+ * Modération : file de traitement priorisée (barre de priorité, ressource, signalements,
+ * ancienneté, « Examiner ») et dossier détaillé (contexte, historique, décision, note),
+ * consommant l'API du module Modération (`/moderation/cases`) — donc sans dupliquer la logique ni
+ * lire les tables. Toutes les décisions (assigner, résoudre, ignorer, escalader, avertir, masquer,
+ * fermer, suspendre) sont DÉLÉGUÉES aux endpoints du domaine, qui appliquent eux-mêmes leurs gardes.
  *
  * @package Postelio\Backoffice\Screens
  */
@@ -54,6 +55,10 @@ final class ModerationScreen extends ListScreen {
 		return Menu::CAP_VIEW;
 	}
 
+	protected function eyebrow(): string {
+		return 'Postelio · Activité';
+	}
+
 	protected function slug(): string {
 		return 'postelio-moderation';
 	}
@@ -66,7 +71,7 @@ final class ModerationScreen extends ListScreen {
 		if ( ! isset( self::QUEUES[ $queue ] ) ) {
 			$queue = 'open';
 		}
-		$out = Ui::page_header( 'Modération', 'Signalements et contenus à examiner.' );
+		$out = $this->header( 'Modération', 'Signalements et contenus à examiner, du plus urgent au moins urgent.' );
 
 		$res = Rest::call( 'GET', '/postelio/v1/moderation/cases', array( 'status' => $queue, 'page' => $this->paged(), 'per_page' => static::PER_PAGE ) );
 		if ( 403 === $res['status'] ) {
@@ -76,40 +81,54 @@ final class ModerationScreen extends ListScreen {
 			return $out . Ui::alert( 'La file de modération est momentanément indisponible.', 'warning' );
 		}
 
-		$tabs = array();
-		foreach ( self::QUEUES as $key => $label ) {
-			$tabs[] = array( 'label' => $label, 'url' => $this->url( $this->slug(), array( 'status' => $key ) ), 'active' => $key === $queue );
-		}
-		$out .= Ui::tabs( $tabs, 'Files de modération' );
-
 		$items = (array) ( $res['data']['data'] ?? array() );
 		$total = (int) ( $res['data']['meta']['pagination']['total'] ?? count( $items ) );
 
-		$rows = array();
-		foreach ( $items as $c ) {
-			$rows[] = $this->row( (array) $c, $queue );
+		$tabs = array();
+		foreach ( self::QUEUES as $key => $label ) {
+			$tabs[] = array( 'label' => $label, 'url' => $this->url( $this->slug(), array( 'status' => $key ) ), 'active' => $key === $queue, 'count' => $key === $queue ? $total : null );
 		}
-		$out .= Ui::table( array( 'Ressource', 'Priorité', 'Risque', 'Origine', 'Signalements', 'Assigné à', 'Actions' ), $rows, 'Aucun dossier dans cette file.' );
+		$out .= $this->toolbar( Ui::tabs( $tabs, 'Files de modération' ) );
+
+		if ( empty( $items ) ) {
+			return $out . Ui::empty_state( 'Aucun dossier dans cette file', 'open' === $queue ? 'Rien n\'attend de décision pour le moment.' : '' );
+		}
+
+		// Tri visuel par priorité (la file reste celle de l'API : aucune logique métier).
+		$order = array( 'critical' => 0, 'high' => 1, 'medium' => 2, 'low' => 3 );
+		usort( $items, static fn( $a, $b ) => ( $order[ (string) ( ( (array) $a )['priority'] ?? 'medium' ) ] ?? 2 ) <=> ( $order[ (string) ( ( (array) $b )['priority'] ?? 'medium' ) ] ?? 2 ) );
+
+		$out .= Ui::queue_open();
+		foreach ( $items as $c ) {
+			$out .= $this->queue_item( (array) $c, $queue );
+		}
+		$out .= Ui::queue_close();
 		$out .= Ui::pager( $this->url( $this->slug(), array( 'status' => $queue ) ), $this->paged(), static::PER_PAGE, $total );
 		return $out;
 	}
 
-	/** @param array<string,mixed> $c @return array<int,string> */
-	private function row( array $c, string $queue ): array {
+	/** @param array<string,mixed> $c */
+	private function queue_item( array $c, string $queue ): string {
 		$prio  = (string) ( $c['priority'] ?? 'medium' );
 		$risk  = (string) ( $c['risk_level'] ?? 'medium' );
 		$rtype = (string) ( $c['resource_type'] ?? '' );
 		$pm    = self::LEVELS[ $prio ] ?? array( ucfirst( $prio ), 'neutral' );
 		$rm    = self::LEVELS[ $risk ] ?? array( ucfirst( $risk ), 'neutral' );
+		$n     = (int) ( $c['reports_count'] ?? 0 );
+		$since = (string) ( $c['created_at'] ?? ( $c['opened_at'] ?? '' ) );
 
-		return array(
-			Ui::entity( self::RESOURCES[ $rtype ] ?? Fmt::or_dash( $rtype ), Fmt::ref( (string) ( $c['resource_uuid'] ?? '' ) ), '', true ),
-			Ui::badge( $pm[0], $pm[1], true ),
-			Ui::badge( $rm[0], $rm[1] ),
-			Ui::text( $this->origin_label( (string) ( $c['origin'] ?? '' ) ), false, true ),
-			Ui::text( (string) (int) ( $c['reports_count'] ?? 0 ), false, true ),
-			Ui::text( Fmt::or_dash( $c['assigned_to'] ?? '' ), false, true ),
-			$this->quick_actions( (string) ( $c['uuid'] ?? '' ), $queue ),
+		$meta = Ui::text( $n . ( $n > 1 ? ' signalements' : ' signalement' ), false, true )
+			. Ui::badge( 'Risque ' . mb_strtolower( $rm[0] ), $rm[1] )
+			. Ui::text( '' !== $since ? 'Ouvert le ' . Fmt::date( $since ) : '—', false, true )
+			. Ui::text( '' !== (string) ( $c['assigned_to'] ?? '' ) ? 'Assigné : ' . (string) $c['assigned_to'] : 'Non assigné', false, true );
+
+		return Ui::queue_item(
+			$prio,
+			$pm[0],
+			self::RESOURCES[ $rtype ] ?? Fmt::or_dash( $rtype ),
+			$this->origin_label( (string) ( $c['origin'] ?? '' ) ) . ' · réf. ' . Fmt::ref( (string) ( $c['resource_uuid'] ?? '' ) ),
+			$meta,
+			$this->quick_actions( (string) ( $c['uuid'] ?? '' ), $queue )
 		);
 	}
 
@@ -119,16 +138,16 @@ final class ModerationScreen extends ListScreen {
 	}
 
 	private function quick_actions( string $uuid, string $queue ): string {
-		$h = '<div class="bo-actions">' . $this->view_link( $uuid );
+		$items = array();
 		if ( '' !== $uuid && ! in_array( $queue, array( 'resolved', 'dismissed' ), true ) ) {
 			if ( current_user_can( 'pst_decide_report' ) ) {
-				$h .= Ui::action_button( 'pst_admin_mod_assign', array( 'uuid' => $uuid ), 'M\'assigner' );
+				$items[] = Ui::action_button( 'pst_admin_mod_assign', array( 'uuid' => $uuid ), 'M\'assigner' );
 			}
 			if ( current_user_can( 'pst_moderate_content' ) ) {
-				$h .= Ui::action_button( 'pst_admin_mod_resolve', array( 'uuid' => $uuid ), 'Traiter', 'primary', 'Marquer ce dossier comme traité, sans action sur le contenu ?' );
+				$items[] = Ui::action_button( 'pst_admin_mod_resolve', array( 'uuid' => $uuid ), 'Traiter sans action', '', 'Marquer ce dossier comme traité, sans action sur le contenu ?' );
 			}
 		}
-		return $h . '</div>';
+		return $this->view_link( $uuid, 'Examiner' ) . Ui::menu( $items );
 	}
 
 	protected function detail( string $uuid ): string {
@@ -149,10 +168,10 @@ final class ModerationScreen extends ListScreen {
 		$closed = in_array( $status, array( 'resolved', 'dismissed' ), true );
 
 		$title = ( self::RESOURCES[ $rtype ] ?? 'Dossier' ) . ' signalé';
-		$out   = Ui::page_header( $title, self::QUEUES[ $status ] ?? Fmt::or_dash( $status ), Ui::badge( $pm[0], $pm[1], true ) . $this->back_link( '← File' ), 'Postelio · Modération' );
+		$out   = $this->header( $title, 'File : ' . ( self::QUEUES[ $status ] ?? Fmt::or_dash( $status ) ) . ' · priorité ' . mb_strtolower( $pm[0] ), $this->back_link( 'Retour à la file' ), 'Postelio · Modération' );
 		$out  .= Ui::cols_open() . Ui::col_open();
 
-		$out .= Ui::card_open( 'Dossier' ) . Ui::kv( array(
+		$out .= Ui::card_open( 'Contexte' ) . Ui::kv( array(
 			'Ressource concernée' => Ui::text( self::RESOURCES[ $rtype ] ?? Fmt::or_dash( $rtype ), true ),
 			'Priorité'            => Ui::badge( $pm[0], $pm[1], true ),
 			'Niveau de risque'    => Ui::badge( $rm[0], $rm[1] ),
@@ -163,23 +182,22 @@ final class ModerationScreen extends ListScreen {
 			'Type de ressource'    => Ui::text( Fmt::or_dash( $rtype ), false, true ),
 			'Référence ressource'  => Ui::text( Fmt::ref( (string) ( $c['resource_uuid'] ?? '' ), 12 ), false, true ),
 			'Référence dossier'    => Ui::text( Fmt::ref( $uuid, 12 ), false, true ),
-		) ) ) . Ui::card_close();
+		), true ) ) . Ui::card_close();
 
 		$rows = array();
 		foreach ( (array) ( $c['events'] ?? array() ) as $e ) {
 			$e      = (array) $e;
 			$rows[] = array(
-				Ui::text( Fmt::or_dash( $e['event'] ?? '' ), true ),
-				Ui::text( Fmt::or_dash( $e['actor_role'] ?? '' ), false, true ),
+				Ui::meta( Fmt::or_dash( $e['event'] ?? '' ), Fmt::or_dash( $e['actor_role'] ?? '' ) ),
 				Ui::text( Fmt::or_dash( trim( (string) ( $e['action'] ?? '' ) . ' ' . (string) ( $e['decision'] ?? '' ) ) ) ),
 				Ui::text( Fmt::or_dash( $e['note'] ?? '' ) ),
 				Ui::text( Fmt::datetime( $e['at'] ?? '' ), false, true ),
 			);
 		}
-		$out .= Ui::card_open( 'Historique', 'Journal non modifiable.' ) . Ui::table( array( 'Événement', 'Rôle', 'Décision', 'Note', 'Quand' ), $rows, 'Aucun événement.' ) . Ui::card_close();
+		$out .= Ui::card_open( 'Historique', 'Journal non modifiable.', '', 'bo-card--flush' ) . Ui::table( array( 'Événement', 'Décision', 'Note', 'Quand' ), $rows, 'Aucun événement.' ) . Ui::card_close();
 
 		$out .= Ui::col_close() . Ui::col_open();
-		$out .= Ui::card_open( 'Décision' );
+		$out .= Ui::card_open( 'Décision', '', '', 'bo-card--aside' );
 		if ( $closed ) {
 			$out .= Ui::alert( 'Ce dossier est clôturé. L\'historique reste consultable.', 'success' );
 		} else {

@@ -1,8 +1,9 @@
 <?php
 /**
- * Offres : liste par statut métier (avec distinction de la source) et détail. Les offres externes
- * (partenaires) sont lues via `Jobs\Api\JobDirectory::external` et leur masquage passe par
- * `JobSources\Api\JobSourcesModeration`. Suspension / réactivation déléguées à
+ * Offres : liste par statut métier (titre + entreprise dans la même cellule, contrat, ville, source,
+ * statut, expiration) et détail (contenu à gauche ; entreprise, statut, cycle de vie et actions à
+ * droite). Les offres externes (partenaires) sont lues via `Jobs\Api\JobDirectory::external` et leur
+ * masquage passe par `JobSources\Api\JobSourcesModeration`. Suspension / réactivation déléguées à
  * `Jobs\Api\JobModeration`.
  *
  * @package Postelio\Backoffice\Screens
@@ -38,6 +39,10 @@ final class JobsScreen extends ListScreen {
 		return Menu::CAP_ADMIN;
 	}
 
+	protected function eyebrow(): string {
+		return 'Postelio · Gestion';
+	}
+
 	protected function slug(): string {
 		return 'postelio-jobs';
 	}
@@ -56,20 +61,22 @@ final class JobsScreen extends ListScreen {
 		}
 		$res = (array) call_user_func( array( self::DIR, 'list' ), $filters, $this->paged(), static::PER_PAGE );
 
-		$out  = Ui::page_header( 'Offres', 'Cycle de vie des offres publiées sur Postelio.' );
-		$out .= $this->status_tabs(
-			array( 'published' => 'Publiées', 'expiring' => 'Expirent', 'draft' => 'Brouillons', 'expired' => 'Expirées', 'filled' => 'Pourvues', 'suspended' => 'Suspendues', 'archived' => 'Archivées' ),
-			$counts,
-			$tab,
-			'Toutes'
+		$out  = $this->header( 'Offres', 'Diffusion et cycle de vie des offres publiées sur Postelio.' );
+		$out .= $this->toolbar(
+			$this->status_tabs(
+				array( 'published' => 'Publiées', 'expiring' => 'Expirent', 'draft' => 'Brouillons', 'expired' => 'Expirées', 'filled' => 'Pourvues', 'suspended' => 'Suspendues', 'archived' => 'Archivées' ),
+				$counts,
+				$tab,
+				'Toutes'
+			),
+			$this->search( $q, 'Titre de l\'offre…', array( 'tab' => $tab ) )
 		);
-		$out .= Ui::filters( array( 'page' => $this->slug(), 'tab' => $tab ), Ui::search_input( 's', $q, 'Titre de l\'offre…' ), 'Rechercher' );
 
 		$rows = array();
 		foreach ( (array) $res['items'] as $j ) {
 			$rows[] = $this->row( (array) $j );
 		}
-		$out .= Ui::table( array( 'Offre', 'Source', 'Contrat', 'Ville', 'Statut', 'Expiration', 'Actions' ), $rows, 'Aucune offre ne correspond.' );
+		$out .= Ui::table( array( 'Offre', 'Contrat', 'Ville', 'Source', 'Statut', 'Candidatures', 'Expiration', '' ), $rows, 'Aucune offre ne correspond', '' !== $q ? 'Essayez un autre titre.' : '' );
 		$out .= $this->pagination( (int) $res['total'], array( 'tab' => $tab, 's' => $q ) );
 		return $out;
 	}
@@ -81,29 +88,31 @@ final class JobsScreen extends ListScreen {
 		$company = (string) ( $j['company']['nom'] ?? '' );
 		$native  = 'postelio' === (string) $j['source'];
 		return array(
-			Ui::entity( (string) $j['title'], '' !== $company ? $company : '—', '', true ),
-			Ui::badge( $native ? 'Postelio' : 'Partenaire', $native ? 'info' : 'neutral' ),
+			Ui::entity( (string) $j['title'], '' !== $company ? $company : '—', (string) ( $j['company']['logo_url'] ?? '' ), true ),
 			Ui::text( Fmt::or_dash( $j['contrat'] ?? '' ), false, true ),
 			Ui::text( Fmt::or_dash( $j['ville'] ?? '' ), false, true ),
+			Ui::badge( $native ? 'Postelio' : 'Partenaire', $native ? 'info' : 'neutral' ),
 			Ui::badge( $meta[0], $meta[1], true ),
-			Ui::text( Fmt::or_dash( $j['date_expiration'] ?? '' ), false, true ),
+			Ui::text( '—', false, true ),
+			Ui::text( Fmt::date( $j['date_expiration'] ?? '' ), false, true ),
 			$this->actions( (string) $j['uuid'], $status, true ),
 		);
 	}
 
-	private function actions( string $uuid, string $status, bool $with_view ): string {
-		$h = '<div class="bo-actions">';
-		if ( $with_view ) {
-			$h .= $this->view_link( $uuid );
-		}
+	/** Liste : « Voir » + menu ⋯ ; détail : pile d'actions. */
+	private function actions( string $uuid, string $status, bool $in_list ): string {
+		$items = array();
 		if ( Data::has( '\\Postelio\\Jobs\\Api\\JobModeration' ) && current_user_can( 'pst_manage_all_jobs' ) ) {
 			if ( 'suspended' === $status ) {
-				$h .= Ui::action_button( 'pst_admin_job_unsuspend', array( 'uuid' => $uuid ), 'Réactiver', 'primary' );
+				$items[] = Ui::action_button( 'pst_admin_job_unsuspend', array( 'uuid' => $uuid ), 'Réactiver l\'offre', $in_list ? '' : 'primary' );
 			} elseif ( in_array( $status, array( 'published', 'expiring' ), true ) ) {
-				$h .= Ui::action_button( 'pst_admin_job_suspend', array( 'uuid' => $uuid ), 'Suspendre', 'danger', 'Suspendre cette offre ? Elle ne sera plus visible publiquement.' );
+				$items[] = Ui::action_button( 'pst_admin_job_suspend', array( 'uuid' => $uuid ), 'Suspendre l\'offre', 'danger', 'Suspendre cette offre ? Elle ne sera plus visible publiquement.' );
 			}
 		}
-		return $h . '</div>';
+		if ( $in_list ) {
+			return '<div class="bo-actions">' . $this->view_link( $uuid ) . Ui::menu( $items ) . '</div>';
+		}
+		return implode( '', $items );
 	}
 
 	protected function detail( string $uuid ): string {
@@ -118,38 +127,45 @@ final class JobsScreen extends ListScreen {
 		$status  = (string) $j['status'];
 		$meta    = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
 		$company = (string) ( $j['company']['nom'] ?? '' );
+		$logo    = (string) ( $j['company']['logo_url'] ?? '' );
 
-		$out  = Ui::page_header( (string) $j['titre'], Fmt::or_dash( $company ), $this->back_link() . $this->actions( $uuid, $status, false ), 'Postelio · Offre' );
+		$out  = $this->header( (string) $j['titre'], trim( Fmt::or_dash( $company ) . ' · ' . Fmt::or_dash( $j['ville'] ?? '' ), ' ·' ), $this->back_link(), 'Postelio · Offre' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
-		$out .= Ui::card_open( 'Offre' ) . Ui::kv( array(
-			'Entreprise'   => Ui::text( Fmt::or_dash( $company ), true ),
-			'Statut'       => Ui::badge( $meta[0], $meta[1], true ),
-			'Source'       => Ui::badge( 'Postelio', 'info' ),
-			'Contrat'      => Ui::text( Fmt::or_dash( $j['contrat'] ?? '' ) ),
-			'Ville'        => Ui::text( Fmt::or_dash( $j['ville'] ?? '' ) ),
+		// Colonne principale : contenu de l'offre.
+		$out .= Ui::card_open( 'Contenu de l\'offre', '', Ui::badge( Fmt::or_dash( $j['contrat'] ?? '' ), 'neutral' ) . Ui::badge( Fmt::or_dash( $j['ville'] ?? '' ), 'neutral' ) );
+		$desc = Fmt::excerpt( (string) ( $j['description'] ?? '' ), 1200 );
+		$out .= '' !== $desc ? Ui::excerpt( $desc ) : Ui::help( 'Aucune description.' );
+		$out .= '<div class="bo-section">' . Ui::kv( array(
 			'Catégorie'    => Ui::text( Fmt::or_dash( $j['categorie'] ?? '' ) ),
 			'Télétravail'  => Ui::text( Fmt::or_dash( $j['teletravail'] ?? '' ) ),
-		) ) . Ui::card_close();
-
-		$out .= Ui::card_open( 'Diffusion' ) . Ui::kv( array(
-			'Publication'      => Ui::text( Fmt::or_dash( $j['date_publication'] ?? '' ) ),
-			'Expiration'       => Ui::text( Fmt::or_dash( $j['date_expiration'] ?? '' ) ),
-			'Renouvellements'  => Ui::text( (string) (int) ( $j['renewal_count'] ?? 0 ) ),
-			'Dernier renouvellement' => Ui::text( Fmt::or_dash( $j['renewed_at'] ?? '' ) ),
-		) ) . Ui::details( 'Détails techniques', Ui::kv( array(
-			'Révision métier'   => Ui::text( (string) (int) ( $j['revision'] ?? 0 ) ),
+		) ) . '</div>';
+		$out .= Ui::details( 'Détails techniques', Ui::kv( array(
+			'Révision métier'    => Ui::text( (string) (int) ( $j['revision'] ?? 0 ) ),
 			'Référence publique' => Ui::text( $uuid, false, true ),
-		) ) ) . Ui::card_close();
+		), true ) ) . Ui::card_close();
 
 		$out .= Ui::col_close() . Ui::col_open();
-		$out .= Ui::card_open( 'Aperçu', 'Ce que voient les candidats.' );
-		$out .= '<div class="bo-cardpreview">';
-		$out .= '<h3 class="bo-cardpreview__title">' . esc_html( (string) $j['titre'] ) . '</h3>';
-		$out .= '<p class="bo-cardpreview__meta">' . esc_html( trim( Fmt::or_dash( $company ) . ' · ' . Fmt::or_dash( $j['ville'] ?? '' ), ' ·' ) ) . '</p>';
-		$out .= '<p class="bo-cardpreview__badges">' . Ui::badge( Fmt::or_dash( $j['contrat'] ?? '' ), 'neutral' ) . '</p>';
-		$out .= Ui::excerpt( Fmt::excerpt( (string) ( $j['description'] ?? '' ), 300 ) );
-		$out .= '</div>' . Ui::card_close();
+
+		// Colonne latérale : entreprise, statut, cycle de vie, actions.
+		$out .= Ui::card_open( 'Entreprise', '', '', 'bo-card--aside' ) . Ui::entity( Fmt::or_dash( $company ), 'Source : Postelio', $logo, true ) . Ui::card_close();
+
+		$out .= Ui::card_open( 'Statut', '', '', 'bo-card--aside' ) . Ui::kv( array(
+			'État'         => Ui::badge( $meta[0], $meta[1], true ),
+			'Candidatures' => Ui::text( '—', false, true ),
+		), true );
+		$stack = $this->actions( $uuid, $status, false );
+		if ( '' !== $stack ) {
+			$out .= '<div class="bo-section">' . Ui::action_stack( $stack ) . '</div>';
+		}
+		$out .= Ui::card_close();
+
+		$out .= Ui::card_open( 'Cycle de vie', '', '', 'bo-card--aside' ) . Ui::timeline( array(
+			array( 'label' => 'Publication', 'time' => Fmt::date( $j['date_publication'] ?? '' ), 'done' => ! empty( $j['date_publication'] ) ),
+			array( 'label' => 'Dernier renouvellement' . ( (int) ( $j['renewal_count'] ?? 0 ) > 0 ? ' (' . (int) $j['renewal_count'] . ')' : '' ), 'time' => Fmt::date( $j['renewed_at'] ?? '' ), 'done' => ! empty( $j['renewed_at'] ) ),
+			array( 'label' => 'Expiration', 'time' => Fmt::date( $j['date_expiration'] ?? '' ), 'done' => in_array( $status, array( 'expired', 'archived' ), true ) ),
+		) ) . Ui::card_close();
+
 		$out .= Ui::col_close() . Ui::cols_close();
 		return $out;
 	}
@@ -160,18 +176,21 @@ final class JobsScreen extends ListScreen {
 		$hidden = 'hidden' === (string) ( $ext['local_visibility'] ?? 'visible' );
 		$uuid   = (string) ( $pv['uuid'] ?? $ext['public_uuid'] ?? '' );
 		$sync   = (string) ( $ext['sync_status'] ?? 'active' );
+		$source = Fmt::or_dash( $ext['source_key'] ?? ( $pv['source']['key'] ?? '' ) );
 
-		$out  = Ui::page_header( Fmt::or_dash( $pv['title'] ?? 'Offre partenaire' ), 'Offre importée d\'un partenaire', $this->back_link(), 'Postelio · Offre' );
+		$out  = $this->header( Fmt::or_dash( $pv['title'] ?? 'Offre partenaire' ), 'Offre importée d\'un partenaire · synchronisée automatiquement', $this->back_link(), 'Postelio · Offre' );
 		$out .= Ui::cols_open() . Ui::col_open();
-		$out .= Ui::card_open( 'Source partenaire' ) . Ui::kv( array(
-			'Partenaire'    => Ui::text( Fmt::or_dash( $ext['source_key'] ?? ( $pv['source']['key'] ?? '' ) ), true ),
-			'Import'        => Ui::badge( 'active' === $sync ? 'À jour' : 'À vérifier', 'active' === $sync ? 'success' : 'warning', true ),
-			'Visibilité'    => Ui::badge( $hidden ? 'Masquée' : 'Visible', $hidden ? 'error' : 'success', true ),
-		) ) . Ui::help( 'Les offres partenaires ne sont pas éditables : elles sont synchronisées automatiquement.' ) . Ui::card_close();
+		$out .= Ui::card_open( 'Contenu de l\'offre' ) . Ui::help( 'Les offres partenaires ne sont pas éditables : leur contenu est synchronisé depuis la source.' ) . Ui::card_close();
 		$out .= Ui::col_close() . Ui::col_open();
 
+		$out .= Ui::card_open( 'Source partenaire', '', '', 'bo-card--aside' ) . Ui::entity( $source, 'Connecteur', '', true )
+			. '<div class="bo-section">' . Ui::kv( array(
+				'Import'     => Ui::badge( 'active' === $sync ? 'À jour' : 'À vérifier', 'active' === $sync ? 'success' : 'warning', true ),
+				'Visibilité' => Ui::badge( $hidden ? 'Masquée' : 'Visible', $hidden ? 'error' : 'success', true ),
+			), true ) . '</div>' . Ui::card_close();
+
 		if ( '' !== $uuid && current_user_can( 'pst_moderate_content' ) && Data::has( '\\Postelio\\JobSources\\Api\\JobSourcesModeration' ) ) {
-			$out .= Ui::card_open( 'Modération' ) . Ui::action_stack(
+			$out .= Ui::card_open( 'Modération', '', '', 'bo-card--aside' ) . Ui::action_stack(
 				$hidden
 					? Ui::action_button( 'pst_admin_extjob_unhide', array( 'uuid' => $uuid ), 'Restaurer', 'primary' )
 					: Ui::action_button( 'pst_admin_extjob_hide', array( 'uuid' => $uuid ), 'Masquer du public', 'danger', 'Masquer cette offre partenaire du public ?' )

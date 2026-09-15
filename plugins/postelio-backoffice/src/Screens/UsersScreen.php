@@ -3,7 +3,8 @@
  * Utilisateurs : liste filtrable (requête WordPress native) enrichie par les contrats du module
  * Users (statut de compte, rôle, vérification d'e-mail, UUID public), et détail. Les actions
  * sensibles (suspendre / réactiver) sont déléguées à `Users\Api\UserModeration` — jamais d'écriture
- * directe dans `wp_users`. Les compteurs d'activité non exposés par une façade affichent « — ».
+ * directe dans `wp_users`. En liste, l'e-mail est masqué ; les compteurs d'activité non exposés par
+ * une façade affichent « — ».
  *
  * @package Postelio\Backoffice\Screens
  */
@@ -36,6 +37,10 @@ final class UsersScreen extends ListScreen {
 		return Menu::CAP_ADMIN;
 	}
 
+	protected function eyebrow(): string {
+		return 'Postelio · Gestion';
+	}
+
 	protected function slug(): string {
 		return 'postelio-users';
 	}
@@ -49,35 +54,26 @@ final class UsersScreen extends ListScreen {
 		$query = new \WP_User_Query( $this->query_args( $tab, $q, $paged ) );
 		$total = (int) $query->get_total();
 
-		$out  = Ui::page_header( 'Utilisateurs', 'Candidats et recruteurs de la plateforme.' );
-		$out .= '<div class="bo-stats bo-stats--4">';
-		$out .= Ui::stat( 'Candidats', $users['candidates'] );
-		$out .= Ui::stat( 'Recruteurs', $users['recruiters'] );
-		$out .= Ui::stat( 'Suspendus', Data::suspended_users(), '', (int) Data::suspended_users() > 0 );
-		$out .= Ui::stat( 'Comptes au total', $users['total'] );
-		$out .= '</div>';
-
-		$out .= $this->status_tabs(
-			array( 'candidates' => 'Candidats', 'recruiters' => 'Recruteurs', 'suspended' => 'Suspendus' ),
-			array(
-				'total'      => $users['candidates'] + $users['recruiters'],
-				'candidates' => $users['candidates'],
-				'recruiters' => $users['recruiters'],
-				'suspended'  => Data::suspended_users() ?? 0,
+		$out  = $this->header( 'Utilisateurs', 'Candidats et recruteurs inscrits sur la plateforme.' );
+		$out .= $this->toolbar(
+			$this->status_tabs(
+				array( 'candidates' => 'Candidats', 'recruiters' => 'Recruteurs', 'suspended' => 'Suspendus' ),
+				array(
+					'total'      => $users['candidates'] + $users['recruiters'],
+					'candidates' => $users['candidates'],
+					'recruiters' => $users['recruiters'],
+					'suspended'  => Data::suspended_users(),
+				),
+				$tab
 			),
-			$tab
-		);
-		$out .= Ui::filters(
-			array( 'page' => $this->slug(), 'tab' => $tab ),
-			Ui::search_input( 's', $q, 'Nom ou e-mail…' ),
-			'Rechercher'
+			$this->search( $q, 'Nom ou e-mail…', array( 'tab' => $tab ) )
 		);
 
 		$rows = array();
 		foreach ( $query->get_results() as $u ) {
 			$rows[] = $this->row( $u );
 		}
-		$out .= Ui::table( array( 'Utilisateur', 'Type', 'Statut', 'E-mail vérifié', 'Inscription', 'Actions' ), $rows, 'Aucun utilisateur ne correspond.' );
+		$out .= Ui::table( array( 'Utilisateur', 'E-mail', 'Statut', 'Inscription', '' ), $rows, 'Aucun utilisateur ne correspond', '' !== $q ? 'Essayez un autre nom ou une autre adresse.' : '' );
 		$out .= $this->pagination( $total, array( 'tab' => $tab, 's' => $q ) );
 		return $out;
 	}
@@ -118,10 +114,9 @@ final class UsersScreen extends ListScreen {
 		$meta   = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
 
 		return array(
-			Ui::entity( (string) $u->display_name, (string) $u->user_email ),
-			Ui::badge( $this->role_label( $role ), 'candidate' === $role ? 'info' : 'neutral' ),
+			Ui::entity( (string) $u->display_name, $this->role_label( $role ) ),
+			Ui::meta( Ui::mask_email( (string) $u->user_email ), $verif ? 'Vérifié' : 'Non vérifié' ),
 			Ui::badge( $meta[0], $meta[1], true ),
-			$verif ? Ui::badge( 'Vérifié', 'success' ) : Ui::text( 'Non vérifié', false, true ),
 			Ui::text( Fmt::date( (string) $u->user_registered ), false, true ),
 			$this->actions( $id, $status, true ),
 		);
@@ -136,18 +131,22 @@ final class UsersScreen extends ListScreen {
 		return $map[ $role ] ?? Fmt::or_dash( $role );
 	}
 
-	private function actions( int $id, string $status, bool $with_view ): string {
+	/** Liste : « Voir » + menu ⋯ ; détail : boutons en en-tête. */
+	private function actions( int $id, string $status, bool $in_list ): string {
 		$uuid = (string) Data::facade( self::DIR, 'public_uuid', array( $id ), '' );
-		$h    = '<div class="bo-actions">';
-		if ( $with_view && '' !== $uuid ) {
-			$h .= $this->view_link( $uuid );
+		if ( '' === $uuid ) {
+			return '';
 		}
-		if ( '' !== $uuid && 'deleted' !== $status && Data::has( self::MOD ) && current_user_can( 'pst_suspend_account' ) ) {
-			$h .= 'suspended' === $status
-				? Ui::action_button( 'pst_admin_user_unsuspend', array( 'uuid' => $uuid ), 'Réactiver', 'primary' )
-				: Ui::action_button( 'pst_admin_user_suspend', array( 'uuid' => $uuid ), 'Suspendre', 'danger', 'Suspendre ce compte ? Ses jetons et sessions seront révoqués (action réversible).' );
+		$mod = '';
+		if ( 'deleted' !== $status && Data::has( self::MOD ) && current_user_can( 'pst_suspend_account' ) ) {
+			$mod = 'suspended' === $status
+				? Ui::action_button( 'pst_admin_user_unsuspend', array( 'uuid' => $uuid ), 'Réactiver le compte', $in_list ? '' : 'primary' )
+				: Ui::action_button( 'pst_admin_user_suspend', array( 'uuid' => $uuid ), 'Suspendre le compte', 'danger', 'Suspendre ce compte ? Ses jetons et sessions seront révoqués (action réversible).' );
 		}
-		return $h . '</div>';
+		if ( $in_list ) {
+			return '<div class="bo-actions">' . $this->view_link( $uuid ) . Ui::menu( array( $mod ) ) . '</div>';
+		}
+		return $mod;
 	}
 
 	protected function detail( string $uuid ): string {
@@ -161,17 +160,12 @@ final class UsersScreen extends ListScreen {
 		$verif  = (bool) Data::facade( self::DIR, 'email_verified', array( $id ), false );
 		$meta   = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
 
-		$out  = Ui::page_header( (string) $u->display_name, $this->role_label( $role ), $this->back_link() . $this->actions( $id, $status, false ), 'Postelio · Utilisateur' );
+		$out  = $this->header( (string) $u->display_name, $this->role_label( $role ) . ' · inscrit le ' . Fmt::date( (string) $u->user_registered ), $this->back_link() . $this->actions( $id, $status, false ), 'Postelio · Utilisateur' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
-		$out .= Ui::card_open( 'Identité' ) . Ui::kv( array(
-			'Nom'             => Ui::text( (string) $u->display_name, true ),
-			'E-mail'          => Ui::text( (string) $u->user_email ),
-			'Type de compte'  => Ui::badge( $this->role_label( $role ), 'candidate' === $role ? 'info' : 'neutral' ),
-			'Statut'          => Ui::badge( $meta[0], $meta[1], true ),
-			'E-mail vérifié'  => $verif ? Ui::badge( 'Oui', 'success' ) : Ui::badge( 'Non', 'warning' ),
-			'Inscription'     => Ui::text( Fmt::date( (string) $u->user_registered ) ),
-		) ) . Ui::details( 'Détails techniques', Ui::kv( array( 'Référence publique' => Ui::text( $uuid, false, true ) ) ) ) . Ui::card_close();
+		$out .= Ui::card_open( 'Compte' );
+		$out .= Ui::identity( (string) $u->display_name, (string) $u->user_email, '', false, Ui::badge( $this->role_label( $role ), 'candidate' === $role ? 'info' : 'neutral' ) . Ui::badge( $meta[0], $meta[1], true ) . ( $verif ? Ui::badge( 'E-mail vérifié', 'success' ) : Ui::badge( 'E-mail non vérifié', 'warning' ) ) );
+		$out .= Ui::details( 'Détails techniques', Ui::kv( array( 'Référence publique' => Ui::text( $uuid, false, true ), 'Identifiant WordPress' => Ui::text( (string) $id, false, true ) ), true ) ) . Ui::card_close();
 
 		$out .= $this->profile_card( $id, $role );
 		$out .= Ui::col_close() . Ui::col_open();
@@ -209,14 +203,14 @@ final class UsersScreen extends ListScreen {
 		$notifs     = Data::facade( '\\Postelio\\Notifications\\Api\\NotificationDirectory', 'unread_count', array( $id ), null );
 		$skills     = Data::facade( '\\Postelio\\Skills\\Api\\SkillDirectory', 'published_for_user', array( $id ), null );
 
-		$out = Ui::card_open( 'Activité', 'Compteurs exposés par les modules.' ) . Ui::kv( array(
+		$out = Ui::card_open( 'Activité', '', '', 'bo-card--aside' ) . Ui::kv( array(
 			'Entretiens à venir'      => Ui::text( Fmt::count( null === $interviews ? null : (int) $interviews ) ),
 			'Notifications non lues'  => Ui::text( Fmt::count( null === $notifs ? null : (int) $notifs ) ),
 			'Savoir-faire publiés'    => Ui::text( Fmt::count( is_array( $skills ) ? count( $skills ) : null ) ),
 			'Candidatures'            => Ui::text( '—', false, true ),
 			'Conversations'           => Ui::text( '—', false, true ),
-		) );
-		$out .= Ui::help( '« — » : compteur non exposé par une façade de lecture, il n\'est donc pas reconstitué ici.' );
+		), true );
+		$out .= Ui::help( '« — » : compteur non exposé par une façade de lecture.' );
 		return $out . Ui::card_close();
 	}
 }

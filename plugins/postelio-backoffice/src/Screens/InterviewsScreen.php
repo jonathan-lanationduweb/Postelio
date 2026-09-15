@@ -1,8 +1,9 @@
 <?php
 /**
- * Entretiens : supervision plateforme (liste par statut + détail avec chronologie). Lecture seule
- * via `Interviews\Api\InterviewAdminDirectory`. CONFIDENTIALITÉ : les coordonnées (adresse, lien
- * visio, téléphone) ne figurent JAMAIS dans la liste ; en détail, elles ne sont demandées au
+ * Entretiens : vue par période (Aujourd'hui · À venir · À confirmer · Historique) en cartes
+ * compactes (heure, candidat, offre, entreprise, mode, statut) et détail avec chronologie. Lecture
+ * seule via `Interviews\Api\InterviewAdminDirectory`. CONFIDENTIALITÉ : les coordonnées (adresse,
+ * lien visio, téléphone) ne figurent JAMAIS dans la liste ; en détail, elles ne sont demandées au
  * contrat que si l'utilisateur dispose de la capacité d'administration plateforme.
  *
  * @package Postelio\Backoffice\Screens
@@ -38,8 +39,20 @@ final class InterviewsScreen extends ListScreen {
 	/** Type d'entretien => canal de coordonnées correspondant (contrat du module Entretiens). */
 	private const CHANNELS = array( 'onsite' => 'location', 'video' => 'video', 'phone' => 'phone' );
 
+	/** Vues : clé => [libellé, filtre statut passé au contrat (null = tous)]. */
+	private const VIEWS = array(
+		'upcoming'  => array( 'À venir', null ),
+		'today'     => array( 'Aujourd\'hui', null ),
+		'pending'   => array( 'À confirmer', 'proposed' ),
+		'history'   => array( 'Historique', null ),
+	);
+
 	protected function capability(): string {
 		return Menu::CAP_ADMIN;
+	}
+
+	protected function eyebrow(): string {
+		return 'Postelio · Activité';
 	}
 
 	protected function slug(): string {
@@ -50,38 +63,74 @@ final class InterviewsScreen extends ListScreen {
 		if ( ! Data::has( self::DIR ) ) {
 			return $this->module_missing( 'Entretiens', 'Entretiens' );
 		}
-		$tab    = $this->current( 'tab', 'all' );
+		$view = $this->current( 'tab', 'upcoming' );
+		if ( ! isset( self::VIEWS[ $view ] ) ) {
+			$view = 'upcoming';
+		}
 		$counts = (array) call_user_func( array( self::DIR, 'counts' ) );
 
+		// Le contrat filtre par statut ; le découpage temporel est fait côté présentation sur la page
+		// courante (aucune requête supplémentaire, aucune logique métier).
 		$filters = array();
-		if ( 'all' !== $tab && isset( self::STATUSES[ $tab ] ) ) {
-			$filters['status'] = $tab;
+		if ( null !== self::VIEWS[ $view ][1] ) {
+			$filters['status'] = self::VIEWS[ $view ][1];
 		}
-		$res = (array) call_user_func( array( self::DIR, 'list' ), $filters, $this->paged(), static::PER_PAGE );
+		$res   = (array) call_user_func( array( self::DIR, 'list' ), $filters, $this->paged(), static::PER_PAGE );
+		$items = array_map( static fn( $i ) => (array) $i, (array) $res['items'] );
+		$now   = time();
+		$today = wp_date( 'Y-m-d' );
 
-		$out  = Ui::page_header( 'Entretiens', 'Entretiens proposés aux candidats par les entreprises.' );
-		$out .= $this->status_tabs( array_map( static fn( $m ) => $m[0], self::STATUSES ), $counts, $tab, 'Tous' );
-
-		$rows = array();
-		foreach ( (array) $res['items'] as $iv ) {
-			$rows[] = $this->row( (array) $iv );
+		if ( 'today' === $view ) {
+			$items = array_values( array_filter( $items, static fn( $iv ) => wp_date( 'Y-m-d', (int) strtotime( (string) ( $iv['scheduled_at'] ?? '' ) ) ) === $today ) );
+		} elseif ( 'upcoming' === $view ) {
+			$items = array_values( array_filter( $items, static fn( $iv ) => (int) strtotime( (string) ( $iv['scheduled_at'] ?? '' ) ) >= $now && ! in_array( (string) $iv['status'], array( 'declined', 'cancelled', 'completed' ), true ) ) );
+		} elseif ( 'history' === $view ) {
+			$items = array_values( array_filter( $items, static fn( $iv ) => (int) strtotime( (string) ( $iv['scheduled_at'] ?? '' ) ) < $now || in_array( (string) $iv['status'], array( 'declined', 'cancelled', 'completed' ), true ) ) );
 		}
-		$out .= Ui::table( array( 'Candidat', 'Entreprise', 'Créneau', 'Mode', 'Statut', 'Actions' ), $rows, 'Aucun entretien ne correspond.' );
-		$out .= $this->pagination( (int) $res['total'], array( 'tab' => $tab ) );
+
+		$tabs = array();
+		foreach ( self::VIEWS as $key => $def ) {
+			$tabs[] = array( 'label' => $def[0], 'url' => $this->url( $this->slug(), array( 'tab' => $key ) ), 'active' => $key === $view, 'count' => 'pending' === $key ? (int) ( $counts['proposed'] ?? 0 ) : null );
+		}
+
+		$out  = $this->header( 'Entretiens', 'Entretiens proposés aux candidats par les entreprises.', Ui::badge( (int) ( $counts['total'] ?? 0 ) . ' au total', 'neutral' ) );
+		$out .= $this->toolbar( Ui::tabs( $tabs, 'Vue des entretiens' ) );
+
+		if ( empty( $items ) ) {
+			$msgs = array( 'upcoming' => 'Aucun entretien à venir sur cette page.', 'today' => 'Aucun entretien prévu aujourd\'hui.', 'pending' => 'Aucun entretien en attente de confirmation.', 'history' => 'Aucun entretien passé sur cette page.' );
+			return $out . Ui::empty_state( 'Rien à afficher', $msgs[ $view ] ) . $this->pagination( (int) $res['total'], array( 'tab' => $view ) );
+		}
+
+		// Groupes datés (jour) → cartes compactes.
+		$groups = array();
+		foreach ( $items as $iv ) {
+			$ts               = (int) strtotime( (string) ( $iv['scheduled_at'] ?? '' ) );
+			$day              = $ts > 0 ? wp_date( 'l j F Y', $ts ) : 'Date inconnue';
+			$groups[ $day ][] = $iv;
+		}
+		foreach ( $groups as $day => $list ) {
+			$out .= Ui::day_open( ucfirst( (string) $day ) );
+			foreach ( $list as $iv ) {
+				$out .= $this->slot( $iv );
+			}
+			$out .= Ui::day_close();
+		}
+		$out .= $this->pagination( (int) $res['total'], array( 'tab' => $view ) );
 		return $out;
 	}
 
-	/** @param array<string,mixed> $iv @return array<int,string> */
-	private function row( array $iv ): array {
+	/** @param array<string,mixed> $iv */
+	private function slot( array $iv ): string {
 		$st   = (string) $iv['status'];
 		$meta = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
-		return array(
-			Ui::entity( (string) $iv['candidate'], (string) $iv['job_title'] ),
-			Ui::entity( Fmt::or_dash( $iv['company'] ), '', '', true ),
-			Ui::text( Fmt::datetime( $iv['scheduled_at'] ?? '' ), false, true ),
-			Ui::badge( self::TYPES[ (string) $iv['type'] ] ?? (string) $iv['type'], 'neutral' ),
-			Ui::badge( $meta[0], $meta[1], true ),
-			$this->view_link( (string) $iv['uuid'] ),
+		$ts   = (int) strtotime( (string) ( $iv['scheduled_at'] ?? '' ) );
+		return Ui::slot(
+			$this->url( $this->slug(), array( 'view' => (string) $iv['uuid'] ) ),
+			$ts > 0 ? wp_date( 'H:i', $ts ) : '—',
+			$ts > 0 ? wp_date( 'd/m', $ts ) : '',
+			(string) $iv['candidate'],
+			(string) $iv['job_title'] . ' · ' . Fmt::or_dash( $iv['company'] ),
+			Ui::badge( self::TYPES[ (string) $iv['type'] ] ?? (string) $iv['type'], 'neutral' ) . Ui::badge( $meta[0], $meta[1], true )
 		);
 	}
 
@@ -99,12 +148,12 @@ final class InterviewsScreen extends ListScreen {
 		$meta = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
 		$type = (string) $iv['type'];
 
-		$out  = Ui::page_header( 'Entretien · ' . (string) $iv['candidate'], (string) $iv['company'] . ' · ' . (string) $iv['job_title'], Ui::badge( $meta[0], $meta[1], true ) . $this->back_link(), 'Postelio · Entretien' );
+		$out  = $this->header( (string) $iv['candidate'], Fmt::or_dash( $iv['company'] ) . ' · ' . (string) $iv['job_title'], $this->back_link(), 'Postelio · Entretien' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
 		$pairs = array(
-			'Mode'    => Ui::badge( self::TYPES[ $type ] ?? $type, 'neutral' ),
 			'Créneau' => Ui::text( Fmt::datetime( $iv['scheduled_at'] ?? '' ), true ),
+			'Mode'    => Ui::badge( self::TYPES[ $type ] ?? $type, 'neutral' ),
 			'Fuseau'  => Ui::text( Fmt::or_dash( $iv['timezone'] ?? 'UTC' ) ),
 		);
 		if ( '' !== (string) ( $iv['proposed_at'] ?? '' ) ) {
@@ -113,7 +162,7 @@ final class InterviewsScreen extends ListScreen {
 		if ( '' !== (string) ( $iv['cancelled_at'] ?? '' ) ) {
 			$pairs['Annulé le'] = Ui::text( Fmt::datetime( $iv['cancelled_at'] ) );
 		}
-		$out .= Ui::card_open( 'Rendez-vous' ) . Ui::kv( $pairs ) . Ui::card_close();
+		$out .= Ui::card_open( 'Rendez-vous', '', Ui::badge( $meta[0], $meta[1], true ) ) . Ui::kv( $pairs ) . Ui::card_close();
 
 		$out .= Ui::card_open( 'Coordonnées', 'Information sensible.' );
 		if ( ! $can_coords ) {
@@ -133,13 +182,13 @@ final class InterviewsScreen extends ListScreen {
 		$out .= Ui::col_close() . Ui::col_open();
 
 		$app_uuid = (string) ( $iv['application_uuid'] ?? '' );
-		$out     .= Ui::card_open( 'Candidature liée' );
+		$out     .= Ui::card_open( 'Candidature liée', '', '', 'bo-card--aside' );
 		$out     .= ( '' !== $app_uuid && Data::has( '\\Postelio\\Applications\\Api\\ApplicationAdminDirectory' ) )
 			? Ui::button( 'Ouvrir la candidature', $this->url( 'postelio-applications', array( 'view' => $app_uuid ) ), 'primary', true )
 			: Ui::help( 'Aucune candidature accessible pour cet entretien.' );
 		$out     .= Ui::card_close();
 
-		$out .= Ui::card_open( 'Chronologie' ) . Ui::timeline( $this->history( (array) ( $iv['history'] ?? array() ) ) ) . Ui::card_close();
+		$out .= Ui::card_open( 'Chronologie', '', '', 'bo-card--aside' ) . Ui::timeline( $this->history( (array) ( $iv['history'] ?? array() ) ) ) . Ui::card_close();
 		$out .= Ui::col_close() . Ui::cols_close();
 		return $out;
 	}
