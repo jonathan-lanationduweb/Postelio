@@ -12,7 +12,11 @@
 define( 'POSTELIO_JOBSOURCES_TESTING', true );
 
 // --- Shims WordPress minimaux (dépendance-free) ---
-if ( ! function_exists( 'apply_filters' ) ) { function apply_filters( $t, $v = null ) { return $v; } }
+// Hooks : registre minimal réel pour tester JobSourceRegistry (filtres `providers` + `source_available`).
+$GLOBALS['__pst_filters'] = array();
+if ( ! function_exists( 'add_filter' ) ) { function add_filter( $t, $cb, $p = 10, $a = 1 ) { $GLOBALS['__pst_filters'][ $t ][] = $cb; return true; } }
+if ( ! function_exists( 'remove_all_filters' ) ) { function remove_all_filters( $t ) { unset( $GLOBALS['__pst_filters'][ $t ] ); return true; } }
+if ( ! function_exists( 'apply_filters' ) ) { function apply_filters( $t, $v = null, ...$args ) { foreach ( $GLOBALS['__pst_filters'][ $t ] ?? array() as $cb ) { $v = $cb( $v, ...$args ); } return $v; } }
 if ( ! function_exists( 'get_transient' ) ) { function get_transient( $k ) { return false; } }
 if ( ! function_exists( 'set_transient' ) ) { function set_transient( $k, $v, $t = 0 ) { return true; } }
 if ( ! function_exists( 'delete_transient' ) ) { function delete_transient( $k ) { return true; } }
@@ -30,8 +34,12 @@ require_once $base . 'PageResult.php';
 require_once $base . 'RateLimiter.php';
 require_once $base . 'JobSourceProvider.php';
 require_once $base . 'FranceTravail/FranceTravailProvider.php';
+require_once $base . 'FakeJobSourceProvider.php';
+require_once $base . 'JobSourceRegistry.php';
 
+use Postelio\JobSources\Sources\FakeJobSourceProvider;
 use Postelio\JobSources\Sources\FranceTravail\FranceTravailProvider;
+use Postelio\JobSources\Sources\JobSourceRegistry;
 use Postelio\JobSources\Sources\HtmlSanitizer;
 use Postelio\JobSources\Sources\NormalizedExternalJob;
 use Postelio\JobSources\Sources\UrlGuard;
@@ -116,6 +124,24 @@ $check( 'alternance true détectée', ( $ft->normalize( array( 'id' => 'C3', 'in
 $check( 'offre sans id/titre => null', null === $ft->normalize( array( 'intitule' => 'x' ) ) && null === $ft->normalize( array( 'id' => 'z' ) ) );
 $evil = $ft->normalize( array( 'id' => 'D4', 'intitule' => 'X', 'contact' => array( 'urlPostulation' => 'javascript:alert(1)' ), 'origineOffre' => array( 'urlOrigine' => 'https://ok.fr/o' ) ) );
 $check( 'apply url javascript rejetée → repli urlOrigine', 'https://ok.fr/o' === $evil->external_apply_url );
+
+echo "== JobSourceRegistry : disponibilité = ALLOWLIST (source inconnue => indisponible) ==\n";
+$ok  = new FakeJobSourceProvider( 'src_ok' );
+$off = new FakeJobSourceProvider( 'src_off' ); $off->available = false;
+add_filter( 'postelio/job_sources/providers', static function () use ( $ok, $off ) { return array( $ok, $off ); } );
+$reg = new JobSourceRegistry();
+$check( 'providers() indexés par clé', array( 'src_ok', 'src_off' ) === array_keys( $reg->providers() ) );
+$check( 'source enregistrée + disponible => true', $reg->is_source_available( 'src_ok' ) );
+$check( 'source enregistrée mais désactivée => false', ! $reg->is_source_available( 'src_off' ) );
+$check( 'source INCONNUE (orpheline) => false', ! $reg->is_source_available( 'smoke_src' ) && ! $reg->is_source_available( '' ) );
+$check( 'available_source_keys() = allowlist des disponibles', array( 'src_ok' ) === $reg->available_source_keys() );
+$check( 'disabled_source_keys() = enregistrées indisponibles seulement', array( 'src_off' ) === $reg->disabled_source_keys() );
+add_filter( 'postelio/job_sources/source_available', static function ( $avail, $key ) { return 'src_ok' === $key ? false : true; } );
+$check( 'filtre métier peut FERMER une source disponible', ! $reg->is_source_available( 'src_ok' ) && array() === $reg->available_source_keys() );
+$check( 'filtre métier ne peut pas OUVRIR une source inconnue/désactivée', ! $reg->is_source_available( 'src_off' ) && ! $reg->is_source_available( 'orphan' ) );
+remove_all_filters( 'postelio/job_sources/source_available' );
+remove_all_filters( 'postelio/job_sources/providers' );
+$check( 'sans filtre : registre par défaut = France Travail (indisponible sans secrets)', array( 'france_travail' ) === array_keys( ( new JobSourceRegistry() )->providers() ) && ! ( new JobSourceRegistry() )->is_source_available( 'france_travail' ) );
 
 echo "\n";
 echo 'RÉSULTAT : ' . $tests . ' assertions, ' . count( $failed ) . " échec(s). " . ( empty( $failed ) ? "OK\n" : "ÉCHEC\n" );

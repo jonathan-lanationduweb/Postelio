@@ -60,6 +60,19 @@ $notif_dl = $wpdb->prefix . 'postelio_notification_deliveries';
 $audit    = $wpdb->prefix . 'postelio_audit_log';
 $companies = array(); $jobs = array(); $ext_uuids = array();
 
+// ISOLATION des fixtures externes : (1) purge de tout résidu d'un run précédent ; (2) la source de
+// test `smoke_src` doit être ENREGISTRÉE et disponible (allowlist postelio-job-sources), sinon ses
+// offres ne sont jamais publiques ni matchées ; (3) nettoyage garanti même en cas d'échec/fatal.
+$ext_cleanup = static function () use ( $wpdb, $ext_tbl ): void {
+	$wpdb->query( "DELETE FROM {$ext_tbl} WHERE source_key IN ('smoke_src','smoke_orphan_src')" ); // phpcs:ignore WordPress.DB
+};
+$ext_cleanup();
+register_shutdown_function( $ext_cleanup );
+if ( class_exists( '\\Postelio\\JobSources\\Sources\\FakeJobSourceProvider' ) ) {
+	$smokeProvider = new \Postelio\JobSources\Sources\FakeJobSourceProvider( 'smoke_src' );
+	add_filter( 'postelio/job_sources/providers', static function ( $providers ) use ( $smokeProvider ) { $providers = (array) $providers; $providers[] = $smokeProvider; return $providers; } );
+}
+
 // Capture des événements de digest / anomalie.
 $captured = array();
 Core::instance()->events()->on( 'job_alert.matches_found', static function ( $p ) use ( &$captured ) { $captured['matches'][] = $p; } );
@@ -78,10 +91,10 @@ $mkJob = static function ( int $rec, string $ville ) use ( $req, $jrepo, &$jobs 
 	$req( 'POST', '/postelio/v1/jobs/' . $juuid . '/publish', null, $rec );
 	$jid = $jrepo->get_by_uuid( $juuid )['id']; $jobs[] = $jid; return array( $juuid, $jid );
 };
-$seedExternal = static function ( string $ville, string $published_at ) use ( $wpdb, $ext_tbl, &$ext_uuids ): string {
+$seedExternal = static function ( string $ville, string $published_at, string $source_key = 'smoke_src' ) use ( $wpdb, $ext_tbl, &$ext_uuids ): string {
 	$uuid = wp_generate_uuid4();
 	$wpdb->insert( $ext_tbl, array(
-		'public_uuid' => $uuid, 'source_key' => 'smoke_src', 'external_id' => 'ext-' . wp_generate_password( 8, false ),
+		'public_uuid' => $uuid, 'source_key' => $source_key, 'external_id' => 'ext-' . wp_generate_password( 8, false ),
 		'sync_status' => 'active', 'local_visibility' => 'visible', 'title' => 'Offre externe ' . wp_generate_password( 4, false ),
 		'company_name' => 'Partenaire SA', 'ville' => $ville, 'application_mode' => 'external_redirect', 'alternance' => 0,
 		'mapping_version' => 1, 'source_published_at' => $published_at, 'created_at' => current_time( 'mysql', true ), 'updated_at' => current_time( 'mysql', true ),
@@ -193,6 +206,21 @@ $captured = array();
 $run2 = $req( 'POST', '/postelio/v1/me/saved-searches/' . $ssA . '/run-now', null, $candA );
 $t( 'second run : 0 nouvelle (dédup deliveries)', 0 === (int) ( $run2['data']['data']['matched'] ?? -1 ) );
 $t( 'second run : aucun digest', empty( $captured['matches'] ) );
+
+echo "== Source ORPHELINE : jamais de match / delivery / notification ==\n";
+// Une offre externe dont la source n'a AUCUN provider enregistré (règle job-sources : inconnue =
+// indisponible) ne doit produire ni match, ni delivery, ni digest, même si elle correspond aux filtres.
+$extOrphan = $seedExternal( 'Lyon', current_time( 'mysql', true ), 'smoke_orphan_src' );
+$delBefore = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$del_tbl} d JOIN {$ss_tbl} s ON s.id=d.saved_search_id WHERE s.public_uuid=%s", $ssA ) );
+$captured = array();
+$runO = $req( 'POST', '/postelio/v1/me/saved-searches/' . $ssA . '/run-now', null, $candA );
+$t( 'orpheline : run-now => 0 match', 200 === $runO['status'] && 0 === (int) ( $runO['data']['data']['matched'] ?? -1 ) );
+$t( 'orpheline : aucune delivery créée', $delBefore === (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$del_tbl} d JOIN {$ss_tbl} s ON s.id=d.saved_search_id WHERE s.public_uuid=%s", $ssA ) ) );
+$t( 'orpheline : aucun digest', empty( $captured['matches'] ) );
+$t( 'orpheline : absente de l\'aperçu', false === strpos( wp_json_encode( $req( 'POST', '/postelio/v1/me/saved-searches/' . $ssA . '/preview', null, $candA )['data'] ), $extOrphan ) );
+$fo = $req( 'POST', '/postelio/v1/me/favorites/jobs/' . $extOrphan, null, $candA );
+$t( 'orpheline : favori conservé mais marqué indisponible (available=false)', in_array( $fo['status'], array( 200, 201 ), true ) && false === ( $fo['data']['data']['available'] ?? true ) );
+$req( 'DELETE', '/postelio/v1/me/favorites/jobs/' . $extOrphan, null, $candA );
 
 echo "== Curseur / published_after ==\n";
 $ssId = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$ss_tbl} WHERE public_uuid=%s", $ssA ) );

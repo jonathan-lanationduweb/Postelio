@@ -264,17 +264,28 @@ Erreur :
   **`meta.pagination.total_is_exact`** (bool) : la fusion V1 est exacte dans la fenêtre
   `merge_cap` ; au-delà, `total` reste la somme exacte mais l'ordre/pagination profonde
   peut être approximatif (`false`). Défaut `true` (moteur natif).
-- `GET /jobs/{uuid}` — détail natif OU externe. **404** si la source est désactivée/non
+- **Règle de disponibilité (V1, source de vérité unique `JobSourceRegistry::is_source_available()`)** :
+  une offre externe est publique **uniquement si** son provider est **enregistré** dans le
+  registre **et** disponible (activé + configuré), l'offre est `active`, `local_visibility=visible`
+  et non `removed`. **Provider inconnu = indisponible** (ligne orpheline en base, provider retiré) :
+  la recherche filtre sur l'**allowlist** des sources disponibles (jamais une denylist des sources
+  désactivées connues), donc une telle offre n'apparaît **ni** dans la liste, **ni** dans `total`,
+  **ni** avec `?source=partners`, **ni** dans la recherche interne consommée par les alertes. La
+  liste et le détail sont ainsi toujours cohérents. La ligne est **conservée** (jamais de hard-delete)
+  et redevient publique dès que le provider est enregistré/réactivé.
+- `GET /jobs/{uuid}` — détail natif OU externe. **404** si la source est inconnue/désactivée/non
   configurée ou l'offre masquée (indisponibilité réversible) ; **410 Gone** si l'offre est
   **removed** (retirée à la source + anonymisée). Externe : `seo{noindex,canonical,
   in_sitemap}` + `attribution{notice,licence_url,source_updated_at,logo_url}`.
 - `GET /jobs/{uuid}/apply-redirect` — offre externe active+disponible → **302** vers l'URL
-  officielle/partenaire (revalidée) ; native → 404 ; source désactivée/masquée → **404** ;
+  officielle/partenaire (revalidée) ; native → 404 ; source inconnue/désactivée/masquée → **404** ;
   removed → **410** ; URL invalide / mauvais mode → 404/400. Émet
   `external_job.apply_redirected` (jamais une candidature). **Aucune** candidature Postelio
   sur une offre externe (`POST /jobs/{uuid}/applications` → **409**).
-- `GET /job-sources/health` — admin (`pst_manage_platform`) : état par provider (disponible,
-  offres actives, dernière sync/succès, dernière erreur ; aucun secret).
+- `GET /job-sources/health` — admin (`pst_manage_platform`) : `providers[]` (disponible, offres
+  actives, dernière sync/succès, dernière erreur ; aucun secret) + **`orphaned_sources[]`**
+  `{source_key, active_offers}` et **`orphaned_sources_count`** (offres actives en base dont la
+  clé n'a aucun provider enregistré : jamais publiques, jamais supprimées ici — champs additifs).
 
 ### Modération — `postelio-moderation` (implémenté Lot 11)
 > Modération centralisée : **signalements** (réactif → **cas** regroupés par ressource) +
