@@ -70,28 +70,73 @@ final class WpMailProvider implements EmailProvider {
 
 	/**
 	 * Description du transport RÉELLEMENT utilisé par wp_mail() sur ce serveur (aucun secret) :
-	 * WP Mail SMTP, un SMTP branché via `phpmailer_init`, ou la fonction mail() de PHP (sendmail
-	 * ou SMTP déclaré dans php.ini). Sert au diagnostic admin.
+	 * WP Mail SMTP, un SMTP branché via `phpmailer_init` (hôte:port lus sur l'objet PHPMailer tel que
+	 * wp_mail() le configurerait — jamais d'identifiant ni de mot de passe), ou la fonction mail()
+	 * de PHP (sendmail ou SMTP déclaré dans php.ini). Sert au diagnostic admin.
 	 *
-	 * @return array{label:string, detail:string, smtp_configured:bool}
+	 * @return array{label:string, detail:string, smtp_configured:bool, mailer:string, host:string, port:int, local:bool}
 	 */
 	public static function transport(): array {
+		$base = array( 'mailer' => 'mail', 'host' => '', 'port' => 0, 'local' => false );
 		if ( class_exists( '\\WPMailSMTP\\Core' ) ) {
-			return array( 'label' => 'wp_mail via WP Mail SMTP', 'detail' => 'Transport géré par le plugin WP Mail SMTP.', 'smtp_configured' => true );
+			return array_merge( $base, array( 'label' => 'wp_mail via WP Mail SMTP', 'detail' => 'Transport géré par le plugin WP Mail SMTP.', 'smtp_configured' => true, 'mailer' => 'plugin' ) );
 		}
 		if ( function_exists( 'has_filter' ) && has_filter( 'phpmailer_init' ) ) {
-			return array( 'label' => 'wp_mail via SMTP (phpmailer_init)', 'detail' => 'Un SMTP est branché par un plugin ou du code (hook phpmailer_init).', 'smtp_configured' => true );
+			$cfg = self::inspect_phpmailer();
+			if ( 'smtp' === $cfg['mailer'] && '' !== $cfg['host'] ) {
+				$endpoint = $cfg['host'] . ( $cfg['port'] > 0 ? ':' . $cfg['port'] : '' );
+				return array_merge( $base, $cfg, array(
+					'label'           => 'wp_mail via SMTP ' . $endpoint,
+					'detail'          => $cfg['local']
+						? 'SMTP sur l\'hôte local (' . $endpoint . ') : serveur de capture de développement — les e-mails ne sont pas remis à de vrais destinataires.'
+						: 'SMTP configuré par code (hook phpmailer_init) : ' . $endpoint . '.',
+					'smtp_configured' => true,
+				) );
+			}
+			return array_merge( $base, $cfg, array( 'label' => 'wp_mail via SMTP (phpmailer_init)', 'detail' => 'Un transport est branché par un plugin ou du code (hook phpmailer_init).', 'smtp_configured' => true ) );
 		}
 		$sendmail = (string) ini_get( 'sendmail_path' );
 		if ( '' !== trim( $sendmail ) ) {
-			return array( 'label' => 'wp_mail → PHP mail() (sendmail)', 'detail' => 'sendmail_path = ' . $sendmail, 'smtp_configured' => false );
+			return array_merge( $base, array( 'label' => 'wp_mail → PHP mail() (sendmail)', 'detail' => 'sendmail_path = ' . $sendmail, 'smtp_configured' => false, 'mailer' => 'sendmail' ) );
 		}
 		$host = (string) ini_get( 'SMTP' );
 		$port = (string) ini_get( 'smtp_port' );
-		return array(
+		return array_merge( $base, array(
 			'label'           => 'wp_mail → PHP mail() (SMTP php.ini)',
 			'detail'          => 'PHP tente un SMTP local : ' . ( '' !== $host ? $host : 'localhost' ) . ':' . ( '' !== $port ? $port : '25' ) . ' — aucun provider transactionnel ni SMTP Postelio configuré.',
 			'smtp_configured' => false,
-		);
+			'host'            => '' !== $host ? $host : 'localhost',
+			'port'            => '' !== $port ? (int) $port : 25,
+		) );
+	}
+
+	/**
+	 * Lit la configuration que `phpmailer_init` appliquerait à PHPMailer (même chemin que wp_mail(),
+	 * sans envoyer) : type de transport, hôte, port, hôte local ou non. AUCUN secret retourné
+	 * (Username/Password ignorés). Renvoie un transport `mail` si PHPMailer est indisponible.
+	 *
+	 * @return array{mailer:string, host:string, port:int, local:bool}
+	 */
+	private static function inspect_phpmailer(): array {
+		$none = array( 'mailer' => 'mail', 'host' => '', 'port' => 0, 'local' => false );
+		if ( ! class_exists( '\\PHPMailer\\PHPMailer\\PHPMailer' ) ) {
+			$lib = defined( 'ABSPATH' ) ? ABSPATH . WPINC . '/PHPMailer/' : '';
+			if ( '' === $lib || ! is_readable( $lib . 'PHPMailer.php' ) ) {
+				return $none;
+			}
+			require_once $lib . 'PHPMailer.php';
+			require_once $lib . 'SMTP.php';
+			require_once $lib . 'Exception.php';
+		}
+		try {
+			$m = new \PHPMailer\PHPMailer\PHPMailer( true );
+			do_action_ref_array( 'phpmailer_init', array( &$m ) );
+		} catch ( \Throwable $e ) {
+			return $none;
+		}
+		$mailer = strtolower( (string) $m->Mailer );
+		$host   = 'smtp' === $mailer ? trim( (string) $m->Host ) : '';
+		$local  = '' !== $host && in_array( strtolower( $host ), array( '127.0.0.1', 'localhost', '::1' ), true );
+		return array( 'mailer' => $mailer, 'host' => $host, 'port' => 'smtp' === $mailer ? (int) $m->Port : 0, 'local' => $local );
 	}
 }

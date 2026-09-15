@@ -35,6 +35,15 @@ define( 'SECURE_AUTH_SALT', 'à-générer' );
 define( 'LOGGED_IN_SALT',   'à-générer' );
 define( 'NONCE_SALT',       'à-générer' );
 
+// --- E-mail LOCAL (développement) ------------------------------------------
+// Capture des e-mails via un SMTP local (Mailpit : SMTP 127.0.0.1:1025, UI http://127.0.0.1:8025).
+// Lu par wordpress/wp-content/mu-plugins/postelio-local-mail.php (copie de tools/local-mail/).
+// Laisser commenté en production : le transport réel sera un provider transactionnel.
+// define( 'POSTELIO_LOCAL_SMTP_HOST', '127.0.0.1' );
+// define( 'POSTELIO_LOCAL_SMTP_PORT', 1025 );
+// define( 'POSTELIO_LOCAL_MAIL_FROM', 'noreply@postelio.test' );
+// define( 'POSTELIO_LOCAL_MAIL_FROM_NAME', 'Postelio (local)' );
+
 // --- Débogage local -------------------------------------------------------
 define( 'WP_DEBUG',         true );
 define( 'WP_DEBUG_LOG',     true );   // écrit dans wp-content/debug.log (ignoré par Git)
