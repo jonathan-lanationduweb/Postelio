@@ -126,67 +126,89 @@ final class ApplicationsScreen extends ListScreen {
 		if ( ! is_array( $a ) ) {
 			return $this->not_found( 'Candidature', 'Cette candidature n\'existe pas.' );
 		}
-		$st   = (string) $a['status'];
-		$meta = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
-		$snap = is_array( $a['job_snapshot'] ?? null ) ? $a['job_snapshot'] : array();
+		$st      = (string) $a['status'];
+		$meta    = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
+		$snap    = is_array( $a['job_snapshot'] ?? null ) ? $a['job_snapshot'] : array();
+		$company = (string) ( $a['company'] ?? '' );
+		$sources = array( 'web' => 'Site Postelio', 'app' => 'Application', 'mobile' => 'Application mobile', 'partner' => 'Partenaire', 'direct' => 'Candidature directe' );
+		$source  = (string) ( $a['source'] ?? '' );
 
-		$out  = $this->header( (string) $a['candidate'], 'Candidature reçue le ' . Fmt::datetime( $a['created_at'] ?? '' ), $this->back_link(), 'Postelio · Candidature' );
+		$out  = $this->header( (string) $a['candidate'], 'Candidature reçue le ' . Fmt::datetime( $a['created_at'] ?? '' ) . ' pour ' . (string) $a['job_title'] . ( '' !== $company ? ' · ' . $company : '' ), $this->back_link(), 'Postelio · Candidature' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
-		// Colonne principale : dossier.
-		$out .= Ui::card_open( (string) $a['job_title'], Fmt::or_dash( $a['company'] ), Ui::badge( $meta[0], $meta[1], true ), '', 'Offre au moment de la candidature' );
-		$out .= Ui::kv( array(
-			'Contrat'  => Ui::text( Fmt::or_dash( $snap['contrat'] ?? ( $snap['type_contrat'] ?? '' ) ) ),
-			'Ville'    => Ui::text( Fmt::or_dash( $snap['ville'] ?? '' ) ),
-			'Origine'  => Ui::text( '' !== (string) ( $a['source'] ?? '' ) ? (string) $a['source'] : 'Candidature directe' ),
-		) );
-		$out .= Ui::help( 'Version figée : reflète l\'offre telle que le candidat l\'a vue.' );
+		// --- Profil candidat ------------------------------------------------------
+		$out .= Ui::card_open( 'Profil candidat' );
+		$out .= Ui::identity( (string) $a['candidate'], 'Candidat · candidature reçue ' . Fmt::relative( $a['created_at'] ?? '' ), '', false, Ui::badge( $meta[0], $meta[1], true ) . ( ! empty( $a['has_interview'] ) ? Ui::badge( 'Entretien planifié', 'success', true ) : '' ) );
 		if ( '' !== (string) ( $a['withdrawn_at'] ?? '' ) ) {
 			$out .= Ui::alert( 'Candidature retirée par le candidat le ' . Fmt::datetime( $a['withdrawn_at'] ) . '.', 'info' );
 		}
-		$out .= Ui::details( 'Détails techniques', Ui::kv( array(
-			'Révision de l\'offre' => Ui::text( (string) (int) ( $a['job_revision'] ?? 0 ) ),
-			'Référence publique'   => Ui::text( $uuid, false, true ),
-		), true ) ) . Ui::card_close();
+		$out .= Ui::card_close();
 
-		$msg  = trim( (string) ( $a['message'] ?? '' ) );
-		$out .= Ui::card_open( 'Message du candidat' ) . ( '' !== $msg ? Ui::excerpt( $msg ) : Ui::help( 'Aucun message joint.' ) ) . Ui::card_close();
-
+		// --- Dossier candidat : message + réponses de présélection ---------------
+		$msg     = trim( (string) ( $a['message'] ?? '' ) );
 		$answers = is_array( $a['answers'] ?? null ) ? $a['answers'] : array();
-		$out    .= Ui::card_open( 'Réponses de présélection' );
-		if ( empty( $answers ) ) {
-			$out .= Ui::help( 'Cette offre ne comportait aucune question de présélection.' );
+		$out    .= Ui::card_open( 'Dossier candidat', 'Ce que le candidat a transmis avec sa candidature.' );
+		if ( '' === $msg && empty( $answers ) ) {
+			$out .= Ui::empty_state( 'Dossier sans message', 'Le candidat n\'a joint ni message ni réponse de présélection.', '', 'file' );
 		} else {
-			$pairs = array();
-			foreach ( $answers as $k => $v ) {
-				$question           = is_array( $v ) ? (string) ( $v['question'] ?? $k ) : (string) $k;
-				$answer             = is_array( $v ) ? (string) ( $v['answer'] ?? ( $v['value'] ?? '' ) ) : (string) $v;
-				$pairs[ $question ] = Ui::text( Fmt::or_dash( $answer ) );
+			if ( '' !== $msg ) {
+				$out .= Ui::section_open( 'Message du candidat' ) . Ui::excerpt( $msg ) . Ui::section_close();
 			}
-			$out .= Ui::kv( $pairs );
+			if ( ! empty( $answers ) ) {
+				$pairs = array();
+				foreach ( $answers as $k => $v ) {
+					$question           = is_array( $v ) ? (string) ( $v['question'] ?? $k ) : (string) $k;
+					$answer             = is_array( $v ) ? (string) ( $v['answer'] ?? ( $v['value'] ?? '' ) ) : (string) $v;
+					$pairs[ $question ] = '' !== trim( $answer ) ? $answer : 'Sans réponse';
+				}
+				$out .= Ui::section_open( 'Réponses de présélection' ) . Ui::kv_present( $pairs ) . Ui::section_close();
+			}
 		}
 		$out .= Ui::card_close();
 
-		$out .= Ui::col_close() . Ui::col_open();
-
-		// Colonne latérale : état, pièces, historique.
-		$out .= Ui::card_open( 'État', '', '', 'bo-card--aside' ) . Ui::kv( array(
-			'Étape'      => Ui::badge( $meta[0], $meta[1], true ),
-			'Entretien'  => ! empty( $a['has_interview'] ) ? Ui::badge( 'Planifié', 'success', true ) : Ui::text( '—', false, true ),
-			'Décision'   => Ui::text( 'Réservée à l\'entreprise', false, true ),
-		), true ) . Ui::card_close();
-
-		$out .= Ui::card_open( 'Pièces', '', '', 'bo-card--aside' );
+		// --- CV / document : référence seulement, jamais le contenu -----------------
+		$out .= Ui::card_open( 'CV et documents' );
 		if ( '' !== (string) ( $a['cv_reference'] ?? '' ) ) {
 			$out .= '<div class="bo-chips">' . Ui::badge( 'CV transmis', 'info', true ) . '</div>';
-			$out .= Ui::help( 'Fichier privé, consultable uniquement par l\'entreprise destinataire : aucun contenu ni lien de téléchargement ici.' );
+			$out .= Ui::help( 'Fichier privé, consultable uniquement par l\'entreprise destinataire : aucun contenu ni téléchargement depuis la supervision.' );
 		} else {
-			$out .= Ui::help( 'Aucun CV rattaché à cette candidature.' );
+			$out .= Ui::empty_state( 'Aucun CV rattaché', 'Le candidat n\'a pas joint de CV à cette candidature.', '', 'file' );
 		}
 		$out .= Ui::protected_notice( 'Les notes recruteur sont confidentielles et réservées à l\'entreprise concernée.' );
 		$out .= Ui::card_close();
 
-		$out .= Ui::card_open( 'Historique', '', '', 'bo-card--aside' ) . Ui::timeline( $this->history( (array) ( $a['history'] ?? array() ) ) ) . Ui::card_close();
+		// --- Historique réel -------------------------------------------------------
+		$out .= Ui::card_open( 'Historique', 'Étapes réellement franchies.' ) . Ui::timeline( $this->history( (array) ( $a['history'] ?? array() ) ) ) . Ui::card_close();
+
+		$out .= Ui::col_close() . Ui::col_open();
+
+		// --- Colonne latérale : offre, entreprise, statut ----------------------------
+		$out .= Ui::card_open( 'Offre', 'Telle que le candidat l\'a vue.', '', 'bo-card--aside' );
+		$out .= Ui::entity( (string) $a['job_title'], $company, '', true );
+		$offer = Ui::kv_present( array(
+			'Contrat'      => (string) ( $snap['contrat'] ?? ( $snap['type_contrat'] ?? '' ) ),
+			'Localisation' => (string) ( $snap['ville'] ?? '' ),
+			'Salaire'      => (string) ( $snap['salaire'] ?? '' ),
+			'Origine'      => $sources[ $source ] ?? ( '' !== $source ? ucfirst( $source ) : 'Candidature directe' ),
+		), true );
+		if ( '' !== $offer ) {
+			$out .= '<div class="bo-section">' . $offer . '</div>';
+		}
+		$out .= Ui::card_close();
+
+		if ( '' !== $company ) {
+			$out .= Ui::card_open( 'Entreprise', '', '', 'bo-card--aside' ) . Ui::entity( $company, 'Entreprise destinataire', '', true ) . Ui::card_close();
+		}
+
+		$out .= Ui::card_open( 'Statut', '', '', 'bo-card--aside' ) . Ui::kv_present( array(
+			'Étape'     => Ui::html( Ui::badge( $meta[0], $meta[1], true ) ),
+			'Entretien' => ! empty( $a['has_interview'] ) ? Ui::html( Ui::badge( 'Planifié', 'success', true ) ) : '',
+			'Décision'  => 'Réservée à l\'entreprise',
+		), true ) . Ui::details( 'Détails techniques', Ui::kv( array(
+			'Version de l\'offre' => Ui::text( (string) (int) ( $a['job_revision'] ?? 0 ), false, true ),
+			'Référence'           => Ui::text( $uuid, false, true ),
+		), true ) ) . Ui::card_close();
+
 		$out .= Ui::col_close() . Ui::cols_close();
 		return $out;
 	}

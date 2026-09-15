@@ -69,12 +69,15 @@ final class Health {
 
 			if ( 'moderation' === $module ) {
 				$d           = Rest::payload( '/postelio/v1/moderation/health' );
-				$row['meta'] = 'Fournisseur : ' . (string) ( $d['provider'] ?? 'local_only' );
+				$labels      = array( 'local_only' => 'Analyse locale uniquement' );
+				$provider    = (string) ( $d['provider'] ?? 'local_only' );
+				$row['meta'] = 'Analyse de contenu : ' . ( $labels[ $provider ] ?? ucfirst( str_replace( '_', ' ', $provider ) ) );
 			} elseif ( 'billing' === $module ) {
 				$d             = Rest::payload( '/postelio/v1/billing/health' );
 				$configured    = ! empty( $d['configured'] );
 				$row['status'] = $configured ? self::OK : self::UNCONFIGURED;
-				$row['meta']   = 'Stripe : ' . ( $configured ? 'configuré (' . (string) ( $d['mode'] ?? 'inconnu' ) . ')' : 'non configuré' )
+				$modes         = array( 'test' => 'mode test', 'live' => 'mode réel' );
+				$row['meta']   = 'Paiement en ligne : ' . ( $configured ? 'configuré (' . ( $modes[ (string) ( $d['mode'] ?? '' ) ] ?? 'mode inconnu' ) . ')' : 'non configuré' )
 					. ' · Facture légale : ' . ( ! empty( $d['invoice_legal_ready'] ) ? 'prête' : 'à configurer' );
 			} elseif ( 'job-sources' === $module || 'job_sources' === $module ) {
 				$d             = Rest::payload( '/postelio/v1/job-sources/health' );

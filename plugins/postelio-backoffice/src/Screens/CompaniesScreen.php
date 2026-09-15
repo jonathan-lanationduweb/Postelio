@@ -1,7 +1,8 @@
 <?php
 /**
- * Entreprises : liste par statut de vérification (ligne riche : logo, nom, ville, vérification,
- * SIREN) et fiche détaillée (identité, vérification, données légales, membres, aperçu public).
+ * Entreprises : liste compacte (logo, nom, ville, vérification, SIREN) et fiche (identité,
+ * informations légales renseignées, présentation publique, membres ; statut / vérification /
+ * actions en colonne latérale). Une information absente n'est jamais affichée sous forme de « — ».
  * Toutes les décisions (vérifier / rejeter / suspendre / réactiver) sont DÉLÉGUÉES aux services du
  * module Companies. Le motif interne de vérification reste réservé à `pst_verify_company`.
  *
@@ -31,6 +32,15 @@ final class CompaniesScreen extends ListScreen {
 		'unverified'    => array( 'Non vérifiée', 'neutral' ),
 		'rejected'      => array( 'Rejetée', 'error' ),
 		'suspended'     => array( 'Suspendue', 'error' ),
+	);
+
+	/** Libellés des méthodes de vérification (jamais la clé technique à l'écran). */
+	private const METHODS = array(
+		'manual'   => 'Vérification manuelle',
+		'admin'    => 'Vérification manuelle',
+		'sirene'   => 'Registre SIRENE',
+		'insee'    => 'Registre SIRENE',
+		'declared' => 'Déclaration de l\'entreprise',
 	);
 
 	protected function capability(): string {
@@ -80,7 +90,13 @@ final class CompaniesScreen extends ListScreen {
 		foreach ( (array) $res['items'] as $c ) {
 			$rows[] = $this->row( (array) $c );
 		}
-		$out .= Ui::table( array( 'Entreprise', 'Vérification', 'SIREN', 'Offres', 'Membres', '' ), $rows, 'Aucune entreprise ne correspond', '' !== $q ? 'Essayez un autre nom.' : '' );
+		if ( empty( $rows ) ) {
+			$out .= 'all' === $tab && '' === $q
+				? Ui::empty_state( 'Aucune entreprise pour le moment', 'Les entreprises qui s\'inscrivent apparaîtront ici avec leur état de vérification.', '', 'build', true )
+				: Ui::empty_state( 'Aucune entreprise ne correspond', '' !== $q ? 'Essayez un autre nom.' : 'Aucune entreprise dans cet état.', '', 'build', true );
+		} else {
+			$out .= Ui::table( array( 'Entreprise', 'Vérification', 'SIREN', '' ), $rows );
+		}
 		$out .= $this->pagination( (int) $res['total'], array( 'tab' => $tab, 's' => $q ) );
 		return $out;
 	}
@@ -92,26 +108,24 @@ final class CompaniesScreen extends ListScreen {
 		return array(
 			Ui::entity( (string) $c['nom'], (string) ( $c['ville'] ?? '' ), (string) ( $c['logo_url'] ?? '' ), true ),
 			Ui::badge( $meta[0], $meta[1], true ),
-			Ui::text( Fmt::or_dash( $c['siren'] ?? '' ), false, true ),
-			Ui::text( '—', false, true ),
-			Ui::text( '—', false, true ),
+			Ui::text( '' !== (string) ( $c['siren'] ?? '' ) ? (string) $c['siren'] : 'Non renseigné', false, true ),
 			$this->actions( (string) $c['uuid'], $status, true ),
 		);
 	}
 
-	/** Liste : « Voir » + menu ⋯ ; détail : boutons en en-tête. */
+	/** Liste : « Voir » + menu ⋯ ; détail : pile d'actions. */
 	private function actions( string $uuid, string $status, bool $in_list ): string {
 		$has_mod   = Data::has( '\\Postelio\\Companies\\Api\\CompanyModeration' );
 		$has_verif = Data::has( '\\Postelio\\Companies\\Verification\\VerificationService' );
 		$items     = array();
 
 		if ( 'suspended' === $status && $has_mod && current_user_can( 'pst_suspend_company' ) ) {
-			$items[] = Ui::action_button( 'pst_admin_company_unsuspend', array( 'uuid' => $uuid ), 'Réactiver', $in_list ? '' : 'primary' );
+			$items[] = Ui::action_button( 'pst_admin_company_unsuspend', array( 'uuid' => $uuid ), 'Réactiver l\'entreprise', $in_list ? '' : 'primary' );
 		} elseif ( 'verified' === $status && $has_mod && current_user_can( 'pst_suspend_company' ) ) {
-			$items[] = Ui::action_button( 'pst_admin_company_suspend', array( 'uuid' => $uuid ), 'Suspendre', 'danger', 'Suspendre cette entreprise ? Ses offres actives seront retirées de la diffusion.' );
+			$items[] = Ui::action_button( 'pst_admin_company_suspend', array( 'uuid' => $uuid ), 'Suspendre l\'entreprise', 'danger', 'Suspendre cette entreprise ? Ses offres actives seront retirées de la diffusion.' );
 		} elseif ( $has_verif && current_user_can( 'pst_verify_company' ) && in_array( $status, array( 'unverified', 'pending', 'manual_review', 'rejected' ), true ) ) {
-			$items[] = Ui::action_button( 'pst_admin_company_verify', array( 'uuid' => $uuid ), 'Vérifier', $in_list ? '' : 'primary' );
-			$items[] = Ui::action_button( 'pst_admin_company_reject', array( 'uuid' => $uuid ), 'Rejeter', 'danger', 'Rejeter la vérification de cette entreprise ?' );
+			$items[] = Ui::action_button( 'pst_admin_company_verify', array( 'uuid' => $uuid ), 'Vérifier l\'entreprise', $in_list ? '' : 'primary' );
+			$items[] = Ui::action_button( 'pst_admin_company_reject', array( 'uuid' => $uuid ), 'Rejeter la vérification', 'danger', 'Rejeter la vérification de cette entreprise ?' );
 		}
 		if ( $in_list ) {
 			return '<div class="bo-actions">' . $this->view_link( $uuid ) . Ui::menu( $items ) . '</div>';
@@ -130,29 +144,32 @@ final class CompaniesScreen extends ListScreen {
 		$verification = is_array( $c['verification'] ?? null ) ? $c['verification'] : array();
 		$status       = (string) ( $verification['status'] ?? 'unverified' );
 		$meta         = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
-		$legal        = is_array( $c['legal_verified'] ?? null ) && ! empty( $c['legal_verified'] )
-			? (array) $c['legal_verified']
-			: (array) ( $c['legal_declared'] ?? array() );
+		$verified     = is_array( $c['legal_verified'] ?? null ) && ! empty( $c['legal_verified'] );
+		$legal        = $verified ? (array) $c['legal_verified'] : (array) ( $c['legal_declared'] ?? array() );
 		$editorial    = is_array( $c['editorial'] ?? null ) ? $c['editorial'] : array();
 		$logo         = (string) ( $editorial['logo_url'] ?? '' );
 		$members      = (array) ( $c['members'] ?? array() );
+		$ville        = (string) ( $legal['ville_siege'] ?? '' );
+		$secteur      = (string) ( $editorial['secteur'] ?? ( $editorial['sector'] ?? '' ) );
+		$subtitle     = implode( ' · ', array_filter( array( $secteur, $ville ) ) );
 
-		$out  = $this->header( (string) $c['nom'], implode( ' · ', array_filter( array( (string) ( $legal['forme_juridique'] ?? '' ), (string) ( $legal['ville_siege'] ?? '' ) ) ) ), $this->back_link() . $this->actions( $uuid, $status, false ), 'Postelio · Entreprise' );
+		$out  = $this->header( (string) $c['nom'], $subtitle, $this->back_link(), 'Postelio · Entreprise' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
-		// Fiche : identité + vérification.
-		$out .= Ui::card_open( 'Fiche entreprise' );
-		$out .= Ui::identity( (string) $c['nom'], (string) ( $legal['ville_siege'] ?? '' ), $logo, true, Ui::badge( $meta[0], $meta[1], true ) . Ui::badge( count( $members ) . ( count( $members ) > 1 ? ' membres' : ' membre' ), 'neutral' ) );
-		$pairs = array( 'Méthode de vérification' => Ui::text( Fmt::or_dash( $verification['provider'] ?? '' ) ) );
-		if ( current_user_can( 'pst_verify_company' ) && ! empty( $verification['motif'] ) ) {
-			$pairs['Motif interne'] = Ui::text( (string) $verification['motif'] );
-		}
-		$out .= '<div class="bo-section">' . Ui::kv( $pairs ) . '</div>';
-		if ( ! current_user_can( 'pst_verify_company' ) ) {
-			$out .= Ui::protected_notice( 'Le motif interne de vérification est réservé aux profils habilités.' );
+		// --- Identité -----------------------------------------------------------
+		$out .= Ui::card_open( 'Identité' );
+		$out .= Ui::identity( (string) $c['nom'], $subtitle, $logo, true, Ui::badge( $meta[0], $meta[1], true ) . ( $members ? Ui::badge( count( $members ) . ( count( $members ) > 1 ? ' membres' : ' membre' ), 'neutral' ) : '' ) );
+		$identity = Ui::kv_present( array(
+			'Site web' => (string) ( $editorial['site_web'] ?? ( $editorial['website'] ?? '' ) ),
+			'Taille'   => (string) ( $editorial['taille'] ?? ( $editorial['effectif'] ?? '' ) ),
+			'Secteur'  => $secteur,
+		) );
+		if ( '' !== $identity ) {
+			$out .= '<div class="bo-section">' . $identity . '</div>';
 		}
 		$out .= Ui::card_close();
 
+		// --- Informations légales : uniquement les champs renseignés ------------
 		$labels = array(
 			'raison_sociale' => 'Raison sociale', 'forme_juridique' => 'Forme juridique', 'siren' => 'SIREN',
 			'siret' => 'SIRET', 'tva' => 'TVA', 'naf_ape' => 'NAF / APE', 'adresse_siege' => 'Adresse',
@@ -160,10 +177,26 @@ final class CompaniesScreen extends ListScreen {
 		);
 		$pairs = array();
 		foreach ( $labels as $k => $label ) {
-			$pairs[ $label ] = Ui::text( Fmt::or_dash( $legal[ $k ] ?? '' ) );
+			$pairs[ $label ] = (string) ( $legal[ $k ] ?? '' );
 		}
-		$out .= Ui::card_open( 'Données légales', ! empty( $c['legal_verified'] ) ? 'Données vérifiées.' : 'Données déclarées par l\'entreprise.' ) . Ui::kv( $pairs ) . Ui::card_close();
+		$legal_html = Ui::kv_present( $pairs );
+		$out       .= Ui::card_open( 'Informations légales', $verified ? 'Données vérifiées.' : ( '' !== $legal_html ? 'Données déclarées par l\'entreprise.' : '' ) );
+		$out       .= '' !== $legal_html ? $legal_html : Ui::empty_state( 'Informations légales à compléter', 'L\'entreprise n\'a pas encore renseigné ses informations légales.', '', 'file' );
+		$out       .= Ui::card_close();
 
+		// --- Informations publiques ------------------------------------------------
+		$desc = trim( (string) ( $c['description'] ?? '' ) );
+		$out .= Ui::card_open( 'Présentation publique', 'Ce que voient les candidats.' );
+		if ( '' !== $desc ) {
+			$out .= '<div class="bo-cardpreview">' . Ui::entity( (string) $c['nom'], $ville, $logo, true )
+				. ( 'verified' === $status ? '<p class="bo-cardpreview__badges">' . Ui::badge( 'Entreprise vérifiée', 'success', true ) . '</p>' : '' )
+				. Ui::excerpt( Fmt::excerpt( $desc, 600 ) ) . '</div>';
+		} else {
+			$out .= Ui::empty_state( 'Aucune présentation publiée', 'L\'entreprise n\'a pas encore rédigé sa présentation.', '', 'build' );
+		}
+		$out .= Ui::card_close();
+
+		// --- Membres ---------------------------------------------------------------
 		$rows = array();
 		foreach ( $members as $m ) {
 			$m      = (array) $m;
@@ -177,20 +210,24 @@ final class CompaniesScreen extends ListScreen {
 		$out .= Ui::card_open( 'Membres', '', '', 'bo-card--flush' ) . Ui::table( array( 'Membre', 'Rôle' ), $rows, 'Aucun membre rattaché.' ) . Ui::card_close();
 		$out .= Ui::col_close() . Ui::col_open();
 
-		$out .= Ui::card_open( 'Aperçu public', 'Ce que voient les candidats.', '', 'bo-card--aside' );
-		$out .= '<div class="bo-cardpreview">';
-		$out .= Ui::entity( (string) $c['nom'], (string) ( $legal['ville_siege'] ?? '' ), $logo, true );
-		if ( 'verified' === $status ) {
-			$out .= '<p class="bo-cardpreview__badges">' . Ui::badge( 'Entreprise vérifiée', 'success', true ) . '</p>';
+		// --- Colonne latérale : statut, vérification, actions --------------------
+		$method = (string) ( $verification['provider'] ?? ( $verification['method'] ?? '' ) );
+		$out   .= Ui::card_open( 'Statut', '', '', 'bo-card--aside' );
+		$out   .= Ui::kv_present( array(
+			'Vérification'  => Ui::html( Ui::badge( $meta[0], $meta[1], true ) ),
+			'Méthode'       => '' !== $method ? ( self::METHODS[ $method ] ?? ucfirst( str_replace( '_', ' ', $method ) ) ) : '',
+			'Vérifiée le'   => '' !== (string) ( $verification['verified_at'] ?? '' ) ? Fmt::date( $verification['verified_at'] ) : '',
+			'Motif interne' => current_user_can( 'pst_verify_company' ) ? (string) ( $verification['motif'] ?? '' ) : '',
+		), true );
+		if ( ! current_user_can( 'pst_verify_company' ) && ! empty( $verification['motif'] ) ) {
+			$out .= Ui::protected_notice( 'Le motif interne de vérification est réservé aux profils habilités.' );
 		}
-		$desc = Fmt::excerpt( (string) ( $c['description'] ?? '' ), 260 );
-		$out .= '' !== $desc ? Ui::excerpt( $desc ) : Ui::help( 'Aucune présentation publiée.' );
-		$out .= '</div>' . Ui::card_close();
-
-		$out .= Ui::card_open( 'Activité', '', '', 'bo-card--aside' ) . Ui::kv( array(
-			'Offres publiées' => Ui::text( '—', false, true ),
-			'Candidatures'    => Ui::text( '—', false, true ),
-		), true ) . Ui::help( '« — » : compteur non exposé par une façade de lecture.' ) . Ui::card_close();
+		$stack = $this->actions( $uuid, $status, false );
+		if ( '' !== $stack ) {
+			$out .= '<div class="bo-section">' . Ui::action_stack( $stack ) . '</div>';
+		}
+		$out .= Ui::details( 'Détails techniques', Ui::kv( array( 'Référence' => Ui::text( $uuid, false, true ) ), true ) );
+		$out .= Ui::card_close();
 
 		$out .= Ui::col_close() . Ui::cols_close();
 		return $out;

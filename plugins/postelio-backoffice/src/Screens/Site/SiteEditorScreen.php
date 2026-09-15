@@ -83,7 +83,7 @@ final class SiteEditorScreen extends Screen {
 			. '<a class="sb-preview__open" id="pst-bo-pvopen" target="_blank" rel="noopener" href="' . esc_url( $front ) . '">Ouvrir dans un onglet</a>'
 			. '</div>'
 			. '<div class="sb-canvas" id="pst-bo-canvas"></div>'
-			. '<p class="sb-preview__hint">Le vrai site — reflète vos modifications non enregistrées.</p>'
+			. '<p class="sb-preview__hint">Le vrai site, avec vos modifications non enregistrées.</p>'
 			. '</div></div>';
 
 		$out .= '<div class="sb-savebar" id="pst-bo-savebar" role="status">'

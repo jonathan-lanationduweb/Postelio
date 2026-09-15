@@ -65,9 +65,9 @@ final class SourcesScreen extends Screen {
 		$name      = Fmt::or_dash( $p['label'] ?? ( $p['key'] ?? 'Connecteur' ) );
 
 		$detail = Ui::kv( array(
-			'Identifiant du connecteur' => Ui::text( Fmt::or_dash( $p['key'] ?? '' ), false, true ),
-			'Dernier résultat'          => Ui::text( Fmt::or_dash( $p['last_run_status'] ?? '' ), false, true ),
-			'Identifiants'              => Ui::text( 'Environnement serveur (jamais affichés)', false, true ),
+			'Connecteur'       => Ui::text( '' !== (string) ( $p['key'] ?? '' ) ? (string) $p['key'] : 'inconnu', false, true ),
+			'Dernier résultat' => Ui::text( '' !== (string) ( $p['last_run_status'] ?? '' ) ? ( 'success' === (string) $p['last_run_status'] ? 'Réussite' : 'Échec' ) : 'Aucune synchronisation', false, true ),
+			'Identifiants'     => Ui::text( 'Configurés côté serveur, jamais affichés', false, true ),
 		), true );
 		if ( $errored ) {
 			$err     = Fmt::excerpt( (string) ( $p['last_error'] ?? '' ), 140 );

@@ -97,8 +97,13 @@ final class InterviewsScreen extends ListScreen {
 		$out .= $this->toolbar( Ui::tabs( $tabs, 'Vue des entretiens' ) );
 
 		if ( empty( $items ) ) {
-			$msgs = array( 'upcoming' => 'Aucun entretien à venir sur cette page.', 'today' => 'Aucun entretien prévu aujourd\'hui.', 'pending' => 'Aucun entretien en attente de confirmation.', 'history' => 'Aucun entretien passé sur cette page.' );
-			return $out . Ui::empty_state( 'Rien à afficher', $msgs[ $view ] ) . $this->pagination( (int) $res['total'], array( 'tab' => $view ) );
+			$msgs = array(
+				'upcoming' => array( 'Aucun entretien à venir', 'Les entretiens proposés par les entreprises et acceptés par les candidats apparaîtront ici.' ),
+				'today'    => array( 'Aucun entretien aujourd\'hui', 'Les rendez-vous du jour apparaîtront ici avec leur horaire et leur mode.' ),
+				'pending'  => array( 'Aucun entretien à confirmer', 'Les créneaux proposés qui attendent la réponse du candidat apparaîtront ici.' ),
+				'history'  => array( 'Aucun entretien passé', 'L\'historique des entretiens terminés, refusés ou annulés apparaîtra ici.' ),
+			);
+			return $out . Ui::empty_state( $msgs[ $view ][0], $msgs[ $view ][1], '', 'cal', true ) . $this->pagination( (int) $res['total'], array( 'tab' => $view ) );
 		}
 
 		// Groupes datés (jour) → cartes compactes.
@@ -129,7 +134,7 @@ final class InterviewsScreen extends ListScreen {
 			$ts > 0 ? wp_date( 'H:i', $ts ) : '—',
 			$ts > 0 ? wp_date( 'd/m', $ts ) : '',
 			(string) $iv['candidate'],
-			(string) $iv['job_title'] . ' · ' . Fmt::or_dash( $iv['company'] ),
+			implode( ' · ', array_filter( array( (string) $iv['job_title'], (string) ( $iv['company'] ?? '' ) ) ) ),
 			Ui::badge( self::TYPES[ (string) $iv['type'] ] ?? (string) $iv['type'], 'neutral' ) . Ui::badge( $meta[0], $meta[1], true )
 		);
 	}
@@ -148,13 +153,13 @@ final class InterviewsScreen extends ListScreen {
 		$meta = self::STATUSES[ $st ] ?? array( ucfirst( $st ), 'neutral' );
 		$type = (string) $iv['type'];
 
-		$out  = $this->header( (string) $iv['candidate'], Fmt::or_dash( $iv['company'] ) . ' · ' . (string) $iv['job_title'], $this->back_link(), 'Postelio · Entretien' );
+		$out  = $this->header( (string) $iv['candidate'], implode( ' · ', array_filter( array( (string) ( $iv['company'] ?? '' ), (string) $iv['job_title'] ) ) ), $this->back_link(), 'Postelio · Entretien' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
 		$pairs = array(
 			'Créneau' => Ui::text( Fmt::datetime( $iv['scheduled_at'] ?? '' ), true ),
 			'Mode'    => Ui::badge( self::TYPES[ $type ] ?? $type, 'neutral' ),
-			'Fuseau'  => Ui::text( Fmt::or_dash( $iv['timezone'] ?? 'UTC' ) ),
+			'Fuseau'  => Ui::text( '' !== (string) ( $iv['timezone'] ?? '' ) ? (string) $iv['timezone'] : 'UTC' ),
 		);
 		if ( '' !== (string) ( $iv['proposed_at'] ?? '' ) ) {
 			$pairs['Créneau proposé'] = Ui::text( Fmt::datetime( $iv['proposed_at'] ) );

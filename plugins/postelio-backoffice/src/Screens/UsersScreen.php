@@ -163,13 +163,21 @@ final class UsersScreen extends ListScreen {
 		$out  = $this->header( (string) $u->display_name, $this->role_label( $role ) . ' · inscrit le ' . Fmt::date( (string) $u->user_registered ), $this->back_link() . $this->actions( $id, $status, false ), 'Postelio · Utilisateur' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
-		$out .= Ui::card_open( 'Compte' );
-		$out .= Ui::identity( (string) $u->display_name, (string) $u->user_email, '', false, Ui::badge( $this->role_label( $role ), 'candidate' === $role ? 'info' : 'neutral' ) . Ui::badge( $meta[0], $meta[1], true ) . ( $verif ? Ui::badge( 'E-mail vérifié', 'success' ) : Ui::badge( 'E-mail non vérifié', 'warning' ) ) );
-		$out .= Ui::details( 'Détails techniques', Ui::kv( array( 'Référence publique' => Ui::text( $uuid, false, true ), 'Identifiant WordPress' => Ui::text( (string) $id, false, true ) ), true ) ) . Ui::card_close();
+		// L'adresse complète n'est visible qu'avec la capacité de gestion des comptes.
+		$email = current_user_can( 'pst_suspend_account' ) ? (string) $u->user_email : Ui::mask_email( (string) $u->user_email );
+		$out  .= Ui::card_open( 'Compte' );
+		$out  .= Ui::identity( (string) $u->display_name, $email, '', false, Ui::badge( $this->role_label( $role ), 'candidate' === $role ? 'info' : 'neutral' ) . Ui::badge( $meta[0], $meta[1], true ) . ( $verif ? Ui::badge( 'E-mail vérifié', 'success' ) : Ui::badge( 'E-mail non vérifié', 'warning' ) ) );
+		$out  .= $this->activity_strip( $id );
+		$out  .= Ui::details( 'Détails techniques', Ui::kv( array( 'Référence' => Ui::text( $uuid, false, true ), 'Identifiant WordPress' => Ui::text( (string) $id, false, true ) ), true ) ) . Ui::card_close();
 
 		$out .= $this->profile_card( $id, $role );
 		$out .= Ui::col_close() . Ui::col_open();
-		$out .= $this->activity_card( $id );
+		$out .= Ui::card_open( 'Statut', '', '', 'bo-card--aside' ) . Ui::kv_present( array(
+			'Compte'         => Ui::html( Ui::badge( $meta[0], $meta[1], true ) ),
+			'Type de compte' => $this->role_label( $role ),
+			'E-mail'         => Ui::html( $verif ? Ui::badge( 'Vérifié', 'success' ) : Ui::badge( 'Non vérifié', 'warning' ) ),
+			'Inscription'    => Fmt::date( (string) $u->user_registered ),
+		), true ) . Ui::card_close();
 		$out .= Ui::col_close() . Ui::cols_close();
 		return $out;
 	}
@@ -180,37 +188,42 @@ final class UsersScreen extends ListScreen {
 			if ( ! $p ) {
 				return Ui::card_open( 'Profil candidat' ) . Ui::help( 'Profil non renseigné par le candidat.' ) . Ui::card_close();
 			}
-			$vis = array( 'public' => 'Public', 'recruiters' => 'Recruteurs vérifiés', 'private' => 'Privé' );
-			return Ui::card_open( 'Profil candidat' ) . Ui::kv( array(
-				'Métier'      => Ui::text( Fmt::or_dash( $p['metier'] ?? '' ) ),
-				'Ville'       => Ui::text( Fmt::or_dash( $p['ville'] ?? '' ) ),
-				'Recherche'   => Ui::text( Fmt::or_dash( $p['statut_recherche'] ?? '' ) ),
-				'Visibilité'  => Ui::text( $vis[ (string) ( $p['profile_visibility'] ?? '' ) ] ?? Fmt::or_dash( $p['profile_visibility'] ?? '' ) ),
-			) ) . Ui::card_close();
+			$vis = array( 'public' => 'Public', 'recruiters' => 'Recruteurs vérifiés', 'recruteurs' => 'Recruteurs vérifiés', 'private' => 'Privé', 'prive' => 'Privé' );
+			$search = array( 'active' => 'En recherche active', 'open' => 'À l\'écoute', 'passive' => 'À l\'écoute', 'not_looking' => 'Pas en recherche' );
+			$kv     = Ui::kv_present( array(
+				'Métier'      => (string) ( $p['metier'] ?? '' ),
+				'Ville'       => (string) ( $p['ville'] ?? '' ),
+				'Recherche'   => $search[ (string) ( $p['statut_recherche'] ?? '' ) ] ?? (string) ( $p['statut_recherche'] ?? '' ),
+				'Visibilité'  => $vis[ (string) ( $p['profile_visibility'] ?? '' ) ] ?? (string) ( $p['profile_visibility'] ?? '' ),
+			) );
+			return Ui::card_open( 'Profil candidat' ) . ( '' !== $kv ? $kv : Ui::empty_state( 'Profil à compléter', 'Le candidat n\'a pas encore renseigné son profil.', '', 'user' ) ) . Ui::card_close();
 		}
 		if ( 'recruiter' === $role ) {
 			$cid  = (int) Data::facade( '\\Postelio\\Companies\\Api\\CompanyDirectory', 'company_of_user', array( $id ), 0 );
 			$name = $cid > 0 ? (string) Data::facade( '\\Postelio\\Companies\\Api\\CompanyDirectory', 'name_of', array( $cid ), '' ) : '';
-			$val  = '' !== $name ? Ui::text( $name, true ) : Ui::text( '—', false, true );
-			return Ui::card_open( 'Entreprise' ) . Ui::kv( array( 'Rattachement' => $val ) )
-				. ( '' !== $name ? '' : Ui::help( 'Ce recruteur n\'est rattaché à aucune entreprise.' ) ) . Ui::card_close();
+			return Ui::card_open( 'Entreprise' ) . ( '' !== $name
+				? Ui::entity( $name, 'Entreprise de rattachement', '', true )
+				: Ui::empty_state( 'Aucune entreprise rattachée', 'Ce recruteur n\'est rattaché à aucune entreprise pour le moment.', '', 'build' ) ) . Ui::card_close();
 		}
 		return Ui::card_open( 'Profil' ) . Ui::help( 'Aucun profil détaillé pour ce type de compte.' ) . Ui::card_close();
 	}
 
-	private function activity_card( int $id ): string {
+	/** Petite bande de compteurs : uniquement ceux qu'un module expose réellement. */
+	private function activity_strip( int $id ): string {
 		$interviews = Data::facade( '\\Postelio\\Interviews\\Api\\InterviewDirectory', 'upcoming_count', array( $id ), null );
 		$notifs     = Data::facade( '\\Postelio\\Notifications\\Api\\NotificationDirectory', 'unread_count', array( $id ), null );
 		$skills     = Data::facade( '\\Postelio\\Skills\\Api\\SkillDirectory', 'published_for_user', array( $id ), null );
 
-		$out = Ui::card_open( 'Activité', '', '', 'bo-card--aside' ) . Ui::kv( array(
-			'Entretiens à venir'      => Ui::text( Fmt::count( null === $interviews ? null : (int) $interviews ) ),
-			'Notifications non lues'  => Ui::text( Fmt::count( null === $notifs ? null : (int) $notifs ) ),
-			'Savoir-faire publiés'    => Ui::text( Fmt::count( is_array( $skills ) ? count( $skills ) : null ) ),
-			'Candidatures'            => Ui::text( '—', false, true ),
-			'Conversations'           => Ui::text( '—', false, true ),
-		), true );
-		$out .= Ui::help( '« — » : compteur non exposé par une façade de lecture.' );
-		return $out . Ui::card_close();
+		$kpis = array();
+		if ( null !== $interviews ) {
+			$kpis[] = Ui::kpi( 'Entretiens à venir', (int) $interviews );
+		}
+		if ( null !== $notifs ) {
+			$kpis[] = Ui::kpi( 'Notifications non lues', (int) $notifs );
+		}
+		if ( is_array( $skills ) ) {
+			$kpis[] = Ui::kpi( 'Savoir-faire publiés', count( $skills ) );
+		}
+		return $kpis ? '<div class="bo-section">' . Ui::kpis_open( count( $kpis ) ) . implode( '', $kpis ) . Ui::kpis_close() . '</div>' : '';
 	}
 }

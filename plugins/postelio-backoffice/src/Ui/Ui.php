@@ -197,10 +197,110 @@ final class Ui {
 		return '<div class="bo-alert bo-alert--' . esc_attr( self::variant( $variant ) ) . '" role="status">' . esc_html( $message ) . '</div>';
 	}
 
-	/** État vide compact : une phrase, une explication, une action optionnelle (HTML via ::button). */
-	public static function empty_state( string $title, string $message = '', string $action_html = '' ): string {
-		return '<div class="bo-empty"><p class="bo-empty__title">' . esc_html( $title ) . '</p>' . ( '' !== $message ? '<p class="bo-empty__text">' . esc_html( $message ) . '</p>' : '' )
+	/**
+	 * État vide : une phrase, une explication, une action optionnelle (HTML via ::button), icône
+	 * discrète optionnelle (nom ::icon). Compact dans une carte ; `$page = true` pour l'état vide
+	 * d'un écran entier (centré, plus d'air, jamais énorme).
+	 */
+	public static function empty_state( string $title, string $message = '', string $action_html = '', string $icon = '', bool $page = false ): string {
+		return '<div class="bo-empty' . ( $page ? ' bo-empty--page' : '' ) . '">'
+			. ( '' !== $icon ? '<span class="bo-empty__icon">' . self::icon( $icon ) . '</span>' : '' )
+			. '<p class="bo-empty__title">' . esc_html( $title ) . '</p>' . ( '' !== $message ? '<p class="bo-empty__text">' . esc_html( $message ) . '</p>' : '' )
 			. ( '' !== $action_html ? '<div class="bo-empty__action">' . $action_html . '</div>' : '' ) . '</div>';
+	}
+
+	/**
+	 * Une valeur est-elle « présente » ? null, chaîne vide (après trim) et tableau vide sont absents ;
+	 * 0, "0" et false sont des valeurs métier valides, donc présentes. Une chaîne « — » est absente.
+	 */
+	public static function present( $value ): bool {
+		if ( null === $value ) {
+			return false;
+		}
+		if ( is_array( $value ) ) {
+			return ! empty( $value );
+		}
+		if ( is_bool( $value ) || is_int( $value ) || is_float( $value ) ) {
+			return true;
+		}
+		$s = trim( (string) $value );
+		return '' !== $s && '—' !== $s;
+	}
+
+	/**
+	 * Clé / valeur n'affichant que les valeurs présentes (cf. ::present). $pairs = [ 'Libellé' =>
+	 * valeur brute ]. Une valeur brute est échappée ; un tableau [ 'html' => '…' ] est un fragment
+	 * déjà composé via Ui (présent si non vide) ; une liste de chaînes est jointe par « · » ;
+	 * un booléen s'affiche « Oui » / « Non ». Retourne '' si rien n'est présent.
+	 *
+	 * @param array<string,mixed> $pairs
+	 */
+	public static function kv_present( array $pairs, bool $tight = false ): string {
+		$rows = array();
+		foreach ( $pairs as $k => $v ) {
+			if ( is_array( $v ) && array_key_exists( 'html', $v ) ) {
+				if ( '' !== trim( (string) $v['html'] ) ) {
+					$rows[ $k ] = (string) $v['html'];
+				}
+				continue;
+			}
+			if ( ! self::present( $v ) ) {
+				continue;
+			}
+			if ( is_bool( $v ) ) {
+				$rows[ $k ] = esc_html( $v ? 'Oui' : 'Non' );
+			} elseif ( is_array( $v ) ) {
+				$list = array_filter( array_map( 'strval', $v ), static fn( $s ) => '' !== trim( $s ) );
+				if ( empty( $list ) ) {
+					continue;
+				}
+				$rows[ $k ] = esc_html( implode( ' · ', $list ) );
+			} else {
+				$rows[ $k ] = esc_html( (string) $v );
+			}
+		}
+		return empty( $rows ) ? '' : self::kv( $rows, $tight );
+	}
+
+	/** Fragment HTML déjà composé, à passer à ::kv_present. */
+	public static function html( string $html ): array {
+		return array( 'html' => $html );
+	}
+
+	/**
+	 * Activité récente : liste compacte icône · texte · date · lien.
+	 * $items = [ ['icon'=>, 'text'=>, 'sub'=>?, 'time'=>, 'url'=>] ].
+	 *
+	 * @param array<int,array<string,string>> $items
+	 */
+	public static function activity( array $items ): string {
+		$h = '<ul class="bo-activity">';
+		foreach ( $items as $it ) {
+			$url = (string) ( $it['url'] ?? '' );
+			$h  .= '<li class="bo-activity__item"><span class="bo-activity__icon">' . self::icon( (string) ( $it['icon'] ?? 'dot' ) ) . '</span>'
+				. '<span class="bo-activity__main">' . ( '' !== $url ? '<a class="bo-activity__text" href="' . esc_url( $url ) . '">' : '<span class="bo-activity__text">' ) . esc_html( (string) $it['text'] ) . ( '' !== $url ? '</a>' : '</span>' )
+				. ( ! empty( $it['sub'] ) ? '<span class="bo-activity__sub">' . esc_html( (string) $it['sub'] ) . '</span>' : '' ) . '</span>'
+				. '<time class="bo-activity__time">' . esc_html( (string) ( $it['time'] ?? '' ) ) . '</time></li>';
+		}
+		return $h . '</ul>';
+	}
+
+	/** Contenu riche déjà filtré par wp_kses_post (description d'annonce), mis en page lecture. */
+	public static function richtext( string $html ): string {
+		return '<div class="bo-richtext">' . wp_kses_post( wpautop( $html ) ) . '</div>';
+	}
+
+	/** Liste à puces simple (échappée). @param string[] $items */
+	public static function bullets( array $items ): string {
+		$items = array_values( array_filter( array_map( static fn( $s ) => trim( (string) $s ), $items ), static fn( $s ) => '' !== $s ) );
+		if ( empty( $items ) ) {
+			return '';
+		}
+		$h = '<ul class="bo-bullets">';
+		foreach ( $items as $i ) {
+			$h .= '<li>' . esc_html( $i ) . '</li>';
+		}
+		return $h . '</ul>';
 	}
 
 	// ------------------------------------------------------------------ boutons, menus
@@ -255,6 +355,15 @@ final class Ui {
 			'back'   => '<path d="M19 12H5"/><path d="m11 18-6-6 6-6"/>',
 			'check'  => '<path d="m5 12 5 5L20 7"/>',
 			'ext'    => '<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M20 14v6H4V4h6"/>',
+			'dot'    => '<circle cx="12" cy="12" r="3"/>',
+			'inbox'  => '<path d="M4 13h4l2 3h4l2-3h4"/><path d="M6 5h12l2 8v6H4v-6z"/>',
+			'shield' => '<path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z"/><path d="m9.5 12 2 2 3.5-4"/>',
+			'file'   => '<path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/>',
+			'user'   => '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+			'brief'  => '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>',
+			'build'  => '<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/>',
+			'cal'    => '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
+			'card'   => '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/>',
 		);
 		return '<svg class="bo-icon" viewBox="0 0 24 24" aria-hidden="true">' . ( $paths[ $name ] ?? '' ) . '</svg>';
 	}

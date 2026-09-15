@@ -32,6 +32,15 @@ final class ModerationScreen extends ListScreen {
 		'dismissed' => 'Sans suite',
 	);
 
+	/** @var array<string,array{0:string,1:string}> état vide par file : titre, explication */
+	private const EMPTY = array(
+		'open'      => array( 'Aucun dossier à traiter', 'Les signalements et les contenus qui nécessitent une intervention apparaîtront ici, du plus urgent au moins urgent.' ),
+		'in_review' => array( 'Aucun dossier en cours', 'Les dossiers qu\'un modérateur s\'est assignés apparaîtront ici.' ),
+		'escalated' => array( 'Aucun dossier escaladé', 'Les dossiers transmis à un niveau supérieur apparaîtront ici.' ),
+		'resolved'  => array( 'Aucun dossier traité', 'L\'historique des décisions prises apparaîtra ici.' ),
+		'dismissed' => array( 'Aucun dossier classé sans suite', 'Les signalements écartés après examen apparaîtront ici.' ),
+	);
+
 	/** @var array<string,array{0:string,1:string}> priorité/risque => [libellé, variante] */
 	private const LEVELS = array(
 		'critical' => array( 'Critique', 'error' ),
@@ -75,7 +84,7 @@ final class ModerationScreen extends ListScreen {
 
 		$res = Rest::call( 'GET', '/postelio/v1/moderation/cases', array( 'status' => $queue, 'page' => $this->paged(), 'per_page' => static::PER_PAGE ) );
 		if ( 403 === $res['status'] ) {
-			return $out . Ui::empty_state( 'Accès restreint', 'Votre profil ne permet pas d\'accéder à la file de modération.' );
+			return $out . Ui::empty_state( 'Accès restreint', 'Votre profil ne permet pas d\'accéder à la file de modération.', '', 'shield', true );
 		}
 		if ( 200 !== $res['status'] || ! is_array( $res['data'] ) ) {
 			return $out . Ui::alert( 'La file de modération est momentanément indisponible.', 'warning' );
@@ -91,7 +100,9 @@ final class ModerationScreen extends ListScreen {
 		$out .= $this->toolbar( Ui::tabs( $tabs, 'Files de modération' ) );
 
 		if ( empty( $items ) ) {
-			return $out . Ui::empty_state( 'Aucun dossier dans cette file', 'open' === $queue ? 'Rien n\'attend de décision pour le moment.' : '' );
+			$e      = self::EMPTY[ $queue ];
+			$action = current_user_can( Menu::CAP_ADMIN ) ? Ui::button( 'Réglages de modération', $this->url( 'postelio-settings', array( 'tab' => 'moderation' ) ), '', true ) : '';
+			return $out . Ui::empty_state( $e[0], $e[1], $action, 'shield', true );
 		}
 
 		// Tri visuel par priorité (la file reste celle de l'API : aucune logique métier).
@@ -119,22 +130,22 @@ final class ModerationScreen extends ListScreen {
 
 		$meta = Ui::text( $n . ( $n > 1 ? ' signalements' : ' signalement' ), false, true )
 			. Ui::badge( 'Risque ' . mb_strtolower( $rm[0] ), $rm[1] )
-			. Ui::text( '' !== $since ? 'Ouvert le ' . Fmt::date( $since ) : '—', false, true )
+			. ( '' !== $since ? Ui::text( 'Ouvert ' . Fmt::relative( $since ), false, true ) : '' )
 			. Ui::text( '' !== (string) ( $c['assigned_to'] ?? '' ) ? 'Assigné : ' . (string) $c['assigned_to'] : 'Non assigné', false, true );
 
 		return Ui::queue_item(
 			$prio,
 			$pm[0],
-			self::RESOURCES[ $rtype ] ?? Fmt::or_dash( $rtype ),
-			$this->origin_label( (string) ( $c['origin'] ?? '' ) ) . ' · réf. ' . Fmt::ref( (string) ( $c['resource_uuid'] ?? '' ) ),
+			self::RESOURCES[ $rtype ] ?? ucfirst( $rtype ),
+			$this->origin_label( (string) ( $c['origin'] ?? '' ) ),
 			$meta,
 			$this->quick_actions( (string) ( $c['uuid'] ?? '' ), $queue )
 		);
 	}
 
 	private function origin_label( string $origin ): string {
-		$map = array( 'user_report' => 'Signalement', 'automatic' => 'Détection automatique', 'admin' => 'Administration', 'provider' => 'Fournisseur' );
-		return $map[ $origin ] ?? Fmt::or_dash( $origin );
+		$map = array( 'user_report' => 'Signalement d\'un utilisateur', 'automatic' => 'Détection automatique', 'admin' => 'Ouvert par l\'administration', 'provider' => 'Remonté par le partenaire' );
+		return $map[ $origin ] ?? ( '' !== $origin ? ucfirst( $origin ) : 'Origine inconnue' );
 	}
 
 	private function quick_actions( string $uuid, string $queue ): string {
@@ -168,29 +179,30 @@ final class ModerationScreen extends ListScreen {
 		$closed = in_array( $status, array( 'resolved', 'dismissed' ), true );
 
 		$title = ( self::RESOURCES[ $rtype ] ?? 'Dossier' ) . ' signalé';
-		$out   = $this->header( $title, 'File : ' . ( self::QUEUES[ $status ] ?? Fmt::or_dash( $status ) ) . ' · priorité ' . mb_strtolower( $pm[0] ), $this->back_link( 'Retour à la file' ), 'Postelio · Modération' );
+		$out   = $this->header( $title, 'File : ' . ( self::QUEUES[ $status ] ?? ucfirst( $status ) ) . ' · priorité ' . mb_strtolower( $pm[0] ), $this->back_link( 'Retour à la file' ), 'Postelio · Modération' );
 		$out  .= Ui::cols_open() . Ui::col_open();
 
-		$out .= Ui::card_open( 'Contexte' ) . Ui::kv( array(
-			'Ressource concernée' => Ui::text( self::RESOURCES[ $rtype ] ?? Fmt::or_dash( $rtype ), true ),
-			'Priorité'            => Ui::badge( $pm[0], $pm[1], true ),
-			'Niveau de risque'    => Ui::badge( $rm[0], $rm[1] ),
-			'Origine'             => Ui::text( $this->origin_label( (string) ( $c['origin'] ?? '' ) ) ),
-			'Signalements reçus'  => Ui::text( (string) (int) ( $c['reports_count'] ?? 0 ) ),
-			'Assigné à'           => Ui::text( Fmt::or_dash( $c['assigned_to'] ?? '' ) ),
+		$out .= Ui::card_open( 'Contexte' ) . Ui::kv_present( array(
+			'Ressource concernée' => self::RESOURCES[ $rtype ] ?? ucfirst( $rtype ),
+			'Priorité'            => Ui::html( Ui::badge( $pm[0], $pm[1], true ) ),
+			'Niveau de risque'    => Ui::html( Ui::badge( $rm[0], $rm[1] ) ),
+			'Origine'             => $this->origin_label( (string) ( $c['origin'] ?? '' ) ),
+			'Signalements reçus'  => (int) ( $c['reports_count'] ?? 0 ),
+			'Assigné à'           => (string) ( $c['assigned_to'] ?? '' ),
+			'Ouvert le'           => '' !== (string) ( $c['created_at'] ?? '' ) ? Fmt::datetime( $c['created_at'] ) : '',
 		) ) . Ui::details( 'Détails techniques', Ui::kv( array(
-			'Type de ressource'    => Ui::text( Fmt::or_dash( $rtype ), false, true ),
-			'Référence ressource'  => Ui::text( Fmt::ref( (string) ( $c['resource_uuid'] ?? '' ), 12 ), false, true ),
-			'Référence dossier'    => Ui::text( Fmt::ref( $uuid, 12 ), false, true ),
+			'Type de ressource'    => Ui::text( '' !== $rtype ? $rtype : 'inconnu', false, true ),
+			'Référence ressource'  => Ui::text( (string) ( $c['resource_uuid'] ?? '' ), false, true ),
+			'Référence dossier'    => Ui::text( $uuid, false, true ),
 		), true ) ) . Ui::card_close();
 
 		$rows = array();
 		foreach ( (array) ( $c['events'] ?? array() ) as $e ) {
 			$e      = (array) $e;
 			$rows[] = array(
-				Ui::meta( Fmt::or_dash( $e['event'] ?? '' ), Fmt::or_dash( $e['actor_role'] ?? '' ) ),
-				Ui::text( Fmt::or_dash( trim( (string) ( $e['action'] ?? '' ) . ' ' . (string) ( $e['decision'] ?? '' ) ) ) ),
-				Ui::text( Fmt::or_dash( $e['note'] ?? '' ) ),
+				Ui::meta( (string) ( $e['event'] ?? 'Événement' ), (string) ( $e['actor_role'] ?? '' ) ),
+				Ui::text( trim( (string) ( $e['action'] ?? '' ) . ' ' . (string) ( $e['decision'] ?? '' ) ) ),
+				Ui::text( (string) ( $e['note'] ?? '' ) ),
 				Ui::text( Fmt::datetime( $e['at'] ?? '' ), false, true ),
 			);
 		}

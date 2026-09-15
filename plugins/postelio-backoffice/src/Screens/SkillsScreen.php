@@ -90,9 +90,9 @@ final class SkillsScreen extends ListScreen {
 		$meta    = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
 		$company = 'company' === ( $s['author_type'] ?? '' );
 		return array(
-			Ui::entity( (string) $s['title'], Fmt::or_dash( $s['summary'] ?? '' ), (string) ( $s['image_url'] ?? '' ), true ),
-			Ui::meta( Fmt::or_dash( $s['author_name'] ?? '' ), $company ? 'Entreprise' : 'Candidat' ),
-			Ui::text( Fmt::or_dash( $s['category'] ?? '' ), false, true ),
+			Ui::entity( (string) $s['title'], Fmt::excerpt( (string) ( $s['summary'] ?? '' ), 80 ), (string) ( $s['image_url'] ?? '' ), true ),
+			Ui::meta( '' !== (string) ( $s['author_name'] ?? '' ) ? (string) $s['author_name'] : 'Auteur inconnu', $company ? 'Entreprise' : 'Candidat' ),
+			Ui::text( '' !== (string) ( $s['category'] ?? '' ) ? (string) $s['category'] : 'Sans catégorie', false, true ),
 			Ui::badge( $meta[0], $meta[1], true ),
 			Ui::text( (string) (int) ( $s['comments'] ?? 0 ), false, true ),
 			$this->actions( (string) $s['uuid'], $hidden, true ),
@@ -125,7 +125,7 @@ final class SkillsScreen extends ListScreen {
 		$meta   = self::STATUSES[ $status ] ?? array( ucfirst( $status ), 'neutral' );
 		$seo    = is_array( $s['seo'] ?? null ) ? $s['seo'] : array();
 
-		$out  = $this->header( (string) $s['title'], Fmt::or_dash( $s['author_name'] ?? '' ) . ( 'company' === ( $s['author_type'] ?? '' ) ? ' (entreprise)' : ' (candidat)' ), $this->back_link() . $this->actions( $uuid, $hidden, false ), 'Postelio · Savoir-faire' );
+		$out  = $this->header( (string) $s['title'], trim( (string) ( $s['author_name'] ?? '' ) . ( 'company' === ( $s['author_type'] ?? '' ) ? ' (entreprise)' : ' (candidat)' ) ), $this->back_link() . $this->actions( $uuid, $hidden, false ), 'Postelio · Savoir-faire' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
 		$out .= Ui::card_open( 'Contenu', '', Ui::badge( $meta[0], $meta[1], true ) );
@@ -133,15 +133,18 @@ final class SkillsScreen extends ListScreen {
 			$out .= Ui::alert( 'Ce contenu est actuellement masqué du public par la modération.', 'warning' );
 		}
 		$out .= Ui::excerpt( Fmt::excerpt( (string) ( $s['content'] ?? '' ), 1200 ) );
-		$out .= '<div class="bo-section">' . Ui::kv( array(
-			'Résumé'        => Ui::text( Fmt::or_dash( $s['summary'] ?? '' ) ),
-			'Catégorie'     => Ui::text( Fmt::or_dash( $s['category'] ?? '' ) ),
-			'Mots-clés'     => Ui::text( Fmt::or_dash( implode( ', ', (array) ( $s['tags'] ?? array() ) ) ) ),
-			'Commentaires'  => Ui::text( (string) (int) ( $s['comments'] ?? 0 ) ),
-		) ) . '</div>';
+		$facts = Ui::kv_present( array(
+			'Résumé'       => (string) ( $s['summary'] ?? '' ),
+			'Catégorie'    => (string) ( $s['category'] ?? '' ),
+			'Mots-clés'    => implode( ', ', (array) ( $s['tags'] ?? array() ) ),
+			'Commentaires' => (int) ( $s['comments'] ?? 0 ),
+		) );
+		if ( '' !== $facts ) {
+			$out .= '<div class="bo-section">' . $facts . '</div>';
+		}
 		$out .= Ui::details( 'Détails techniques', Ui::kv( array(
 			'Révision'           => Ui::text( (string) (int) ( $s['revision'] ?? 0 ) ),
-			'Référence publique' => Ui::text( $uuid, false, true ),
+			'Référence'          => Ui::text( $uuid, false, true ),
 		), true ) ) . Ui::card_close();
 
 		$out .= Ui::col_close() . Ui::col_open();
@@ -151,13 +154,15 @@ final class SkillsScreen extends ListScreen {
 			$out .= '<img class="bo-cardpreview__img" src="' . esc_url( (string) $s['image_url'] ) . '" alt="">';
 		}
 		$out .= '<h3 class="bo-cardpreview__title">' . esc_html( (string) $s['title'] ) . '</h3>';
-		$out .= '<p class="bo-cardpreview__meta">' . esc_html( Fmt::or_dash( $s['author_name'] ?? '' ) ) . '</p>';
+		if ( '' !== (string) ( $s['author_name'] ?? '' ) ) {
+			$out .= '<p class="bo-cardpreview__meta">' . esc_html( (string) $s['author_name'] ) . '</p>';
+		}
 		$out .= Ui::excerpt( Fmt::excerpt( (string) ( $s['summary'] ?? ( $s['content'] ?? '' ) ), 200 ) );
 		$out .= '</div>' . Ui::card_close();
 
-		$out .= Ui::card_open( 'Référencement', '', '', 'bo-card--aside' ) . Ui::kv( array(
-			'Adresse publique' => Ui::text( Fmt::or_dash( $seo['slug'] ?? '' ) ),
-			'Indexation'       => Ui::badge( ! empty( $seo['noindex'] ) ? 'Exclu des moteurs' : 'Indexable', ! empty( $seo['noindex'] ) ? 'warning' : 'success' ),
+		$out .= Ui::card_open( 'Référencement', '', '', 'bo-card--aside' ) . Ui::kv_present( array(
+			'Adresse publique' => (string) ( $seo['slug'] ?? '' ),
+			'Indexation'       => Ui::html( Ui::badge( ! empty( $seo['noindex'] ) ? 'Exclu des moteurs' : 'Indexable', ! empty( $seo['noindex'] ) ? 'warning' : 'success' ) ),
 		), true ) . Ui::card_close();
 		$out .= Ui::col_close() . Ui::cols_close();
 		return $out;

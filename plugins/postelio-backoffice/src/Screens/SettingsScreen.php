@@ -195,7 +195,7 @@ final class SettingsScreen extends Screen {
 		}
 		$d   = Rest::payload( '/postelio/v1/billing/health' );
 		$out = Ui::section_open( 'Paiement en ligne' ) . Ui::kv( array(
-			'Mode'                     => Ui::badge( Fmt::or_dash( $d['mode'] ?? '' ), 'info' ),
+			'Mode'                     => Ui::badge( array( 'test' => 'Mode test', 'live' => 'Mode réel' )[ (string) ( $d['mode'] ?? '' ) ] ?? 'Mode inconnu', 'info' ),
 			'Paiement en ligne'        => $this->state( ! empty( $d['configured'] ), 'Configuré', 'Non configuré' ),
 			'Confirmation de paiement' => $this->state( ! empty( $d['webhook_configured'] ), 'Configurée', 'Non configurée' ),
 		) ) . Ui::section_close();

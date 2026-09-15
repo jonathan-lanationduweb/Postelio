@@ -4,7 +4,7 @@
  * détail (paiements, chronologie, justificatif), via l'API du module Billing (`/billing/health`,
  * `/billing/admin/orders`). La relance du traitement est déléguée à l'endpoint du domaine. AUCUN
  * secret Stripe n'est lu ni affiché ; les états techniques sont traduits en libellés humains. Aucun
- * total de revenus n'est exposé par l'API : il n'est pas reconstitué ici (« — »).
+ * total de revenus n'est exposé par l'API : il n'est donc pas affiché.
  *
  * @package Postelio\Backoffice\Screens
  */
@@ -71,7 +71,7 @@ final class BillingScreen extends ListScreen {
 		}
 		$out = $this->header( 'Facturation', 'Commandes et paiements des recruteurs.', $actions );
 
-		// Indicateurs : revenus / commandes / anomalies (valeur « — » si l'API ne répond pas).
+		// Indicateurs réellement calculés (un compteur indisponible n'est pas affiché).
 		$paid    = Rest::total( '/postelio/v1/billing/admin/orders', array( 'status' => 'fulfilled' ) );
 		$waiting = Rest::total( '/postelio/v1/billing/admin/orders', array( 'status' => 'awaiting_payment' ) );
 		$pending = Rest::total( '/postelio/v1/billing/admin/orders', array( 'status' => 'fulfillment_pending' ) );
@@ -80,13 +80,22 @@ final class BillingScreen extends ListScreen {
 		$refund  = Rest::total( '/postelio/v1/billing/admin/orders', array( 'status' => 'refunded' ) );
 		$anom    = ( null === $failed && null === $review ) ? null : (int) $failed + (int) $review;
 
-		$out .= Ui::kpis_open( 5 );
-		$out .= Ui::kpi( 'Revenus', null, 'non exposé par l\'API' );
-		$out .= Ui::kpi( 'Commandes payées', $paid, '', false, $this->url( $this->slug(), array( 'tab' => 'fulfilled' ) ) );
-		$out .= Ui::kpi( 'En attente', ( null === $waiting && null === $pending ) ? null : (int) $waiting + (int) $pending, (int) $pending > 0 ? (int) $pending . ' en traitement' : '', false, $this->url( $this->slug(), array( 'tab' => 'awaiting_payment' ) ) );
-		$out .= Ui::kpi( 'Anomalies', $anom, (int) $failed > 0 ? (int) $failed . ' en échec' : '', (int) $anom > 0, $this->url( $this->slug(), array( 'tab' => 'fulfillment_failed' ) ) );
-		$out .= Ui::kpi( 'Remboursées', $refund, '', false, $this->url( $this->slug(), array( 'tab' => 'refunded' ) ) );
-		$out .= Ui::kpis_close();
+		$kpis = array();
+		if ( null !== $paid ) {
+			$kpis[] = Ui::kpi( 'Commandes payées', $paid, '', false, $this->url( $this->slug(), array( 'tab' => 'fulfilled' ) ) );
+		}
+		if ( null !== $waiting || null !== $pending ) {
+			$kpis[] = Ui::kpi( 'En attente', (int) $waiting + (int) $pending, (int) $pending > 0 ? (int) $pending . ' en traitement' : '', false, $this->url( $this->slug(), array( 'tab' => 'awaiting_payment' ) ) );
+		}
+		if ( null !== $anom ) {
+			$kpis[] = Ui::kpi( 'Anomalies', $anom, (int) $failed > 0 ? (int) $failed . ' en échec' : '', $anom > 0, $this->url( $this->slug(), array( 'tab' => 'fulfillment_failed' ) ) );
+		}
+		if ( null !== $refund ) {
+			$kpis[] = Ui::kpi( 'Remboursées', $refund, '', false, $this->url( $this->slug(), array( 'tab' => 'refunded' ) ) );
+		}
+		if ( $kpis ) {
+			$out .= Ui::kpis_open( count( $kpis ) ) . implode( '', $kpis ) . Ui::kpis_close();
+		}
 
 		$tabs = array( array( 'label' => 'Toutes', 'url' => $this->url( $this->slug(), array( 'tab' => 'all' ) ), 'active' => 'all' === $tab ) );
 		foreach ( self::TABS as $st ) {
@@ -109,7 +118,13 @@ final class BillingScreen extends ListScreen {
 		foreach ( $items as $o ) {
 			$rows[] = $this->row( (array) $o );
 		}
-		$out .= Ui::table( array( 'Commande', 'Montant', 'État', 'Créée', '' ), $rows, 'Aucune commande ne correspond', 'all' === $tab ? 'Aucune commande n\'a encore été passée.' : '' );
+		if ( empty( $rows ) ) {
+			$out .= 'all' === $tab
+				? Ui::empty_state( 'Aucune commande pour le moment', 'Les paiements et renouvellements des recruteurs apparaîtront ici.', '', 'card', true )
+				: Ui::empty_state( 'Aucune commande dans cet état', 'Changez de filtre pour voir les autres commandes.', '', 'card', true );
+		} else {
+			$out .= Ui::table( array( 'Commande', 'Montant', 'État', 'Créée', '' ), $rows );
+		}
 		$out .= $this->pagination( $total, array( 'tab' => $tab ) );
 		return $out;
 	}
@@ -119,7 +134,7 @@ final class BillingScreen extends ListScreen {
 		$uuid   = (string) ( $o['order_uuid'] ?? '' );
 		$status = (string) ( $o['status'] ?? '' );
 		return array(
-			Ui::entity( Fmt::or_dash( $o['product']['label'] ?? ( $o['product']['code'] ?? '' ) ), 'Réf. ' . Fmt::ref( $uuid ), '', true ),
+			Ui::entity( (string) ( $o['product']['label'] ?? ( $o['product']['code'] ?? 'Commande' ) ), 'Commande du ' . Fmt::date( $o['created_at'] ?? '' ), '', true ),
 			Ui::text( Fmt::money( (int) ( $o['amount'] ?? 0 ), (string) ( $o['currency'] ?? 'EUR' ) ), true ),
 			Ui::badge( $this->label( $status ), $this->variant( $status ), true ),
 			Ui::text( Fmt::date( $o['created_at'] ?? '' ), false, true ),
@@ -144,12 +159,12 @@ final class BillingScreen extends ListScreen {
 			$actions .= Ui::action_button( 'pst_admin_billing_retry', array( 'uuid' => $uuid ), 'Relancer le traitement', 'primary', 'Relancer le traitement de cette commande ?' );
 		}
 
-		$out  = $this->header( 'Commande ' . Fmt::ref( $uuid ), Fmt::or_dash( $o['product']['label'] ?? '' ) . ' · ' . Fmt::money( (int) ( $o['amount'] ?? 0 ), (string) ( $o['currency'] ?? 'EUR' ) ), $actions, 'Postelio · Facturation' );
+		$out  = $this->header( (string) ( $o['product']['label'] ?? 'Commande' ), 'Commande du ' . Fmt::date( $o['created_at'] ?? '' ) . ' · ' . Fmt::money( (int) ( $o['amount'] ?? 0 ), (string) ( $o['currency'] ?? 'EUR' ) ), $actions, 'Postelio · Facturation' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
 		$out .= Ui::card_open( 'Commande', '', Ui::badge( $this->label( $status ), $this->variant( $status ), true ) ) . Ui::kv( array(
-			'Paiement'  => Ui::badge( $paid ? 'Encaissé' : Fmt::or_dash( $o['payment_status'] ?? '' ), $paid ? 'success' : 'neutral' ),
-			'Produit'   => Ui::text( Fmt::or_dash( $o['product']['label'] ?? '' ), true ),
+			'Paiement'  => Ui::badge( $paid ? 'Encaissé' : ( '' !== (string) ( $o['payment_status'] ?? '' ) ? ucfirst( str_replace( '_', ' ', (string) $o['payment_status'] ) ) : 'En attente' ), $paid ? 'success' : 'neutral' ),
+			'Produit'   => Ui::text( (string) ( $o['product']['label'] ?? 'Commande' ), true ),
 			'Montant'   => Ui::text( Fmt::money( (int) ( $o['amount'] ?? 0 ), (string) ( $o['currency'] ?? 'EUR' ) ), true ),
 			'Concerne'  => Ui::text( $this->resource_label( (array) ( $o['resource'] ?? array() ) ) ),
 		) );
@@ -157,8 +172,8 @@ final class BillingScreen extends ListScreen {
 			$out .= Ui::alert( 'Dernier échec de traitement : ' . Fmt::excerpt( (string) $o['last_fulfillment_error'], 160 ), 'error' );
 		}
 		$out .= Ui::details( 'Détails techniques', Ui::kv( array(
-			'Statut technique'         => Ui::text( Fmt::or_dash( $status ), false, true ),
-			'Traitement'               => Ui::text( Fmt::or_dash( $o['fulfillment_status'] ?? '' ), false, true ),
+			'Statut technique'         => Ui::text( '' !== $status ? $status : 'inconnu', false, true ),
+			'Traitement'               => Ui::text( '' !== (string) ( $o['fulfillment_status'] ?? '' ) ? (string) $o['fulfillment_status'] : 'aucun', false, true ),
 			'Tentatives de traitement' => Ui::text( (string) (int) ( $o['fulfillment_attempts'] ?? 0 ) ),
 			'Référence commande'       => Ui::text( Fmt::ref( $uuid, 12 ), false, true ),
 		), true ) ) . Ui::card_close();
@@ -168,7 +183,7 @@ final class BillingScreen extends ListScreen {
 			$p       = (array) $p;
 			$ok      = 'succeeded' === (string) ( $p['status'] ?? '' );
 			$prows[] = array(
-				Ui::badge( $ok ? 'Encaissé' : Fmt::or_dash( $p['status'] ?? '' ), $ok ? 'success' : 'neutral', true ),
+				Ui::badge( $ok ? 'Encaissé' : ucfirst( str_replace( '_', ' ', (string) ( $p['status'] ?? 'inconnu' ) ) ), $ok ? 'success' : 'neutral', true ),
 				Ui::text( Fmt::money( (int) ( $p['amount'] ?? 0 ), (string) ( $p['currency'] ?? 'EUR' ) ) ),
 				Ui::text( Fmt::date( $p['created_at'] ?? '' ), false, true ),
 			);

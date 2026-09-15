@@ -65,6 +65,39 @@ final class Fmt {
 		return '' === $u ? '—' : mb_substr( $u, 0, $len ) . '…';
 	}
 
+	/** Date relative courte et lisible (« il y a 3 h », « hier », « dans 2 j »), absolue au-delà de 7 jours. */
+	public static function relative( $value ): string {
+		$v = (string) $value;
+		if ( '' === $v || '0000-00-00 00:00:00' === $v ) {
+			return '';
+		}
+		$ts = strtotime( $v . ' UTC' );
+		if ( false === $ts ) {
+			return self::date( $v );
+		}
+		$diff = time() - $ts;
+		$abs  = abs( $diff );
+		if ( $abs > 7 * DAY_IN_SECONDS ) {
+			return get_date_from_gmt( $v, 'd/m/Y' );
+		}
+		if ( $abs < MINUTE_IN_SECONDS ) {
+			return 'à l\'instant';
+		}
+		if ( $abs < HOUR_IN_SECONDS ) {
+			$n = (int) floor( $abs / MINUTE_IN_SECONDS );
+			return $diff > 0 ? 'il y a ' . $n . ' min' : 'dans ' . $n . ' min';
+		}
+		if ( $abs < DAY_IN_SECONDS ) {
+			$n = (int) floor( $abs / HOUR_IN_SECONDS );
+			return $diff > 0 ? 'il y a ' . $n . ' h' : 'dans ' . $n . ' h';
+		}
+		$n = (int) floor( $abs / DAY_IN_SECONDS );
+		if ( 1 === $n ) {
+			return $diff > 0 ? 'hier' : 'demain';
+		}
+		return $diff > 0 ? 'il y a ' . $n . ' j' : 'dans ' . $n . ' j';
+	}
+
 	/** Texte tronqué proprement. */
 	public static function excerpt( string $text, int $len = 240 ): string {
 		$t = trim( wp_strip_all_tags( $text ) );

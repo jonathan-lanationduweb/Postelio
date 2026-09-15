@@ -1,9 +1,9 @@
 <?php
 /**
  * Tableau de bord : synthèse utile en un écran. Bande d'indicateurs compacts, « À traiter » (actions
- * RÉELLES uniquement, jamais inventées, compteur en tête de ligne), raccourcis en tuiles, santé
- * discrète. Données via Support\Data (contrats réels) ; une valeur indisponible s'affiche « — ».
- * Rendu 100 % via Ui (aucun style inline).
+ * RÉELLES uniquement, jamais inventées), « Activité récente » construite à partir des façades de
+ * lecture existantes (une requête paginée par source, jamais de N+1), raccourcis utiles, santé
+ * discrète. Une valeur indisponible n'est pas affichée. Rendu 100 % via Ui.
  *
  * @package Postelio\Backoffice\Screens
  */
@@ -12,6 +12,7 @@ namespace Postelio\Backoffice\Screens;
 
 use Postelio\Backoffice\Menu;
 use Postelio\Backoffice\Support\Data;
+use Postelio\Backoffice\Support\Fmt;
 use Postelio\Backoffice\Ui\Ui;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,6 +20,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class DashboardScreen extends Screen {
+
+	private const APPS       = '\\Postelio\\Applications\\Api\\ApplicationAdminDirectory';
+	private const JOBS       = '\\Postelio\\Jobs\\Api\\JobAdminDirectory';
+	private const COMPANIES  = '\\Postelio\\Companies\\Api\\CompanyAdminDirectory';
+	private const INTERVIEWS = '\\Postelio\\Interviews\\Api\\InterviewAdminDirectory';
 
 	protected function capability(): string {
 		return Menu::CAP_VIEW;
@@ -46,45 +52,57 @@ final class DashboardScreen extends Screen {
 
 		$out = $this->header( 'Tableau de bord', 'L\'essentiel de la plateforme, en un coup d\'œil.', $actions );
 
-		// --- Indicateurs (bande compacte, cliquables) -------------------------
-		$out .= Ui::kpis_open( 6 );
-		$out .= Ui::kpi( 'Candidats', $is_admin ? $users['candidates'] : null, '', false, $is_admin ? $this->url( 'postelio-users', array( 'tab' => 'candidates' ) ) : '' );
-		$out .= Ui::kpi( 'Recruteurs', $is_admin ? $users['recruiters'] : null, '', false, $is_admin ? $this->url( 'postelio-users', array( 'tab' => 'recruiters' ) ) : '' );
-		$out .= Ui::kpi( 'Entreprises', $cc ? (int) ( $cc['total'] ?? 0 ) : null, $cc ? (int) ( $cc['verified'] ?? 0 ) . ' vérifiées' : '', false, $is_admin ? $this->url( 'postelio-companies' ) : '' );
-		$out .= Ui::kpi( 'Offres actives', $jc ? (int) ( $jc['published'] ?? 0 ) : null, $jc ? (int) ( $jc['expiring'] ?? 0 ) . ' expirent bientôt' : '', false, $is_admin ? $this->url( 'postelio-jobs', array( 'tab' => 'published' ) ) : '' );
-		$out .= Ui::kpi( 'Candidatures', $apps ? (int) ( $apps['total'] ?? 0 ) : null, $apps ? (int) ( $apps['new'] ?? 0 ) . ' nouvelles' : '', false, $is_admin ? $this->url( 'postelio-applications' ) : '' );
-		$out .= Ui::kpi( 'À modérer', $mod, null !== $modc && $modc > 0 ? (int) $modc . ' critiques' : '', null !== $mod && $mod > 0, $this->url( 'postelio-moderation' ) );
-		$out .= Ui::kpis_close();
+		// --- Indicateurs : seulement ceux réellement disponibles ----------------
+		$kpis = array();
+		if ( $is_admin ) {
+			$kpis[] = Ui::kpi( 'Candidats', $users['candidates'], '', false, $this->url( 'postelio-users', array( 'tab' => 'candidates' ) ) );
+			$kpis[] = Ui::kpi( 'Recruteurs', $users['recruiters'], '', false, $this->url( 'postelio-users', array( 'tab' => 'recruiters' ) ) );
+		}
+		if ( $cc ) {
+			$kpis[] = Ui::kpi( 'Entreprises', (int) ( $cc['total'] ?? 0 ), (int) ( $cc['verified'] ?? 0 ) . ' vérifiées', false, $this->url( 'postelio-companies' ) );
+		}
+		if ( $jc ) {
+			$kpis[] = Ui::kpi( 'Offres actives', (int) ( $jc['published'] ?? 0 ), (int) ( $jc['expiring'] ?? 0 ) > 0 ? (int) $jc['expiring'] . ' expirent bientôt' : '', false, $this->url( 'postelio-jobs', array( 'tab' => 'published' ) ) );
+		}
+		if ( $apps ) {
+			$kpis[] = Ui::kpi( 'Candidatures', (int) ( $apps['total'] ?? 0 ), (int) ( $apps['new'] ?? 0 ) > 0 ? (int) $apps['new'] . ' nouvelles' : '', false, $this->url( 'postelio-applications' ) );
+		}
+		if ( null !== $mod ) {
+			$kpis[] = Ui::kpi( 'À modérer', $mod, null !== $modc && $modc > 0 ? (int) $modc . ' critiques' : '', $mod > 0, $this->url( 'postelio-moderation' ) );
+		}
+		if ( $kpis ) {
+			$out .= Ui::kpis_open( count( $kpis ) ) . implode( '', $kpis ) . Ui::kpis_close();
+		}
 
-		// --- À traiter + colonne latérale -------------------------------------
-		$out .= '<div class="bo-grid bo-grid--main">';
+		// --- Colonne principale : À traiter + Activité récente -------------------
+		$out .= '<div class="bo-grid bo-grid--main"><div class="bo-col">';
 
 		$todos = $is_admin ? $this->todos( $cc, $jc, $mod ) : array();
 		$out  .= Ui::card_open( 'À traiter', $is_admin ? 'Ce qui attend une décision ou une vérification.' : 'Vue détaillée réservée aux administrateurs.', '', '', 'Priorités' );
 		if ( empty( $todos ) ) {
-			$out .= Ui::empty_state( 'Rien à traiter', $is_admin ? 'Aucune décision ni vérification n\'est en attente pour le moment.' : 'Les files de traitement sont réservées aux administrateurs.' );
+			$out .= Ui::empty_state( 'Rien à traiter', $is_admin ? 'Aucune décision ni vérification n\'est en attente.' : 'Les files de traitement sont réservées aux administrateurs.', '', 'check' );
 		} else {
 			$out .= Ui::rows_open();
 			foreach ( $todos as $t ) {
-				$out .= Ui::row(
-					esc_html( (string) $t['title'] ),
-					(string) $t['desc'],
-					'',
-					Ui::button( (string) $t['label'], (string) $t['url'], '', true ),
-					(string) $t['variant'],
-					Ui::count_lead( (int) $t['n'] )
-				);
+				$out .= Ui::row( esc_html( (string) $t['title'] ), (string) $t['desc'], '', Ui::button( (string) $t['label'], (string) $t['url'], '', true ), (string) $t['variant'], Ui::count_lead( (int) $t['n'] ) );
 			}
 			$out .= Ui::rows_close();
 		}
 		$out .= Ui::card_close();
 
+		if ( $is_admin ) {
+			$activity = $this->activity();
+			$out     .= Ui::card_open( 'Activité récente', 'Derniers mouvements sur la plateforme.', '', '', 'Suivi' );
+			$out     .= empty( $activity ) ? Ui::empty_state( 'Aucune activité récente', 'Les candidatures, offres et entretiens apparaîtront ici dès qu\'ils existeront.', '', 'inbox' ) : Ui::activity( $activity );
+			$out     .= Ui::card_close();
+		}
+		$out .= '</div>';
+
+		// --- Colonne latérale : raccourcis utiles + santé ------------------------
 		$out .= '<div class="bo-col">';
 		$out .= Ui::card_open( 'Raccourcis', '', '', 'bo-card--aside' ) . Ui::tiles( $this->shortcuts( $is_admin ) ) . Ui::card_close();
 		$out .= $this->health_card();
-		$out .= '</div>';
-
-		$out .= '</div>';
+		$out .= '</div></div>';
 		return $out;
 	}
 
@@ -94,6 +112,61 @@ final class DashboardScreen extends Screen {
 			return \Postelio\Site\Api\SiteConfigDirectory::front_origin() . '/';
 		}
 		return home_url( '/' );
+	}
+
+	/**
+	 * Activité récente : 5 événements maximum, issus des façades existantes (une requête par source,
+	 * page 1, 3 éléments), triés par date décroissante. Aucune donnée inventée.
+	 *
+	 * @return array<int,array<string,string>>
+	 */
+	private function activity(): array {
+		$events = array();
+
+		if ( Data::has( self::APPS ) ) {
+			$res = Data::facade( self::APPS, 'list', array( array(), 1, 3 ), array() );
+			foreach ( (array) ( $res['items'] ?? array() ) as $a ) {
+				$a        = (array) $a;
+				$events[] = array( 'ts' => (string) ( $a['created_at'] ?? '' ), 'icon' => 'file', 'text' => 'Candidature de ' . (string) ( $a['candidate'] ?? '' ) . ' · ' . (string) ( $a['job_title'] ?? '' ), 'sub' => trim( (string) ( $a['company'] ?? '' ) ), 'url' => $this->url( 'postelio-applications', array( 'view' => (string) $a['uuid'] ) ) );
+			}
+		}
+		if ( Data::has( self::JOBS ) ) {
+			$res = Data::facade( self::JOBS, 'list', array( array( 'status' => 'published' ), 1, 3 ), array() );
+			foreach ( (array) ( $res['items'] ?? array() ) as $j ) {
+				$j = (array) $j;
+				if ( '' === (string) ( $j['date_publication'] ?? '' ) ) {
+					continue;
+				}
+				$events[] = array( 'ts' => (string) $j['date_publication'], 'icon' => 'brief', 'text' => 'Offre publiée · ' . (string) ( $j['title'] ?? '' ), 'sub' => trim( (string) ( $j['company']['nom'] ?? '' ) . ( '' !== (string) ( $j['ville'] ?? '' ) ? ' · ' . (string) $j['ville'] : '' ), ' ·' ), 'url' => $this->url( 'postelio-jobs', array( 'view' => (string) $j['uuid'] ) ) );
+			}
+		}
+		if ( Data::has( self::INTERVIEWS ) ) {
+			$res = Data::facade( self::INTERVIEWS, 'list', array( array( 'status' => 'confirmed' ), 1, 3 ), array() );
+			foreach ( (array) ( $res['items'] ?? array() ) as $iv ) {
+				$iv = (array) $iv;
+				if ( strtotime( (string) ( $iv['scheduled_at'] ?? '' ) . ' UTC' ) < time() ) {
+					continue;
+				}
+				$events[] = array( 'ts' => (string) $iv['scheduled_at'], 'icon' => 'cal', 'text' => 'Entretien confirmé · ' . (string) ( $iv['candidate'] ?? '' ), 'sub' => trim( (string) ( $iv['job_title'] ?? '' ) . ' · ' . (string) ( $iv['company'] ?? '' ), ' ·' ), 'url' => $this->url( 'postelio-interviews', array( 'view' => (string) $iv['uuid'] ) ) );
+			}
+		}
+		if ( Data::has( self::COMPANIES ) && current_user_can( 'pst_verify_company' ) ) {
+			foreach ( array( 'pending', 'manual_review' ) as $st ) {
+				$res = Data::facade( self::COMPANIES, 'list', array( array( 'status' => $st ), 1, 2 ), array() );
+				foreach ( (array) ( $res['items'] ?? array() ) as $c ) {
+					$c        = (array) $c;
+					$events[] = array( 'ts' => '', 'icon' => 'build', 'text' => 'Entreprise à vérifier · ' . (string) ( $c['nom'] ?? '' ), 'sub' => trim( (string) ( $c['ville'] ?? '' ) ), 'url' => $this->url( 'postelio-companies', array( 'view' => (string) $c['uuid'] ) ) );
+				}
+			}
+		}
+
+		usort( $events, static fn( $a, $b ) => strcmp( (string) $b['ts'], (string) $a['ts'] ) );
+		$events = array_slice( $events, 0, 5 );
+		foreach ( $events as &$e ) {
+			$e['time'] = '' !== $e['ts'] ? Fmt::relative( $e['ts'] ) : 'en attente';
+			unset( $e['ts'] );
+		}
+		return $events;
 	}
 
 	/**
@@ -123,7 +196,7 @@ final class DashboardScreen extends Screen {
 		$st = Data::delivery_stats();
 		$nf = is_array( $st ) ? (int) ( $st['failed'] ?? 0 ) : 0;
 		if ( $nf > 0 ) {
-			$items[] = array( 'n' => $nf, 'title' => $nf > 1 ? 'e-mails non envoyés' : 'e-mail non envoyé', 'desc' => 'Vérifier le service e-mail (transport).', 'label' => 'Voir le service e-mail', 'url' => $this->url( 'postelio-notifications' ), 'variant' => 'warning' );
+			$items[] = array( 'n' => $nf, 'title' => $nf > 1 ? 'e-mails non envoyés' : 'e-mail non envoyé', 'desc' => 'Vérifier le service e-mail.', 'label' => 'Voir le service e-mail', 'url' => $this->url( 'postelio-notifications' ), 'variant' => 'warning' );
 		}
 		$expiring = $jc ? (int) ( $jc['expiring'] ?? 0 ) : 0;
 		if ( $expiring > 0 && current_user_can( 'pst_manage_all_jobs' ) ) {
@@ -132,22 +205,15 @@ final class DashboardScreen extends Screen {
 		return $items;
 	}
 
-	/** @return array<int,array<string,string>> */
+	/** Raccourcis réellement utiles (le site et la santé ont déjà leur place ailleurs). @return array<int,array<string,string>> */
 	private function shortcuts( bool $is_admin ): array {
 		$tiles = array();
 		if ( $is_admin ) {
-			$tiles[] = array( 'title' => 'Offres', 'sub' => 'Cycle de vie et diffusion', 'url' => $this->url( 'postelio-jobs' ) );
+			$tiles[] = array( 'title' => 'Offres', 'sub' => 'Diffusion et cycle de vie', 'url' => $this->url( 'postelio-jobs' ) );
 			$tiles[] = array( 'title' => 'Candidatures', 'sub' => 'Suivi du parcours', 'url' => $this->url( 'postelio-applications' ) );
 			$tiles[] = array( 'title' => 'Entreprises', 'sub' => 'Vérification et fiches', 'url' => $this->url( 'postelio-companies' ) );
-			$tiles[] = array( 'title' => 'Utilisateurs', 'sub' => 'Candidats et recruteurs', 'url' => $this->url( 'postelio-users' ) );
-		}
-		if ( current_user_can( Menu::CAP_SITE ) ) {
-			$tiles[] = array( 'title' => 'Mon site', 'sub' => 'Pages, navigation, apparence', 'url' => $this->url( 'postelio-site-pages' ) );
 		}
 		$tiles[] = array( 'title' => 'Modération', 'sub' => 'Signalements et décisions', 'url' => $this->url( 'postelio-moderation' ) );
-		if ( $is_admin ) {
-			$tiles[] = array( 'title' => 'Réglages', 'sub' => 'État réel de la plateforme', 'url' => $this->url( 'postelio-settings' ) );
-		}
 		return $tiles;
 	}
 

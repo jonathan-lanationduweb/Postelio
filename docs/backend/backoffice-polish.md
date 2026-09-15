@@ -50,3 +50,27 @@ corail `#FF6B6B`, fond clair).
   · `empty` · `alert` · `details` · `kv` · `form` helpers.
 - Responsive : 1440 / 1280 / 1024 / 782 / 390 — tables défilent horizontalement, colonnes se
   replient, navigation latérale devient onglets.
+
+## 4. Lot A — Finition produit (15/09/2026)
+
+Objectif : faire disparaître l'impression « inachevé / généré / données techniques ».
+
+- **Règle** : aucune série de « — ». Une information absente → ligne, colonne ou bloc masqué
+  (`Ui::present()`, `Ui::kv_present()`, valeurs `0` / `"0"` / `false` considérées présentes).
+- **Jargon** retiré des écrans (« non exposé par l'API », « façade », « révision métier »,
+  « référence publique », « figée », « source_key », « Fournisseur : local_only ») ; les identifiants
+  utiles restent dans « Détails techniques » replié.
+- **Dashboard** : indicateurs disponibles uniquement, « À traiter », **Activité récente** (5 éléments
+  max, une requête paginée par façade : candidatures, offres publiées, entretiens confirmés,
+  entreprises à vérifier), raccourcis réduits à 4.
+- **Listes** : Entreprises sans colonnes Offres / Membres ; Offres sans colonne Candidatures, avec
+  date de publication / expiration.
+- **Fiches** : Entreprise (identité, informations légales renseignées ou état « à compléter »,
+  présentation publique, membres ; statut / vérification / actions à droite) ; Offre (aperçu de
+  l'annonce : titre, entreprise, localisation, contrat, résumé, description, missions / profil /
+  avantages, conditions ; statut, entreprise, dates utiles à droite) ; Utilisateur (identité forte,
+  bande de compteurs disponibles, profil sans champs vides) ; Candidature (profil, dossier candidat,
+  CV, historique ; offre / entreprise / statut à droite).
+- **États vides** : `Ui::empty_state(titre, texte, action, icône, page)` — variante plein écran pour
+  Modération, Facturation, Entretiens, Entreprises, Offres.
+- Assets : `POSTELIO_BACKOFFICE_VERSION` 0.4.1.

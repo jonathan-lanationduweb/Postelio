@@ -100,7 +100,7 @@ final class NotificationsScreen extends Screen {
 			'État'       => Ui::badge( $state[0], $state[1], true ),
 		);
 		if ( is_array( $test ) ) {
-			$pairs['Dernier test'] = Ui::text( Fmt::datetime( $test['at'] ?? '' ) . ' → ' . Fmt::or_dash( $test['recipient_masked'] ?? '' ) )
+			$pairs['Dernier test'] = Ui::text( Fmt::datetime( $test['at'] ?? '' ) . ( '' !== (string) ( $test['recipient_masked'] ?? '' ) ? ' → ' . (string) $test['recipient_masked'] : '' ) )
 				. ( ! empty( $test['ok'] ) ? Ui::badge( 'Remis au transport', 'success' ) : Ui::badge( 'Échec', 'error' ) );
 		}
 		$out .= Ui::kv( $pairs );
@@ -115,14 +115,14 @@ final class NotificationsScreen extends Screen {
 
 		// File et échecs.
 		$out .= Ui::card_open( 'File d\'envoi', 'Tentatives et échecs.', $failed > 0 ? Ui::button( 'Voir les échecs', $this->url( 'postelio-notifications', array( 'view' => 'failures' ) ), '', true ) : '' );
-		$out .= Ui::kv( array(
-			'En attente'          => Ui::text( (string) (int) ( $stats['pending'] ?? 0 ) ),
-			'En cours'            => Ui::text( (string) (int) ( $stats['processing'] ?? 0 ) ),
-			'Non envoyés'         => Ui::text( (int) ( $stats['skipped'] ?? 0 ) . ' (devenus inutiles)', false, true ),
-			'Échecs définitifs'   => Ui::badge( (string) $failed, $failed > 0 ? 'warning' : 'success' ),
-			'Prochaine tentative' => Ui::text( Fmt::datetime( $stats['next_retry_at'] ?? '' ) ),
-			'Dernier échec'       => Ui::text( Fmt::datetime( $stats['last_failed_at'] ?? '' ) ),
-			'Passage automatique' => Ui::text( $this->next_worker_run() ),
+		$out .= Ui::kv_present( array(
+			'En attente'          => (int) ( $stats['pending'] ?? 0 ),
+			'En cours'            => (int) ( $stats['processing'] ?? 0 ),
+			'Non envoyés'         => (int) ( $stats['skipped'] ?? 0 ) . ' (devenus inutiles)',
+			'Échecs définitifs'   => Ui::html( Ui::badge( (string) $failed, $failed > 0 ? 'warning' : 'success' ) ),
+			'Prochaine tentative' => '' !== (string) ( $stats['next_retry_at'] ?? '' ) ? Fmt::datetime( $stats['next_retry_at'] ) : '',
+			'Dernier échec'       => '' !== (string) ( $stats['last_failed_at'] ?? '' ) ? Fmt::datetime( $stats['last_failed_at'] ) : '',
+			'Passage automatique' => $this->next_worker_run(),
 		) );
 		$out .= Ui::help( 'Un envoi qui échoue est retenté avec un délai croissant (2, 4, 8… minutes, au maximum une heure), puis abandonné. Les échecs passés n\'altèrent pas l\'état courant du transport.' );
 		$out .= Ui::card_close();
@@ -161,7 +161,7 @@ final class NotificationsScreen extends Screen {
 			$r      = (array) $r;
 			$when   = '' !== (string) ( $r['failed_at'] ?? '' ) ? $r['failed_at'] : ( $r['created_at'] ?? '' );
 			$rows[] = array(
-				Ui::meta( self::TEMPLATES[ (string) $r['template'] ] ?? (string) $r['template'], Fmt::or_dash( $r['recipient_masked'] ?? '' ) ),
+				Ui::meta( self::TEMPLATES[ (string) $r['template'] ] ?? (string) $r['template'], (string) ( $r['recipient_masked'] ?? '' ) ),
 				Ui::text( (int) ( $r['attempts'] ?? 0 ) . ' / ' . (int) ( $r['max_attempts'] ?? 0 ), false, true ),
 				Ui::text( $this->humanize( (string) ( $r['last_error'] ?? '' ) ), false, true ),
 				Ui::text( Fmt::datetime( $when ), false, true ),
@@ -203,8 +203,8 @@ final class NotificationsScreen extends Screen {
 		}
 		$ts = wp_next_scheduled( 'postelio_job_notifications_worker' );
 		if ( ! $ts ) {
-			return 'Toutes les 15 minutes — non planifié actuellement';
+			return 'Toutes les 15 minutes · non planifié actuellement';
 		}
-		return 'Toutes les 15 minutes — prochain : ' . get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $ts ), 'd/m/Y H:i' );
+		return 'Toutes les 15 minutes · prochain passage : ' . get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $ts ), 'd/m/Y H:i' );
 	}
 }
