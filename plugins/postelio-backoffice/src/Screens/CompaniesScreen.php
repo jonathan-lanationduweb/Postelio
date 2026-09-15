@@ -137,12 +137,12 @@ final class CompaniesScreen extends ListScreen {
 		$logo         = (string) ( $editorial['logo_url'] ?? '' );
 		$members      = (array) ( $c['members'] ?? array() );
 
-		$out  = $this->header( (string) $c['nom'], trim( Fmt::or_dash( $legal['forme_juridique'] ?? '' ) . ' · ' . Fmt::or_dash( $legal['ville_siege'] ?? '' ), ' ·' ), $this->back_link() . $this->actions( $uuid, $status, false ), 'Postelio · Entreprise' );
+		$out  = $this->header( (string) $c['nom'], implode( ' · ', array_filter( array( (string) ( $legal['forme_juridique'] ?? '' ), (string) ( $legal['ville_siege'] ?? '' ) ) ) ), $this->back_link() . $this->actions( $uuid, $status, false ), 'Postelio · Entreprise' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
 		// Fiche : identité + vérification.
 		$out .= Ui::card_open( 'Fiche entreprise' );
-		$out .= Ui::identity( (string) $c['nom'], Fmt::or_dash( $legal['ville_siege'] ?? '' ), $logo, true, Ui::badge( $meta[0], $meta[1], true ) . Ui::badge( count( $members ) . ( count( $members ) > 1 ? ' membres' : ' membre' ), 'neutral' ) );
+		$out .= Ui::identity( (string) $c['nom'], (string) ( $legal['ville_siege'] ?? '' ), $logo, true, Ui::badge( $meta[0], $meta[1], true ) . Ui::badge( count( $members ) . ( count( $members ) > 1 ? ' membres' : ' membre' ), 'neutral' ) );
 		$pairs = array( 'Méthode de vérification' => Ui::text( Fmt::or_dash( $verification['provider'] ?? '' ) ) );
 		if ( current_user_can( 'pst_verify_company' ) && ! empty( $verification['motif'] ) ) {
 			$pairs['Motif interne'] = Ui::text( (string) $verification['motif'] );
@@ -179,7 +179,7 @@ final class CompaniesScreen extends ListScreen {
 
 		$out .= Ui::card_open( 'Aperçu public', 'Ce que voient les candidats.', '', 'bo-card--aside' );
 		$out .= '<div class="bo-cardpreview">';
-		$out .= Ui::entity( (string) $c['nom'], Fmt::or_dash( $legal['ville_siege'] ?? '' ), $logo, true );
+		$out .= Ui::entity( (string) $c['nom'], (string) ( $legal['ville_siege'] ?? '' ), $logo, true );
 		if ( 'verified' === $status ) {
 			$out .= '<p class="bo-cardpreview__badges">' . Ui::badge( 'Entreprise vérifiée', 'success', true ) . '</p>';
 		}

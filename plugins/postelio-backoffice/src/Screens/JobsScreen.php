@@ -129,7 +129,7 @@ final class JobsScreen extends ListScreen {
 		$company = (string) ( $j['company']['nom'] ?? '' );
 		$logo    = (string) ( $j['company']['logo_url'] ?? '' );
 
-		$out  = $this->header( (string) $j['titre'], trim( Fmt::or_dash( $company ) . ' · ' . Fmt::or_dash( $j['ville'] ?? '' ), ' ·' ), $this->back_link(), 'Postelio · Offre' );
+		$out  = $this->header( (string) $j['titre'], implode( ' · ', array_filter( array( $company, (string) ( $j['ville'] ?? '' ) ) ) ), $this->back_link(), 'Postelio · Offre' );
 		$out .= Ui::cols_open() . Ui::col_open();
 
 		// Colonne principale : contenu de l'offre.
