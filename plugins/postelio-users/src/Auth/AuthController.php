@@ -86,6 +86,7 @@ final class AuthController extends Controller {
 	}
 
 	public function do_register( \WP_REST_Request $request ): \WP_REST_Response {
+		AuthRateLimiter::guard_register(); // M2 : anti-inscription massive (par IP).
 		$user_id = $this->accounts->register( (array) $request->get_json_params() );
 		$user    = get_userdata( $user_id );
 
@@ -111,7 +112,16 @@ final class AuthController extends Controller {
 			throw ApiError::validation( array( 'email' => 'Requis', 'password' => 'Requis' ) );
 		}
 
-		$user = $this->accounts->authenticate( $login, $pass );
+		// M2 : anti force-brute / credential stuffing. On vérifie les compteurs (IP et
+		// IP+e-mail) AVANT, et on ne consomme le budget que sur ÉCHEC (un login légitime
+		// n'est jamais bloqué par des attaques ciblant seulement son e-mail).
+		AuthRateLimiter::guard_login( $login );
+		try {
+			$user = $this->accounts->authenticate( $login, $pass );
+		} catch ( ApiError $e ) {
+			AuthRateLimiter::note_login_failure( $login );
+			throw $e;
+		}
 		$this->establish_web_session( $user );
 		$token = $this->tokens->issue( (int) $user->ID );
 
@@ -158,6 +168,11 @@ final class AuthController extends Controller {
 		$params = (array) $request->get_json_params();
 		$email  = sanitize_email( (string) ( $params['email'] ?? '' ) );
 
+		// M2 : anti-bombardement e-mail (IP+e-mail et garde-fou IP). Appliqué avant tout
+		// travail ; la réponse reste identique (429) pour un e-mail connu ou inconnu, donc
+		// l'anti-énumération n'est pas affaiblie.
+		AuthRateLimiter::guard_lost_password( $email );
+
 		// Anti-énumération : toujours 200, quel que soit le résultat.
 		if ( is_email( $email ) ) {
 			$user = get_user_by( 'email', $email );
@@ -180,6 +195,7 @@ final class AuthController extends Controller {
 	}
 
 	public function do_reset_password( \WP_REST_Request $request ): \WP_REST_Response {
+		AuthRateLimiter::guard_reset(); // M2 : tentatives répétées (par IP, jamais par jeton).
 		$params   = (array) $request->get_json_params();
 		$login    = (string) ( $params['login'] ?? '' );
 		$key      = (string) ( $params['key'] ?? '' );
@@ -197,7 +213,8 @@ final class AuthController extends Controller {
 			throw new ApiError( 'invalid_transition', 'Lien de réinitialisation invalide ou expiré.' );
 		}
 		reset_password( $user, $password );
-		( new TokenService() )->revoke_all( (int) $user->ID );
+		// M3 : l'invalidation des accès (jetons Bearer + sessions WordPress) est centralisée
+		// dans PasswordChangeListener via le hook `after_password_reset`, déclenché ici.
 
 		return $this->ok( array( 'reset' => true ) );
 	}
@@ -220,6 +237,7 @@ final class AuthController extends Controller {
 		if ( $this->accounts->is_email_verified( $uid ) ) {
 			return $this->ok( array( 'email_verified' => true ) );
 		}
+		AuthRateLimiter::guard_resend( $uid ); // M2 : cooldown court + plafond horaire.
 		$this->accounts->issue_email_verification( $uid );
 		return $this->ok( array( 'sent' => true ) );
 	}

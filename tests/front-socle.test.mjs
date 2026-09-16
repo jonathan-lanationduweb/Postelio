@@ -34,7 +34,7 @@ const sandbox = {
   location: { origin: "http://test.local", search: "" },
   fetch: (...a) => fetchImpl(...a),
   setTimeout, clearTimeout,
-  AbortController, URLSearchParams,
+  AbortController, URLSearchParams, URL,
   CustomEvent: class { constructor(t, o) { this.type = t; this.detail = o && o.detail; } },
   console, Promise, JSON, Object, Array, Date, Error, String, Number, encodeURIComponent
 };
@@ -99,6 +99,48 @@ fetchImpl = async () => makeResponse(401, { error: { code: "unauthenticated", me
 await Auth.session.load(); // GET /me → 401
 check("401 sur /me → jeton effacé", Auth.tokens.get() === null);
 check("401 sur /me → session anonyme", Auth.session.isAuthenticated() === false);
+
+/* ---- 6. M6 — garde anti open-redirect (?next) ---- */
+console.log("== M6 — redirection interne sûre ==");
+const ORIGIN = "http://test.local";
+const BASE = "http://test.local/connexion.html";
+const sip = (raw) => Auth.guards.safeInternalPath(raw, ORIGIN, BASE);
+/* Destinations internes ACCEPTÉES (chemin normalisé non vide). */
+[
+  ["/dashboard", "/dashboard"],
+  ["/offres?id=123", "/offres?id=123"],
+  ["/candidat/profil#section", "/candidat/profil#section"],
+  ["offres.html", "/offres.html"],
+  ["offres.html?q=dev", "/offres.html?q=dev"],
+  ["/%2Fweird", "/%2Fweird"] /* %2F reste un chemin same-origin, pas un hôte */
+].forEach(([raw, want]) => check("ACCEPT " + raw + " → " + want, sip(raw) === want));
+/* Destinations externes / dangereuses REJETÉES (retour ""). */
+[
+  "https://evil.com",
+  "http://evil.com",
+  "//evil.com",
+  "/\\evil.com",
+  "/\\\\evil.com",
+  "\\evil.com",
+  "javascript:alert(1)",
+  "JavaScript:alert(1)",
+  "data:text/html,<script>1</script>",
+  "https:/evil.com",
+  "/\tevil",
+  "/foo\r\nSet-Cookie:x",
+  "//evil.com/path",
+  "\\/evil.com"
+].forEach((raw) => check("REJECT " + JSON.stringify(raw), sip(raw) === ""));
+/* Encodages : URLSearchParams décode une fois avant l'appel → simuler le décodage. */
+check("REJECT next=%5Cevil.com (backslash décodé)", sip(decodeURIComponent("%5Cevil.com")) === "");
+check("REJECT next=%2F%2Fevil.com (// décodé)", sip(decodeURIComponent("%2F%2Fevil.com")) === "");
+check("REJECT next avec CRLF encodé (%0D%0A)", sip(decodeURIComponent("/x%0D%0Ay")) === "");
+/* internalNext() lit location.search et applique la garde. */
+sandbox.location.search = "?next=" + encodeURIComponent("/\\evil.com");
+check("internalNext rejette ?next=/\\evil.com → null", Auth.guards.internalNext() === null);
+sandbox.location.search = "?next=" + encodeURIComponent("/dashboard");
+check("internalNext accepte ?next=/dashboard", Auth.guards.internalNext() === "/dashboard");
+sandbox.location.search = "";
 
 /* ---- Bilan ---- */
 console.log("");
