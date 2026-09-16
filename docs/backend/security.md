@@ -16,7 +16,17 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
   **`pst_email_verified`** (accordée dynamiquement si e-mail vérifié + compte actif) :
   les plugins métier composent `Guard::require_all('<cap_métier>', 'pst_email_verified')`.
   L'envoi réel des e-mails relèvera de `postelio-notifications`. Les durées/rappels
-  restent `À VALIDER`.
+  restent `À VALIDER`. **Lot sécurité (M1)** : la vérification est désormais **activée par
+  défaut** — un nouveau compte démarre **non vérifié** (`postelio/require_email_verification`
+  = true) et n'obtient les capacités sensibles qu'après confirmation réelle.
+- **Statut de compte (étanchéité — H1)** : la suspension (et la suppression RGPD) est une
+  règle **centrale**, portée par `AccountStatusGuard` sur deux couches : (1) filtre
+  `authenticate` (après vérification du mot de passe) → **aucune nouvelle session native**
+  (`wp-login.php`, XML-RPC, mots de passe d'application, `/auth`) pour un compte non actif ;
+  (2) filtre `user_has_cap` → toute session/cookie/Bearer **déjà établi** perd l'ensemble de
+  ses capabilities `pst_*`. Le rôle WordPress n'est **jamais** retiré (rôle = type de compte,
+  statut = état) ; la réactivation restaure l'accès sans réparation. La suspension révoque en
+  plus immédiatement jetons et sessions (défense en profondeur).
 - **Reset password** via le flux WordPress natif (`get/check_password_reset_key`,
   `reset_password`). Jamais de jeton de réinitialisation ni de session dans une URL
   autre que le lien à usage unique envoyé par e-mail.
@@ -27,6 +37,14 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 - Toute route vérifie **capability** (voir [roles-permissions.md](roles-permissions.md))
   **+** propriété de la ressource (ex. recruteur ⇒ membre de la company ; candidat ⇒
   propriétaire). Double contrôle (capability + ownership).
+- **Visibilité du profil candidat (H2)** — `GET /candidates/{uuid}` : la capability
+  `pst_view_company_applications` ne suffit **jamais**. `CandidateVisibilityPolicy` exige que
+  l'appelant soit membre d'une entreprise **non suspendue**, puis applique `profile_visibility`
+  (`recruteurs` → entreprises actives non bloquées ; `candidatees` → uniquement une entreprise
+  ayant **reçu une candidature** du candidat, tous états confondus ; `masque` → jamais) et fait
+  primer `blocked_companies` (une entreprise bloquée par le candidat perd l'accès même avec une
+  candidature). Tout refus renvoie **404** (non-divulgation). Un recruteur sans entreprise
+  n'accède à aucun profil.
 - Les transitions de statut passent par le moteur de workflow ([workflows.md](workflows.md)),
   jamais un `update` libre depuis le front.
 - **Publication d'offre** (décision V1 — D1) : une entreprise **non vérifiée** peut créer

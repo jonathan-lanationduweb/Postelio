@@ -60,7 +60,10 @@ final class ProfileController extends Controller {
 		// jamais par l'ID numérique interne.
 		register_rest_route( $ns, '/candidates/(?P<uuid>[0-9a-fA-F-]{36})', array(
 			'methods'             => 'GET',
-			'permission_callback' => Guard::require_cap( 'pst_view_company_applications' ),
+			// Cadre : recruteur à l'e-mail vérifié (M1). L'autorisation FINE (entreprise
+			// réelle non suspendue, visibilité, blocage) est décidée dans le callback
+			// par CandidateVisibilityPolicy — la capability seule ne suffit jamais (H2).
+			'permission_callback' => Guard::require_all( 'pst_view_company_applications', 'pst_email_verified' ),
 			'callback'            => $this->guarded( array( $this, 'get_candidate_recruiter_view' ) ),
 			'args'                => array(
 				'uuid' => array(
@@ -118,8 +121,11 @@ final class ProfileController extends Controller {
 		if ( null === $profile ) {
 			throw ApiError::not_found();
 		}
-		if ( 'masque' === ( $profile['profile_visibility'] ?? '' ) ) {
-			throw ApiError::not_found(); // profil masqué : indistinct d'un inexistant
+		// H2 : la visibilité (`masque`/`candidatees`/`recruteurs`), l'appartenance réelle
+		// du recruteur à une entreprise active et les blocages (`blocked_companies`) sont
+		// décidés de façon centralisée. Tout refus est indistinct d'un profil inexistant.
+		if ( ! CandidateVisibilityPolicy::recruiter_can_view( $profile, get_current_user_id() ) ) {
+			throw ApiError::not_found();
 		}
 		return $this->ok( CandidateProfileRepository::recruiter_view( $profile ) );
 	}

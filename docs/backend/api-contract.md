@@ -66,7 +66,7 @@ Erreur :
 - `GET /me/export` — export RGPD. `DELETE /me` — suppression/anonymisation.
 
 ### Candidats — `postelio-users`
-- `GET /candidates/{id}` — **vue recruteur** (respecte visibilité ; jamais email/tel/notes si non autorisé). R: recruiter/admin.
+- `GET /candidates/{id}` — **vue recruteur** (respecte visibilité ; jamais email/tel/notes si non autorisé). R: recruiter (`pst_view_company_applications` **+ `pst_email_verified`**) / admin. **Autorisation fine (H2)** : l'appelant doit être membre d'une entreprise non suspendue ; `masque`→404 ; `candidatees`→404 sauf si l'entreprise a reçu une candidature du candidat (tous états) ; `blocked_companies` prioritaire→404 ; tout refus = **404** (non-divulgation).
 - `GET/PUT /candidates/me/profile` — profil complet (self). R: candidate.
 
 ### Entreprises — `postelio-companies`

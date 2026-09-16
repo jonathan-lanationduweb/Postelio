@@ -57,6 +57,15 @@ final class ApplicationDirectory {
 	}
 
 	/**
+	 * L'entreprise a-t-elle reçu au moins une candidature de ce candidat (tous états) ?
+	 * Contrat consommé par postelio-users pour la visibilité `candidatees` (H2) — évite
+	 * toute requête SQL de candidatures hors de ce plugin.
+	 */
+	public static function company_has_application_from_candidate( int $company_id, int $candidate_user_id ): bool {
+		return ( new ApplicationRepository() )->company_has_application_from_candidate( $company_id, $candidate_user_id );
+	}
+
+	/**
 	 * La candidature est-elle dans un état permettant de planifier un entretien ?
 	 * Vrai pour les états « actifs » du pipeline (new/review/shortlisted/interview) ;
 	 * faux pour les états terminaux (selected/rejected/withdrawn). L'autorité de l'état

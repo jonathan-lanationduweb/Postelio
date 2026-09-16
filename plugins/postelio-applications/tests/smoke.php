@@ -21,6 +21,7 @@ use Postelio\Users\Users\AccountService;
 
 if ( ! defined( 'ABSPATH' ) ) { echo "WP-CLI requis.\n"; exit( 1 ); }
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
+add_filter( 'postelio/require_email_verification', '__return_false' ); // smoke : comptes de test réputés déjà vérifiés (onboarding simulé).
 require_once ABSPATH . 'wp-admin/includes/user.php';
 
 $fail = array(); $pass = 0;
@@ -185,6 +186,38 @@ $t( 'candidature sur offre filled => 409/invalid', in_array( $req( 'POST', '/pos
 echo "== UUID inconnu / invalide ==\n";
 $t( 'candidature inexistante (candidat) => 404', 404 === $req( 'GET', '/postelio/v1/me/applications/' . wp_generate_uuid4(), null, $cand )['status'] );
 $t( 'candidature inexistante (recruteur) => 404', 404 === $req( 'GET', '/postelio/v1/companies/me/applications/' . wp_generate_uuid4(), null, $recA )['status'] );
+
+echo "== H2 — visibilité du profil candidat (GET /candidates/{uuid}) ==\n";
+// recA ∈ Company A a REÇU la candidature de $cand ; recB ∈ Company B, non. Les deux
+// entreprises sont vérifiées (actives) et les recruteurs ont l'e-mail vérifié (compat).
+$cprofRepo = new CandidateProfileRepository();
+$candUuid  = (string) ( $cprofRepo->get_by_user( $cand )['public_uuid'] ?? '' );
+$viewAs    = static function ( int $rec ) use ( $req, $candUuid ): int { return $req( 'GET', '/postelio/v1/candidates/' . $candUuid, null, $rec )['status']; };
+
+// Défaut `recruteurs` : visible à toute entreprise active.
+$cprofRepo->update( $cand, array( 'profile_visibility' => 'recruteurs', 'blocked_companies' => array() ) );
+$t( 'recruteurs : Company A (avec candidature) => 200', 200 === $viewAs( $recA ) );
+$t( 'recruteurs : Company B (sans candidature) => 200', 200 === $viewAs( $recB ) );
+$viewA = $req( 'GET', '/postelio/v1/candidates/' . $candUuid, null, $recA );
+$t( 'vue candidat expose public_uuid, jamais user_id/id', ( $viewA['data']['data']['public_uuid'] ?? '' ) === $candUuid && ! isset( $viewA['data']['data']['user_id'], $viewA['data']['data']['id'] ) );
+
+// `candidatees` : réservé aux entreprises auxquelles le candidat a postulé.
+$cprofRepo->update( $cand, array( 'profile_visibility' => 'candidatees' ) );
+$t( 'candidatees : Company A (a une candidature) => 200', 200 === $viewAs( $recA ) );
+$t( 'candidatees : Company B (aucune candidature) => 404', 404 === $viewAs( $recB ) );
+
+// `masque` : indistinct d'un profil inexistant pour tous.
+$cprofRepo->update( $cand, array( 'profile_visibility' => 'masque' ) );
+$t( 'masque : Company A => 404', 404 === $viewAs( $recA ) );
+$t( 'masque : Company B => 404', 404 === $viewAs( $recB ) );
+
+// blocked_companies PRIORITAIRE : bloque même une entreprise qui a la candidature.
+$cprofRepo->update( $cand, array( 'profile_visibility' => 'recruteurs', 'blocked_companies' => array( $cuuidA ) ) );
+$t( 'blocage : Company A bloquée => 404 (malgré candidature + recruteurs)', 404 === $viewAs( $recA ) );
+$t( 'blocage : Company B non bloquée => 200', 200 === $viewAs( $recB ) );
+// Déblocage → accès de nouveau normal.
+$cprofRepo->update( $cand, array( 'blocked_companies' => array() ) );
+$t( 'déblocage : Company A de nouveau => 200', 200 === $viewAs( $recA ) );
 
 echo "== Événements / audit ==\n";
 foreach ( array( 'application.created', 'application.status_changed', 'application.reviewed', 'application.shortlisted', 'application.interview', 'application.selected', 'application.rejected', 'application.withdrawn' ) as $ev ) {

@@ -66,6 +66,25 @@ final class ApplicationRepository {
 		);
 	}
 
+	/**
+	 * L'entreprise a-t-elle reçu au moins une candidature de ce candidat ? Tous états
+	 * confondus (y compris `rejected`/`withdrawn`) : l'entreprise a déjà reçu le CV et
+	 * les coordonnées, l'historique est conservé (décision métier de visibilité H2).
+	 */
+	public function company_has_application_from_candidate( int $company_id, int $candidate_user_id ): bool {
+		global $wpdb;
+		if ( $company_id <= 0 || $candidate_user_id <= 0 ) {
+			return false;
+		}
+		return (bool) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT id FROM ' . self::table() . ' WHERE company_id = %d AND candidate_user_id = %d LIMIT 1',
+				$company_id,
+				$candidate_user_id
+			)
+		);
+	}
+
 	/** @return array<string, mixed>|null */
 	public function get( int $id ): ?array {
 		global $wpdb;
