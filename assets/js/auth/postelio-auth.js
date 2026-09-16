@@ -243,18 +243,41 @@
    * Utiliser après session.ready pour une décision fiable ; l'instantané
    * cache permet une décision optimiste immédiate.
    * ============================================================= */
+  /**
+   * Valide une destination de redirection interne (M6 — anti open-redirect).
+   * Validation POSITIVE : la destination doit se résoudre sur la MÊME origine. Rejette tout
+   * schéma (javascript:/data:/http:/…), le protocole-relatif (//host), le backslash
+   * (`/\host` que le navigateur replie en `//host`), les caractères de contrôle/CRLF, et
+   * toute origine étrangère après résolution réelle (y compris encodages équivalents, que
+   * `URLSearchParams` a déjà décodés une fois avant l'appel). Retourne le chemin interne
+   * normalisé, ou "" si la destination n'est pas sûre. Fonction PURE (testable).
+   */
+  function safeInternalPath(raw, origin, base) {
+    if (!raw || typeof raw !== "string") { return ""; }
+    if (/[ -\\]/.test(raw)) { return ""; }            // contrôle / CRLF / backslash
+    if (/^[a-z][a-z0-9+.\-]*:/i.test(raw)) { return ""; }              // schéma explicite (javascript:, data:, http:)
+    if (raw.charAt(0) === "/" && raw.charAt(1) === "/") { return ""; } // protocole-relatif //host
+    var url;
+    try { url = new URL(raw, base || origin); } catch (e) { return ""; }
+    if (url.origin !== origin) { return ""; }                          // origine réellement interprétée
+    var path = url.pathname + url.search + url.hash;
+    if (/[ -\\]/.test(path)) { return ""; }           // ceinture + bretelles
+    return path;
+  }
+
   function internalNext() {
     try {
-      var params = new URLSearchParams(location.search);
-      var next = params.get("next");
-      if (next && /^\/[^/]/.test(next) && !/^\/\//.test(next)) { return next; } // interne uniquement
-      if (next && /^[a-z0-9\-]+\.html([?#].*)?$/i.test(next)) { return next; }
+      var raw = new URLSearchParams(location.search).get("next");
+      var origin = location.origin;
+      var base = location.href || (origin + "/");
+      return safeInternalPath(raw, origin, base) || null;
     } catch (e) { /* */ }
     return null;
   }
 
   var guards = {
     internalNext: internalNext,
+    safeInternalPath: safeInternalPath,
     requireAuth: function () {
       var u = session.snapshot();
       if (!u) {

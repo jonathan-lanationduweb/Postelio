@@ -59,8 +59,10 @@ Erreur :
 > Notation : `M` méthode · `R` rôle requis · `→` réponse · `err` erreurs typiques.
 
 ### Auth & moi — `postelio-users`
-- `POST /auth` — login (email+mot de passe / provider). → `{ token, user }`. err: `unauthenticated`, `validation_error`.
+- `POST /auth` — login (email+mot de passe / provider). → `{ token, user }`. err: `unauthenticated`, `validation_error`, `rate_limited`.
 - `POST /auth/refresh` · `POST /auth/logout`.
+- **Rate limiting (M2)** : `/auth`, `/auth/register`, `/auth/lost-password`, `/auth/verify-email/resend`, `/auth/reset-password` renvoient **429 `rate_limited`** avec en-tête **`Retry-After`** (secondes) au dépassement. Clé par IP (`REMOTE_ADDR`) et par IP+identifiant, jamais par e-mail seul. `/auth/refresh` n'est pas limité. Limites exactes : [security.md](security.md#1-authentification).
+- **Reset/changement de mot de passe (M3)** : révoque tous les jetons Bearer et détruit les sessions ; l'ancien mot de passe et les anciens jetons sont refusés ensuite.
 - `GET /me` — profil de l'utilisateur courant (identité + rôle). R: authentifié.
 - `GET/PUT /me/settings` — préférences (notifications, langue, visibilité coordonnées).
 - `GET /me/export` — export RGPD. `DELETE /me` — suppression/anonymisation.

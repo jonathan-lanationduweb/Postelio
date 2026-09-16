@@ -53,7 +53,13 @@ abstract class Controller {
 	 * Réponse d'erreur `{ error: { code, message, details } }`.
 	 */
 	protected function fail( ApiError $error ): \WP_REST_Response {
-		return new \WP_REST_Response( $error->to_envelope(), $error->http_status() );
+		$response = new \WP_REST_Response( $error->to_envelope(), $error->http_status() );
+		$details  = $error->details();
+		if ( isset( $details['retry_after'] ) ) {
+			// Ex. rate_limited (429) : indiquer au client le délai avant nouvelle tentative.
+			$response->header( 'Retry-After', (string) max( 0, (int) $details['retry_after'] ) );
+		}
+		return $response;
 	}
 
 	/**

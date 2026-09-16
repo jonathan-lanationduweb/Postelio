@@ -15,6 +15,7 @@ use Postelio\Core\Permissions\Capabilities;
 use Postelio\Core\Plugin as Core;
 use Postelio\Users\Api\UserDirectory;
 use Postelio\Users\Api\UserModeration;
+use Postelio\Users\Auth\AuthRateLimiter;
 use Postelio\Users\Auth\TokenAuthenticator;
 use Postelio\Users\Auth\TokenService;
 use Postelio\Users\Users\AccountService;
@@ -238,6 +239,130 @@ $t( 'jetons révoqués après suppression', 0 === ( new TokenService() )->valida
 // Connexion impossible après suppression (statut deleted + mot de passe réinitialisé).
 $r = $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_tmp, 'password' => 'motdepasse123' ) );
 $t( 'connexion impossible après suppression (401/403)', in_array( $r['status'], array( 401, 403 ), true ) );
+
+echo "== M2 — rate limiting authentification (horloge contrôlable) ==\n";
+// Horloge injectable (aucun sleep) + IP contrôlable et unique à ce run (buckets frais).
+$rt                        = wp_generate_password( 8, false );
+$GLOBALS['pst_smoke_now']  = 1700000000;
+$GLOBALS['pst_smoke_ip']   = 'ip0.' . $rt;
+AuthRateLimiter::$clock    = static function () { return (int) $GLOBALS['pst_smoke_now']; };
+add_filter( 'postelio/auth/client_ip', static function () { return (string) $GLOBALS['pst_smoke_ip']; } );
+$set_ip = static function ( string $ip ) use ( $rt ) { $GLOBALS['pst_smoke_ip'] = $ip . '.' . $rt; };
+// Dispatch qui expose aussi les en-têtes (pour Retry-After).
+$reqh = static function ( string $route, ?array $body, int $user = 0 ) {
+	wp_set_current_user( $user );
+	$r = new WP_REST_Request( 'POST', $route );
+	if ( null !== $body ) { $r->set_header( 'Content-Type', 'application/json' ); $r->set_body( wp_json_encode( $body ) ); }
+	$resp = rest_do_request( $r );
+	return array( 'status' => $resp->get_status(), 'data' => $resp->get_data(), 'headers' => $resp->get_headers() );
+};
+
+// --- Login : brute-force bloqué après 10 échecs (IP+e-mail), sans DoS de la victime ---
+$em_bf = 'smoke.bf.' . $rt . '@postelio.test';
+$r     = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => $em_bf, 'password' => 'motdepasse123', 'role' => 'candidate' ) );
+$bf_id = (int) ( $r['data']['data']['user']['id'] ?? 0 );
+$created[] = $bf_id;
+$set_ip( '203.0.113.10' );
+$all401 = true;
+for ( $i = 0; $i < 10; $i++ ) {
+	if ( 401 !== $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_bf, 'password' => 'FAUX' ) )['status'] ) { $all401 = false; }
+}
+$t( 'login : 10 échecs => 401 (pas de blocage prématuré)', $all401 );
+$blk = $reqh( '/postelio/v1/auth', array( 'email' => $em_bf, 'password' => 'FAUX' ) );
+$t( 'login : 11e tentative => 429 rate_limited', 429 === $blk['status'] && 'rate_limited' === ( $blk['data']['error']['code'] ?? '' ) );
+$t( 'login : 429 porte un en-tête Retry-After > 0', (int) ( $blk['headers']['Retry-After'] ?? 0 ) > 0 );
+$t( 'login : bon mot de passe DEPUIS LA MÊME IP reste bloqué (429)', 429 === $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_bf, 'password' => 'motdepasse123' ) )['status'] );
+$set_ip( '198.51.100.20' );
+$t( 'login : victime NON DoS — bon mot de passe depuis une AUTRE IP => 200', 200 === $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_bf, 'password' => 'motdepasse123' ) )['status'] );
+$set_ip( '203.0.113.10' );
+$GLOBALS['pst_smoke_now'] += 901; // au-delà de la fenêtre (900s) => bucket réinitialisé
+$t( 'login : après expiration de la fenêtre, IP bloquée de nouveau autorisée => 200', 200 === $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_bf, 'password' => 'motdepasse123' ) )['status'] );
+
+// --- Register : plafond par IP (limite abaissée pour le test) ---
+add_filter( 'postelio/auth/rate_limit/register_ip', static function () { return array( 2, 60 ); } );
+$set_ip( '203.0.113.50' );
+$reg1 = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => 'smoke.rl1.' . $rt . '@postelio.test', 'password' => 'motdepasse123', 'role' => 'candidate' ) );
+$reg2 = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => 'smoke.rl2.' . $rt . '@postelio.test', 'password' => 'motdepasse123', 'role' => 'candidate' ) );
+$reg3 = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => 'smoke.rl3.' . $rt . '@postelio.test', 'password' => 'motdepasse123', 'role' => 'candidate' ) );
+$created[] = (int) ( $reg1['data']['data']['user']['id'] ?? 0 );
+$created[] = (int) ( $reg2['data']['data']['user']['id'] ?? 0 );
+$t( 'register : 2 inscriptions => 201, la 3e (même IP) => 429', 201 === $reg1['status'] && 201 === $reg2['status'] && 429 === $reg3['status'] );
+
+// --- Lost-password : anti-bombardement + réponse IDENTIQUE connu/inconnu (anti-énumération) ---
+add_filter( 'postelio/auth/rate_limit/lost_id', static function () { return array( 1, 60 ); } );
+$set_ip( '203.0.113.60' );
+$lp_known1 = $req( 'POST', '/postelio/v1/auth/lost-password', array( 'email' => $em_bf ) );
+$lp_known2 = $req( 'POST', '/postelio/v1/auth/lost-password', array( 'email' => $em_bf ) );
+$set_ip( '203.0.113.61' );
+$lp_unk1 = $req( 'POST', '/postelio/v1/auth/lost-password', array( 'email' => 'inconnu.' . $rt . '@nope.test' ) );
+$lp_unk2 = $req( 'POST', '/postelio/v1/auth/lost-password', array( 'email' => 'inconnu.' . $rt . '@nope.test' ) );
+$t( 'lost-password : 1re => 200, 2e (même IP+email) => 429', 200 === $lp_known1['status'] && 429 === $lp_known2['status'] );
+$t( 'lost-password : réponse IDENTIQUE pour e-mail connu et inconnu (pas d\'énumération)', $lp_known1['status'] === $lp_unk1['status'] && $lp_known2['status'] === $lp_unk2['status'] && ( $lp_known1['data'] == $lp_unk1['data'] ) );
+
+// --- Resend verification : cooldown court (utilisateur non vérifié) ---
+$set_ip( '203.0.113.70' );
+$rs1 = $req( 'POST', '/postelio/v1/auth/verify-email/resend', null, $bf_id );
+$rs2 = $req( 'POST', '/postelio/v1/auth/verify-email/resend', null, $bf_id );
+$t( 'resend : 1er => 200 sent, 2e immédiat => 429 (cooldown)', 200 === $rs1['status'] && 429 === $rs2['status'] );
+$GLOBALS['pst_smoke_now'] += 61;
+$t( 'resend : après cooldown (60s) => 200 de nouveau', 200 === $req( 'POST', '/postelio/v1/auth/verify-email/resend', null, $bf_id )['status'] );
+
+// --- Reset-password : tentatives répétées par IP (jamais par jeton) ---
+add_filter( 'postelio/auth/rate_limit/reset_ip', static function () { return array( 2, 60 ); } );
+$set_ip( '203.0.113.80' );
+$rp = array( 'login' => 'x', 'key' => 'mauvais', 'password' => 'motdepasse123' );
+$rp1 = $req( 'POST', '/postelio/v1/auth/reset-password', $rp );
+$rp2 = $req( 'POST', '/postelio/v1/auth/reset-password', $rp );
+$rp3 = $req( 'POST', '/postelio/v1/auth/reset-password', $rp );
+$t( 'reset : 2 tentatives (clé invalide) traitées, la 3e => 429 (par IP)', 429 === $rp3['status'] && 429 !== $rp1['status'] && 429 !== $rp2['status'] );
+
+// --- Refresh : NON limité (jeton = secret, non énumérable) ---
+$set_ip( '203.0.113.90' );
+$tok_ref  = ( new TokenService() )->issue( $bf_id );
+$cur_tok  = $tok_ref['token'];
+$refresh_ok = true;
+for ( $i = 0; $i < 6; $i++ ) {
+	$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $cur_tok;
+	$rr = $req( 'POST', '/postelio/v1/auth/refresh', null, 0 );
+	if ( 200 !== $rr['status'] ) { $refresh_ok = false; break; }
+	$cur_tok = (string) ( $rr['data']['data']['token'] ?? '' );
+}
+unset( $_SERVER['HTTP_AUTHORIZATION'] );
+$t( 'refresh : 6 rafraîchissements chaînés => 200 (aucun rate limit)', $refresh_ok );
+
+echo "== M3 — invalidation des accès après reset de mot de passe ==\n";
+$em_m3 = 'smoke.m3.' . $rt . '@postelio.test';
+$r     = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => $em_m3, 'password' => 'motdepasse123', 'role' => 'candidate' ) );
+$m3_id = (int) ( $r['data']['data']['user']['id'] ?? 0 );
+$created[] = $m3_id;
+$svc3  = new TokenService();
+$tokA  = $svc3->issue( $m3_id );  // appareil A
+$tokB  = $svc3->issue( $m3_id );  // appareil B
+$mgr3  = \WP_Session_Tokens::get_instance( $m3_id );
+$mgr3->create( time() + 3600 );   // session WordPress (cookie C)
+$sess_count = static function ( int $id ): int { $s = get_user_meta( $id, 'session_tokens', true ); return is_array( $s ) ? count( $s ) : 0; };
+$t( 'M3 pré : Bearer A valide', $m3_id === $svc3->validate( $tokA['token'] ) );
+$t( 'M3 pré : Bearer B valide', $m3_id === $svc3->validate( $tokB['token'] ) );
+$t( 'M3 pré : au moins une session WP', $sess_count( $m3_id ) >= 1 );
+// Reset via le flux Postelio natif (reset_password → after_password_reset).
+$set_ip( '203.0.113.100' );
+$key3 = get_password_reset_key( get_userdata( $m3_id ) );
+$rez  = $req( 'POST', '/postelio/v1/auth/reset-password', array( 'login' => get_userdata( $m3_id )->user_login, 'key' => $key3, 'password' => 'nouveaumotdepasse1' ) );
+$t( 'M3 : reset => 200', 200 === $rez['status'] );
+clean_user_cache( $m3_id );
+$t( 'M3 : Bearer A révoqué', 0 === $svc3->validate( $tokA['token'] ) );
+$t( 'M3 : Bearer B révoqué', 0 === $svc3->validate( $tokB['token'] ) );
+$t( 'M3 : sessions WordPress détruites', 0 === $sess_count( $m3_id ) );
+$set_ip( '203.0.113.101' );
+$t( 'M3 : ancien mot de passe refusé => 401', 401 === $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_m3, 'password' => 'motdepasse123' ) )['status'] );
+$t( 'M3 : nouveau mot de passe accepté => 200', 200 === $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_m3, 'password' => 'nouveaumotdepasse1' ) )['status'] );
+
+// Restaure l'horloge réelle et les limites par défaut.
+AuthRateLimiter::$clock = null;
+remove_all_filters( 'postelio/auth/client_ip' );
+remove_all_filters( 'postelio/auth/rate_limit/register_ip' );
+remove_all_filters( 'postelio/auth/rate_limit/lost_id' );
+remove_all_filters( 'postelio/auth/rate_limit/reset_ip' );
 
 echo "== Nettoyage ==\n";
 foreach ( array_unique( array_filter( $created ) ) as $uid ) {

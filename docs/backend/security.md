@@ -30,6 +30,33 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 - **Reset password** via le flux WordPress natif (`get/check_password_reset_key`,
   `reset_password`). Jamais de jeton de réinitialisation ni de session dans une URL
   autre que le lien à usage unique envoyé par e-mail.
+- **Invalidation après changement de mot de passe (M3)** : centralisée dans
+  `PasswordChangeListener` (hooks `after_password_reset` et `profile_update`), donc valable
+  quel que soit le chemin (API Postelio, `wp-login.php?action=rp`, profil wp-admin). Un
+  reset **révoque tous les jetons Bearer ET détruit les sessions WordPress** ; un changement
+  de mot de passe depuis le profil révoque les jetons Bearer (les cookies WP sont déjà
+  invalidés par le changement de hash, WordPress préservant volontairement la session
+  courante). L'ancien mot de passe et les anciens jetons sont alors refusés.
+- **Rate limiting authentification (M2)** : `AuthRateLimiter` (compteurs par transient,
+  clé HMAC — ni IP ni e-mail en clair, fenêtres par bucket, horloge injectable pour les
+  tests). IP = `REMOTE_ADDR` **uniquement** (jamais `X-Forwarded-For`/`X-Real-IP` ; filtre
+  `postelio/auth/client_ip` pour un futur proxy de confiance). **Jamais de verrou par e-mail
+  seul** (anti-DoS) : les compteurs par identifiant sont scopés par IP. Dépassement →
+  **429** `rate_limited` + en-tête **`Retry-After`**. Limites par défaut (filtrables via
+  `postelio/auth/rate_limit/{clé}`) :
+
+  | Endpoint | Clé | Fenêtre | Max | Note |
+  |---|---|---|---|---|
+  | `POST /auth` | login_ip / login_id | 15 min | 30 / 10 | compte les **échecs** ; un login réussi ne consomme rien |
+  | `POST /auth/register` | register_ip | 1 h | 10 | anti-inscription massive |
+  | `POST /auth/lost-password` | lost_id / lost_ip | 15 min / 1 h | 5 / 20 | anti-bombardement ; réponse identique connu/inconnu |
+  | `POST /auth/verify-email/resend` | resend_cooldown / resend_user | 60 s / 1 h | 1 / 5 | cooldown + plafond |
+  | `POST /auth/reset-password` | reset_ip | 15 min | 10 | par **IP**, jamais par jeton (un tiers ne peut pas neutraliser le reset d'autrui) |
+  | `POST /auth/refresh` | — | — | — | non limité (jeton = secret 32 o, `hash_equals`, non énumérable) |
+
+  > **Portée** : le stockage par transient est par instance si le cache objet est local ;
+  > en multi-instances, prévoir un cache objet partagé (Redis/Memcached) pour un comptage
+  > global. Aucune IP ni e-mail n'est conservé en clair (clé HMAC, expiration obligatoire).
 - **2FA** (décision V1 — D8) : **prévue pour les comptes administrateurs** (`postelio_admin`) ;
   **non obligatoire** pour candidat/recruteur en V1. Méthode (TOTP) `À VALIDER`.
 
@@ -54,6 +81,15 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 
 ## 3. Menaces web
 - **CSRF** : nonce sur mutations (web) ; Bearer + `Origin`/`Referer` check (app).
+- **Open redirect (M6)** : le paramètre `?next` de connexion/inscription passe par une
+  garde unique côté front (`PostelioAuth.guards.safeInternalPath`, utilisée par
+  `internalNext()`), en **validation positive** : la destination doit se résoudre sur la
+  **même origine** (`new URL(next, origin).origin === location.origin`). Sont rejetés les
+  schémas (`javascript:`/`data:`/`http:`), le protocole-relatif (`//host`), le backslash
+  (`/\host`, replié en `//host` par le navigateur), les caractères de contrôle/CRLF et les
+  encodages équivalents. Toute valeur non sûre retombe sur l'espace du rôle réel. Côté
+  serveur, les redirections back-office utilisent `wp_safe_redirect` vers `admin_url`, et
+  les URL de paiement (`success_url`/`cancel_url`) sont construites serveur (`home_url`).
 - **XSS** : sanitization à l'entrée (`sanitize_*`), échappement à la sortie
   (`esc_html`/`esc_attr`/`wp_kses` pour le rich text) ; jamais d'HTML brut injecté.
 - **SQL injection** : `$wpdb->prepare` systématique / requêtes paramétrées ; pas de
