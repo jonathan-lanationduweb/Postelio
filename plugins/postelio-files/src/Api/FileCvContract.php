@@ -39,6 +39,32 @@ final class FileCvContract {
 	}
 
 	/**
+	 * Le CV est-il un CV GUEST utilisable (propriétaire 0, type cv, statut `ready`) et pas
+	 * encore rattaché à un compte ? Le parcours guest stocke le CV avec le propriétaire 0.
+	 */
+	public static function usable_guest_cv( string $cv_uuid ): bool {
+		return self::usable_for_application( $cv_uuid, 0 );
+	}
+
+	/**
+	 * Ré-attribue un CV guest (propriétaire 0) à un compte candidat, à la matérialisation de
+	 * la candidature. Refuse si le fichier n'est pas un CV guest utilisable. Retourne true si
+	 * ré-attribué.
+	 */
+	public static function reassign_to_user( string $cv_uuid, int $user_id ): bool {
+		if ( $user_id <= 0 || ! self::usable_guest_cv( $cv_uuid ) ) {
+			return false;
+		}
+		$repo = new FileRepository();
+		$f    = $repo->get_by_uuid( $cv_uuid );
+		if ( null === $f ) {
+			return false;
+		}
+		$repo->reassign_owner( (int) $f['id'], $user_id );
+		return true;
+	}
+
+	/**
 	 * Métadonnées minimales pour un snapshot (nom d'origine), ou null.
 	 *
 	 * @return array{uuid:string, name:?string}|null

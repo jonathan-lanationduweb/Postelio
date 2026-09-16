@@ -72,7 +72,7 @@ foreach ( array( 'postelio_applications', 'postelio_application_history', 'poste
 	$tbl = $wpdb->prefix . $s;
 	$t( "table {$tbl}", $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $tbl ) ) === $tbl );
 }
-$t( 'schema applications = 1', (string) get_option( 'postelio_applications_schema' ) === '1' );
+$t( 'schema applications = 2', (string) get_option( 'postelio_applications_schema' ) === '2' );
 
 echo "== Comptes / entreprises / offres ==\n";
 $cand = $mk( 'candidate' ); $cand2 = $mk( 'candidate' ); $cand3 = $mk( 'candidate' );

@@ -117,6 +117,21 @@ Erreur :
   R: candidate **+ `pst_email_verified`**. err: `conflict` (déjà postulé), `validation_error`
   (présélection), `invalid_transition` (offre non candidateable). *(Le snapshot CV immuable
   réel viendra de `postelio-files` ; `cv_reference` opaque en attendant.)*
+- **Candidature GUEST (sans compte) — double opt-in :**
+  - `POST /guest/files/cv` — **public**, rate-limité. Upload CV (multipart `file`, PDF). Stocké
+    privé (propriétaire 0). → `{ cv_reference, name }` (aucune fuite storage_key/chemin).
+  - `POST /jobs/{job_uuid}/guest-applications` — **public**, rate-limité. `{first_name, last_name,
+    email, cv_reference?, screening_answers{id:val}, message?, consent}`. Présélection obligatoire
+    exigée ; consentement requis. → **202** `{submitted:true}` (générique, anti-énumération). Un
+    e-mail de confirmation (jeton signé, expirant) est envoyé via postelio-notifications. La
+    candidature n'est **pas** visible du recruteur tant qu'elle n'est pas confirmée. err:
+    `validation_error`, `rate_limited`, `not_found`, `invalid_transition`.
+  - `POST /applications/guest/confirm` — **public**, rate-limité. `{uuid, token}`. Confirme
+    l'e-mail puis **matérialise** la candidature en candidature réelle rattachée à un compte
+    candidat existant (`account:existing`) ou **invité** créé après consentement
+    (`account:invited` + `claim_url` pour définir le mot de passe). CV ré-attribué au compte.
+    Aucun accès par UUID seul (jeton requis). err: `invalid_transition` (lien invalide/expiré/
+    consommé), `rate_limited`, `conflict`.
 - `GET /me/applications` (filtre statut) · `GET /me/applications/{uuid}` (détail + timeline). R: candidate (propriétaire).
 - `POST /me/applications/{uuid}/withdraw` — R: candidate. err: `invalid_transition`.
 - `GET /companies/me/applications` (filtres `job`={uuid}, `status`) · `GET /companies/me/applications/{uuid}`. R: recruiter (membre).

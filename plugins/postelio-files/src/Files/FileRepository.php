@@ -102,6 +102,18 @@ final class FileRepository {
 		$wpdb->update( self::table(), $data, array( 'id' => $id ), $formats, array( '%d' ) );
 	}
 
+	/** Ré-attribue un fichier à un nouveau propriétaire (matérialisation d'un CV guest). */
+	public function reassign_owner( int $id, int $new_owner ): void {
+		global $wpdb;
+		$wpdb->update(
+			self::table(),
+			array( 'owner_user_id' => $new_owner, 'updated_at' => current_time( 'mysql', true ) ),
+			array( 'id' => $id ),
+			array( '%d', '%s' ),
+			array( '%d' )
+		);
+	}
+
 	public function hard_delete( int $id ): void {
 		global $wpdb;
 		$wpdb->delete( self::table(), array( 'id' => $id ), array( '%d' ) );

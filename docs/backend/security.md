@@ -77,6 +77,17 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
 - **2FA** (décision V1 — D8) : **prévue pour les comptes administrateurs** (`postelio_admin`) ;
   **non obligatoire** pour candidat/recruteur en V1. Méthode (TOTP) `À VALIDER`.
 
+- **Candidature GUEST (sans compte)** : parcours en **double opt-in**. La soumission publique
+  n'active rien : la candidature est stockée `pending_email`, invisible du recruteur, avec un
+  **jeton signé haché** (secret CSPRNG, jamais en clair, expiration limitée). L'accès exige
+  `uuid` **+** jeton (jamais l'UUID seul). La confirmation d'e-mail matérialise la candidature
+  en rattachant un compte candidat **existant** (jamais de doublon) ou **invité** (créé après
+  consentement, e-mail vérifié par le double opt-in, mot de passe à définir via le flux de
+  réinitialisation). CV via **postelio-files** (propriétaire 0, ré-attribué au compte, aucune
+  fuite de chemin/clé). Présélection obligatoire réellement exigée. **Rate limiting** (M2) et
+  consentement horodaté (RGPD) ; purge quotidienne des candidatures non confirmées expirées.
+  Respecte M1 (vérification e-mail), H1 (compte actif), M2/M3/M5.
+
 ## 2. Autorisation
 - Toute route vérifie **capability** (voir [roles-permissions.md](roles-permissions.md))
   **+** propriété de la ressource (ex. recruteur ⇒ membre de la company ; candidat ⇒
