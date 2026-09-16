@@ -102,7 +102,7 @@ $pub = $r['data']['data'] ?? array(); $flat = wp_json_encode( $pub );
 $t( 'GET public offre publiée => 200', 200 === $r['status'] );
 $t( 'public: company résumé présent', ! empty( $pub['company']['uuid'] ) );
 $t( 'public: PAS email_reception', false === strpos( $flat, 'email_reception' ) );
-$t( 'public: PAS questions_preselection', false === strpos( $flat, 'questions_preselection' ) );
+$t( 'public: questions_preselection présentes (formulaire) SANS barème `critere`', isset( $pub['questions_preselection'] ) && false === strpos( $flat, 'critere' ) );
 $t( 'public: PAS d\'id interne', ! isset( $pub['id'] ) && ! isset( $pub['author_id'] ) );
 $t( 'public: PAS de status brut', ! isset( $pub['status'] ) );
 

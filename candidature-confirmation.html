@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirmation de candidature | Postelio</title>
+  <meta name="description" content="Confirmez votre candidature Postelio.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#17324d">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="assets/css/reset.css">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenu">Aller au contenu principal</a>
+
+  <header class="site-header site-header--light">
+  <div class="header-inner">
+    <a class="logo" href="index.html" aria-label="Postelio, retour à l'accueil">
+      <span class="logo-mark" aria-hidden="true">P</span>
+      <span class="logo-text">Postelio</span>
+    </a>
+    <nav class="main-nav" id="main-nav" aria-label="Navigation principale">
+      <ul class="nav-links">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="offres.html">Offres d'emploi</a></li>
+        <li><a href="entreprises.html">Entreprises</a></li>
+        <li><a href="savoir-faire.html">Savoir-faire &amp; Avis</a></li>
+        <li><a href="blog.html">Conseils</a></li>
+        <li><a href="a-propos.html">Qui sommes-nous</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions" id="account-nav" data-account-nav>
+      <a href="connexion.html" class="btn btn-ghost account-guest">Se connecter</a>
+      <a href="inscription.html" class="btn btn-primary account-guest">Créer un compte</a>
+    </div>
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Ouvrir le menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+  <main id="contenu">
+    <div class="container" style="max-width:640px;padding-block:var(--sp-8, 3rem);">
+      <div class="card" id="gconf" aria-live="polite">
+        <p>Chargement…</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Postelio</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api/postelio-api.js"></script>
+  <script src="assets/js/auth/postelio-auth.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/auth/postelio-boot.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/guest-confirmation.js"></script>
+</body>
+</html>

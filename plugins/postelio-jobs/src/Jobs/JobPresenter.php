@@ -57,12 +57,45 @@ final class JobPresenter {
 			'competences'      => $d['competences'] ?? array(),
 			'avantages'        => $d['avantages'] ?? array(),
 			'processus'        => $d['processus'] ?? array(),
+			// Questions de présélection PUBLIQUES (pour le formulaire de candidature) : id,
+			// libellé, type, obligatoire, options — JAMAIS le `critere` (barème interne).
+			'questions_preselection' => self::public_questions( $d['questions_preselection'] ?? array() ),
 			'company'          => CompanyDirectory::public_summary( (int) $j['company']['id'] ),
 			// Provenance (Lot 10) : offre native Postelio, candidature Postelio.
 			'source'           => array( 'type' => 'native', 'key' => 'postelio', 'label' => 'Postelio', 'external' => false ),
 			'application'      => array( 'mode' => 'postelio' ),
 		);
-		// Exclus du public : id/author interne, email_reception, questions_preselection, statut brut.
+		// Exclus du public : id/author interne, email_reception, `critere` des questions, statut brut.
+	}
+
+	/**
+	 * Vue PUBLIQUE des questions de présélection : de quoi afficher le formulaire, sans le
+	 * barème interne (`critere`).
+	 *
+	 * @param mixed $qs
+	 * @return array<int, array<string, mixed>>
+	 */
+	private static function public_questions( $qs ): array {
+		if ( ! is_array( $qs ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $qs as $q ) {
+			if ( ! is_array( $q ) || '' === (string) ( $q['id'] ?? '' ) ) {
+				continue;
+			}
+			$pq = array(
+				'id'       => (string) $q['id'],
+				'label'    => (string) ( $q['label'] ?? '' ),
+				'type'     => (string) ( $q['type'] ?? 'texte' ),
+				'required' => ! empty( $q['required'] ),
+			);
+			if ( isset( $q['options'] ) && is_array( $q['options'] ) ) {
+				$pq['options'] = array_values( array_map( 'strval', $q['options'] ) );
+			}
+			$out[] = $pq; // jamais `critere`
+		}
+		return $out;
 	}
 
 	/**
