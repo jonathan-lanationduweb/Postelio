@@ -49,6 +49,10 @@ final class AuthRateLimiter {
 	private const DEFAULTS = array(
 		'login_ip'        => array( 30, 900 ),
 		'login_id'        => array( 10, 900 ),
+		// Login WordPress natif (wp-login.php / XML-RPC) — mêmes seuils que REST, clés
+		// distinctes pour un comptage indépendant (jamais de double-comptage avec /auth).
+		'login_native_ip' => array( 30, 900 ),
+		'login_native_id' => array( 10, 900 ),
 		'register_ip'     => array( 10, 3600 ),
 		'lost_id'         => array( 5, 900 ),
 		'lost_ip'         => array( 20, 3600 ),

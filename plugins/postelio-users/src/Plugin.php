@@ -11,6 +11,7 @@ namespace Postelio\Users;
 
 use Postelio\Core\Plugin as Core;
 use Postelio\Users\Auth\AuthController;
+use Postelio\Users\Auth\NativeAuthRateLimiter;
 use Postelio\Users\Auth\PasswordChangeListener;
 use Postelio\Users\Auth\TokenAuthenticator;
 use Postelio\Users\Auth\TokenService;
@@ -108,6 +109,9 @@ final class Plugin {
 
 		// 3b-ter. Invalidation des accès après changement/réinitialisation de mot de passe (M3).
 		( new PasswordChangeListener() )->register();
+
+		// 3b-quater. Rate limiting du login WordPress natif — wp-login.php / XML-RPC (M2).
+		( new NativeAuthRateLimiter() )->register();
 
 		// 3c. Rattachement entreprise : écoute `company.member_added` (postelio-companies).
 		( new \Postelio\Users\Integration\CompanyLink( $this->recruiters, $core->events() ) )->register();

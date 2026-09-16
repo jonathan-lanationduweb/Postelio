@@ -60,6 +60,13 @@ $req = static function ( string $method, string $route, ?array $body = null, int
 global $wpdb;
 $created = array();
 
+// Isolation du rate limiting auth (M2/M2bis) : IP unique à CHAQUE exécution → buckets
+// frais, de sorte que les tests non-M2 (H1, register, login, delete) ne subissent jamais
+// de limite d'un run précédent. Les blocs M2/M2bis surchargent l'IP via $set_ip.
+$rt                      = wp_generate_password( 8, false );
+$GLOBALS['pst_smoke_ip'] = 'baseline.' . $rt;
+add_filter( 'postelio/auth/client_ip', static function () { return (string) $GLOBALS['pst_smoke_ip']; } );
+
 echo "== Activation & schéma ==\n";
 $t( 'plugin postelio-users actif', is_plugin_active( 'postelio-users/postelio-users.php' ) );
 foreach ( array( 'postelio_candidate_profiles', 'postelio_recruiter_profiles' ) as $s ) {
@@ -241,12 +248,9 @@ $r = $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_tmp, 'password' =>
 $t( 'connexion impossible après suppression (401/403)', in_array( $r['status'], array( 401, 403 ), true ) );
 
 echo "== M2 — rate limiting authentification (horloge contrôlable) ==\n";
-// Horloge injectable (aucun sleep) + IP contrôlable et unique à ce run (buckets frais).
-$rt                        = wp_generate_password( 8, false );
-$GLOBALS['pst_smoke_now']  = 1700000000;
-$GLOBALS['pst_smoke_ip']   = 'ip0.' . $rt;
-AuthRateLimiter::$clock    = static function () { return (int) $GLOBALS['pst_smoke_now']; };
-add_filter( 'postelio/auth/client_ip', static function () { return (string) $GLOBALS['pst_smoke_ip']; } );
+// Horloge injectable (aucun sleep) ; l'IP contrôlable est déjà filtrée (haut du fichier).
+$GLOBALS['pst_smoke_now'] = 1700000000;
+AuthRateLimiter::$clock   = static function () { return (int) $GLOBALS['pst_smoke_now']; };
 $set_ip = static function ( string $ip ) use ( $rt ) { $GLOBALS['pst_smoke_ip'] = $ip . '.' . $rt; };
 // Dispatch qui expose aussi les en-têtes (pour Retry-After).
 $reqh = static function ( string $route, ?array $body, int $user = 0 ) {
@@ -329,6 +333,42 @@ for ( $i = 0; $i < 6; $i++ ) {
 }
 unset( $_SERVER['HTTP_AUTHORIZATION'] );
 $t( 'refresh : 6 rafraîchissements chaînés => 200 (aucun rate limit)', $refresh_ok );
+
+echo "== M2bis — rate limiting du login WordPress natif (wp-login / XML-RPC) ==\n";
+// Comptes de test (IP dédiée pour rester sous le plafond d'inscription abaissé).
+$set_ip( '203.0.113.199' );
+$rn1     = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => 'smoke.nat.' . $rt . '@postelio.test', 'password' => 'motdepasse123', 'role' => 'candidate' ) );
+$rn2     = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => 'smoke.nat2.' . $rt . '@postelio.test', 'password' => 'motdepasse123', 'role' => 'candidate' ) );
+$nat_id  = (int) ( $rn1['data']['data']['user']['id'] ?? 0 );
+$nat2_id = (int) ( $rn2['data']['data']['user']['id'] ?? 0 );
+$created[] = $nat_id;
+$created[] = $nat2_id;
+$nat_login  = get_userdata( $nat_id )->user_login;
+$nat2_login = get_userdata( $nat2_id )->user_login;
+// wp_authenticate() est la porte commune à wp-login.php, XML-RPC et aux mots de passe
+// d'application : on la teste directement (aucun sleep, horloge injectable).
+$set_ip( '203.0.113.200' );
+$only_incorrect = true;
+for ( $i = 0; $i < 10; $i++ ) {
+	$e = wp_authenticate( $nat_login, 'FAUX' );
+	if ( ! is_wp_error( $e ) || 'too_many_attempts' === $e->get_error_code() ) { $only_incorrect = false; }
+}
+$t( 'login natif : 10 échecs => erreurs d\'identifiants (pas encore bloqué)', $only_incorrect );
+$nblk = wp_authenticate( $nat_login, 'FAUX' );
+$t( 'login natif : 11e => WP_Error too_many_attempts', is_wp_error( $nblk ) && 'too_many_attempts' === $nblk->get_error_code() );
+$nblk_ok = wp_authenticate( $nat_login, 'motdepasse123' );
+$t( 'login natif : bon mot de passe AUSSI bloqué tant que limité', is_wp_error( $nblk_ok ) && 'too_many_attempts' === $nblk_ok->get_error_code() );
+$t( 'login natif : AUTRE compte, même IP, NON bloqué (admins non impactés)', wp_authenticate( $nat2_login, 'motdepasse123' ) instanceof WP_User );
+$GLOBALS['pst_smoke_now'] += 901; // fenêtre écoulée
+$t( 'login natif : après expiration de la fenêtre => bon mdp accepté (WP_User)', wp_authenticate( $nat_login, 'motdepasse123' ) instanceof WP_User );
+// Ordre mot de passe → rate limit → AccountStatusGuard : un suspendu sur-limité ne
+// révèle pas son statut (too_many_attempts, pas « compte indisponible »).
+UserModeration::suspend( UserDirectory::public_uuid( $nat2_id ), $admin_id );
+clean_user_cache( $nat2_id );
+$set_ip( '203.0.113.201' );
+for ( $i = 0; $i < 11; $i++ ) { wp_authenticate( $nat2_login, 'FAUX' ); }
+$nse = wp_authenticate( $nat2_login, 'motdepasse123' );
+$t( 'login natif : suspendu + sur-limité => too_many_attempts (statut non divulgué)', is_wp_error( $nse ) && 'too_many_attempts' === $nse->get_error_code() );
 
 echo "== M3 — invalidation des accès après reset de mot de passe ==\n";
 $em_m3 = 'smoke.m3.' . $rt . '@postelio.test';
