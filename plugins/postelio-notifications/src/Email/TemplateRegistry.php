@@ -32,6 +32,13 @@ final class TemplateRegistry {
 				'body'      => "Bonjour {recipient_name},\n\nVotre candidature au poste « {job_title} » chez {company_name} a bien été enregistrée. Vous pouvez suivre son avancement depuis votre espace Postelio.",
 				'cta'       => 'Voir ma candidature',
 			),
+			// Parcours guest : confirmation d'e-mail (double opt-in) avant activation.
+			'guest_application_pending' => array(
+				'subject'   => 'Confirmez votre candidature à « {job_title} »',
+				'preheader' => 'Une dernière étape pour envoyer votre candidature',
+				'body'      => "Bonjour {recipient_name},\n\nVous avez postulé au poste « {job_title} » chez {company_name}. Pour envoyer réellement votre candidature au recruteur, confirmez votre adresse e-mail en cliquant sur le lien ci-dessous. Ce lien expire dans {expires_hours} heures.\n\nSi vous n'êtes pas à l'origine de cette candidature, ignorez cet e-mail.",
+				'cta'       => 'Confirmer ma candidature',
+			),
 			'new_application' => array(
 				'subject'   => 'Nouvelle candidature — {job_title}',
 				'preheader' => 'Un candidat a postulé',

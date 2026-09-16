@@ -475,6 +475,16 @@ BillingEvent (webhook Stripe) n─1 BillingOrder
 ```
 Détail des relations métier : [workflows.md](workflows.md) §7.
 
+## Candidature guest (`postelio-applications`, schéma v2)
+
+- **GuestApplication** (`postelio_guest_applications`) : `id, public_uuid, job_id, job_uuid,
+  company_id, company_uuid, email, first_name, last_name, cv_reference (CV guest, propriétaire 0),
+  screening_answers (JSON {id:val}), message, consent_at, token_hash (SHA-256 du secret, jamais en
+  clair), token_expires (epoch), status (pending_email|linked|expired), linked_application_uuid,
+  created_at, updated_at`. `KEY(job_id, email)`, `KEY token_hash`, `KEY status`. Accès protégé par
+  (uuid + jeton). À la confirmation : matérialisée en `postelio_applications` (compte existant ou
+  invité) puis `linked`. Purge quotidienne des `pending_email` expirées (RGPD).
+
 ## Lot 14 — Favoris & Alertes (`postelio-alerts`)
 
 - **JobFavorite** (`postelio_job_favorites`) : `id, public_uuid, candidate_user_id, job_source

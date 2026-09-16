@@ -59,6 +59,11 @@ final class AuthRateLimiter {
 		'resend_cooldown' => array( 1, 60 ),
 		'resend_user'     => array( 5, 3600 ),
 		'reset_ip'        => array( 10, 900 ),
+		// Parcours candidature guest (public) — anti-spam.
+		'guest_apply_ip'  => array( 20, 3600 ),
+		'guest_apply_id'  => array( 5, 3600 ),
+		'guest_confirm_ip' => array( 30, 900 ),
+		'guest_cv_ip'     => array( 15, 3600 ),
 	);
 
 	private static function now(): int {
@@ -178,5 +183,24 @@ final class AuthRateLimiter {
 
 	public static function guard_reset(): void {
 		self::enforce( array( array( 'reset_ip', self::client_ip() ) ) );
+	}
+
+	/** Soumission d'une candidature guest : anti-spam par IP et par IP+e-mail. */
+	public static function guard_guest_apply( string $email ): void {
+		$ip = self::client_ip();
+		self::enforce( array(
+			array( 'guest_apply_ip', $ip ),
+			array( 'guest_apply_id', $ip . '|' . $email ),
+		) );
+	}
+
+	/** Confirmation d'une candidature guest (tentatives de jeton) : par IP. */
+	public static function guard_guest_confirm(): void {
+		self::enforce( array( array( 'guest_confirm_ip', self::client_ip() ) ) );
+	}
+
+	/** Upload CV guest (public) : par IP. */
+	public static function guard_guest_cv(): void {
+		self::enforce( array( array( 'guest_cv_ip', self::client_ip() ) ) );
 	}
 }

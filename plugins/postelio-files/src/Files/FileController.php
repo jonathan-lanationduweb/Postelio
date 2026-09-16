@@ -55,6 +55,12 @@ final class FileController extends Controller {
 			'methods' => 'POST', 'permission_callback' => Guard::require_cap( 'pst_manage_own_cv' ), 'callback' => $this->guarded( array( $this, 'set_primary' ) ),
 		) );
 
+		// Upload CV GUEST (parcours candidature sans compte). Public + rate-limité. Le CV est
+		// stocké avec le propriétaire 0 puis ré-attribué au compte à la matérialisation.
+		register_rest_route( $ns, '/guest/files/cv', array(
+			'methods' => 'POST', 'permission_callback' => Guard::public_access(), 'callback' => $this->guarded( array( $this, 'upload_guest' ) ),
+		) );
+
 		// Streaming (aperçu / téléchargement) — authentifié, autorisation fine interne.
 		register_rest_route( $ns, '/files/' . self::UUID . '/view', array(
 			'methods' => 'GET', 'permission_callback' => Guard::require_cap( 'read' ), 'callback' => array( $this, 'stream_view' ),
@@ -74,6 +80,22 @@ final class FileController extends Controller {
 		}
 		$f = $this->cv->upload( get_current_user_id(), $file );
 		return $this->ok( FilePresenter::view( $f ), array(), 201 );
+	}
+
+	public function upload_guest( \WP_REST_Request $r ): \WP_REST_Response {
+		// M2 : rate limiting anti-abus (upload public non authentifié).
+		if ( class_exists( '\\Postelio\\Users\\Auth\\AuthRateLimiter' ) ) {
+			\Postelio\Users\Auth\AuthRateLimiter::guard_guest_cv();
+		}
+		$files = $r->get_file_params();
+		$file  = $files['file'] ?? $files['cv'] ?? null;
+		if ( ! is_array( $file ) ) {
+			throw ApiError::validation( array( 'file' => 'Champ fichier « file » requis (multipart).' ) );
+		}
+		// Propriétaire 0 = CV guest (ré-attribué au compte à la matérialisation de la candidature).
+		$f = $this->cv->upload( 0, $file );
+		// Réponse MINIMALE : aucune fuite de storage_key, chemin ni nom interne.
+		return $this->ok( array( 'cv_reference' => (string) $f['public_uuid'], 'name' => $f['original_name'] ?? null ), array(), 201 );
 	}
 
 	public function list(): \WP_REST_Response {

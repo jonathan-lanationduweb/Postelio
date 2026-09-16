@@ -217,12 +217,6 @@
       renderValueCards("company-values", company.valeurs);
       renderPerkCards("company-benefits", company.avantages);
 
-      var contactHref = "contact.html?entreprise=" + encodeURIComponent(company.nom);
-      ["company-contact-btn", "cta-contact-btn"].forEach(function (bid) {
-        var b = document.getElementById(bid);
-        if (b) { b.href = contactHref; }
-      });
-
       /* Suivre l'entreprise (candidats connectés uniquement, §23). */
       var followBtn = document.getElementById("company-follow-btn");
       if (followBtn && window.SS && SS.auth && SS.auth.isCandidate && SS.auth.isCandidate()) {

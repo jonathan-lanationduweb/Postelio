@@ -11,8 +11,12 @@ namespace Postelio\Applications;
 use Postelio\Applications\Applications\ApplicationController;
 use Postelio\Applications\Applications\ApplicationRepository;
 use Postelio\Applications\Applications\ApplicationService;
+use Postelio\Applications\Applications\GuestApplicationController;
+use Postelio\Applications\Applications\GuestApplicationRepository;
+use Postelio\Applications\Applications\GuestApplicationService;
 use Postelio\Applications\Applications\HistoryRepository;
 use Postelio\Applications\Applications\NoteRepository;
+use Postelio\Applications\Migrations\AddGuestApplicationsTable;
 use Postelio\Applications\Migrations\CreateApplicationsTables;
 use Postelio\Core\Plugin as Core;
 
@@ -43,9 +47,9 @@ final class Plugin {
 		return self::$instance;
 	}
 
-	/** @return CreateApplicationsTables[] */
+	/** @return \Postelio\Core\Migrations\Migration[] */
 	private static function migrations(): array {
-		return array( new CreateApplicationsTables() );
+		return array( new CreateApplicationsTables(), new AddGuestApplicationsTable() );
 	}
 
 	public function boot(): void {
@@ -73,6 +77,14 @@ final class Plugin {
 		// Pont files ↔ applications (par filtres, sans dépendance de classe).
 		( new \Postelio\Applications\Integration\FilesAccess() )->register();
 
+		// Purge RGPD des candidatures guest non confirmées et expirées (cron quotidien).
+		add_action( 'postelio/applications/guest_purge', static function () {
+			( new GuestApplicationRepository() )->purge_expired( time() );
+		} );
+		if ( function_exists( 'wp_next_scheduled' ) && ! wp_next_scheduled( 'postelio/applications/guest_purge' ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'postelio/applications/guest_purge' );
+		}
+
 		add_action( 'init', array( $this, 'maybe_upgrade' ), 2 );
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'init', static function () {
@@ -82,6 +94,7 @@ final class Plugin {
 
 	public function register_routes(): void {
 		( new ApplicationController( $this->service, $this->apps ) )->register_routes();
+		( new GuestApplicationController( new GuestApplicationService( new GuestApplicationRepository(), $this->service ) ) )->register_routes();
 	}
 
 	public function maybe_upgrade(): void {

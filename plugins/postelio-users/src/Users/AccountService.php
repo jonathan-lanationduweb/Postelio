@@ -29,6 +29,7 @@ final class AccountService {
 	public const META_EMAIL_VERIFY   = 'postelio_email_verify';
 	public const META_CREATED_AT     = 'postelio_created_at';
 	public const META_LAST_LOGIN     = 'postelio_last_login_at';
+	public const META_INVITED        = 'postelio_invited'; // compte candidat invité (guest), mot de passe non encore défini par l'utilisateur
 
 	public const STATUS_ACTIVE    = 'active';
 	public const STATUS_SUSPENDED = 'suspended';
@@ -140,6 +141,57 @@ final class AccountService {
 			)
 		);
 
+		return $user_id;
+	}
+
+	/**
+	 * Crée (ou réutilise) un compte candidat INVITÉ pour un parcours guest confirmé.
+	 *
+	 * Appelé UNIQUEMENT après confirmation d'e-mail (double opt-in = consentement) : l'e-mail
+	 * est marqué vérifié, le compte est actif mais « invité » (mot de passe aléatoire non
+	 * communiqué → à réclamer via le flux de réinitialisation). Jamais de doublon : un compte
+	 * candidat existant pour cet e-mail est réutilisé ; un e-mail rattaché à un compte NON
+	 * candidat lève un conflit.
+	 *
+	 * @throws ApiError
+	 */
+	public function create_invited_candidate( string $email, string $first, string $last ): int {
+		$email    = sanitize_email( $email );
+		$existing = get_user_by( 'email', $email );
+		if ( $existing ) {
+			if ( ! in_array( Capabilities::ROLE_CANDIDATE, (array) $existing->roles, true ) ) {
+				throw new ApiError( 'conflict', 'Cette adresse e-mail est déjà associée à un compte non candidat.' );
+			}
+			return (int) $existing->ID;
+		}
+
+		$login   = $this->unique_login( $email );
+		$display = trim( $first . ' ' . $last );
+		$user_id = wp_insert_user( array(
+			'user_login'   => $login,
+			'user_email'   => $email,
+			'user_pass'    => wp_generate_password( 32, true, true ),
+			'display_name' => sanitize_text_field( '' !== $display ? $display : $login ),
+			'first_name'   => sanitize_text_field( $first ),
+			'last_name'    => sanitize_text_field( $last ),
+			'role'         => Capabilities::ROLE_CANDIDATE,
+		) );
+		if ( is_wp_error( $user_id ) ) {
+			throw new ApiError( 'server_error', 'Création du compte invité impossible.', array( 'wp' => $user_id->get_error_message() ) );
+		}
+		$user_id = (int) $user_id;
+
+		update_user_meta( $user_id, self::META_STATUS, self::STATUS_ACTIVE );
+		update_user_meta( $user_id, self::META_CREATED_AT, current_time( 'mysql', true ) );
+		// Confirmé par le double opt-in de la candidature guest → e-mail vérifié.
+		update_user_meta( $user_id, self::META_EMAIL_VERIFIED, current_time( 'mysql', true ) );
+		update_user_meta( $user_id, self::META_INVITED, 1 );
+		$this->candidates->create_for( $user_id );
+
+		Core::instance()->events()->emit(
+			'user.created',
+			array( 'id' => $user_id, 'resource_type' => 'user', 'resource_id' => (string) $user_id, 'audit' => array( 'role' => 'candidate', 'invited' => true ) )
+		);
 		return $user_id;
 	}
 
