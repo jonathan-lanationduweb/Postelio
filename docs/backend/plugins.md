@@ -247,6 +247,12 @@ les événements **propriétaires** (`job.suspended`/`company.suspended`/`user.s
 jamais de doublon.
 **Écoute :** appelé en **filtre** par messaging/jobs (passerelle préventive) ; le réactif
 entre par `POST /moderation/reports` (pas d'abonnement à un flux d'événements pour décider).
+**Cible dérivée du cas (M5)** : la décision n'accepte **aucun `target` client** ; la ressource
+traitée est **dérivée du cas** côté serveur (`CaseTargetResolver`) — contenu → ressource propre
+du cas (types compatibles seulement, sinon **409**) ; `suspend_user` → utilisateur responsable
+dérivé (offre → créateur via `JobDirectory::created_by`, entreprise → propriétaire via
+`CompanyDirectory::owner_of`). L'audit journalise la ressource réellement traitée.
+
 **Actions déléguées** (contrats propriétaires, jamais d'`UPDATE` direct) :
 `hide/unhide`→`JobSourcesModeration` ; `close_conversation`→`MessagingDirectory` ;
 `suspend_job/unsuspend_job`→`JobModeration`→`JobService::admin_transition` ;

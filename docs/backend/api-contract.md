@@ -306,10 +306,14 @@ Erreur :
   `pst_view_moderation_queue`. Notes internes visibles **ici uniquement** (file admin).
 - `POST /moderation/cases/{uuid}/assign` — assigner. R: `pst_decide_report`.
 - `POST /moderation/cases/{uuid}/decision` — décider (`pst_moderate_content`) : `{action,
-  reason_codes?, note?, resolve?, target?}`. `target{type,uuid}` optionnel permet à un
-  **admin** de suspendre l'auteur (par UUID public) depuis un cas de contenu. Les actions
-  **admin** (`suspend_*`) sont **re-vérifiées par capability** dans l'exécuteur d'action.
-  err: `forbidden`, `invalid_transition`.
+  reason_codes?, note?, resolve?}`. **M5** : la ressource effective est **dérivée du cas
+  côté serveur** (`CaseTargetResolver`) — le client **ne fournit jamais** d'UUID cible (un
+  `target` éventuel dans le corps est **ignoré**). Contenu → ressource propre du cas ;
+  `suspend_user`/`unsuspend_user` → utilisateur **responsable** dérivé (offre → créateur,
+  entreprise → propriétaire). Action incompatible avec le type du cas → **409** (message
+  générique, aucune autre ressource divulguée). Les actions **admin** (`suspend_*`) sont
+  **re-vérifiées par capability** dans l'exécuteur d'action. L'audit journalise la ressource
+  **réellement traitée** (dérivée), pas un champ client. err: `forbidden`, `invalid_transition`.
 - `POST /moderation/cases/{uuid}/note` — note interne. R: `pst_moderate_content`.
 - `GET /moderation/health` — état (`provider: local_only`). R: `pst_view_moderation_queue`.
 - **Actions déléguées** (via contrats propriétaires, jamais d'écriture directe) :

@@ -272,7 +272,9 @@ final class Actions {
 
 	/** @return array<string,string> */
 	private function mod_suspend_user( string $uuid ): array {
-		return $this->mod_decision( $uuid, 'suspend_user', $this->target_from_post() );
+		// M5 : la cible (utilisateur responsable) est dérivée de la case côté serveur ;
+		// le back-office ne transmet plus d'UUID cible.
+		return $this->mod_decision( $uuid, 'suspend_user' );
 	}
 
 	/** @return array<string,string> */
@@ -285,24 +287,14 @@ final class Actions {
 		return 200 === $r['status'] ? array( 'pst_msg' => 'done' ) : array( 'pst_err' => 403 === $r['status'] ? 'forbidden' : 'failed' );
 	}
 
-	/** @param array<string,string>|null $target @return array<string,string> */
-	private function mod_decision( string $uuid, string $action, ?array $target = null ): array {
-		$body = array( 'action' => $action );
-		if ( null !== $target ) {
-			$body['target'] = $target;
-		}
-		$r = Rest::call( 'POST', '/postelio/v1/moderation/cases/' . $uuid . '/decision', array(), $body );
+	/** @return array<string,string> */
+	private function mod_decision( string $uuid, string $action ): array {
+		// La ressource effective est dérivée de la case côté serveur (M5) : aucun `target`.
+		$r = Rest::call( 'POST', '/postelio/v1/moderation/cases/' . $uuid . '/decision', array(), array( 'action' => $action ) );
 		if ( 200 === $r['status'] ) {
 			return array( 'pst_msg' => 'moderated' );
 		}
 		return array( 'pst_err' => 403 === $r['status'] ? 'forbidden' : 'failed' );
-	}
-
-	/** @return array<string,string>|null */
-	private function target_from_post(): ?array {
-		$type = isset( $_POST['target_type'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['target_type'] ) ) : '';
-		$uuid = isset( $_POST['target_uuid'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['target_uuid'] ) ) : '';
-		return ( '' !== $type && '' !== $uuid ) ? array( 'type' => $type, 'uuid' => $uuid ) : null;
 	}
 
 	// --- Facturation ----------------------------------------------------------

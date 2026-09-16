@@ -89,6 +89,16 @@ Documentation des règles à appliquer dès le Lot 01. Rien n'est implémenté i
   primer `blocked_companies` (une entreprise bloquée par le candidat perd l'accès même avec une
   candidature). Tout refus renvoie **404** (non-divulgation). Un recruteur sans entreprise
   n'accède à aucun profil.
+- **Cible d'une décision de modération (M5)** : `POST /moderation/cases/{uuid}/decision`
+  n'accepte **aucune cible cliente**. La ressource effectivement traitée est **dérivée du
+  cas** côté serveur (`CaseTargetResolver`) : les actions de contenu (hide/unhide,
+  close_conversation, suspend_job, suspend_company, warning) agissent sur la ressource
+  **propre** du cas, si le type est compatible ; `suspend_user`/`unsuspend_user` visent
+  l'utilisateur **responsable** dérivé via les contrats propriétaires (offre → créateur,
+  entreprise → propriétaire). Un `target` fourni dans le corps est **ignoré** ; une action
+  incompatible avec le type du cas est refusée (**409**, message générique). L'audit
+  (`moderation.decision_made`) journalise la ressource **réellement traitée**, pas le champ
+  client. Un modérateur ne peut donc plus agir sur une ressource étrangère au cas.
 - Les transitions de statut passent par le moteur de workflow ([workflows.md](workflows.md)),
   jamais un `update` libre depuis le front.
 - **Publication d'offre** (décision V1 — D1) : une entreprise **non vérifiée** peut créer

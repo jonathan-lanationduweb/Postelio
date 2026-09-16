@@ -83,15 +83,15 @@ final class CaseController extends Controller {
 		if ( ! ModerationActions::is_valid( $action ) ) {
 			throw \Postelio\Core\ApiError::validation( array( 'action' => 'Action inconnue.' ) );
 		}
-		$target = ( isset( $b['target'] ) && is_array( $b['target'] ) ) ? $b['target'] : null;
-		$case   = $this->cases->decide(
+		// M5 : aucun `target` client. La ressource effective est dérivée de la case côté
+		// serveur (CaseTargetResolver) ; un éventuel champ `target` dans le corps est ignoré.
+		$case = $this->cases->decide(
 			self::uuid( $r ),
 			get_current_user_id(),
 			$action,
 			array_values( array_filter( array_map( 'strval', (array) ( $b['reason_codes'] ?? array() ) ) ) ),
 			(string) ( $b['note'] ?? '' ),
-			isset( $b['resolve'] ) ? (bool) $b['resolve'] : true,
-			$target
+			isset( $b['resolve'] ) ? (bool) $b['resolve'] : true
 		);
 		return $this->ok( ModerationPresenter::case_view( $case ) );
 	}
