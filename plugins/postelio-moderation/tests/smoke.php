@@ -169,7 +169,7 @@ $t( 'la nouvelle case est active', null !== $new_case );
 
 echo "== Action modérateur interdite (suspend_user) ==\n";
 $new_case_uuid = (string) $new_case['public_uuid'];
-$t( 'moderator ne peut PAS suspend_user => 403', 403 === $req( 'POST', '/postelio/v1/moderation/cases/' . $new_case_uuid . '/decision', array( 'action' => 'suspend_user', 'target' => array( 'type' => 'user', 'uuid' => UserDirectory::public_uuid( $recB ) ) ), $moderator )['status'] );
+$t( 'moderator ne peut PAS suspend_user => 403', 403 === $req( 'POST', '/postelio/v1/moderation/cases/' . $new_case_uuid . '/decision', array( 'action' => 'suspend_user' ), $moderator )['status'] );
 
 echo "== Passerelle préventive : jobs publish (fail-closed) ==\n";
 $jok = $create_job( array( 'description' => 'Nous recherchons un développeur motivé pour rejoindre une belle équipe.' ) );
@@ -201,13 +201,32 @@ $t( 'menace explicite => blocked', true === ( $crit['blocked'] ?? false ) );
 $t( 'décision bloquée : message générique non vide', ! empty( $crit['message'] ) );
 $t( 'message générique n\'expose aucun reason code', false === strpos( strtolower( (string) $crit['message'] ), 'violence' ) && false === strpos( strtolower( (string) $crit['message'] ), 'threat' ) );
 
-echo "== Actions déléguées : suspend_user (admin, via target) ==\n";
-$r_userc = $req( 'POST', '/postelio/v1/moderation/reports', array( 'resource_type' => 'job', 'resource_uuid' => $jok, 'reason_code' => 'fraud' ), $cand );
-$uc = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$case_tbl} WHERE resource_type='job' AND resource_uuid=%s AND status IN ('open','in_review','escalated')", $jok ), ARRAY_A );
+echo "== M5 : suspend_user (admin) — cible DÉRIVÉE de la case, target client IGNORÉ ==\n";
+// L'offre $jok a été créée par $recA. On envoie sciemment un target ARBITRAIRE ($recB, sans
+// rapport avec la case) : il doit être ignoré, et seul le créateur de l'offre (recA) suspendu.
+$req( 'POST', '/postelio/v1/moderation/reports', array( 'resource_type' => 'job', 'resource_uuid' => $jok, 'reason_code' => 'fraud' ), $cand );
+$uc  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$case_tbl} WHERE resource_type='job' AND resource_uuid=%s AND status IN ('open','in_review','escalated')", $jok ), ARRAY_A );
+$aud_before = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$audit} WHERE action='moderation.decision_made'" );
 $dsu = $req( 'POST', '/postelio/v1/moderation/cases/' . $uc['public_uuid'] . '/decision', array( 'action' => 'suspend_user', 'target' => array( 'type' => 'user', 'uuid' => UserDirectory::public_uuid( $recB ) ), 'note' => 'abus' ), $admin );
 $t( 'admin suspend_user => 200 resolved', 200 === $dsu['status'] && 'resolved' === ( $dsu['data']['data']['status'] ?? '' ) );
-$t( 'utilisateur ciblé suspendu (réversible)', UserModeration::is_suspended( $recB ) );
-UserModeration::unsuspend( UserDirectory::public_uuid( $recB ), $admin );
+$t( 'M5 : utilisateur DÉRIVÉ (créateur de l\'offre = recA) suspendu', UserModeration::is_suspended( $recA ) );
+$t( 'M5 : target arbitraire (recB) IGNORÉ => NON suspendu', ! UserModeration::is_suspended( $recB ) );
+// Audit : la métadonnée porte la ressource réellement traitée (user), pas un champ client brut.
+$aud_row = $wpdb->get_row( "SELECT * FROM {$audit} WHERE action='moderation.decision_made' ORDER BY id DESC LIMIT 1", ARRAY_A );
+$t( 'M5 : moderation.decision_made journalisé', (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$audit} WHERE action='moderation.decision_made'" ) === $aud_before + 1 );
+$aud_meta = json_decode( (string) ( $aud_row['metadata'] ?? '' ), true );
+$t( 'M5 : audit metadata cible = user (dérivé, pas l\'offre du case)', is_array( $aud_meta ) && 'user' === ( $aud_meta['resource_type'] ?? '' ) && 'suspend_user' === ( $aud_meta['action'] ?? '' ) );
+UserModeration::unsuspend( UserDirectory::public_uuid( $recA ), $admin );
+
+echo "== M5 : liaison décision ↔ ressource du case (rejets cross-type) ==\n";
+$jx = $create_job();
+$req( 'POST', '/postelio/v1/moderation/reports', array( 'resource_type' => 'job', 'resource_uuid' => $jx, 'reason_code' => 'scam' ), $cand2 );
+$caseX = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$case_tbl} WHERE resource_type='job' AND resource_uuid=%s AND status IN ('open','in_review','escalated')", $jx ), ARRAY_A );
+$caseX_uuid = (string) $caseX['public_uuid'];
+$t( 'cross-type : suspend_company sur case job => 409', 409 === $req( 'POST', '/postelio/v1/moderation/cases/' . $caseX_uuid . '/decision', array( 'action' => 'suspend_company' ), $admin )['status'] );
+$t( 'cross-type : close_conversation sur case job => 409', 409 === $req( 'POST', '/postelio/v1/moderation/cases/' . $caseX_uuid . '/decision', array( 'action' => 'close_conversation' ), $admin )['status'] );
+$t( 'la case reste active après actions incompatibles', null !== $wpdb->get_row( $wpdb->prepare( "SELECT id FROM {$case_tbl} WHERE public_uuid=%s AND status IN ('open','in_review','escalated')", $caseX_uuid ), ARRAY_A ) );
+$t( 'cross-type : message d\'erreur ne divulgue aucune autre ressource', false === strpos( strtolower( (string) ( $req( 'POST', '/postelio/v1/moderation/cases/' . $caseX_uuid . '/decision', array( 'action' => 'suspend_company' ), $admin )['data']['error']['message'] ?? '' ) ), 'uuid' ) );
 
 echo "== Actions déléguées : hide/unhide (external_job si présent) ==\n";
 $ext_uuid = (string) $wpdb->get_var( "SELECT public_uuid FROM {$wpdb->prefix}postelio_external_jobs WHERE sync_status='active' LIMIT 1" );

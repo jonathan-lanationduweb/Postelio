@@ -92,7 +92,7 @@ final class CaseService {
 	 * @param array<int,string> $reason_codes
 	 * @throws ApiError
 	 */
-	public function decide( string $case_uuid, int $actor_id, string $action, array $reason_codes = array(), string $note = '', bool $resolve = true, ?array $target = null ): array {
+	public function decide( string $case_uuid, int $actor_id, string $action, array $reason_codes = array(), string $note = '', bool $resolve = true ): array {
 		$case = $this->require_case( $case_uuid );
 		$id   = (int) $case['id'];
 		if ( CaseStateMachine::is_terminal( (string) $case['status'] ) ) {
@@ -104,10 +104,9 @@ final class CaseService {
 			$case['status'] = CaseStateMachine::IN_REVIEW;
 		}
 
-		// Ressource cible : la case, sauf override explicite (ex. suspend_user d'un auteur
-		// depuis une case de message). Exécution DÉLÉGUÉE au domaine propriétaire.
-		$res_type = ( is_array( $target ) && ! empty( $target['type'] ) ) ? (string) $target['type'] : (string) $case['resource_type'];
-		$res_uuid = ( is_array( $target ) && ! empty( $target['uuid'] ) ) ? (string) $target['uuid'] : (string) $case['resource_uuid'];
+		// M5 : la ressource effective est DÉRIVÉE de la case côté serveur (jamais un UUID
+		// arbitraire du client). Exécution DÉLÉGUÉE au domaine propriétaire.
+		list( $res_type, $res_uuid ) = CaseTargetResolver::resolve( $case, $action );
 		$this->actions->execute( $action, $res_type, $res_uuid, $actor_id, $reason_codes );
 
 		$this->events->add( $id, array(
@@ -116,7 +115,7 @@ final class CaseService {
 			'note' => '' !== $note ? sanitize_textarea_field( $note ) : null,
 			'policy_version' => (string) apply_filters( 'postelio/moderation/policy_version', '1' ),
 		) );
-		$this->emit( 'moderation.decision_made', $id, (string) $case['resource_type'], (string) $case['resource_uuid'] );
+		$this->emit_decision( $id, (string) $case['public_uuid'], $action, (string) $case['resource_type'], (string) $case['resource_uuid'], $res_type, $res_uuid );
 
 		// Transition finale.
 		if ( 'escalate' === $action ) {
@@ -152,5 +151,25 @@ final class CaseService {
 
 	private function emit( string $event, int $case_id, string $resource_type, string $resource_uuid ): void {
 		Core::instance()->events()->emit( $event, array( 'case_id' => $case_id, 'resource_type' => $resource_type, 'resource_uuid' => $resource_uuid, 'audit_resource_type' => 'moderation_case' ) );
+	}
+
+	/**
+	 * Émet `moderation.decision_made` en distinguant la ressource de la case (contexte) de
+	 * la ressource RÉELLEMENT traitée (dérivée) — jamais un champ client non validé (M5).
+	 */
+	private function emit_decision( int $case_id, string $case_uuid, string $action, string $case_res_type, string $case_res_uuid, string $acted_type, string $acted_uuid ): void {
+		Core::instance()->events()->emit( 'moderation.decision_made', array(
+			'case_id'             => $case_id,
+			'resource_type'       => $case_res_type,
+			'resource_uuid'       => $case_res_uuid,
+			'audit_resource_type' => 'moderation_case',
+			// Journalisé (metadata d'audit) : la cible RÉELLEMENT traitée, dérivée du case.
+			'audit'               => array(
+				'case_uuid'     => $case_uuid,
+				'action'        => $action,
+				'resource_type' => $acted_type,
+				'resource_uuid' => $acted_uuid,
+			),
+		) );
 	}
 }
