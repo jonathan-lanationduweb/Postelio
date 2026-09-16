@@ -446,6 +446,54 @@ a.bo-activity__text:hover { text-decoration: underline; }
 .bo-identity__sub { font-size: 12.5px; color: var(--bo-muted); }
 .bo-identity .bo-chips { margin-top: 4px; }
 
+/* ---------- PAGE THUMB (miniature abstraite d'une mise en page : barres + blocs, jamais une capture) ---------- */
+.bo-thumb { position: relative; width: 64px; height: 44px; flex: none; border-radius: 6px; background: #fff; border: 1px solid var(--bo-line); overflow: hidden; }
+.bo-thumb::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--bo-primary); opacity: .9; }
+.bo-thumb i { position: absolute; display: block; border-radius: 2px; background: var(--bo-primary-soft); }
+/* Accueil : hero large + 3 tuiles */
+.bo-thumb--home i:nth-child(1) { left: 6px; right: 6px; top: 10px; height: 14px; background: var(--bo-accent-soft); }
+.bo-thumb--home i:nth-child(1)::after { content: ""; position: absolute; left: 4px; top: 4px; width: 22px; height: 3px; border-radius: 2px; background: var(--bo-accent); }
+.bo-thumb--home i:nth-child(2) { left: 6px; top: 28px; width: 15px; height: 10px; }
+.bo-thumb--home i:nth-child(3) { left: 24px; top: 28px; width: 15px; height: 10px; }
+.bo-thumb--home i:nth-child(4) { left: 42px; top: 28px; width: 16px; height: 10px; }
+/* Offres : filtre à gauche + liste */
+.bo-thumb--jobs i:nth-child(1) { left: 6px; top: 10px; width: 14px; height: 28px; }
+.bo-thumb--jobs i:nth-child(2) { left: 24px; top: 10px; right: 6px; height: 7px; }
+.bo-thumb--jobs i:nth-child(3) { left: 24px; top: 20px; right: 6px; height: 7px; }
+.bo-thumb--jobs i:nth-child(4) { left: 24px; top: 30px; right: 6px; height: 7px; }
+/* Entreprises : grille 2×2 */
+.bo-thumb--companies i:nth-child(1) { left: 6px; top: 10px; width: 24px; height: 12px; }
+.bo-thumb--companies i:nth-child(2) { left: 34px; top: 10px; width: 24px; height: 12px; }
+.bo-thumb--companies i:nth-child(3) { left: 6px; top: 26px; width: 24px; height: 12px; }
+.bo-thumb--companies i:nth-child(4) { left: 34px; top: 26px; width: 24px; height: 12px; }
+/* Savoir-faire : 3 cartes verticales */
+.bo-thumb--skills i:nth-child(1) { left: 6px; top: 10px; width: 15px; height: 28px; }
+.bo-thumb--skills i:nth-child(2) { left: 25px; top: 10px; width: 15px; height: 28px; }
+.bo-thumb--skills i:nth-child(3) { left: 44px; top: 10px; width: 14px; height: 28px; }
+.bo-thumb--skills i:nth-child(4) { display: none; }
+/* Conseils : article vedette + lignes */
+.bo-thumb--advice i:nth-child(1) { left: 6px; top: 10px; width: 26px; height: 28px; background: var(--bo-accent-soft); }
+.bo-thumb--advice i:nth-child(2) { left: 36px; top: 10px; right: 6px; height: 6px; }
+.bo-thumb--advice i:nth-child(3) { left: 36px; top: 20px; right: 6px; height: 6px; }
+.bo-thumb--advice i:nth-child(4) { left: 36px; top: 30px; right: 6px; height: 6px; }
+/* Contact : texte à gauche + formulaire */
+.bo-thumb--contact i:nth-child(1) { left: 6px; top: 10px; width: 22px; height: 6px; }
+.bo-thumb--contact i:nth-child(2) { left: 6px; top: 19px; width: 16px; height: 5px; }
+.bo-thumb--contact i:nth-child(3) { left: 32px; top: 10px; right: 6px; height: 20px; border: 1px solid var(--bo-line); background: #fff; }
+.bo-thumb--contact i:nth-child(4) { left: 32px; top: 32px; width: 14px; height: 6px; background: var(--bo-accent); }
+/* Navigation : barre seule */
+.bo-thumb--navigation::before { height: 12px; }
+.bo-thumb--navigation i:nth-child(1) { left: 6px; top: 3px; width: 10px; height: 6px; background: var(--bo-accent); z-index: 1; }
+.bo-thumb--navigation i:nth-child(2) { left: 22px; top: 4px; width: 26px; height: 4px; background: rgba(255,255,255,.7); z-index: 1; }
+.bo-thumb--navigation i:nth-child(3) { left: 6px; right: 6px; top: 18px; height: 20px; }
+.bo-thumb--navigation i:nth-child(4) { display: none; }
+/* Footer : bloc sombre en bas */
+.bo-thumb--footer::before { display: none; }
+.bo-thumb--footer i:nth-child(1) { left: 6px; right: 6px; top: 6px; height: 14px; }
+.bo-thumb--footer i:nth-child(2) { left: 0; right: 0; bottom: 0; height: 18px; border-radius: 0; background: var(--bo-primary); }
+.bo-thumb--footer i:nth-child(3) { left: 6px; bottom: 6px; width: 14px; height: 4px; background: rgba(255,255,255,.7); z-index: 1; }
+.bo-thumb--footer i:nth-child(4) { left: 26px; bottom: 6px; width: 24px; height: 4px; background: rgba(255,255,255,.45); z-index: 1; }
+
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 1280px) {
 	.bo-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -74,3 +74,44 @@ Objectif : faire disparaître l'impression « inachevé / généré / données t
 - **États vides** : `Ui::empty_state(titre, texte, action, icône, page)` — variante plein écran pour
   Modération, Facturation, Entretiens, Entreprises, Offres.
 - Assets : `POSTELIO_BACKOFFICE_VERSION` 0.4.1.
+
+## 5. Lot B — Mon site / Site Builder (16/09/2026)
+
+Périmètre 100 % UX : aucune modification du schéma, du REST, du bridge d'aperçu
+(`?postelio_preview=1` + `postMessage` `postelio-site-preview` / `postelio-preview-ready`,
+`preview_target`, `preview_device`) ni de la validation des médias.
+
+- **Layout** : éditeur 40 % / aperçu 60 % (`minmax(380px, 2fr) minmax(0, 3fr)`), aperçu sticky
+  (`top: 46px`, hauteur `calc(100vh - 150px)`, min 520 px) ; 1280 → 42/58 ; ≤ 1100 → une colonne,
+  aperçu 72 vh sous l'éditeur ; ≤ 782 → champs en une colonne, cartes média empilées.
+- **En-tête** compact : surtitre « Postelio · Mon site », titre de la page, description courte,
+  « Voir le site » + « Enregistrer » (désactivé sans modification) ; **statut** discret sous les
+  onglets (Enregistré · Modifications non enregistrées · Enregistrement… · Modifications
+  enregistrées · erreur) piloté par le cycle de sauvegarde réel.
+- **Accordéons** numérotés (01, 02…) : titre, description courte (table de présentation par section
+  / groupe), résumé replié, chip Actif / Inactif, switch d'activation dans l'en-tête, chevron ;
+  `role=button`, `tabindex=0`, Entrée / Espace, `aria-expanded` / `aria-controls`. Réordonnancement
+  réel (Monter / Descendre) uniquement là où le schéma l'autorise ; aucun faux drag.
+- **Champs** : grille 2 colonnes (`col: half`), zones pleine largeur, libellé + compteur informatif
+  (titres 70, sous-titres 120, nom 40, compteurs SEO du schéma) jamais bloquant, aide courte.
+  Libellés et aides réécrits en langage utilisateur côté éditeur (table `LABELS` / `HELPS`),
+  le schéma restant la source.
+- **Switch** avec état textuel Actif / Inactif, `role=switch`, `aria-checked`.
+- **Couleurs** : pastille (sélecteur natif), valeur hexadécimale, nom fonctionnel, mention
+  « Couleur Postelio » quand la valeur est celle de la marque.
+- **Cartes média** : aperçu réel 180 × 110 (image), logo sur damier clair, logo clair sur fond bleu
+  nuit, favicon en 32 et 16 px + simulation d'onglet, image de partage au ratio social, vidéo avec
+  son image d'attente ; nom, format · dimensions (lues à l'affichage) · poids (connu après
+  sélection) ; Remplacer / Supprimer / Restaurer ; avertissement > 15 Mo discret ; état vide =
+  zone d'ajout en pointillés avec formats acceptés.
+- **Répéteurs** : ligne compacte (numéro, titre, résumé, Monter / Descendre / Supprimer, chevron),
+  édition dépliée au clic ou au clavier, bouton d'ajout en pointillés nommé selon l'objet
+  (« Ajouter un lien », « Ajouter une colonne », « Ajouter un réseau »…).
+- **Aperçu** : barre « Aperçu · Desktop / Tablette / Mobile · Actualiser · Ouvrir le site »,
+  appareil imposé par le schéma respecté (Footer = mobile, libellé « Aperçu mobile »), SEO = aperçu
+  éditorial (extrait Google + carte de partage à partir des champs réels, sans score).
+- **Retours** : toast discret (média ajouté / remplacé / retiré, section activée / désactivée,
+  élément supprimé, enregistré, erreur) ; Ctrl/Cmd+S enregistre.
+- **Hub** : miniature graphique abstraite par type de page (`.bo-thumb--home|jobs|companies|skills|
+  advice|contact|navigation|footer`), aucune capture inventée.
+- Assets : `POSTELIO_BACKOFFICE_VERSION` 0.5.0.
