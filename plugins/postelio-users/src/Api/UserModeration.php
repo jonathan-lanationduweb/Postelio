@@ -2,9 +2,11 @@
 /**
  * Contrat public de SUSPENSION utilisateur (consommé par postelio-moderation). Respecte le
  * statut/soft-delete existant (`AccountService::META_STATUS`). À la suspension : révocation
- * des jetons applicatifs + destruction des sessions WP → nouvelle authentification refusée
- * tant que `suspended` (AccountService::authenticate refuse déjà les comptes non actifs).
- * Réversible. Ne détruit jamais l'utilisateur ni ses données.
+ * des jetons applicatifs + destruction des sessions WP. L'étanchéité du statut est ensuite
+ * garantie de façon CENTRALE par `AccountStatusGuard` (filtres `authenticate` + `user_has_cap`)
+ * : aucune nouvelle session native n'est délivrée à un compte suspendu, et toute session déjà
+ * établie perd ses capabilities `pst_*`. Réversible. Ne détruit jamais l'utilisateur, ses
+ * données ni son rôle (le rôle = type de compte ; le statut = état).
  *
  * @package Postelio\Users\Api
  */

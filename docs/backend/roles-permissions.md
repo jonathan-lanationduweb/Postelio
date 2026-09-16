@@ -4,6 +4,16 @@ Rôles WordPress custom (créés par `postelio-core` à l'activation, capabiliti
 Le contrôle est **serveur** : chaque endpoint et chaque transition de statut vérifie une
 capability. Le front n'accorde aucun droit.
 
+> **Statut de compte (H1).** Le rôle indique le **type** de compte ; le **statut**
+> (`active`/`suspended`/`deleted`) en gouverne l'accès. Un compte non actif conserve son rôle
+> mais perd **toutes** ses capabilities `pst_*` (filtre `user_has_cap`) et ne peut plus ouvrir
+> de session native (filtre `authenticate`) — voir [security.md](security.md#1-authentification).
+>
+> **La capability seule ne suffit pas.** Plusieurs autorisations dépendent de la **ressource**,
+> pas du seul rôle : ex. `pst_view_company_applications` autorise le *cadre*, mais l'accès réel
+> au profil d'un candidat (`GET /candidates/{uuid}`) exige une entreprise réelle non suspendue,
+> la visibilité du candidat et l'absence de blocage (H2).
+
 ## Rôles
 
 | Rôle | Description |

@@ -46,6 +46,12 @@ final class CompanyDirectory {
 		return ( new CompanyRepository() )->exists( $company_id );
 	}
 
+	/** L'entreprise est-elle suspendue (statut de vérification `suspended`) ? */
+	public static function is_suspended( int $company_id ): bool {
+		$c = ( new CompanyRepository() )->get( $company_id );
+		return null !== $c && 'suspended' === ( $c['verification']['status'] ?? '' );
+	}
+
 	/** ID interne depuis l'UUID public (0 si inconnu). */
 	public static function id_from_uuid( string $uuid ): int {
 		$c = ( new CompanyRepository() )->get_by_uuid( $uuid );

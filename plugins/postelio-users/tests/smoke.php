@@ -11,10 +11,15 @@
  * @package Postelio\Users\Tests
  */
 
+use Postelio\Core\Permissions\Capabilities;
 use Postelio\Core\Plugin as Core;
+use Postelio\Users\Api\UserDirectory;
+use Postelio\Users\Api\UserModeration;
 use Postelio\Users\Auth\TokenAuthenticator;
 use Postelio\Users\Auth\TokenService;
 use Postelio\Users\Users\AccountService;
+use Postelio\Users\Users\AccountStatusGuard;
+use Postelio\Users\Verification\EmailVerification;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	echo "Doit être exécuté via WP-CLI.\n";
@@ -122,15 +127,22 @@ $t( 'candidat sur vue recruteur => 403', 403 === $r['status'] );
 $r = $req( 'GET', '/postelio/v1/recruiters/me/profile', null, $rec_id );
 $t( 'recruteur sur son profil => 200', 200 === $r['status'] );
 
-echo "== Vue recruteur d'un candidat par UUID (D2) ==\n";
+echo "== M1 — inscription non vérifiée par défaut ==\n";
+$t( 'recruteur fraîchement inscrit => e-mail NON vérifié', ! EmailVerification::is_verified( $rec_id ) );
+$t( 'recruteur non vérifié => pas de pst_email_verified', ! user_can( $rec_id, 'pst_email_verified' ) );
 $r = $req( 'GET', '/postelio/v1/candidates/' . $cand_uuid, null, $rec_id );
-$t( 'recruteur voit le candidat (UUID) => 200', 200 === $r['status'] );
-$t( 'réponse expose public_uuid', ( $r['data']['data']['public_uuid'] ?? '' ) === $cand_uuid );
-$t( 'réponse n\'expose PAS user_id interne', ! isset( $r['data']['data']['user_id'] ) );
-$t( 'réponse n\'expose PAS id interne', ! isset( $r['data']['data']['id'] ) );
-$t( 'téléphone masqué par défaut (visibility.tel absent)', empty( $r['data']['data']['telephone'] ) );
+$t( 'M1 : recruteur NON vérifié sur vue candidat => 403', 403 === $r['status'] );
+
+echo "== H2 — vue recruteur d'un candidat (autorisation fine) ==\n";
+// On vérifie l'e-mail du recruteur pour dépasser le cadre M1 et isoler H2 lui-même.
+update_user_meta( $rec_id, AccountService::META_EMAIL_VERIFIED, current_time( 'mysql', true ) );
+clean_user_cache( $rec_id );
+$r = $req( 'GET', '/postelio/v1/candidates/' . $cand_uuid, null, $rec_id );
+$t( 'H2 : recruteur vérifié SANS entreprise => 404 (le rôle seul ne suffit pas)', 404 === $r['status'] );
 $r = $req( 'GET', '/postelio/v1/candidates/' . wp_generate_uuid4(), null, $rec_id );
 $t( 'UUID inconnu => 404', 404 === $r['status'] );
+// Chemins autorisés (entreprise réelle, visibilités masque/candidatees/recruteurs,
+// blocked_companies prioritaire) : couverts par le smoke postelio-applications.
 
 echo "== Préférences ==\n";
 $r = $req( 'PUT', '/postelio/v1/me/settings', array( 'langue' => 'en', 'notifications' => array( 'conseils' => true ) ), $cand_id );
@@ -163,6 +175,38 @@ $t( 'candidat vérifié => a pst_email_verified', user_can( $cand_id, 'pst_email
 delete_user_meta( $rec_id, AccountService::META_EMAIL_VERIFIED );
 clean_user_cache( $rec_id );
 $t( 'recruteur non vérifié => n\'a PAS pst_email_verified', ! user_can( $rec_id, 'pst_email_verified' ) );
+
+echo "== H1 — étanchéité de la suspension (auth native + capabilities) ==\n";
+$admin_id = (int) ( get_users( array( 'role' => 'administrator', 'fields' => 'ID', 'number' => 1 ) )[0] ?? 1 );
+$em_susp  = 'smoke.susp.' . wp_generate_password( 6, false ) . '@postelio.test';
+$r        = $req( 'POST', '/postelio/v1/auth/register', array( 'email' => $em_susp, 'password' => 'motdepasse123', 'role' => 'recruiter' ) );
+$susp_id  = (int) ( $r['data']['data']['user']['id'] ?? 0 );
+$created[] = $susp_id;
+// Actif : la connexion native fonctionne et la capability métier est présente.
+$t( 'actif : wp_authenticate (wp-login/REST/XML-RPC) OK', wp_authenticate( $em_susp, 'motdepasse123' ) instanceof WP_User );
+$t( 'actif : possède pst_view_company_applications', user_can( $susp_id, 'pst_view_company_applications' ) );
+// Suspension via le contrat réel (révoque jetons + sessions), sans toucher au rôle.
+UserModeration::suspend( UserDirectory::public_uuid( $susp_id ), $admin_id );
+clean_user_cache( $susp_id );
+$t( 'suspendu : statut = suspended', AccountService::STATUS_SUSPENDED === AccountService::status( $susp_id ) );
+$t( 'suspendu : rôle recruteur CONSERVÉ (statut ≠ rôle)', in_array( Capabilities::ROLE_RECRUITER, (array) get_userdata( $susp_id )->roles, true ) );
+// Couche 1 — aucune nouvelle session native même avec le bon mot de passe.
+$auth_susp = wp_authenticate( $em_susp, 'motdepasse123' );
+$t( 'suspendu : wp_authenticate REFUSÉ (bon mdp)', is_wp_error( $auth_susp ) && AccountStatusGuard::ERROR_CODE === $auth_susp->get_error_code() );
+$t( 'suspendu : POST /auth => 403 Compte indisponible', 403 === $req( 'POST', '/postelio/v1/auth', array( 'email' => $em_susp, 'password' => 'motdepasse123' ) )['status'] );
+// Couche 2 — une session/cookie/Bearer déjà établi perd toutes les capabilities métier.
+$t( 'suspendu : perd pst_view_company_applications', ! user_can( $susp_id, 'pst_view_company_applications' ) );
+$t( 'suspendu : perd pst_email_verified', ! user_can( $susp_id, 'pst_email_verified' ) );
+wp_set_current_user( $susp_id );
+$t( 'suspendu : current_user_can(pst_send_message) => false', ! current_user_can( 'pst_send_message' ) );
+wp_set_current_user( 0 );
+$t( 'suspendu : capabilities WP natives conservées (read)', user_can( $susp_id, 'read' ) );
+// Réactivation : accès normal restauré immédiatement, sans réparer le rôle.
+UserModeration::unsuspend( UserDirectory::public_uuid( $susp_id ), $admin_id );
+clean_user_cache( $susp_id );
+$t( 'réactivé : statut = active', AccountService::STATUS_ACTIVE === AccountService::status( $susp_id ) );
+$t( 'réactivé : retrouve pst_view_company_applications', user_can( $susp_id, 'pst_view_company_applications' ) );
+$t( 'réactivé : wp_authenticate de nouveau OK', wp_authenticate( $em_susp, 'motdepasse123' ) instanceof WP_User );
 
 echo "== Révocation de toutes les sessions (/auth/logout-all) ==\n";
 $svc_tok  = new TokenService();

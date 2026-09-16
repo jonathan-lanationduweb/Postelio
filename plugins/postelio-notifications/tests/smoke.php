@@ -35,6 +35,7 @@ use Postelio\Users\Users\AccountService;
 
 if ( ! defined( 'ABSPATH' ) ) { echo "WP-CLI requis.\n"; exit( 1 ); }
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
+add_filter( 'postelio/require_email_verification', '__return_false' ); // smoke : comptes de test réputés déjà vérifiés (onboarding simulé).
 require_once ABSPATH . 'wp-admin/includes/user.php';
 
 /* Provider e-mail factice (déterministe) — compte les envois par template. */

@@ -42,9 +42,17 @@ final class AccountService {
 		$this->recruiters = $recruiters;
 	}
 
-	/** La vérification e-mail est-elle exigée ? (À VALIDER — désactivée par défaut.) */
+	/**
+	 * La vérification e-mail est-elle exigée ? (M1 — activée par défaut.)
+	 *
+	 * Un nouveau compte démarre donc NON vérifié jusqu'à confirmation réelle : les
+	 * capabilities métier sensibles composées avec `pst_email_verified` (candidature,
+	 * message, publication, paiement, entreprise, entretien, vue candidat…) ne sont
+	 * accordées qu'après vérification. Le filtre permet de désactiver ce comportement
+	 * dans un contexte de test/outillage qui simule des comptes déjà onboardés.
+	 */
 	public static function verification_required(): bool {
-		return (bool) apply_filters( 'postelio/require_email_verification', false );
+		return (bool) apply_filters( 'postelio/require_email_verification', true );
 	}
 
 	public static function role_slug( \WP_User $user ): string {
@@ -143,8 +151,15 @@ final class AccountService {
 	public function authenticate( string $login, string $password ): \WP_User {
 		$user = wp_authenticate( $login, $password );
 		if ( is_wp_error( $user ) ) {
+			// AccountStatusGuard (filtre `authenticate`) refuse déjà les comptes non
+			// actifs, après vérification du mot de passe : on distingue ce refus (403,
+			// message dédié) d'un échec d'identifiants classique (401).
+			if ( AccountStatusGuard::ERROR_CODE === $user->get_error_code() ) {
+				throw ApiError::forbidden( 'Compte indisponible.' );
+			}
 			throw ApiError::unauthenticated( 'Identifiants invalides.' );
 		}
+		// Filet (défense en profondeur) si le filtre d'authentification était contourné.
 		$status = self::status( (int) $user->ID );
 		if ( self::STATUS_ACTIVE !== $status ) {
 			throw ApiError::forbidden( 'Compte indisponible.' );
